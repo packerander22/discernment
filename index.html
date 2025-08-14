@@ -16,6 +16,11 @@
     margin: auto;
     padding: 20px;
   }
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
   .card {
     background: white;
     padding: 20px;
@@ -25,6 +30,21 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+  }
+  .segment-heading {
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    padding: 8px;
+    border-bottom: 2px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.5s ease, color 0.5s ease;
+  }
+  .flash-gold {
+    background-color: gold !important;
+    color: white !important;
   }
   .text {
     font-size: 1.2em;
@@ -49,19 +69,16 @@
   button.next { background: #2196F3; color: white; }
   button.back { background: #9E9E9E; color: white; flex: 0 0 auto; }
   button.restart { background: #9C27B0; color: white; flex: 0 0 auto; }
-  .top-bar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 10px;
-  }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="top-bar">
+    <button class="back" id="backBtn" onclick="goBack()">Back</button>
     <button class="restart" onclick="restart()">Restart</button>
   </div>
   <div class="card">
+    <div id="segmentHeading" class="segment-heading"></div>
     <div id="text" class="text"></div>
     <div id="buttons" class="buttons"></div>
   </div>
@@ -119,32 +136,53 @@ const flowchart = [
 ]
 ;
 
-// ==== Navigation history for back button ====
+// Transition points where we switch to "When You Should Act"
+const transitionPoints = ["Q11", "Q20", "Q22", "Q24"];
+
 let historyStack = [];
 let currentNode = flowchart.find(n => n.id === "Q1");
+let currentSegment = "If You Should Act"; // default at start
+
+function getSegmentIcon(segment) {
+  return segment === "If You Should Act" ? "✅" : "⏳";
+}
+
+function updateSegmentIfNeeded() {
+  if (transitionPoints.includes(currentNode.id) && currentSegment !== "When You Should Act") {
+    currentSegment = "When You Should Act";
+    flashHeading();
+  }
+}
+
+function flashHeading() {
+  const headingDiv = document.getElementById('segmentHeading');
+  headingDiv.classList.add('flash-gold');
+  setTimeout(() => {
+    headingDiv.classList.remove('flash-gold');
+  }, 1500);
+}
 
 function renderNode(node) {
+  updateSegmentIfNeeded();
+
+  document.getElementById('segmentHeading').textContent = `${getSegmentIcon(currentSegment)} ${currentSegment}`;
+
   document.getElementById('text').textContent = node.text || '';
   const btns = document.getElementById('buttons');
   btns.innerHTML = '';
 
+  document.getElementById('backBtn').style.visibility =
+    historyStack.length > 0 ? 'visible' : 'hidden';
+
   if (node.type === 'question') {
     btns.appendChild(makeButton('Yes', 'yes', () => goToNode(node.yes)));
     btns.appendChild(makeButton('No', 'no', () => goToNode(node.no)));
-    if (historyStack.length > 0) {
-      btns.appendChild(makeButton('Back', 'back', goBack));
-    }
   } 
   else if (node.type === 'info') {
     btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
-    if (historyStack.length > 0) {
-      btns.appendChild(makeButton('Back', 'back', goBack));
-    }
   } 
   else if (node.type === 'result') {
-    if (historyStack.length > 0) {
-      btns.appendChild(makeButton('Back', 'back', goBack));
-    }
+    // results have no local nav buttons
   }
 }
 
@@ -170,11 +208,12 @@ function goBack() {
 
 function restart() {
   historyStack = [];
+  currentSegment = "If You Should Act";
   currentNode = flowchart.find(n => n.id === "Q1");
   renderNode(currentNode);
 }
 
-// Start the app
+// Start app
 renderNode(currentNode);
 </script>
 </body>
