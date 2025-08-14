@@ -47,7 +47,7 @@
     <div>
       <div id="text" class="text"></div>
 
-      <!-- Visualization UI (appears only on Q16 / Q19) -->
+      <!-- Visualization UI (appears only on Q15 / Q17) -->
       <div id="vizToggleWrapper" class="viz-toggle"></div>
       <div id="vizPanel" class="viz-panel">
         <img id="vizImage" alt="Visualization">
@@ -61,71 +61,72 @@
 </div>
 
 <script>
-// ======= EMBEDDED, CORRECTED JSON =======
+// ======= CLEAN, SEQUENTIALLY NUMBERED JSON (word-for-word from your chart) =======
+// Types: "question" (yes/no), "info" (Next only), "result" (endpoint)
 const flowchart = [
-  { "id": "Q1", "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
-  { "id": "Q2", "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q6", "no": "Q3" },
-  { "id": "Q3", "type": "question", "text": "Is there cause for a potential problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q6", "no": "Q4" },
-  { "id": "Q4", "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q6", "no": "R2" },
-  { "id": "Q6", "type": "question", "text": "Is there a solution to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL change)?", "yes": "Q7", "no": "R3" },
-  { "id": "Q7", "type": "question", "text": "Can this solution or QoL change be brought about by your influence?", "yes": "Q10", "no": "Q8" },
-  { "id": "Q8", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and worrying and obsessing won’t change anything and is unhealthy. Is there anything further you can do?", "yes": "Q10", "no": "Q9" },
-  { "id": "Q9", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s within your control or in a better overall way?", "yes": "R4", "no": "R2" },
-  { "id": "Q10", "type": "question", "text": "Does this solution or QoL change involve gaining information that would be valuable in the future?", "yes": "Q11", "no": "Q12" },
-  { "id": "Q11", "type": "question", "text": "Would the information alone gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q27", "no": "Q12" },
-  { "id": "Q12", "type": "question", "text": "Is it worth your resources to solve it?", "yes": "Q14", "no": "Q13" },
-  { "id": "Q13", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
-  { "id": "Q14", "type": "question", "text": "Would the benefits of addressing this issue outweigh any downsides it might likely cause?", "yes": "Q16", "no": "Q15" },
-  { "id": "Q15", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
-  { "id": "Q16", "type": "question", "text": "Does addressing this issue involve a diminishing returns curve for effort applied?", "yes": "Q17", "no": "Q19" },
-  { "id": "Q17", "type": "info", "text": "Do your best to find the point of diminishing returns, then only act until that point. Have the courage to stop there. If you are prone to getting sucked into a particular activity (addressing a problem or QoL change), think of an alternative approach that also solves the problem (or improves QoL) in a different way without the addictive aspect. If a better approach is not available for whatever reason, the original approach can be used only if you pre-allocate a set time limit for yourself beforehand and make some follow through commitments, maybe with a reward for stopping that you would be excited about.", "next": "Q19" },
-  { "id": "Q19", "type": "question", "text": "Does addressing this issue directly involve an inverted-U curve for specific effort applied with an objective sweet spot where clear information is available to you?", "yes": "Q20", "no": "Q21" },
-  { "id": "Q20", "type": "info", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q27" },
-  { "id": "Q21", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the problem/potential problem/QoL change was solved/prevented/changed (for example in a blind test compared side by side, and ignoring any differences irrelevant to the actual functionality of the intended purpose associated)?", "yes": "Q22", "no": "R2" },
-  { "id": "Q22", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the long term?", "yes": "Q27", "no": "Q23" },
-  { "id": "Q23", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the short term?", "yes": "Q24", "no": "R2" },
-  { "id": "Q24", "type": "question", "text": "Is it logically worth solving/preventing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q27", "no": "Q26" },
-  { "id": "Q26", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
-  { "id": "Q27", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q31", "no": "Q29" },
-  { "id": "Q29", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q30", "no": "Q31" },
-  { "id": "Q30", "type": "question", "text": "Would there be clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "Q33", "no": "Q32" },
-  { "id": "Q31", "type": "question", "text": "Is this the best solution you know of assuming you could do it now?", "yes": "Q36", "no": "Q34" },
-  { "id": "Q32", "type": "result", "text": "Wait until the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." },
-  { "id": "Q33", "type": "result", "text": "Wait until those signs are indicated, the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." },
-  { "id": "Q34", "type": "question", "text": "Have you considered all better solutions you know of?", "yes": "Q36", "no": "Q35" },
-  { "id": "Q35", "type": "info", "text": "Consider them.", "next": "R4" },
-  { "id": "Q36", "type": "question", "text": "Is this solution currently available?", "yes": "Q40_available", "no": "Q37" },
-  { "id": "Q37", "type": "question", "text": "Is there a better time down the road to solve/address this to maximize value?", "yes": "Q38", "no": "R6" },
-  { "id": "Q38", "type": "question", "text": "Assuming you waited until it was available, would the benefits of using this solution outweigh the downsides of having to wait?", "yes": "Q40_unavailable", "no": "Q39" },
-  { "id": "Q39", "type": "question", "text": "Is there a next best solution?", "yes": "R4", "no": "R3" },
-  { "id": "Q40_available", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R6" },
-  { "id": "Q40_unavailable", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R5" },
+  { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
+  { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
+  { "id": "Q3",  "type": "question", "text": "Is there cause for a potential problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q4" },
+  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "R2" },
+  { "id": "Q5",  "type": "question", "text": "Is there a solution to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL change)?", "yes": "Q6", "no": "R3" },
+  { "id": "Q6",  "type": "question", "text": "Can this solution or QoL change be brought about by your influence?", "yes": "Q9", "no": "Q7" },
+  { "id": "Q7",  "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and worrying and obsessing won’t change anything and is unhealthy. Is there anything further you can do?", "yes": "Q9", "no": "Q8" },
+  { "id": "Q8",  "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s within your control or in a better overall way?", "yes": "R4", "no": "R2" },
+  { "id": "Q9",  "type": "question", "text": "Does this solution or QoL change involve gaining information that would be valuable in the future?", "yes": "Q10", "no": "Q11" },
+  { "id": "Q10", "type": "question", "text": "Would the information alone gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q24", "no": "Q11" },
+  { "id": "Q11", "type": "question", "text": "Is it worth your resources to solve it?", "yes": "Q13", "no": "Q12" },
+  { "id": "Q12", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
+  { "id": "Q13", "type": "question", "text": "Would the benefits of addressing this issue outweigh any downsides it might likely cause?", "yes": "Q15", "no": "Q14" },
+  { "id": "Q14", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
+  { "id": "Q15", "type": "question", "text": "Does addressing this issue involve a diminishing returns curve for effort applied?", "yes": "Q16", "no": "Q17" },
+  { "id": "Q16", "type": "info",     "text": "Do your best to find the point of diminishing returns, then only act until that point. Have the courage to stop there. If you are prone to getting sucked into a particular activity (addressing a problem or QoL change), think of an alternative approach that also solves the problem (or improves QoL) in a different way without the addictive aspect. If a better approach is not available for whatever reason, the original approach can be used only if you pre-allocate a set time limit after which you must stop and do something else before re-evaluating.", "next": "Q17" },
+  { "id": "Q17", "type": "question", "text": "Does addressing this issue directly involve an inverted-U curve for specific effort applied with an objective sweet spot where clear information is available to you?", "yes": "Q18", "no": "Q19" },
+  { "id": "Q18", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q24" },
+  { "id": "Q19", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the problem/potential problem/QoL change was solved/prevented/changed (for example in a blind test compared side by side, and ignoring any differences irrelevant to the actual functionality of the intended purpose associated)?", "yes": "Q20", "no": "R2" },
+  { "id": "Q20", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the long term?", "yes": "Q24", "no": "Q21" },
+  { "id": "Q21", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the short term?", "yes": "Q22", "no": "R2" },
+  { "id": "Q22", "type": "question", "text": "Is it logically worth solving/preventing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q24", "no": "Q23" },
+  { "id": "Q23", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
+
+  /* ===== WHEN YOU SHOULD ACT (begins here) ===== */
+  { "id": "Q24", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q27", "no": "Q25" },
+  { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q27" },
+  { "id": "Q26", "type": "question", "text": "Would there be clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
+  { "id": "Q27", "type": "question", "text": "Is this the best solution you know of assuming you could do it now?", "yes": "Q30", "no": "Q28" },
+  { "id": "Q28", "type": "question", "text": "Have you considered all better solutions you know of?", "yes": "Q30", "no": "Q29" },
+  { "id": "Q29", "type": "info",     "text": "Consider them.", "next": "R4" },
+  { "id": "Q30", "type": "question", "text": "Is this solution currently available?", "yes": "Q34", "no": "Q31" },
+  { "id": "Q31", "type": "question", "text": "Is there a better time down the road to solve/address this to maximize value?", "yes": "Q32", "no": "R6" },
+  { "id": "Q32", "type": "question", "text": "Assuming you waited until it was available, would the benefits of using this solution outweigh the downsides of having to wait?", "yes": "Q35", "no": "Q33" },
+  { "id": "Q33", "type": "question", "text": "Is there a next best solution?", "yes": "R4", "no": "R3" },
+  { "id": "Q34", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R6" },
+  { "id": "Q35", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R5" },
+
+  /* ===== RESULTS ===== */
   { "id": "R1", "type": "result", "text": "Worry about it once the time is right." },
   { "id": "R2", "type": "result", "text": "Don’t worry about it." },
   { "id": "R3", "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find a solution or solutions. If not, put in as much effort as you deem worth it." },
   { "id": "R4", "type": "result", "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },
   { "id": "R5", "type": "result", "text": "Wait until the best solution given the circumstances is available, then solve it once there aren’t any other more important things to do." },
   { "id": "R6", "type": "result", "text": "Address it sooner than later, once there aren’t any other more important things to do." },
-  { "id": "R7", "type": "result", "text": "Wait until that time, then solve/address it. Consider any other options that could also work and be worth it until then." }
+  { "id": "R7", "type": "result", "text": "Wait until that time, then solve/address it. Consider any other options that could also work and be worth it until then." },
+  { "id": "R8", "type": "result", "text": "Wait until those signs are indicated, the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." },
+  { "id": "R9", "type": "result", "text": "Wait until the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." }
 ];
 
 // ======= APP LOGIC =======
 
-// Nodes that begin the "When You Should Act" section (heading changes AFTER you land here)
-const whenSectionStarts = ["Q27", "Q29", "Q30", "Q31"];
-
-// Visualization mapping
-const visualizations = {
-  Q16: { src: "diminishing_returns_curve.png", alt: "Diminishing Returns Curve: Effort/Resources vs Functional Results" },
-  Q19: { src: "inverted_u_curve.png", alt: "Inverted-U Curve: Effort/Resources vs Functional Results" }
-};
-
+// Segment is determined by question number: Q1–Q23 = "If", Q24+ = "When"
 let historyStack = [];
 let currentNode = flowchart.find(n => n.id === "Q1");
-let currentSegment = "If You Should Act"; // default at start
+let currentSegment = "If You Should Act";
 
 function getSegmentForNodeId(id) {
-  return whenSectionStarts.includes(id) ? "When You Should Act" : "If You Should Act";
+  if (!id || id[0] !== 'Q') return currentSegment; // results keep current
+  const m = /^Q(\d+)$/.exec(id);
+  if (!m) return currentSegment;
+  const num = parseInt(m[1], 10);
+  return num >= 24 ? "When You Should Act" : "If You Should Act";
 }
 
 function flashHeading() {
@@ -135,7 +136,7 @@ function flashHeading() {
 }
 
 function getSegmentIcon(segment) {
-  return segment === "If You Should Act" ? "✅" : "⏳";
+  return segment === "If You Should Act" ? "⚖️" : "⏳";
 }
 
 function renderNode(node) {
@@ -153,7 +154,6 @@ function renderNode(node) {
     return;
   }
 
-  // Segment handling based on the node we just navigated to
   const thisSegment = getSegmentForNodeId(node.id);
   if (thisSegment !== currentSegment) {
     currentSegment = thisSegment;
@@ -162,17 +162,12 @@ function renderNode(node) {
   document.getElementById('segmentHeading').textContent =
     `${getSegmentIcon(currentSegment)} ${currentSegment}`;
 
-  // Text
   document.getElementById('text').textContent = node.text || '';
-
-  // Back visibility
   document.getElementById('backBtn').style.visibility =
     historyStack.length > 0 ? 'visible' : 'hidden';
 
-  // Visualization UI
   setupVisualization(node);
 
-  // Bottom buttons
   const btns = document.getElementById('buttons');
   btns.innerHTML = '';
   if (node.type === 'question') {
@@ -180,7 +175,7 @@ function renderNode(node) {
     btns.appendChild(makeButton('No', 'no', () => goToNode(node.no)));
   } else if (node.type === 'info') {
     btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
-  } // 'result' has no local buttons
+  }
 }
 
 function setupVisualization(node) {
@@ -188,15 +183,22 @@ function setupVisualization(node) {
   const panel = document.getElementById('vizPanel');
   const img = document.getElementById('vizImage');
 
-  // Reset
   toggleWrap.innerHTML = '';
   panel.style.display = 'none';
   img.removeAttribute('src');
   img.removeAttribute('alt');
 
-  const viz = visualizations[node.id];
-  if (!viz) return;
+  // Show graphs only on Q15 (diminishing returns) and Q17 (inverted-U)
+  if (node.id === 'Q15') {
+    attachViz(toggleWrap, panel, img, 'diminishing_returns_curve.png',
+      'Diminishing Returns Curve: Effort/Resources vs Functional Results');
+  } else if (node.id === 'Q17') {
+    attachViz(toggleWrap, panel, img, 'inverted_u_curve.png',
+      'Inverted-U Curve: Effort/Resources vs Functional Results');
+  }
+}
 
+function attachViz(toggleWrap, panel, img, src, alt) {
   const btn = document.createElement('button');
   btn.textContent = 'Show visualization';
   btn.className = 'viz-btn';
@@ -210,8 +212,8 @@ function setupVisualization(node) {
       btn.setAttribute('aria-expanded', 'false');
     } else {
       if (!img.getAttribute('src')) {
-        img.src = viz.src;
-        img.alt = viz.alt;
+        img.src = src;
+        img.alt = alt;
       }
       panel.style.display = 'block';
       btn.textContent = 'Hide visualization';
@@ -232,7 +234,7 @@ function makeButton(label, cls, action) {
 
 function goToNode(id) {
   const next = flowchart.find(n => n.id === id);
-  historyStack.push(currentNode ? currentNode.id : ''); // keep trail
+  historyStack.push(currentNode ? currentNode.id : '');
   currentNode = next;
   renderNode(currentNode);
 }
@@ -240,7 +242,7 @@ function goToNode(id) {
 function goBack() {
   const prevId = historyStack.pop();
   const prev = flowchart.find(n => n.id === prevId);
-  currentNode = prev || currentNode; // if missing, stay
+  currentNode = prev || currentNode;
   renderNode(currentNode);
 }
 
