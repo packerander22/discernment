@@ -1,38 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Flow Chart</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
-  .container { max-width: 650px; margin: auto; padding: 20px; }
-  .top-bar { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  body { font-family: Arial, sans-serif; background: #f7f7f7; margin:0; padding:0; }
+  .container { max-width: 650px; margin:auto; padding:20px; }
+  .top-bar { display:flex; justify-content:space-between; margin-bottom:10px; }
   .card {
-    background: white; padding: 20px; border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1); min-height: 260px;
-    display: flex; flex-direction: column; justify-content: space-between;
+    background:#fff; padding:20px; border-radius:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1); min-height:260px;
+    display:flex; flex-direction:column; justify-content:space-between;
   }
   .segment-heading {
-    font-size: 1.4em; font-weight: bold; margin-bottom: 15px; padding: 8px;
-    border-bottom: 2px solid #ddd; display: flex; align-items: center; gap: 8px;
-    transition: background-color 0.5s ease, color 0.5s ease;
+    font-size:1.4em; font-weight:bold; margin-bottom:15px; padding:8px;
+    border-bottom:2px solid #ddd; display:flex; align-items:center; gap:8px;
+    transition: background-color .5s ease, color .5s ease;
   }
-  .flash-gold { background-color: gold !important; color: white !important; }
-  .text { font-size: 1.2em; margin-bottom: 12px; white-space: pre-wrap; }
-  .viz-toggle { margin: 8px 0 16px 0; }
-  .viz-panel { display: none; border: 1px solid #eee; border-radius: 6px; padding: 10px; background: #fafafa; }
-  .viz-panel img { width: 100%; height: auto; display: block; }
-  .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
-  button {
-    flex: 1; padding: 10px; font-size: 1em; border: none; border-radius: 5px; cursor: pointer;
-  }
-  button.yes { background: #4CAF50; color: white; }
-  button.no { background: #F44336; color: white; }
-  button.next { background: #2196F3; color: white; }
-  button.back { background: #9E9E9E; color: white; flex: 0 0 auto; }
-  button.restart { background: #9C27B0; color: white; flex: 0 0 auto; }
-  button.viz-btn { background: #555; color: white; flex: 0 0 auto; }
+  .flash-gold { background-color:gold !important; color:#fff !important; }
+  .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
+  .viz-toggle { margin:8px 0 16px 0; }
+  .viz-panel { display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa; }
+  .viz-panel img { width:100%; height:auto; display:block; }
+  .buttons { display:flex; gap:10px; flex-wrap:wrap; }
+  button { flex:1; padding:10px; font-size:1em; border:none; border-radius:5px; cursor:pointer; }
+  button.yes { background:#4CAF50; color:#fff; }
+  button.no { background:#F44336; color:#fff; }
+  button.next { background:#2196F3; color:#fff; }
+  button.back { background:#9E9E9E; color:#fff; flex:0 0 auto; }
+  button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
+  button.viz-btn { background:#555; color:#fff; flex:0 0 auto; }
+  .error { color:#B00020; font-size:0.95em; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -48,11 +47,13 @@
     <div>
       <div id="text" class="text"></div>
 
-      <!-- Visualization toggle area (only appears on Q16/Q19) -->
+      <!-- Visualization UI (appears only on Q16 / Q19) -->
       <div id="vizToggleWrapper" class="viz-toggle"></div>
       <div id="vizPanel" class="viz-panel">
         <img id="vizImage" alt="Visualization">
       </div>
+
+      <div id="errorBox" class="error"></div>
     </div>
 
     <div id="buttons" class="buttons"></div>
@@ -60,7 +61,7 @@
 </div>
 
 <script>
-// ==== Corrected JSON flow ====
+// ======= EMBEDDED, CORRECTED JSON =======
 const flowchart = [
   { "id": "Q1", "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
   { "id": "Q2", "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q6", "no": "Q3" },
@@ -85,7 +86,6 @@ const flowchart = [
   { "id": "Q23", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the short term?", "yes": "Q24", "no": "R2" },
   { "id": "Q24", "type": "question", "text": "Is it logically worth solving/preventing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q27", "no": "Q26" },
   { "id": "Q26", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
-
   { "id": "Q27", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q31", "no": "Q29" },
   { "id": "Q29", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q30", "no": "Q31" },
   { "id": "Q30", "type": "question", "text": "Would there be clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "Q33", "no": "Q32" },
@@ -100,7 +100,6 @@ const flowchart = [
   { "id": "Q39", "type": "question", "text": "Is there a next best solution?", "yes": "R4", "no": "R3" },
   { "id": "Q40_available", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R6" },
   { "id": "Q40_unavailable", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R5" },
-
   { "id": "R1", "type": "result", "text": "Worry about it once the time is right." },
   { "id": "R2", "type": "result", "text": "Don’t worry about it." },
   { "id": "R3", "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find a solution or solutions. If not, put in as much effort as you deem worth it." },
@@ -108,22 +107,17 @@ const flowchart = [
   { "id": "R5", "type": "result", "text": "Wait until the best solution given the circumstances is available, then solve it once there aren’t any other more important things to do." },
   { "id": "R6", "type": "result", "text": "Address it sooner than later, once there aren’t any other more important things to do." },
   { "id": "R7", "type": "result", "text": "Wait until that time, then solve/address it. Consider any other options that could also work and be worth it until then." }
-]
-;
+];
 
-// Nodes that begin the "When You Should Act" section
+// ======= APP LOGIC =======
+
+// Nodes that begin the "When You Should Act" section (heading changes AFTER you land here)
 const whenSectionStarts = ["Q27", "Q29", "Q30", "Q31"];
 
-// Visualization mapping for specific question IDs
+// Visualization mapping
 const visualizations = {
-  Q16: {
-    src: "diminishing_returns_curve_final.png",
-    alt: "Diminishing Returns Curve: Effort/Resources vs Functional Results"
-  },
-  Q19: {
-    src: "inverted_u_curve.png",
-    alt: "Inverted-U Curve: Effort/Resources vs Functional Results"
-  }
+  Q16: { src: "diminishing_returns_curve.png", alt: "Diminishing Returns Curve: Effort/Resources vs Functional Results" },
+  Q19: { src: "inverted_u_curve.png", alt: "Inverted-U Curve: Effort/Resources vs Functional Results" }
 };
 
 let historyStack = [];
@@ -145,6 +139,20 @@ function getSegmentIcon(segment) {
 }
 
 function renderNode(node) {
+  const errorBox = document.getElementById('errorBox');
+  errorBox.textContent = '';
+
+  if (!node) {
+    errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
+    document.getElementById('text').textContent = '';
+    document.getElementById('buttons').innerHTML = '';
+    document.getElementById('vizToggleWrapper').innerHTML = '';
+    document.getElementById('vizPanel').style.display = 'none';
+    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
+    document.getElementById('segmentHeading').textContent = `${getSegmentIcon(currentSegment)} ${currentSegment}`;
+    return;
+  }
+
   // Segment handling based on the node we just navigated to
   const thisSegment = getSegmentForNodeId(node.id);
   if (thisSegment !== currentSegment) {
@@ -161,7 +169,7 @@ function renderNode(node) {
   document.getElementById('backBtn').style.visibility =
     historyStack.length > 0 ? 'visible' : 'hidden';
 
-  // Show/hide visualization UI
+  // Visualization UI
   setupVisualization(node);
 
   // Bottom buttons
@@ -172,9 +180,7 @@ function renderNode(node) {
     btns.appendChild(makeButton('No', 'no', () => goToNode(node.no)));
   } else if (node.type === 'info') {
     btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
-  } else if (node.type === 'result') {
-    // No local nav buttons; use Back/Restart on top bar
-  }
+  } // 'result' has no local buttons
 }
 
 function setupVisualization(node) {
@@ -188,11 +194,9 @@ function setupVisualization(node) {
   img.removeAttribute('src');
   img.removeAttribute('alt');
 
-  // Only attach for Q16 (diminishing returns) and Q19 (inverted-U)
   const viz = visualizations[node.id];
   if (!viz) return;
 
-  // Build the "Show visualization" toggle button
   const btn = document.createElement('button');
   btn.textContent = 'Show visualization';
   btn.className = 'viz-btn';
@@ -205,7 +209,6 @@ function setupVisualization(node) {
       btn.textContent = 'Show visualization';
       btn.setAttribute('aria-expanded', 'false');
     } else {
-      // Lazy-load the image the first time
       if (!img.getAttribute('src')) {
         img.src = viz.src;
         img.alt = viz.alt;
@@ -228,5 +231,28 @@ function makeButton(label, cls, action) {
 }
 
 function goToNode(id) {
-  historyStack.push(currentNode.id);
-  currentNode = flowchart.find(n
+  const next = flowchart.find(n => n.id === id);
+  historyStack.push(currentNode ? currentNode.id : ''); // keep trail
+  currentNode = next;
+  renderNode(currentNode);
+}
+
+function goBack() {
+  const prevId = historyStack.pop();
+  const prev = flowchart.find(n => n.id === prevId);
+  currentNode = prev || currentNode; // if missing, stay
+  renderNode(currentNode);
+}
+
+function restart() {
+  historyStack = [];
+  currentSegment = "If You Should Act";
+  currentNode = flowchart.find(n => n.id === "Q1");
+  renderNode(currentNode);
+}
+
+// Start app
+renderNode(currentNode);
+</script>
+</body>
+</html>
