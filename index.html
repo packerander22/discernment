@@ -23,7 +23,8 @@
   .viz-toggle { margin:8px 0 16px 0; }
   .viz-panel { display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa; }
   .viz-panel img { width:100%; height:auto; display:block; }
-  .buttons { display:flex; gap:10px; flex-wrap:wrap; }
+  .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
+  .buttons.center { justify-content:center; }
   button { flex:1; padding:10px; font-size:1em; border:none; border-radius:5px; cursor:pointer; }
   button.yes { background:#4CAF50; color:#fff; }
   button.no { background:#F44336; color:#fff; }
@@ -38,7 +39,7 @@
 <div class="container">
   <div class="top-bar">
     <button class="back" id="backBtn" onclick="goBack()">Back</button>
-    <button class="restart" onclick="restart()">Restart</button>
+    <button class="restart" id="restartTop" onclick="restart()">Restart</button>
   </div>
 
   <div class="card">
@@ -61,8 +62,7 @@
 </div>
 
 <script>
-// ======= CLEAN, SEQUENTIALLY NUMBERED JSON (word-for-word from your chart) =======
-// Types: "question" (yes/no), "info" (Next only), "result" (endpoint)
+// ======= CLEAN, SEQUENTIALLY NUMBERED JSON (word-for-word) =======
 const flowchart = [
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
   { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
@@ -95,7 +95,7 @@ const flowchart = [
   { "id": "Q27", "type": "question", "text": "Is this the best solution you know of assuming you could do it now?", "yes": "Q30", "no": "Q28" },
   { "id": "Q28", "type": "question", "text": "Have you considered all better solutions you know of?", "yes": "Q30", "no": "Q29" },
   { "id": "Q29", "type": "info",     "text": "Consider them.", "next": "R4" },
-  { "id": "Q30", "type": "question", "text": "Is this solution currently available?", "yes": "Q34", "no": "Q31" },
+  { "id": "Q30", "type": "question", "text": "Is this solution currently available?", "yes": "Q34", "no": "Q32" },  <!-- FIXED: No -> Q32 -->
   { "id": "Q31", "type": "question", "text": "Is there a better time down the road to solve/address this to maximize value?", "yes": "Q32", "no": "R6" },
   { "id": "Q32", "type": "question", "text": "Assuming you waited until it was available, would the benefits of using this solution outweigh the downsides of having to wait?", "yes": "Q35", "no": "Q33" },
   { "id": "Q33", "type": "question", "text": "Is there a next best solution?", "yes": "R4", "no": "R3" },
@@ -115,8 +115,6 @@ const flowchart = [
 ];
 
 // ======= APP LOGIC =======
-
-// Segment is determined by question number: Q1–Q23 = "If", Q24+ = "When"
 let historyStack = [];
 let currentNode = flowchart.find(n => n.id === "Q1");
 let currentSegment = "If You Should Act";
@@ -151,6 +149,7 @@ function renderNode(node) {
     document.getElementById('vizPanel').style.display = 'none';
     document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
     document.getElementById('segmentHeading').textContent = `${getSegmentIcon(currentSegment)} ${currentSegment}`;
+    document.getElementById('restartTop').style.display = 'inline-block';
     return;
   }
 
@@ -170,11 +169,27 @@ function renderNode(node) {
 
   const btns = document.getElementById('buttons');
   btns.innerHTML = '';
-  if (node.type === 'question') {
-    btns.appendChild(makeButton('Yes', 'yes', () => goToNode(node.yes)));
-    btns.appendChild(makeButton('No', 'no', () => goToNode(node.no)));
-  } else if (node.type === 'info') {
-    btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
+
+  // Top restart positioning logic
+  const restartTop = document.getElementById('restartTop');
+  if (node.type === 'result') {
+    // Hide top restart and show a centered restart below the text
+    restartTop.style.display = 'none';
+    btns.classList.add('center');
+    const restartCentered = makeButton('Restart', 'restart', () => restart());
+    restartCentered.style.flex = '0 0 auto';
+    btns.appendChild(restartCentered);
+  } else {
+    // Show top restart and normal question/info buttons
+    restartTop.style.display = 'inline-block';
+    btns.classList.remove('center');
+
+    if (node.type === 'question') {
+      btns.appendChild(makeButton('Yes', 'yes', () => goToNode(node.yes)));
+      btns.appendChild(makeButton('No', 'no', () => goToNode(node.no)));
+    } else if (node.type === 'info') {
+      btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
+    }
   }
 }
 
@@ -188,7 +203,7 @@ function setupVisualization(node) {
   img.removeAttribute('src');
   img.removeAttribute('alt');
 
-  // Show graphs only on Q15 (diminishing returns) and Q17 (inverted-U)
+  // Graphs on Q15 (diminishing returns) and Q17 (inverted-U)
   if (node.id === 'Q15') {
     attachViz(toggleWrap, panel, img, 'diminishing_returns_curve.png',
       'Diminishing Returns Curve: Effort/Resources vs Functional Results');
