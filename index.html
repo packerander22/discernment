@@ -10,7 +10,7 @@
   .top-bar { display:flex; justify-content:space-between; margin-bottom:10px; }
   .card {
     background:#fff; padding:20px; border-radius:8px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.1); min-height:260px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1); min-height:280px;
     display:flex; flex-direction:column; justify-content:space-between;
   }
   .segment-heading {
@@ -20,18 +20,26 @@
   }
   .flash-gold { background-color:gold !important; color:#fff !important; }
   .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
-  .viz-toggle { margin:8px 0 16px 0; }
-  .viz-panel { display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa; }
-  .viz-panel img { width:100%; height:auto; display:block; }
+
+  .examples-toggle { margin:8px 0 12px 0; display:flex; gap:8px; flex-wrap:wrap; }
+  .panel {
+    display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
+  }
+  .panel p { margin:6px 0; }
+  .panel img { width:100%; height:auto; display:block; }
+
   .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
   .buttons.center { justify-content:center; }
+
   button { flex:1; padding:10px; font-size:1em; border:none; border-radius:5px; cursor:pointer; }
   button.yes { background:#4CAF50; color:#fff; }
   button.no { background:#F44336; color:#fff; }
   button.next { background:#2196F3; color:#fff; }
   button.back { background:#9E9E9E; color:#fff; flex:0 0 auto; }
   button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
-  button.viz-btn { background:#555; color:#fff; flex:0 0 auto; }
+  button.examples-btn, button.viz-btn { background:#555; color:#fff; flex:0 0 auto; }
+  button.active { outline: 2px solid #000; }
+
   .error { color:#B00020; font-size:0.95em; margin-top:8px; }
 </style>
 </head>
@@ -48,11 +56,9 @@
     <div>
       <div id="text" class="text"></div>
 
-      <!-- Visualization UI (appears only on Q15 / Q17) -->
-      <div id="vizToggleWrapper" class="viz-toggle"></div>
-      <div id="vizPanel" class="viz-panel">
-        <img id="vizImage" alt="Visualization">
-      </div>
+      <!-- Toggle button area(s) and shared panel -->
+      <div id="examplesToggleWrapper" class="examples-toggle"></div>
+      <div id="sharedPanel" class="panel" aria-hidden="true"></div>
 
       <div id="errorBox" class="error"></div>
     </div>
@@ -62,15 +68,14 @@
 </div>
 
 <script>
-// ======= CLEAN, SEQUENTIALLY NUMBERED JSON (Q1–Q34) =======
-// Types: "question" (yes/no), "info" (Next only), "result" (endpoint)
+// ======= FLOW (Q1–Q34) =======
 const flowchart = [
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
-  { "id": "Q2",  "type": "question", "text": "Is there a current problem or desired QoL (quality of life) change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
+  { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
   { "id": "Q3",  "type": "question", "text": "Is there cause for a potential problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q4" },
   { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "R2" },
   { "id": "Q5",  "type": "question", "text": "Is there a solution to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL change)?", "yes": "Q6", "no": "R3" },
-  { "id": "Q6",  "type": "question", "text": "Would this solution or QoL change be guaranteed by your influence?", "yes": "Q9", "no": "Q7" },
+  { "id": "Q6",  "type": "question", "text": "Can this solution or QoL change be brought about by your influence?", "yes": "Q9", "no": "Q7" },
   { "id": "Q7",  "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and worrying and obsessing won’t change anything and is unhealthy. Is there anything further you can do?", "yes": "Q9", "no": "Q8" },
   { "id": "Q8",  "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s within your control or in a better overall way?", "yes": "R4", "no": "R2" },
   { "id": "Q9",  "type": "question", "text": "Does this solution or QoL change involve gaining information that would be valuable in the future?", "yes": "Q10", "no": "Q11" },
@@ -82,14 +87,12 @@ const flowchart = [
   { "id": "Q15", "type": "question", "text": "Does addressing this issue involve a diminishing returns curve for effort applied?", "yes": "Q16", "no": "Q17" },
   { "id": "Q16", "type": "info",     "text": "Do your best to find the point of diminishing returns, then only act until that point. Have the courage to stop there. If you are prone to getting sucked into a particular activity (addressing a problem or QoL change), think of an alternative approach that also solves the problem (or improves QoL) in a different way without the addictive aspect. If a better approach is not available for whatever reason, the original approach can be used only if you pre-allocate a set time limit after which you must stop and do something else before re-evaluating.", "next": "Q17" },
   { "id": "Q17", "type": "question", "text": "Does addressing this issue directly involve an inverted-U curve for specific effort applied with an objective sweet spot where clear information is available to you?", "yes": "Q18", "no": "Q19" },
-  { "id": "Q18", "type": "info",     "text": "Continue through the flow chart to find the best time to act, but as a general rule of thumb, if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q24" },
+  { "id": "Q18", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q24" },
   { "id": "Q19", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the problem/potential problem/QoL change was solved/prevented/changed (for example in a blind test compared side by side, and ignoring any differences irrelevant to the actual functionality of the intended purpose associated)?", "yes": "Q20", "no": "R2" },
   { "id": "Q20", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the long term?", "yes": "Q24", "no": "Q21" },
   { "id": "Q21", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the short term?", "yes": "Q22", "no": "R2" },
   { "id": "Q22", "type": "question", "text": "Is it logically worth solving/preventing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q24", "no": "Q23" },
   { "id": "Q23", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
-
-  /* ===== WHEN YOU SHOULD ACT (begins here) ===== */
   { "id": "Q24", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q27", "no": "Q25" },
   { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q27" },
   { "id": "Q26", "type": "question", "text": "Would there be clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
@@ -102,7 +105,6 @@ const flowchart = [
   { "id": "Q33", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R6" },
   { "id": "Q34", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R5" },
 
-  /* ===== RESULTS ===== */
   { "id": "R1", "type": "result", "text": "Worry about it once the time is right." },
   { "id": "R2", "type": "result", "text": "Don’t worry about it." },
   { "id": "R3", "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find a solution or solutions. If not, put in as much effort as you deem worth it." },
@@ -113,6 +115,44 @@ const flowchart = [
   { "id": "R8", "type": "result", "text": "Wait until those signs are indicated, the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." },
   { "id": "R9", "type": "result", "text": "Wait until the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." }
 ];
+
+// ===== EXAMPLES =====
+const examples = {
+  Q1:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q2:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q3:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q4:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q5:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q6:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q7:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q8:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q9:  ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q10: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q11: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q12: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q13: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q14: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q15: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q16: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q17: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q18: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q19: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q20: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q21: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q22: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q23: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q24: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q25: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q26: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q27: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q28: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q29: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q30: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q31: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q32: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q33: ["Example 1: [edit me]", "Example 2: [edit me]"],
+  Q34: ["Example 1: [edit me]", "Example 2: [edit me]"]
+};
 
 // ======= APP LOGIC =======
 let historyStack = [];
@@ -134,9 +174,7 @@ function flashHeading() {
   setTimeout(() => headingDiv.classList.remove('flash-gold'), 1500);
 }
 
-function getSegmentIcon(segment) {
-  return segment === "If You Should Act" ? "⚖️" : "⏳";
-}
+function getSegmentIcon(segment) { return segment === "If You Should Act" ? "⚖️" : "⏳"; }
 
 function renderNode(node) {
   const errorBox = document.getElementById('errorBox');
@@ -146,8 +184,7 @@ function renderNode(node) {
     errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
     document.getElementById('text').textContent = '';
     document.getElementById('buttons').innerHTML = '';
-    document.getElementById('vizToggleWrapper').innerHTML = '';
-    document.getElementById('vizPanel').style.display = 'none';
+    collapseSharedPanel();
     document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
     document.getElementById('segmentHeading').textContent = `${getSegmentIcon(currentSegment)} ${currentSegment}`;
     document.getElementById('restartTop').style.display = 'inline-block';
@@ -170,8 +207,8 @@ function renderNode(node) {
   document.getElementById('backBtn').style.visibility =
     historyStack.length > 0 ? 'visible' : 'hidden';
 
-  // Visualization toggles
-  setupVisualization(node);
+  // Reset + set up the auxiliary panel controls (examples / viz)
+  setupAuxToggles(node);
 
   // Buttons area
   const btns = document.getElementById('buttons');
@@ -198,53 +235,135 @@ function renderNode(node) {
   }
 }
 
-function setupVisualization(node) {
-  const toggleWrap = document.getElementById('vizToggleWrapper');
-  const panel = document.getElementById('vizPanel');
-  const img = document.getElementById('vizImage');
+// --- AUX PANEL LOGIC ---
+function setupAuxToggles(node) {
+  const wrap = document.getElementById('examplesToggleWrapper');
+  const panel = document.getElementById('sharedPanel');
 
-  // reset
-  toggleWrap.innerHTML = '';
-  panel.style.display = 'none';
-  img.removeAttribute('src');
-  img.removeAttribute('alt');
+  // Reset
+  wrap.innerHTML = '';
+  collapseSharedPanel();
+  panel.innerHTML = '';
 
-  // Graphs on Q15 (diminishing returns) and Q17 (inverted-U)
-  if (node.id === 'Q15') {
-    attachViz(toggleWrap, panel, img, 'diminishing_returns_curve.png',
-      'Diminishing Returns Curve: Effort/Resources vs Functional Results');
-  } else if (node.id === 'Q17') {
-    attachViz(toggleWrap, panel, img, 'inverted_u_curve.png',
-      'Inverted-U Curve: Effort/Resources vs Functional Results');
+  if (node.type !== 'question') return;
+
+  const isSpecial = node.id === 'Q15' || node.id === 'Q17';
+
+  // Build buttons
+  const examplesBtn = document.createElement('button');
+  examplesBtn.textContent = 'Show examples';
+  examplesBtn.className = 'examples-btn';
+  examplesBtn.setAttribute('aria-expanded', 'false');
+  wrap.appendChild(examplesBtn);
+
+  let vizBtn = null;
+  if (isSpecial) {
+    vizBtn = document.createElement('button');
+    vizBtn.textContent = 'Show visualization';
+    vizBtn.className = 'viz-btn';
+    vizBtn.setAttribute('aria-expanded', 'false');
+    wrap.appendChild(vizBtn);
   }
-}
 
-function attachViz(toggleWrap, panel, img, src, alt) {
-  const btn = document.createElement('button');
-  btn.textContent = 'Show visualization';
-  btn.className = 'viz-btn';
-  btn.setAttribute('aria-expanded', 'false');
+  // Handlers
+  examplesBtn.onclick = () => {
+    const isOpenShowingExamples = panel.style.display === 'block' && panel.dataset.mode === 'examples';
 
-  btn.onclick = () => {
-    const isOpen = panel.style.display === 'block';
-    if (isOpen) {
-      panel.style.display = 'none';
-      btn.textContent = 'Show visualization';
-      btn.setAttribute('aria-expanded', 'false');
+    if (isOpenShowingExamples) {
+      collapseSharedPanel();
+      examplesBtn.setAttribute('aria-expanded', 'false');
+      examplesBtn.classList.remove('active');
     } else {
-      if (!img.getAttribute('src')) {
-        img.src = src;
-        img.alt = alt;
+      renderExamples(panel, node.id);
+      openSharedPanel(panel, 'examples');
+      examplesBtn.setAttribute('aria-expanded', 'true');
+      examplesBtn.classList.add('active');
+
+      if (vizBtn) {
+        vizBtn.setAttribute('aria-expanded', 'false');
+        vizBtn.classList.remove('active');
       }
-      panel.style.display = 'block';
-      btn.textContent = 'Hide visualization';
-      btn.setAttribute('aria-expanded', 'true');
     }
   };
 
-  toggleWrap.appendChild(btn);
+  if (isSpecial && vizBtn) {
+    vizBtn.onclick = () => {
+      const isOpenShowingViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
+      const imgSrc = node.id === 'Q15' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
+      const alt = node.id === 'Q15'
+        ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
+        : 'Inverted-U Curve: Effort/Resources vs Functional Results';
+
+      if (isOpenShowingViz) {
+        collapseSharedPanel();
+        vizBtn.setAttribute('aria-expanded', 'false');
+        vizBtn.classList.remove('active');
+      } else {
+        renderViz(panel, imgSrc, alt);
+        openSharedPanel(panel, 'viz');
+        vizBtn.setAttribute('aria-expanded', 'true');
+        vizBtn.classList.add('active');
+
+        examplesBtn.setAttribute('aria-expanded', 'false');
+        examplesBtn.classList.remove('active');
+      }
+    };
+  }
 }
 
+function renderExamples(panel, nodeId) {
+  panel.innerHTML = '';
+  const two = examples[nodeId] || ["Example 1: [edit me]", "Example 2: [edit me]"];
+  two.forEach(line => {
+    const p = document.createElement('p');
+    p.textContent = line;
+    panel.appendChild(p);
+  });
+}
+
+function renderViz(panel, src, alt) {
+  panel.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = alt;
+  panel.appendChild(img);
+}
+
+function collapseSharedPanel() {
+  const panel = document.getElementById('sharedPanel');
+  panel.style.display = 'none';
+  panel.setAttribute('aria-hidden', 'true');
+  panel.dataset.mode = '';
+
+  // reset button labels/states
+  const wrap = document.getElementById('examplesToggleWrapper');
+  wrap.querySelectorAll('button').forEach(btn => {
+    const label = btn.classList.contains('viz-btn') ? 'Show visualization' : 'Show examples';
+    btn.textContent = label;
+    btn.setAttribute('aria-expanded', 'false');
+    btn.classList.remove('active');
+  });
+}
+
+function openSharedPanel(panel, mode) {
+  panel.style.display = 'block';
+  panel.setAttribute('aria-hidden', 'false');
+  panel.dataset.mode = mode;
+
+  // Update button labels
+  const wrap = document.getElementById('examplesToggleWrapper');
+  const exBtn = wrap.querySelector('.examples-btn');
+  const vzBtn = wrap.querySelector('.viz-btn');
+  if (mode === 'examples') {
+    if (exBtn) exBtn.textContent = 'Hide examples';
+    if (vzBtn) vzBtn.textContent = 'Show visualization';
+  } else if (mode === 'viz') {
+    if (vzBtn) vzBtn.textContent = 'Hide visualization';
+    if (exBtn) exBtn.textContent = 'Show examples';
+  }
+}
+
+// --- NAV ---
 function makeButton(label, cls, action) {
   const btn = document.createElement('button');
   btn.textContent = label;
@@ -273,6 +392,9 @@ function restart() {
   currentNode = flowchart.find(n => n.id === "Q1");
   renderNode(currentNode);
 }
+
+// --- SEGMENT HEADING ---
+function getSegmentIcon(segment) { return segment === "If You Should Act" ? "⚖️" : "⏳"; }
 
 // Start app
 renderNode(currentNode);
