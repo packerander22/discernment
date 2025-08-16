@@ -260,8 +260,8 @@ function renderNode(node) {
   // Text (with dynamic % substitution on R8/R9)
   const textDiv = document.getElementById('text');
   let displayText = node.text || '';
-  if (node.id === 'R8' || node.id === 'R9') displayText = displayText.replace('50%', `${currentThresholdPct}%`);
-  textDiv.textContent = displayText;
+  if (node.id === 'R8' || node.id === 'R9') {
+  displayText = applyThresholdClauseTo(displayText);
 
   // Back button visibility
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
@@ -502,6 +502,39 @@ function goBack() {
 function restart() {
   historyStack = []; currentSegment = "If You Should Act";
   currentNode = flowchart.find(n => n.id === "Q1"); renderNode(currentNode);
+}
+
+function buildThresholdClause() {
+  // severity 10 → threshold 0 → special wording
+  if (currentThresholdPct <= 0) {
+    return 'there is even a small chance of failure';
+  }
+  return `the estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
+}
+
+function applyThresholdClauseTo(text) {
+  // Primary: replace the full original clause
+  const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
+  if (fullClause.test(text)) {
+    return text.replace(fullClause, buildThresholdClause());
+  }
+
+  // Fallback: if wording changed in your copy, at least replace "nearing or greater than 50%" → dynamic
+  const fallbackClause = /nearing or greater than\s*50%/i;
+  if (fallbackClause.test(text)) {
+    const repl = (currentThresholdPct <= 0)
+      ? 'even a small chance of failure'
+      : `nearing or greater than ${currentThresholdPct}%`;
+    return text.replace(fallbackClause, repl);
+  }
+
+  // Last resort: simple percentage substitution (keeps whatever wording you used)
+  if (currentThresholdPct > 0) {
+    return text.replace(/50%/g, `${currentThresholdPct}%`);
+  } else {
+    // Replace any "0%" that may result with the special phrase if needed
+    return text.replace(/0%/g, 'even a small chance of failure');
+  }
 }
 
 /* ---------- Start ---------- */
