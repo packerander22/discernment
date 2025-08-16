@@ -26,7 +26,7 @@
   .examples-toggle, .reasoning-toggle { display:flex; gap:8px; flex-wrap:wrap; }
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
-    margin-bottom: 18px;
+    margin-bottom: 18px; /* extra space above bottom buttons */
   }
   .panel p { margin:6px 0; }
   .panel img { width:100%; height:auto; display:block; }
@@ -47,10 +47,11 @@
 
   /* Q26: simple, centered number + slider with ticks */
   .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
-  .sev-display { text-align:center; font-size:1.6em; font-weight:bold; margin-bottom:8px; }
+  .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
   .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
   .risk-row input[type="range"] { width:100%; }
   .risk-ticks { display:block; width:100%; }
+
   .error { color:#B00020; font-size:0.95em; margin-top:8px; }
 </style>
 </head>
@@ -91,6 +92,8 @@
 
 <script>
 // ======= FLOW (Q1–Q35) =======
+// Inserted Q26 as severity slider. Old Q26→Q27, ..., old Q34→Q35.
+// Also: Q24 yes→Q28, Q25 yes→Q26, Q25 no→Q28.
 const flowchart = [
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
   { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
@@ -120,9 +123,11 @@ const flowchart = [
   { "id": "Q24", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q28", "no": "Q25" },
   { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q28" },
 
-  /* NEW: Severity selection (simple, visible) */
-  { "id": "Q26", "type": "info", "text": "Set catastrophic severity (1–10)", "next": "Q27" },
-  { "id": "Q27", "type": "question", "text": "Would there be guaranteed clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
+  /* NEW: Severity selection (simple, visible). Text empty so only number/slider show. */
+  { "id": "Q26", "type": "info", "text": "", "next": "Q27" },
+
+  { "id": "Q27", "type": "question", "text": "Would there be clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
+
   { "id": "Q28", "type": "question", "text": "Is this the best solution you know of assuming you could do it now?", "yes": "Q30", "no": "Q29" },
   { "id": "Q29", "type": "question", "text": "Have you considered all better solutions you know of?", "yes": "Q30", "no": "R4" },
   { "id": "Q30", "type": "question", "text": "Is this solution currently available?", "yes": "Q34", "no": "Q32" },
@@ -219,7 +224,7 @@ let currentThresholdPct = (!isNaN(stored) && stored > 0 && stored <= 100) ? stor
 // ======= APP LOGIC =======
 let historyStack = [];
 let currentNode = flowchart.find(n => n.id === "Q1");
-let currentSegment = "If You Should Act";
+let currentSegment = "If You Should Act"; // default
 
 function getSegmentForNodeId(id) {
   if (!id || id[0] !== 'Q') return currentSegment;
@@ -235,6 +240,36 @@ function flashHeading() {
   setTimeout(() => headingDiv.classList.remove('flash-gold'), 1500);
 }
 function getSegmentIcon(segment) { return segment === "If You Should Act" ? "⚖️" : "⏳"; }
+
+/* ---- Dynamic clause helpers for R8/R9 ---- */
+function buildThresholdClause() {
+  // severity 10 => threshold 0 → special phrase
+  if (currentThresholdPct <= 0) {
+    return 'there is even a small chance of failure';
+  }
+  return `the estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
+}
+function applyThresholdClauseTo(text) {
+  // Replace the known full clause first
+  const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
+  if (fullClause.test(text)) {
+    return text.replace(fullClause, buildThresholdClause());
+  }
+  // Fallback: narrower replacement if wording drifts
+  const fallbackClause = /nearing or greater than\s*50%/i;
+  if (fallbackClause.test(text)) {
+    const repl = (currentThresholdPct <= 0)
+      ? 'even a small chance of failure'
+      : `nearing or greater than ${currentThresholdPct}%`;
+    return text.replace(fallbackClause, repl);
+  }
+  // Last resort: generic percentage swap
+  if (currentThresholdPct > 0) {
+    return text.replace(/50%/g, `${currentThresholdPct}%`);
+  } else {
+    return text.replace(/0%/g, 'even a small chance of failure');
+  }
+}
 
 function renderNode(node) {
   const errorBox = document.getElementById('errorBox');
@@ -257,16 +292,18 @@ function renderNode(node) {
   if (thisSegment !== currentSegment) { currentSegment = thisSegment; flashHeading(); }
   document.getElementById('segmentHeading').textContent = `${getSegmentIcon(currentSegment)} ${currentSegment}`;
 
-  // Text (with dynamic % substitution on R8/R9)
+  // Main text (with dynamic clause for R8/R9)
   const textDiv = document.getElementById('text');
   let displayText = node.text || '';
   if (node.id === 'R8' || node.id === 'R9') {
-  displayText = applyThresholdClauseTo(displayText);
+    displayText = applyThresholdClauseTo(displayText);
+  }
+  textDiv.textContent = displayText;
 
   // Back button visibility
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
 
-  // Examples / Viz controls & panels
+  // Examples / Viz controls & panel
   setupAuxToggles(node);
 
   // Reasoning (button near text) on R8/R9
@@ -362,7 +399,6 @@ function setupAuxToggles(node) {
     };
   }
 }
-
 function renderExamples(panel, nodeId) {
   panel.innerHTML = '';
   const two = examples[nodeId] || ["Example 1: [edit me]","Example 2: [edit me]"];
@@ -418,11 +454,13 @@ function showOrHideRiskInline(node) {
   sevDisplay.textContent = '1';
   container.appendChild(sevDisplay);
 
-  // Slider row + tick marks via datalist
+  // Slider with tick marks via datalist
   const row = document.createElement('div'); row.className = 'risk-row';
   const slider = document.createElement('input');
   slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
   slider.setAttribute('list','riskTicks');
+
+  // Default from localStorage if present, else severity=1
   const storedThr = parseInt(localStorage.getItem('pm_threshold_pct') || '0', 10);
   let startingSeverity = 1;
   if (!isNaN(storedThr) && storedThr > 0) startingSeverity = Math.max(1, Math.min(10, Math.round((100 - storedThr)/10)));
@@ -502,39 +540,6 @@ function goBack() {
 function restart() {
   historyStack = []; currentSegment = "If You Should Act";
   currentNode = flowchart.find(n => n.id === "Q1"); renderNode(currentNode);
-}
-
-function buildThresholdClause() {
-  // severity 10 → threshold 0 → special wording
-  if (currentThresholdPct <= 0) {
-    return 'there is even a small chance of failure';
-  }
-  return `the estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
-}
-
-function applyThresholdClauseTo(text) {
-  // Primary: replace the full original clause
-  const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
-  if (fullClause.test(text)) {
-    return text.replace(fullClause, buildThresholdClause());
-  }
-
-  // Fallback: if wording changed in your copy, at least replace "nearing or greater than 50%" → dynamic
-  const fallbackClause = /nearing or greater than\s*50%/i;
-  if (fallbackClause.test(text)) {
-    const repl = (currentThresholdPct <= 0)
-      ? 'even a small chance of failure'
-      : `nearing or greater than ${currentThresholdPct}%`;
-    return text.replace(fallbackClause, repl);
-  }
-
-  // Last resort: simple percentage substitution (keeps whatever wording you used)
-  if (currentThresholdPct > 0) {
-    return text.replace(/50%/g, `${currentThresholdPct}%`);
-  } else {
-    // Replace any "0%" that may result with the special phrase if needed
-    return text.replace(/0%/g, 'even a small chance of failure');
-  }
 }
 
 /* ---------- Start ---------- */
