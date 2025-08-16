@@ -22,11 +22,11 @@
   .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
 
   /* Controls just under the text */
-  .controls-row { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 18px 0; } /* added bottom space */
+  .controls-row { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 18px 0; }
   .examples-toggle, .reasoning-toggle { display:flex; gap:8px; flex-wrap:wrap; }
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
-    margin-bottom: 18px; /* extra space above bottom buttons */
+    margin-bottom: 18px;
   }
   .panel p { margin:6px 0; }
   .panel img { width:100%; height:auto; display:block; }
@@ -122,9 +122,7 @@ const flowchart = [
 
   /* NEW: Severity selection (simple, visible) */
   { "id": "Q26", "type": "info", "text": "Set catastrophic severity (1–10)", "next": "Q27" },
-
-  { "id": "Q27", "type": "question", "text": "Would there be clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
-
+  { "id": "Q27", "type": "question", "text": "Would there be guaranteed clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
   { "id": "Q28", "type": "question", "text": "Is this the best solution you know of assuming you could do it now?", "yes": "Q30", "no": "Q29" },
   { "id": "Q29", "type": "question", "text": "Have you considered all better solutions you know of?", "yes": "Q30", "no": "R4" },
   { "id": "Q30", "type": "question", "text": "Is this solution currently available?", "yes": "Q34", "no": "Q32" },
