@@ -21,11 +21,12 @@
   .flash-gold { background-color:gold !important; color:#fff !important; }
   .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
 
-  /* Controls under the text */
-  .controls-row { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 10px 0; }
+  /* Controls just under the text */
+  .controls-row { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 18px 0; } /* added bottom space */
   .examples-toggle, .reasoning-toggle { display:flex; gap:8px; flex-wrap:wrap; }
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
+    margin-bottom: 18px; /* extra space above bottom buttons */
   }
   .panel p { margin:6px 0; }
   .panel img { width:100%; height:auto; display:block; }
@@ -39,16 +40,17 @@
   button.yes { background:#4CAF50; color:#fff; }
   button.no { background:#F44336; color:#fff; }
   button.next { background:#2196F3; color:#fff; }
-  button.back { background:#555; color:#fff; flex:0 0 auto; } /* darker */
+  button.back { background:#555; color:#fff; flex:0 0 auto; }
   button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
-  button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; flex:0 0 auto; } /* lighter */
+  button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; flex:0 0 auto; }
   button.active { outline: 2px solid #000; }
 
-  /* Always-visible risk slider (Q26) */
-  .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa; margin:8px 0 12px 0; }
-  .risk-row { display:flex; align-items:center; gap:10px; margin:6px 0; }
-  .risk-badge { font-weight:bold; padding:3px 6px; border-radius:4px; background:#fff; border:1px solid #ddd; }
-
+  /* Q26: simple, centered number + slider with ticks */
+  .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
+  .sev-display { text-align:center; font-size:1.6em; font-weight:bold; margin-bottom:8px; }
+  .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
+  .risk-row input[type="range"] { width:100%; }
+  .risk-ticks { display:block; width:100%; }
   .error { color:#B00020; font-size:0.95em; margin-top:8px; }
 </style>
 </head>
@@ -89,8 +91,6 @@
 
 <script>
 // ======= FLOW (Q1–Q35) =======
-// Inserted Q26 as severity slider. Old Q26→Q27, ..., old Q34→Q35.
-// Also: Q24 yes→Q28, Q25 yes→Q26, Q25 no→Q28.
 const flowchart = [
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
   { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
@@ -120,7 +120,7 @@ const flowchart = [
   { "id": "Q24", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q28", "no": "Q25" },
   { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q28" },
 
-  /* NEW: Severity selection (always visible slider, default=1) */
+  /* NEW: Severity selection (simple, visible) */
   { "id": "Q26", "type": "info", "text": "Set catastrophic severity (1–10)", "next": "Q27" },
 
   { "id": "Q27", "type": "question", "text": "Would there be clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
@@ -147,135 +147,70 @@ const flowchart = [
 
 // ===== EXAMPLES (Applies vs Does not apply) =====
 const examples = {
-  Q1: [
-    "Example 1: A major work/school deadline is today; deciding on a new TV can wait. (Applies here)",
-    "Example 2: A free afternoon with no pressing tasks; you can consider smaller decisions now. (Does not apply here)"
-  ],
-  Q2: [
-    "Example 1: The sink is leaking and wasting water—function isn’t being met. (Applies here)",
-    "Example 2: Paint is slightly dull but everything works fine. (Does not apply here)"
-  ],
-  Q3: [
-    "Example 1: Car battery struggles to start on cold mornings—likely to fail soon. (Applies here)",
-    "Example 2: Phone works perfectly; you just feel uneasy it might break. (Does not apply here)"
-  ],
-  Q4: [
-    "Example 1: Dust at the PC intake could clog the fan → overheating. (Applies here)",
-    "Example 2: A vague future worry with no causal chain. (Does not apply here)"
-  ],
-  Q5: [
-    "Example 1: A replacement faucet cartridge exists, even if backordered. (Applies here)",
-    "Example 2: A software bug has no known fix or workaround yet. (Does not apply here)"
-  ],
-  Q6: [
-    "Example 1: You can schedule a repair and approve payment. (Applies here)",
-    "Example 2: A labor strike must resolve; you can’t influence it. (Does not apply here)"
-  ],
-  Q7: [
-    "Example 1: You can escalate a ticket or try an official fix you skipped. (Applies here)",
-    "Example 2: You’ve done all reasonable steps; more worrying won’t help. (Does not apply here)"
-  ],
-  Q8: [
-    "Example 1: Switch to a simpler app that solves the need. (Applies here)",
-    "Example 2: All alternatives rely on things you can’t control. (Does not apply here)"
-  ],
-  Q9: [
-    "Example 1: Running diagnostics teaches prevention for next time. (Applies here)",
-    "Example 2: A tedious workaround teaches nothing useful later. (Does not apply here)"
-  ],
-  Q10: [
-    "Example 1: A quick medical screening offers value with minimal downside. (Applies here)",
-    "Example 2: Disassembling a working device ‘just to see’ risks damage. (Does not apply here)"
-  ],
-  Q11: [
-    "Example 1: A low-cost fix avoids a bigger expense later. (Applies here)",
-    "Example 2: An expensive fix for a tiny convenience gain. (Does not apply here)"
-  ],
-  Q12: [
-    "Example 1: Another shop offers same repair cheaper with warranty. (Applies here)",
-    "Example 2: All other options are worse across time/cost/reliability. (Does not apply here)"
-  ],
-  Q13: [
-    "Example 1: Repairing a roof leak prevents serious damage. (Applies here)",
-    "Example 2: Risky modification voids warranty for marginal benefit. (Does not apply here)"
-  ],
-  Q14: [
-    "Example 1: Replacing an old appliance is cheaper than repeated repairs. (Applies here)",
-    "Example 2: No alternative beats the current plan. (Does not apply here)"
-  ],
-  Q15: [
-    "Example 1: Polishing slides beyond ‘good enough’ adds little impact. (Applies here)",
-    "Example 2: Fixing a critical bug—each hour matters; no early plateau. (Does not apply here)"
-  ],
-  Q17: [
-    "Example 1: Exercise intensity has a sweet spot; too much/too little harms results. (Applies here)",
-    "Example 2: Filing taxes—no optimal ‘intensity’; you just finish it. (Does not apply here)"
-  ],
-  Q19: [
-    "Example 1: Upgrading HDD to SSD is clearly noticeable. (Applies here)",
-    "Example 2: Gold-plated HDMI vs regular—no functional difference. (Does not apply here)"
-  ],
-  Q20: [
-    "Example 1: Sealing driveway cracks extends lifespan. (Applies here)",
-    "Example 2: A cosmetic fix that wears off in a week. (Does not apply here)"
-  ],
-  Q21: [
-    "Example 1: Decongestant allows sleep tonight. (Applies here)",
-    "Example 2: Reorganizing a drawer doesn’t change today’s urgent issue. (Does not apply here)"
-  ],
-  Q22: [
-    "Example 1: Wearing a seatbelt is worth doing every time. (Applies here)",
-    "Example 2: Washing the car daily isn’t worth it without special reason. (Does not apply here)"
-  ],
-  Q23: [
-    "Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
-    "Example 2: No alternative provides a better long-term outcome. (Does not apply here)"
-  ],
-  Q24: [
-    "Example 1: Cracked phone screen—current problem. (Applies here)",
-    "Example 2: Considering a nicer phone later—QoL only, not current problem. (Does not apply here)"
-  ],
-  Q25: [
-    "Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
-    "Example 2: Repainting a wall for a new color. (Does not apply here)"
-  ],
-  /* Q26 slider is instructional; examples not needed in UI */
-  Q27: [
-    "Example 1: Squealing brakes—clear warning sign. (Applies here)",
-    "Example 2: Timing belt—can fail without warning. (Does not apply here)"
-  ],
-  Q28: [
-    "Example 1: You’d pick this method if you could do it now. (Applies here)",
-    "Example 2: You know a better option but aren’t choosing it. (Does not apply here)"
-  ],
-  Q29: [
-    "Example 1: You compared and ruled out better options. (Applies here)",
-    "Example 2: You haven’t checked obvious alternatives. (Does not apply here)"
-  ],
-  Q30: [
-    "Example 1: Part is in stock; appointments available. (Applies here)",
-    "Example 2: Part is backordered for two weeks. (Does not apply here)"
-  ],
-  Q31: [
-    "Example 1: Off-season timing makes it cheaper and easier. (Applies here)",
-    "Example 2: Waiting won’t improve value; risk may rise. (Does not apply here)"
-  ],
-  Q32: [
-    "Example 1: Waiting a week saves a lot with little downside. (Applies here)",
-    "Example 2: Waiting would cause outages or stress. (Does not apply here)"
-  ],
-  Q33: [
-    "Example 1: A solid Plan B works now. (Applies here)",
-    "Example 2: No next-best option reasonably solves it. (Does not apply here)"
-  ],
-  Q34: [
-    "Example 1: Doing it during a scheduled break reduces disruption. (Applies here)",
-    "Example 2: There’s no later window that beats now. (Does not apply here)"
-  ],
-  Q35: [
-    "Example 1: After availability, doing it during a later lull saves hassle. (Applies here)",
-    "Example 2: Once available, sooner is clearly better. (Does not apply here)"
-  ]
+  Q1:[ "Example 1: A major work/school deadline is today; deciding on a new TV can wait. (Applies here)",
+       "Example 2: A free afternoon with no pressing tasks; you can consider smaller decisions now. (Does not apply here)"],
+  Q2:[ "Example 1: The sink is leaking and wasting water—function isn’t being met. (Applies here)",
+       "Example 2: Paint is slightly dull but everything works fine. (Does not apply here)"],
+  Q3:[ "Example 1: Car battery struggles to start on cold mornings—likely to fail soon. (Applies here)",
+       "Example 2: Phone works perfectly; you just feel uneasy it might break. (Does not apply here)"],
+  Q4:[ "Example 1: Dust at the PC intake could clog the fan → overheating. (Applies here)",
+       "Example 2: A vague future worry with no causal chain. (Does not apply here)"],
+  Q5:[ "Example 1: A replacement faucet cartridge exists, even if backordered. (Applies here)",
+       "Example 2: A software bug has no known fix or workaround yet. (Does not apply here)"],
+  Q6:[ "Example 1: You can schedule a repair and approve payment. (Applies here)",
+       "Example 2: A labor strike must resolve; you can’t influence it. (Does not apply here)"],
+  Q7:[ "Example 1: You can escalate a ticket or try an official fix you skipped. (Applies here)",
+       "Example 2: You’ve done all reasonable steps; more worrying won’t help. (Does not apply here)"],
+  Q8:[ "Example 1: Switch to a simpler app that solves the need. (Applies here)",
+       "Example 2: All alternatives rely on things you can’t control. (Does not apply here)"],
+  Q9:[ "Example 1: Running diagnostics teaches prevention for next time. (Applies here)",
+       "Example 2: A tedious workaround teaches nothing useful later. (Does not apply here)"],
+  Q10:["Example 1: A quick medical screening offers value with minimal downside. (Applies here)",
+       "Example 2: Disassembling a working device ‘just to see’ risks damage. (Does not apply here)"],
+  Q11:["Example 1: A low-cost fix avoids a bigger expense later. (Applies here)",
+       "Example 2: An expensive fix for a tiny convenience gain. (Does not apply here)"],
+  Q12:["Example 1: Another shop offers same repair cheaper with warranty. (Applies here)",
+       "Example 2: All other options are worse across time/cost/reliability. (Does not apply here)"],
+  Q13:["Example 1: Repairing a roof leak prevents serious damage. (Applies here)",
+       "Example 2: Risky modification voids warranty for marginal benefit. (Does not apply here)"],
+  Q14:["Example 1: Replacing an old appliance is cheaper than repeated repairs. (Applies here)",
+       "Example 2: No alternative beats the current plan. (Does not apply here)"],
+  Q15:["Example 1: Polishing slides beyond ‘good enough’ adds little impact. (Applies here)",
+       "Example 2: Fixing a critical bug—each hour matters; no early plateau. (Does not apply here)"],
+  Q17:["Example 1: Exercise intensity has a sweet spot; too much/too little harms results. (Applies here)",
+       "Example 2: Filing taxes—no optimal ‘intensity’; you just finish it. (Does not apply here)"],
+  Q19:["Example 1: Upgrading HDD to SSD is clearly noticeable. (Applies here)",
+       "Example 2: Gold-plated HDMI vs regular—no functional difference. (Does not apply here)"],
+  Q20:["Example 1: Sealing driveway cracks extends lifespan. (Applies here)",
+       "Example 2: A cosmetic fix that wears off in a week. (Does not apply here)"],
+  Q21:["Example 1: Decongestant allows sleep tonight. (Applies here)",
+       "Example 2: Reorganizing a drawer doesn’t change today’s urgent issue. (Does not apply here)"],
+  Q22:["Example 1: Wearing a seatbelt is worth doing every time. (Applies here)",
+       "Example 2: Washing the car daily isn’t worth it without special reason. (Does not apply here)"],
+  Q23:["Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
+       "Example 2: No alternative provides a better long-term outcome. (Does not apply here)"],
+  Q24:["Example 1: Cracked phone screen—current problem. (Applies here)",
+       "Example 2: Considering a nicer phone later—QoL only, not current problem. (Does not apply here)"],
+  Q25:["Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
+       "Example 2: Repainting a wall for a new color. (Does not apply here)"],
+  Q27:["Example 1: Squealing brakes—clear warning sign. (Applies here)",
+       "Example 2: Timing belt—can fail without warning. (Does not apply here)"],
+  Q28:["Example 1: You’d pick this method if you could do it now. (Applies here)",
+       "Example 2: You know a better option but aren’t choosing it. (Does not apply here)"],
+  Q29:["Example 1: You compared and ruled out better options. (Applies here)",
+       "Example 2: You haven’t checked obvious alternatives. (Does not apply here)"],
+  Q30:["Example 1: Part is in stock; appointments available. (Applies here)",
+       "Example 2: Part is backordered for two weeks. (Does not apply here)"],
+  Q31:["Example 1: Off-season timing makes it cheaper and easier. (Applies here)",
+       "Example 2: Waiting won’t improve value; risk may rise. (Does not apply here)"],
+  Q32:["Example 1: Waiting a week saves a lot with little downside. (Applies here)",
+       "Example 2: Waiting would cause outages or stress. (Does not apply here)"],
+  Q33:["Example 1: A solid Plan B works now. (Applies here)",
+       "Example 2: No next-best option reasonably solves it. (Does not apply here)"],
+  Q34:["Example 1: Doing it during a scheduled break reduces disruption. (Applies here)",
+       "Example 2: There’s no later window that beats now. (Does not apply here)"],
+  Q35:["Example 1: After availability, doing it during a later lull saves hassle. (Applies here)",
+       "Example 2: Once available, sooner is clearly better. (Does not apply here)"]
 };
 
 // ======= STATE (severity threshold) =======
@@ -466,7 +401,7 @@ function openSharedPanel(panel, mode) {
   if (mode === 'viz') { if (vzBtn) vzBtn.textContent = 'Hide visualization'; if (exBtn) exBtn.textContent = 'Show examples'; }
 }
 
-/* ---------- Always-visible Risk Slider (Q26 only) ---------- */
+/* ---------- Q26: Simple centered number + slider (with ticks) ---------- */
 function showOrHideRiskInline(node) {
   const container = document.getElementById('riskInline');
   container.innerHTML = '';
@@ -475,43 +410,44 @@ function showOrHideRiskInline(node) {
     container.setAttribute('aria-hidden','true');
     return;
   }
-
   container.style.display = 'block';
   container.setAttribute('aria-hidden','false');
 
-  // Label
-  const h = document.createElement('div');
-  h.innerHTML = `<strong>Set catastrophic severity (1–10)</strong> &nbsp; <span class="risk-badge" id="sevBadge">1</span> &nbsp; <span class="risk-badge" id="thrBadge">Threshold: 90%</span>`;
-  container.appendChild(h);
+  // Large centered number
+  const sevDisplay = document.createElement('div');
+  sevDisplay.className = 'sev-display';
+  sevDisplay.id = 'sevDisplay';
+  sevDisplay.textContent = '1';
+  container.appendChild(sevDisplay);
 
-  // Slider row
+  // Slider row + tick marks via datalist
   const row = document.createElement('div'); row.className = 'risk-row';
-  const slider = document.createElement('input'); slider.type='range'; slider.min='1'; slider.max='10'; slider.step='1';
-
-  // Default to severity=1 (90%) unless a stored threshold exists
+  const slider = document.createElement('input');
+  slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
+  slider.setAttribute('list','riskTicks');
   const storedThr = parseInt(localStorage.getItem('pm_threshold_pct') || '0', 10);
   let startingSeverity = 1;
   if (!isNaN(storedThr) && storedThr > 0) startingSeverity = Math.max(1, Math.min(10, Math.round((100 - storedThr)/10)));
   slider.value = String(startingSeverity);
-  slider.style.flex = '1';
-
-  const sevBadge = h.querySelector('#sevBadge');
-  const thrBadge = h.querySelector('#thrBadge');
+  sevDisplay.textContent = slider.value;
 
   function applyFromSeverity(sev) {
     const thr = 100 - sev*10;
     currentThresholdPct = thr;
-    sevBadge.textContent = String(sev);
-    thrBadge.textContent = `Threshold: ${thr}%`;
+    sevDisplay.textContent = String(sev);
     localStorage.setItem('pm_threshold_pct', String(thr));
   }
-
-  // Initialize badges and global
   applyFromSeverity(parseInt(slider.value,10));
-
   slider.oninput = () => applyFromSeverity(parseInt(slider.value,10));
+
   row.appendChild(slider);
   container.appendChild(row);
+
+  // Ticks (1..10)
+  const ticks = document.createElement('datalist');
+  ticks.id = 'riskTicks';
+  for (let i=1;i<=10;i++){ const opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
+  container.appendChild(ticks);
 }
 
 /* ---------- Reasoning panel (chart on R8/R9; button near text) ---------- */
