@@ -5,16 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Flow Chart</title>
 
-<!-- Favicons / PWA -->
-<meta name="theme-color" content="#ffffff">
-<link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="apple-touch-icon" href="favicon_180.png">
-<!-- Optional PNG fallbacks -->
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
 <link rel="icon" type="image/png" sizes="48x48" href="favicon_48.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon_64.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon_180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon_192.png">
+<link rel="icon" type="image/png" sizes="256x256" href="favicon_256.png">
+<link rel="icon" type="image/png" sizes="384x384" href="favicon_384.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon_512.png">
+<link rel="manifest" href="site.webmanifest">
+<!-- Inline fallback favicon -->
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" x=".08em" font-size="90">✅</text></svg>'>
 
 <style>
   :root { --btn-pad-y:10px; --btn-pad-x:12px; }
@@ -32,11 +35,13 @@
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
     border-bottom:2px solid #ddd; gap:12px;
-    transition: background-color .5s ease, color .5s ease;
+    transition: color .5s ease; /* only color animates now */
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
-  .flash-gold { background-color:gold !important; color:#fff !important; }   /* WHEN */
-  .flash-green { background-color:#2e7d32 !important; color:#fff !important;} /* IF */
+
+  /* Flash animations: text color only (no background highlight) */
+  .flash-gold { color: goldenrod !important; }
+  .flash-green { color: #2e7d32 !important; }
 
   /* Buttons (global) */
   button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
@@ -48,12 +53,12 @@
   button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; flex:0 0 auto; }
   button.active { outline: 2px solid #000; }
 
-  /* Skip button — exactly same height as other buttons, not scaled by header font */
+  /* Skip button — same height as other buttons */
   .segment-heading .skip-btn {
     display:inline-flex; align-items:center; justify-content:center;
     flex:0 0 auto;
     padding:var(--btn-pad-y) var(--btn-pad-x);
-    font-size:1rem;        /* decouple from 1.4em header */
+    font-size:1rem;        /* decouple from 1.8em header */
     line-height:1;         /* avoid tall lines */
     border:none; border-radius:5px; cursor:pointer;
     background:#e9e9e9; color:#333;
@@ -72,11 +77,13 @@
   /* Keep generic buttons stretching within their grid cell */
   .controls-row button { width:100%; }
 
-  /* Previously: :only-child spanned full width. Now we keep half-width for examples. */
   /* If you ever need a control to span full width, add class .full to that button. */
   .controls-row .full { grid-column: 1 / -1; }
-  /* Ensure Examples stays half-width even when it's alone */
-  .controls-row .examples-btn:only-child { grid-column:auto; }
+
+  /* Ensure Examples/Viz/Reasoning stay half-width even if alone */
+  .controls-row .examples-btn:only-child,
+  .controls-row .viz-btn:only-child,
+  .controls-row .reasoning-btn:only-child { grid-column:auto; width:100%; }
 
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
@@ -117,8 +124,9 @@
 
       <!-- Controls placed close to text and aligned flush -->
       <div class="controls-row">
-        <div id="reasoningToggleWrapper" class="reasoning-toggle"></div>
+        <!-- EXAMPLES on the LEFT; REASONING on the RIGHT -->
         <div id="examplesToggleWrapper" class="examples-toggle"></div>
+        <div id="reasoningToggleWrapper" class="reasoning-toggle"></div>
       </div>
 
       <!-- Shared panel (examples OR Q15/Q17 visualization) -->
@@ -141,7 +149,7 @@
 // ======= FLOW (Q0–Q35) =======
 const flowchart = [
   /* START SCREEN */
-  { "id": "Q0", "type": "info", "text": "Welcome! This tool helps you decide both IF and WHEN to act on an issue.\nYou’ll answer simple Yes/No questions (and a severity slider later). Tap Next to begin.", "next": "Q1" },
+  { "id": "Q0", "type": "info", "text": "Welcome! This tool helps you decide both IF and WHEN you should act on an issue.\nYou’ll answer simple Yes/No questions (and a slider later). Tap Next to begin.", "next": "Q1" },
 
   /* ===== IF YOU SHOULD ACT (Q1–Q23) ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
@@ -197,74 +205,6 @@ const flowchart = [
   { "id": "R9", "type": "result", "text": "Wait until the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." }
 ];
 
-// ===== EXAMPLES (Applies vs Does not apply) =====
-const examples = {
-  Q1:[ "Example 1: A major work/school deadline is today; deciding on a new TV can wait. (Applies here)",
-       "Example 2: A free afternoon with no pressing tasks; you can consider smaller decisions now. (Does not apply here)"],
-  Q2:[ "Example 1: The sink is leaking and wasting water—function isn’t being met. (Applies here)",
-       "Example 2: Paint is slightly dull but everything works fine. (Does not apply here)"],
-  Q3:[ "Example 1: Car battery struggles to start on cold mornings—likely to fail soon. (Applies here)",
-       "Example 2: Phone works perfectly; you just feel uneasy it might break. (Does not apply here)"],
-  Q4:[ "Example 1: Dust at the PC intake could clog the fan → overheating. (Applies here)",
-       "Example 2: A vague future worry with no causal chain. (Does not apply here)"],
-  Q5:[ "Example 1: A replacement faucet cartridge exists, even if backordered. (Applies here)",
-       "Example 2: A software bug has no known fix or workaround yet. (Does not apply here)"],
-  Q6:[ "Example 1: You can schedule a repair and approve payment. (Applies here)",
-       "Example 2: A labor strike must resolve; you can’t influence it. (Does not apply here)"],
-  Q7:[ "Example 1: You can escalate a ticket or try an official fix you skipped. (Applies here)",
-       "Example 2: You’ve done all reasonable steps; more worrying won’t help. (Does not apply here)"],
-  Q8:[ "Example 1: Switch to a simpler app that solves the need. (Applies here)",
-       "Example 2: All alternatives rely on things you can’t control. (Does not apply here)"],
-  Q9:[ "Example 1: Running diagnostics teaches prevention for next time. (Applies here)",
-       "Example 2: A tedious workaround teaches nothing useful later. (Does not apply here)"],
-  Q10:["Example 1: A quick medical screening offers value with minimal downside. (Applies here)",
-       "Example 2: Disassembling a working device ‘just to see’ risks damage. (Does not apply here)"],
-  Q11:["Example 1: A low-cost fix avoids a bigger expense later. (Applies here)",
-       "Example 2: An expensive fix for a tiny convenience gain. (Does not apply here)"],
-  Q12:["Example 1: Another shop offers same repair cheaper with warranty. (Applies here)",
-       "Example 2: All other options are worse across time/cost/reliability. (Does not apply here)"],
-  Q13:["Example 1: Repairing a roof leak prevents serious damage. (Applies here)",
-       "Example 2: Risky modification voids warranty for marginal benefit. (Does not apply here)"],
-  Q14:["Example 1: Replacing an old appliance is cheaper than repeated repairs. (Applies here)",
-       "Example 2: No alternative beats the current plan. (Does not apply here)"],
-  Q15:["Example 1: Polishing slides beyond ‘good enough’ adds little impact. (Applies here)",
-       "Example 2: Fixing a critical bug—each hour matters; no early plateau. (Does not apply here)"],
-  Q17:["Example 1: Exercise intensity has a sweet spot; too much/too little harms results. (Applies here)",
-       "Example 2: Filing taxes—no optimal ‘intensity’; you just finish it. (Does not apply here)"],
-  Q19:["Example 1: Upgrading HDD to SSD is clearly noticeable. (Applies here)",
-       "Example 2: Gold-plated HDMI vs regular—no functional difference. (Does not apply here)"],
-  Q20:["Example 1: Sealing driveway cracks extends lifespan. (Applies here)",
-       "Example 2: A cosmetic fix that wears off in a week. (Does not apply here)"],
-  Q21:["Example 1: Decongestant allows sleep tonight. (Applies here)",
-       "Example 2: Reorganizing a drawer doesn’t change today’s urgent issue. (Does not apply here)"],
-  Q22:["Example 1: Wearing a seatbelt is worth doing every time. (Applies here)",
-       "Example 2: Washing the car daily isn’t worth it without special reason. (Does not apply here)"],
-  Q23:["Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
-       "Example 2: No alternative provides a better long-term outcome. (Does not apply here)"],
-  Q24:["Example 1: Replacing a timing belt before expected lifespan ends. (Applies here)",
-       "Example 2: Fixing a screen that already cracked (current problem, not future). (Does not apply here)"],
-  Q25:["Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
-       "Example 2: Repainting a wall for a new color. (Does not apply here)"],
-  Q27:["Example 1: Squealing brakes—clear warning sign. (Applies here)",
-       "Example 2: Timing belt—can fail without warning. (Does not apply here)"],
-  Q28:["Example 1: You’d pick this method if you could do it now. (Applies here)",
-       "Example 2: You know a better option but aren’t choosing it. (Does not apply here)"],
-  Q29:["Example 1: You compared and ruled out better options. (Applies here)",
-       "Example 2: You haven’t checked obvious alternatives. (Does not apply here)"],
-  Q30:["Example 1: Part is in stock; appointments available. (Applies here)",
-       "Example 2: Part is backordered for two weeks. (Does not apply here)"],
-  Q31:["Example 1: Off-season timing makes it cheaper and easier. (Applies here)",
-       "Example 2: Waiting won’t improve value; risk may rise. (Does not apply here)"],
-  Q32:["Example 1: Waiting a week saves a lot with little downside. (Applies here)",
-       "Example 2: Waiting would cause outages or stress. (Does not apply here)"],
-  Q33:["Example 1: A solid Plan B works now. (Applies here)",
-       "Example 2: No next-best option reasonably solves it. (Does not apply here)"],
-  Q34:["Example 1: Doing it during a scheduled break reduces disruption. (Applies here)",
-       "Example 2: There’s no later window that beats now. (Does not apply here)"],
-  Q35:["Example 1: After availability, doing it during a later lull saves hassle. (Applies here)",
-       "Example 2: Once available, sooner is clearly better. (Does not apply here)"]
-};
-
 // ======= STATE (severity threshold) =======
 // Default severity = 1 → threshold 90% (no localStorage).
 let currentThresholdPct = 90;
@@ -309,27 +249,6 @@ function flashHeadingColor(targetSegment) {
   setTimeout(() => headingDiv.classList.remove(cls), 1500);
 }
 
-/* ---- Dynamic clause helpers for R8/R9 ---- */
-function buildThresholdClause() {
-  if (currentThresholdPct <= 0) return 'there is even a small chance of failure';
-  return `the estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
-}
-function applyThresholdClauseTo(text) {
-  const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
-  if (fullClause.test(text)) return text.replace(fullClause, buildThresholdClause());
-
-  const fallbackClause = /nearing or greater than\s*50%/i;
-  if (fallbackClause.test(text)) {
-    const repl = (currentThresholdPct <= 0)
-      ? 'even a small chance of failure'
-      : `nearing or greater than ${currentThresholdPct}%`;
-    return text.replace(fallbackClause, repl);
-  }
-
-  if (currentThresholdPct > 0) return text.replace(/50%/g, `${currentThresholdPct}%`);
-  return text.replace(/0%/g, 'even a small chance of failure');
-}
-
 function renderNode(node) {
   const errorBox = document.getElementById('errorBox');
   errorBox.textContent = '';
@@ -346,14 +265,18 @@ function renderNode(node) {
     return;
   }
 
-  // Determine and apply segment AFTER entering node
+  const previousId = lastNodeId;
   const thisSegment = getSegmentForNodeId(node.id);
 
-  // Flash ONLY when segment actually changes (IF ↔ WHEN),
-  // not when leaving the intro.
+  // Flash on actual segment change (IF <-> WHEN)
   if (thisSegment !== currentSegment) {
     flashHeadingColor(thisSegment);
   }
+  // NEW: Also flash green when leaving intro (Q0) into the first IF question
+  if (previousId === "Q0" && thisSegment === "If You Should Act") {
+    flashHeadingColor("If You Should Act");
+  }
+
   currentSegment = thisSegment;
   setHeadingText(node.id);
 
@@ -398,16 +321,60 @@ function renderNode(node) {
     }
   }
 
-  // record last node (not used for flashing anymore, but kept if needed later)
   lastNodeId = node.id;
 }
 
-/* ---------- Examples + Viz (Q15/Q17 special) ---------- */
+/* ---- Dynamic clause helpers for R8/R9 ---- */
+function buildThresholdClause() {
+  if (currentThresholdPct <= 0) return 'there is even a small chance of failure';
+  return `the estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
+}
+function applyThresholdClauseTo(text) {
+  const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
+  if (fullClause.test(text)) return text.replace(fullClause, buildThresholdClause());
+  const fallbackClause = /nearing or greater than\s*50%/i;
+  if (fallbackClause.test(text)) {
+    const repl = (currentThresholdPct <= 0)
+      ? 'even a small chance of failure'
+      : `nearing or greater than ${currentThresholdPct}%`;
+    return text.replace(fallbackClause, repl);
+  }
+  if (currentThresholdPct > 0) return text.replace(/50%/g, `${currentThresholdPct}%`);
+  return text.replace(/0%/g, 'even a small chance of failure');
+}
+
+function collapseSharedPanel() {
+  const panel = document.getElementById('sharedPanel');
+  panel.style.display = 'none';
+  panel.setAttribute('aria-hidden','true');
+  panel.dataset.mode = '';
+  const exWrap = document.getElementById('examplesToggleWrapper');
+  const reWrap = document.getElementById('reasoningToggleWrapper');
+  [...exWrap.querySelectorAll('button'), ...reWrap.querySelectorAll('button')].forEach(btn => {
+    const label = btn.classList.contains('viz-btn') ? 'Show visualization' : 'Show examples';
+    btn.textContent = label; btn.setAttribute('aria-expanded','false'); btn.classList.remove('active');
+  });
+}
+
+function openSharedPanel(panel, mode) {
+  panel.style.display = 'block';
+  panel.setAttribute('aria-hidden','false');
+  panel.dataset.mode = mode;
+  const exWrap = document.getElementById('examplesToggleWrapper');
+  const reWrap = document.getElementById('reasoningToggleWrapper');
+  const exBtn = exWrap.querySelector('.examples-btn');
+  const vzBtn = reWrap.querySelector('.viz-btn');
+  if (mode === 'examples') { if (exBtn) exBtn.textContent = 'Hide examples'; if (vzBtn) vzBtn.textContent = 'Show visualization'; }
+  if (mode === 'viz') { if (vzBtn) vzBtn.textContent = 'Hide visualization'; if (exBtn) exBtn.textContent = 'Show examples'; }
+}
+
 function setupAuxToggles(node) {
-  const wrap = document.getElementById('examplesToggleWrapper');
+  const exWrap = document.getElementById('examplesToggleWrapper');
+  const reWrap = document.getElementById('reasoningToggleWrapper');
   const panel = document.getElementById('sharedPanel');
 
-  wrap.innerHTML = '';
+  exWrap.innerHTML = '';
+  reWrap.innerHTML = '';
   collapseSharedPanel();
   panel.innerHTML = '';
 
@@ -419,7 +386,7 @@ function setupAuxToggles(node) {
   examplesBtn.textContent = 'Show examples';
   examplesBtn.className = 'examples-btn';
   examplesBtn.setAttribute('aria-expanded', 'false');
-  wrap.appendChild(examplesBtn);
+  exWrap.appendChild(examplesBtn);
 
   let vizBtn = null;
   if (isSpecial) {
@@ -427,7 +394,7 @@ function setupAuxToggles(node) {
     vizBtn.textContent = 'Show visualization';
     vizBtn.className = 'viz-btn';
     vizBtn.setAttribute('aria-expanded', 'false');
-    wrap.appendChild(vizBtn);
+    reWrap.appendChild(vizBtn);
   }
 
   examplesBtn.onclick = () => {
@@ -467,6 +434,7 @@ function setupAuxToggles(node) {
     };
   }
 }
+
 function renderExamples(panel, nodeId) {
   panel.innerHTML = '';
   const two = examples[nodeId] || ["Example 1: [edit me]","Example 2: [edit me]"];
@@ -476,34 +444,13 @@ function renderExamples(panel, nodeId) {
     panel.appendChild(p);
   });
 }
+
 function renderViz(panel, src, alt) {
   panel.innerHTML = '';
   const img = document.createElement('img'); img.src = src; img.alt = alt;
   panel.appendChild(img);
 }
-function collapseSharedPanel() {
-  const panel = document.getElementById('sharedPanel');
-  panel.style.display = 'none';
-  panel.setAttribute('aria-hidden','true');
-  panel.dataset.mode = '';
-  const wrap = document.getElementById('examplesToggleWrapper');
-  wrap.querySelectorAll('button').forEach(btn => {
-    const label = btn.classList.contains('viz-btn') ? 'Show visualization' : 'Show examples';
-    btn.textContent = label; btn.setAttribute('aria-expanded','false'); btn.classList.remove('active');
-  });
-}
-function openSharedPanel(panel, mode) {
-  panel.style.display = 'block';
-  panel.setAttribute('aria-hidden','false');
-  panel.dataset.mode = mode;
-  const wrap = document.getElementById('examplesToggleWrapper');
-  const exBtn = wrap.querySelector('.examples-btn');
-  const vzBtn = wrap.querySelector('.viz-btn');
-  if (mode === 'examples') { if (exBtn) exBtn.textContent = 'Hide examples'; if (vzBtn) vzBtn.textContent = 'Show visualization'; }
-  if (mode === 'viz') { if (vzBtn) vzBtn.textContent = 'Hide visualization'; if (exBtn) exBtn.textContent = 'Show examples'; }
-}
 
-/* ---------- Q26: centered number + slider (ticks), default severity=1 ---------- */
 function showOrHideRiskInline(node) {
   const container = document.getElementById('riskInline');
   container.innerHTML = '';
@@ -515,23 +462,21 @@ function showOrHideRiskInline(node) {
   container.style.display = 'block';
   container.setAttribute('aria-hidden','false');
 
-  // Big centered number
   const sevDisplay = document.createElement('div');
   sevDisplay.className = 'sev-display';
   sevDisplay.id = 'sevDisplay';
   sevDisplay.textContent = '1';
   container.appendChild(sevDisplay);
 
-  // Slider with tick marks via datalist
   const row = document.createElement('div'); row.className = 'risk-row';
   const slider = document.createElement('input');
   slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
   slider.setAttribute('list','riskTicks');
-  slider.value = '1'; // always default to 1
+  slider.value = '1';
 
   function applyFromSeverity(sev) {
-    const thr = 100 - sev * 10;  // linear mapping
-    currentThresholdPct = thr;   // sev=1 → 90
+    const thr = 100 - sev * 10;
+    currentThresholdPct = thr;
     sevDisplay.textContent = String(sev);
   }
   applyFromSeverity(1);
@@ -540,14 +485,12 @@ function showOrHideRiskInline(node) {
   row.appendChild(slider);
   container.appendChild(row);
 
-  // Ticks (1..10)
   const ticks = document.createElement('datalist');
   ticks.id = 'riskTicks';
   for (let i=1;i<=10;i++){ const opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
   container.appendChild(ticks);
 }
 
-/* ---------- Reasoning panel (chart on R8/R9; button near text) ---------- */
 function setupReasoning(node) {
   const wrap = document.getElementById('reasoningToggleWrapper');
   const panel = document.getElementById('reasoningPanel');
@@ -575,15 +518,7 @@ function setupReasoning(node) {
   img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
   panel.appendChild(img);
 }
-function collapseReasoningPanel() {
-  const panel = document.getElementById('reasoningPanel');
-  if (!panel) return;
-  panel.style.display='none'; panel.setAttribute('aria-hidden','true');
-  const btn = document.getElementById('reasoningToggleWrapper').querySelector('button');
-  if (btn) { btn.textContent='Show percentage reasoning'; btn.setAttribute('aria-expanded','false'); }
-}
 
-/* ---------- Nav ---------- */
 function makeButton(label, cls, action) {
   const btn = document.createElement('button');
   btn.textContent = label; btn.className = cls; btn.onclick = action; return btn;
