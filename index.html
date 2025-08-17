@@ -13,12 +13,25 @@
     box-shadow:0 2px 6px rgba(0,0,0,0.1); min-height:280px;
     display:flex; flex-direction:column; justify-content:space-between;
   }
+
+  /* Header / segment heading row (left label + right skip) */
   .segment-heading {
+    display:flex; align-items:center; justify-content:space-between;
     font-size:1.4em; font-weight:bold; margin-bottom:15px; padding:8px;
-    border-bottom:2px solid #ddd; display:flex; align-items:center; gap:8px;
+    border-bottom:2px solid #ddd; gap:12px;
     transition: background-color .5s ease, color .5s ease;
   }
-  .flash-gold { background-color:gold !important; color:#fff !important; }
+  .segment-title { display:inline-flex; align-items:center; gap:8px; }
+  .flash-gold { background-color:gold !important; color:#fff !important; }   /* WHEN */
+  .flash-green { background-color:#2e7d32 !important; color:#fff !important;} /* IF */
+
+  .skip-btn {
+    flex:0 0 auto; padding:6px 10px; font-size:0.9em;
+    border:none; border-radius:5px; cursor:pointer;
+    background:#e9e9e9; color:#333;
+  }
+  .skip-btn:hover { background:#dedede; }
+
   .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
 
   /* Controls just under the text */
@@ -63,7 +76,10 @@
   </div>
 
   <div class="card">
-    <div id="segmentHeading" class="segment-heading"></div>
+    <div id="segmentHeading" class="segment-heading">
+      <span id="segmentTitle" class="segment-title"></span>
+      <button id="skipBtn" class="skip-btn" style="display:none;" title="Skip to when you should act">Skip ⏭</button>
+    </div>
 
     <div>
       <div id="text" class="text"></div>
@@ -92,7 +108,7 @@
 
 <script>
 // ======= FLOW (Q0–Q35) =======
-// Added Q0 as a start screen (info).
+// Intro screen (Q0), then your updated wording below.
 const flowchart = [
   /* START SCREEN */
   { "id": "Q0", "type": "info",
@@ -102,7 +118,7 @@ const flowchart = [
 
   /* ===== IF YOU SHOULD ACT (Q1–Q23) ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
-  { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
+  { "id": "Q2",  "type": "question", "text": "Is there a known problem or desired QoL (quality of life) change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
   { "id": "Q3",  "type": "question", "text": "Is there cause for a potential problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q4" },
   { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "R2" },
   { "id": "Q5",  "type": "question", "text": "Is there a solution to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL change)?", "yes": "Q6", "no": "R3" },
@@ -116,7 +132,7 @@ const flowchart = [
   { "id": "Q13", "type": "question", "text": "Would the benefits of addressing this issue likely outweigh any downsides it might likely cause?", "yes": "Q15", "no": "Q14" },
   { "id": "Q14", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
   { "id": "Q15", "type": "question", "text": "Does addressing this issue involve a diminishing returns curve for effort applied?", "yes": "Q16", "no": "Q17" },
-  { "id": "Q16", "type": "info",     "text": "Find the point of diminishing returns and stop there. If you tend to get absorbed in an activity, look for an alternative approach that solves the problem or improves QoL without the addictive pull. Use that better option whenever possible. If it’s unavailable, you may use the original approach—but only with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q17" },
+  { "id": "Q16", "type": "info",     "text": "Find the point of diminishing returns and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL without the addictive pull and possibly even in a better overall way. Use that better option whenever possible. If it’s unavailable, you may use the original approach—but only with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q17" },
   { "id": "Q17", "type": "question", "text": "Does addressing this issue directly involve an inverted-U curve for specific effort applied with an objective sweet spot where clear information is available to you?", "yes": "Q18", "no": "Q19" },
   { "id": "Q18", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q24" },
   { "id": "Q19", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the problem/potential problem/QoL change was solved/prevented/changed (for example in a blind test compared side by side, and ignoring any differences irrelevant to the actual functionality of the intended purpose associated)?", "yes": "Q20", "no": "R2" },
@@ -126,7 +142,7 @@ const flowchart = [
   { "id": "Q23", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
 
   /* ===== WHEN YOU SHOULD ACT (Q24+) ===== */
-  { "id": "Q24", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q28", "no": "Q25" },
+  { "id": "Q24", "type": "question", "text": "Does this address a future problem?", "yes": "Q25", "no": "Q28" },
   { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q28" },
 
   /* Severity selection */
@@ -198,8 +214,8 @@ const examples = {
        "Example 2: Washing the car daily isn’t worth it without special reason. (Does not apply here)"],
   Q23:["Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
        "Example 2: No alternative provides a better long-term outcome. (Does not apply here)"],
-  Q24:["Example 1: Cracked phone screen—current problem. (Applies here)",
-       "Example 2: Considering a nicer phone later—QoL only, not current problem. (Does not apply here)"],
+  Q24:["Example 1: Replacing a timing belt before expected lifespan ends. (Applies here)",
+       "Example 2: Fixing a screen that already cracked (current problem, not future). (Does not apply here)"],
   Q25:["Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
        "Example 2: Repainting a wall for a new color. (Does not apply here)"],
   Q27:["Example 1: Squealing brakes—clear warning sign. (Applies here)",
@@ -223,14 +239,13 @@ const examples = {
 };
 
 // ======= STATE (severity threshold) =======
-// Severity 1 → threshold 90% by default if nothing stored.
-const stored = parseInt(localStorage.getItem('pm_threshold_pct') || '0', 10);
-let currentThresholdPct = (!isNaN(stored) && stored > 0 && stored <= 100) ? stored : 90;
+// Default severity = 1 → threshold 90% (no localStorage).
+let currentThresholdPct = 90;
 
 // ======= APP LOGIC =======
 let historyStack = [];
-let currentNode = flowchart.find(n => n.id === "Q0");  // Start at Q0
-let currentSegment = "If You Should Act"; // default segment label
+let currentNode = flowchart.find(n => n.id === "Q0");  // Start at intro
+let currentSegment = "If You Should Act"; // default label
 
 function getSegmentForNodeId(id) {
   if (!id || id[0] !== 'Q') return currentSegment;
@@ -240,25 +255,41 @@ function getSegmentForNodeId(id) {
   return num >= 24 ? "When You Should Act" : "If You Should Act";
 }
 
-function flashHeading() {
-  const headingDiv = document.getElementById('segmentHeading');
-  headingDiv.classList.add('flash-gold');
-  setTimeout(() => headingDiv.classList.remove('flash-gold'), 1500);
+function setHeadingText(nodeId) {
+  const title = document.getElementById('segmentTitle');
+  const skipBtn = document.getElementById('skipBtn');
+
+  if (nodeId === 'Q0') {
+    title.textContent = "⚖️ Discernment";
+    skipBtn.style.display = 'none';
+    return;
+  }
+
+  const text = (currentSegment === "If You Should Act")
+    ? "⚖️ If You Should Act"
+    : "⏳ When You Should Act";
+  title.textContent = text;
+
+  // Skip only in IF segment
+  skipBtn.style.display = (currentSegment === "If You Should Act") ? 'inline-block' : 'none';
 }
-function getSegmentIcon(segment) { return segment === "If You Should Act" ? "⚖️" : "⏳"; }
+
+function flashHeadingColor(targetSegment) {
+  const headingDiv = document.getElementById('segmentHeading');
+  const cls = (targetSegment === "If You Should Act") ? 'flash-green' : 'flash-gold';
+  headingDiv.classList.add(cls);
+  setTimeout(() => headingDiv.classList.remove(cls), 1500);
+}
 
 /* ---- Dynamic clause helpers for R8/R9 ---- */
 function buildThresholdClause() {
-  if (currentThresholdPct <= 0) {
-    return 'there is even a small chance of failure';
-  }
+  if (currentThresholdPct <= 0) return 'there is even a small chance of failure';
   return `the estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
 }
 function applyThresholdClauseTo(text) {
   const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
-  if (fullClause.test(text)) {
-    return text.replace(fullClause, buildThresholdClause());
-  }
+  if (fullClause.test(text)) return text.replace(fullClause, buildThresholdClause());
+
   const fallbackClause = /nearing or greater than\s*50%/i;
   if (fallbackClause.test(text)) {
     const repl = (currentThresholdPct <= 0)
@@ -266,11 +297,9 @@ function applyThresholdClauseTo(text) {
       : `nearing or greater than ${currentThresholdPct}%`;
     return text.replace(fallbackClause, repl);
   }
-  if (currentThresholdPct > 0) {
-    return text.replace(/50%/g, `${currentThresholdPct}%`);
-  } else {
-    return text.replace(/0%/g, 'even a small chance of failure');
-  }
+
+  if (currentThresholdPct > 0) return text.replace(/50%/g, `${currentThresholdPct}%`);
+  return text.replace(/0%/g, 'even a small chance of failure');
 }
 
 function renderNode(node) {
@@ -284,15 +313,18 @@ function renderNode(node) {
     collapseSharedPanel(); collapseReasoningPanel();
     showOrHideRiskInline(null);
     document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
-    document.getElementById('segmentHeading').textContent = `${getSegmentIcon(currentSegment)} ${currentSegment}`;
+    setHeadingText(''); // keep whatever was set
     document.getElementById('restartTop').style.display = 'inline-block';
     return;
   }
 
-  // Update segment AFTER entering node
+  // Determine and apply segment AFTER entering node
   const thisSegment = getSegmentForNodeId(node.id);
-  if (thisSegment !== currentSegment) { currentSegment = thisSegment; flashHeading(); }
-  document.getElementById('segmentHeading').textContent = `${getSegmentIcon(currentSegment)} ${currentSegment}`;
+  if (thisSegment !== currentSegment) {
+    currentSegment = thisSegment;
+    flashHeadingColor(currentSegment); // green for IF, gold for WHEN
+  }
+  setHeadingText(node.id);
 
   // Main text (with dynamic clause for R8/R9)
   const textDiv = document.getElementById('text');
@@ -437,7 +469,7 @@ function openSharedPanel(panel, mode) {
   if (mode === 'viz') { if (vzBtn) vzBtn.textContent = 'Hide visualization'; if (exBtn) exBtn.textContent = 'Show examples'; }
 }
 
-/* ---------- Q26: centered number + slider (ticks) ---------- */
+/* ---------- Q26: centered number + slider (ticks), default severity=1 ---------- */
 function showOrHideRiskInline(node) {
   const container = document.getElementById('riskInline');
   container.innerHTML = '';
@@ -449,8 +481,7 @@ function showOrHideRiskInline(node) {
   container.style.display = 'block';
   container.setAttribute('aria-hidden','false');
 
-  // Prompt (shows above number/slider as part of node.text)
-  // Large centered number
+  // Big centered number
   const sevDisplay = document.createElement('div');
   sevDisplay.className = 'sev-display';
   sevDisplay.id = 'sevDisplay';
@@ -462,22 +493,15 @@ function showOrHideRiskInline(node) {
   const slider = document.createElement('input');
   slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
   slider.setAttribute('list','riskTicks');
-
-  // Default from localStorage if present, else severity=1
-  const storedThr = parseInt(localStorage.getItem('pm_threshold_pct') || '0', 10);
-  let startingSeverity = 1;
-  if (!isNaN(storedThr) && storedThr > 0) startingSeverity = Math.max(1, Math.min(10, Math.round((100 - storedThr)/10)));
-  slider.value = String(startingSeverity);
-  sevDisplay.textContent = slider.value;
+  slider.value = '1'; // always default to 1
 
   function applyFromSeverity(sev) {
-    const thr = 100 - sev*10;         // linear mapping
-    currentThresholdPct = thr;        // e.g., sev=1 => 90%
+    const thr = 100 - sev * 10;  // linear mapping
+    currentThresholdPct = thr;   // sev=1 → 90
     sevDisplay.textContent = String(sev);
-    localStorage.setItem('pm_threshold_pct', String(thr));
   }
-  applyFromSeverity(parseInt(slider.value,10));
-  slider.oninput = () => applyFromSeverity(parseInt(slider.value,10));
+  applyFromSeverity(1);
+  slider.oninput = () => applyFromSeverity(parseInt(slider.value, 10));
 
   row.appendChild(slider);
   container.appendChild(row);
@@ -545,7 +569,21 @@ function restart() {
   currentNode = flowchart.find(n => n.id === "Q0"); renderNode(currentNode);
 }
 
-/* ---------- Start ---------- */
+/* ---------- Skip button: jump to Q24 ---------- */
+document.getElementById('skipBtn').addEventListener('click', () => {
+  goToNode('Q24');
+});
+
+/* ---------- Segment handling ---------- */
+function getSegmentForNodeId(id) {
+  if (!id || id[0] !== 'Q') return currentSegment;
+  const m = /^Q(\d+)$/.exec(id);
+  if (!m) return currentSegment;
+  const num = parseInt(m[1], 10);
+  return num >= 24 ? "When You Should Act" : "If You Should Act";
+}
+
+/* ---------- Initial render ---------- */
 renderNode(currentNode);
 </script>
 </body>
