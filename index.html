@@ -141,10 +141,7 @@
 // ======= FLOW (Q0–Q35) =======
 const flowchart = [
   /* START SCREEN */
-  { "id": "Q0", "type": "info",
-    "text": "Welcome! This tool helps you decide both IF and WHEN to act on an issue.\\nYou’ll answer simple Yes/No questions (and a severity slider later). Tap Next to begin.",
-    "next": "Q1"
-  },
+  { "id": "Q0", "type": "info", "text": "Welcome! This tool helps you decide both IF and WHEN to act on an issue.\nYou’ll answer simple Yes/No questions (and a severity slider later). Tap Next to begin.", "next": "Q1" },
 
   /* ===== IF YOU SHOULD ACT (Q1–Q23) ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
