@@ -102,7 +102,7 @@ const flowchart = [
 
   /* ===== IF YOU SHOULD ACT (Q1–Q23) ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
-  { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
+  { "id": "Q2",  "type": "question", "text": "Is there a known problem or desired QoL (quality of life) change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
   { "id": "Q3",  "type": "question", "text": "Is there cause for a potential problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q4" },
   { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "R2" },
   { "id": "Q5",  "type": "question", "text": "Is there a solution to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL change)?", "yes": "Q6", "no": "R3" },
@@ -126,7 +126,7 @@ const flowchart = [
   { "id": "Q23", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
 
   /* ===== WHEN YOU SHOULD ACT (Q24+) ===== */
-  { "id": "Q24", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q28", "no": "Q25" },
+  { "id": "Q24", "type": "question", "text": "Does this address a future problem?", "yes": "Q25", "no": "Q28" },
   { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q28" },
 
   /* Severity selection */
