@@ -102,7 +102,7 @@ const flowchart = [
 
   /* ===== IF YOU SHOULD ACT (Q1–Q23) ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
-  { "id": "Q2",  "type": "question", "text": "Is there a known problem or desired QoL (quality of life) change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
+  { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
   { "id": "Q3",  "type": "question", "text": "Is there cause for a potential problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q4" },
   { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "R2" },
   { "id": "Q5",  "type": "question", "text": "Is there a solution to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL change)?", "yes": "Q6", "no": "R3" },
@@ -116,7 +116,7 @@ const flowchart = [
   { "id": "Q13", "type": "question", "text": "Would the benefits of addressing this issue likely outweigh any downsides it might likely cause?", "yes": "Q15", "no": "Q14" },
   { "id": "Q14", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
   { "id": "Q15", "type": "question", "text": "Does addressing this issue involve a diminishing returns curve for effort applied?", "yes": "Q16", "no": "Q17" },
-  { "id": "Q16", "type": "info",     "text": "Find the point of diminishing returns and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL without the addictive pull and possibly even in a better overall way. Use that better option whenever possible. If it’s unavailable, you may use the original approach—but only with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q17" },
+  { "id": "Q16", "type": "info",     "text": "Find the point of diminishing returns and stop there. If you tend to get absorbed in an activity, look for an alternative approach that solves the problem or improves QoL without the addictive pull. Use that better option whenever possible. If it’s unavailable, you may use the original approach—but only with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q17" },
   { "id": "Q17", "type": "question", "text": "Does addressing this issue directly involve an inverted-U curve for specific effort applied with an objective sweet spot where clear information is available to you?", "yes": "Q18", "no": "Q19" },
   { "id": "Q18", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q24" },
   { "id": "Q19", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the problem/potential problem/QoL change was solved/prevented/changed (for example in a blind test compared side by side, and ignoring any differences irrelevant to the actual functionality of the intended purpose associated)?", "yes": "Q20", "no": "R2" },
@@ -126,7 +126,7 @@ const flowchart = [
   { "id": "Q23", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
 
   /* ===== WHEN YOU SHOULD ACT (Q24+) ===== */
-  { "id": "Q24", "type": "question", "text": "Does this address a future problem?", "yes": "Q25", "no": "Q28" },
+  { "id": "Q24", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q28", "no": "Q25" },
   { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q28" },
 
   /* Severity selection */
