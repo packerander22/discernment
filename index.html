@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Flow Chart</title>
+
+<!-- ⚖️ emoji favicon -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' x='.08em' font-size='90'%3E%E2%9A%96%EF%B8%8F%3C/text%3E%3C/svg%3E">
+
 <style>
   body { font-family: Arial, sans-serif; background: #f7f7f7; margin:0; padding:0; }
   .container { max-width: 650px; margin:auto; padding:20px; }
@@ -108,7 +112,7 @@
 
 <script>
 // ======= FLOW (Q0–Q35) =======
-// Intro screen (Q0), then your updated wording below.
+// Intro screen (Q0), then your updated wording.
 const flowchart = [
   /* START SCREEN */
   { "id": "Q0", "type": "info",
@@ -245,7 +249,8 @@ let currentThresholdPct = 90;
 // ======= APP LOGIC =======
 let historyStack = [];
 let currentNode = flowchart.find(n => n.id === "Q0");  // Start at intro
-let currentSegment = "If You Should Act"; // default label
+let currentSegment = "If You Should Act";               // default label
+let lastNodeId = "Q0";                                  // track last node for intro→IF flash
 
 function getSegmentForNodeId(id) {
   if (!id || id[0] !== 'Q') return currentSegment;
@@ -319,11 +324,15 @@ function renderNode(node) {
   }
 
   // Determine and apply segment AFTER entering node
+  const prevId = lastNodeId;
   const thisSegment = getSegmentForNodeId(node.id);
-  if (thisSegment !== currentSegment) {
-    currentSegment = thisSegment;
-    flashHeadingColor(currentSegment); // green for IF, gold for WHEN
+
+  // Flash if segment changed OR if we're coming from Q0 into the IF segment
+  const enteringIfFromIntro = (prevId === "Q0" && thisSegment === "If You Should Act");
+  if (thisSegment !== currentSegment || enteringIfFromIntro) {
+    flashHeadingColor(thisSegment); // green for IF, gold for WHEN
   }
+  currentSegment = thisSegment;
   setHeadingText(node.id);
 
   // Main text (with dynamic clause for R8/R9)
@@ -366,6 +375,9 @@ function renderNode(node) {
       btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
     }
   }
+
+  // record last node for intro→IF flash logic
+  lastNodeId = node.id;
 }
 
 /* ---------- Examples + Viz (Q15/Q17 special) ---------- */
@@ -565,23 +577,17 @@ function goBack() {
   currentNode = prev || currentNode; renderNode(currentNode);
 }
 function restart() {
-  historyStack = []; currentSegment = "If You Should Act";
-  currentNode = flowchart.find(n => n.id === "Q0"); renderNode(currentNode);
+  historyStack = [];
+  currentSegment = "If You Should Act";
+  lastNodeId = "Q0";
+  currentNode = flowchart.find(n => n.id === "Q0");
+  renderNode(currentNode);
 }
 
 /* ---------- Skip button: jump to Q24 ---------- */
 document.getElementById('skipBtn').addEventListener('click', () => {
   goToNode('Q24');
 });
-
-/* ---------- Segment handling ---------- */
-function getSegmentForNodeId(id) {
-  if (!id || id[0] !== 'Q') return currentSegment;
-  const m = /^Q(\d+)$/.exec(id);
-  if (!m) return currentSegment;
-  const num = parseInt(m[1], 10);
-  return num >= 24 ? "When You Should Act" : "If You Should Act";
-}
 
 /* ---------- Initial render ---------- */
 renderNode(currentNode);
