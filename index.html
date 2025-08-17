@@ -5,11 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Flow Chart</title>
 
-<!-- ⚖️ emoji favicon -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' x='.08em' font-size='90'%3E%E2%9A%96%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<!-- Favicons / PWA -->
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon_180.png">
+<link rel="manifest" href="/manifest.json">
+
+<!-- Optional PNG fallbacks -->
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon_16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon_32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/favicon_48.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon_64.png">
 
 <style>
-  body { font-family: Arial, sans-serif; background: #f7f7f7; margin:0; padding:0; }
+  :root { --btn-pad-y:10px; --btn-pad-x:12px; }
+  body { font-family: Arial, sans-serif; background:#f7f7f7; margin:0; padding:0; }
   .container { max-width: 650px; margin:auto; padding:20px; }
   .top-bar { display:flex; justify-content:space-between; margin-bottom:10px; }
   .card {
@@ -29,31 +40,8 @@
   .flash-gold { background-color:gold !important; color:#fff !important; }   /* WHEN */
   .flash-green { background-color:#2e7d32 !important; color:#fff !important;} /* IF */
 
-  .skip-btn {
-    flex:0 0 auto; padding:6px 10px; font-size:0.9em;
-    border:none; border-radius:5px; cursor:pointer;
-    background:#e9e9e9; color:#333;
-  }
-  .skip-btn:hover { background:#dedede; }
-
-  .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
-
-  /* Controls just under the text */
-  .controls-row { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 18px 0; }
-  .examples-toggle, .reasoning-toggle { display:flex; gap:8px; flex-wrap:wrap; }
-  .panel {
-    display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
-    margin-bottom: 18px; /* space above bottom buttons */
-  }
-  .panel p { margin:6px 0; }
-  .panel img { width:100%; height:auto; display:block; }
-
-  /* Buttons row at bottom */
-  .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
-  .buttons.center { justify-content:center; }
-
-  /* Buttons */
-  button { flex:1; padding:10px; font-size:1em; border:none; border-radius:5px; cursor:pointer; }
+  /* Buttons (global) */
+  button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
   button.yes { background:#4CAF50; color:#fff; }
   button.no { background:#F44336; color:#fff; }
   button.next { background:#2196F3; color:#fff; }
@@ -61,6 +49,47 @@
   button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
   button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; flex:0 0 auto; }
   button.active { outline: 2px solid #000; }
+
+  /* Skip button — exactly same height as other buttons, not scaled by header font */
+  .segment-heading .skip-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    flex:0 0 auto;
+    padding:var(--btn-pad-y) var(--btn-pad-x);
+    font-size:1rem;        /* decouple from 1.4em header */
+    line-height:1;         /* avoid tall lines */
+    border:none; border-radius:5px; cursor:pointer;
+    background:#e9e9e9; color:#333;
+  }
+  .segment-heading .skip-btn:hover { background:#dedede; }
+
+  .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
+
+  /* Controls just under the text — grid aligns with button row width */
+  .controls-row {
+    display:grid;
+    grid-template-columns: 1fr 1fr; /* two columns so 1 control = half width */
+    gap:10px;
+    margin:6px 0 18px 0;
+  }
+  /* Keep generic buttons stretching within their grid cell */
+  .controls-row button { width:100%; }
+
+  /* Previously: :only-child spanned full width. Now we keep half-width for examples. */
+  /* If you ever need a control to span full width, add class .full to that button. */
+  .controls-row .full { grid-column: 1 / -1; }
+  /* Ensure Examples stays half-width even when it's alone */
+  .controls-row .examples-btn:only-child { grid-column:auto; }
+
+  .panel {
+    display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
+    margin-bottom:18px; /* space above bottom buttons */
+  }
+  .panel p { margin:6px 0; }
+  .panel img { width:100%; height:auto; display:block; }
+
+  /* Buttons row at bottom */
+  .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
+  .buttons.center { justify-content:center; }
 
   /* Q26: centered number + slider with ticks */
   .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
@@ -88,7 +117,7 @@
     <div>
       <div id="text" class="text"></div>
 
-      <!-- Controls placed close to text -->
+      <!-- Controls placed close to text and aligned flush -->
       <div class="controls-row">
         <div id="reasoningToggleWrapper" class="reasoning-toggle"></div>
         <div id="examplesToggleWrapper" class="examples-toggle"></div>
@@ -112,11 +141,10 @@
 
 <script>
 // ======= FLOW (Q0–Q35) =======
-// Intro screen (Q0), then your updated wording.
 const flowchart = [
   /* START SCREEN */
   { "id": "Q0", "type": "info",
-    "text": "Welcome! This tool helps you decide both IF and WHEN to act on an issue.\nYou’ll answer simple Yes/No questions (and a severity slider later). Tap Next to begin.",
+    "text": "Welcome! This tool helps you decide both IF and WHEN to act on an issue.\\nYou’ll answer simple Yes/No questions (and a severity slider later). Tap Next to begin.",
     "next": "Q1"
   },
 
@@ -250,7 +278,7 @@ let currentThresholdPct = 90;
 let historyStack = [];
 let currentNode = flowchart.find(n => n.id === "Q0");  // Start at intro
 let currentSegment = "If You Should Act";               // default label
-let lastNodeId = "Q0";                                  // track last node for intro→IF flash
+let lastNodeId = "Q0";                                  // track last node
 
 function getSegmentForNodeId(id) {
   if (!id || id[0] !== 'Q') return currentSegment;
@@ -275,7 +303,7 @@ function setHeadingText(nodeId) {
     : "⏳ When You Should Act";
   title.textContent = text;
 
-  // Skip only in IF segment
+  // Show Skip only in IF segment
   skipBtn.style.display = (currentSegment === "If You Should Act") ? 'inline-block' : 'none';
 }
 
@@ -324,13 +352,12 @@ function renderNode(node) {
   }
 
   // Determine and apply segment AFTER entering node
-  const prevId = lastNodeId;
   const thisSegment = getSegmentForNodeId(node.id);
 
-  // Flash if segment changed OR if we're coming from Q0 into the IF segment
-  const enteringIfFromIntro = (prevId === "Q0" && thisSegment === "If You Should Act");
-  if (thisSegment !== currentSegment || enteringIfFromIntro) {
-    flashHeadingColor(thisSegment); // green for IF, gold for WHEN
+  // Flash ONLY when segment actually changes (IF ↔ WHEN),
+  // not when leaving the intro.
+  if (thisSegment !== currentSegment) {
+    flashHeadingColor(thisSegment);
   }
   currentSegment = thisSegment;
   setHeadingText(node.id);
@@ -376,7 +403,7 @@ function renderNode(node) {
     }
   }
 
-  // record last node for intro→IF flash logic
+  // record last node (not used for flashing anymore, but kept if needed later)
   lastNodeId = node.id;
 }
 
