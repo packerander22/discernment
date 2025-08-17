@@ -26,7 +26,7 @@
   .examples-toggle, .reasoning-toggle { display:flex; gap:8px; flex-wrap:wrap; }
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
-    margin-bottom: 18px; /* extra space above bottom buttons */
+    margin-bottom: 18px; /* space above bottom buttons */
   }
   .panel p { margin:6px 0; }
   .panel img { width:100%; height:auto; display:block; }
@@ -45,7 +45,7 @@
   button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; flex:0 0 auto; }
   button.active { outline: 2px solid #000; }
 
-  /* Q26: simple, centered number + slider with ticks */
+  /* Q26: centered number + slider with ticks */
   .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
   .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
   .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
@@ -91,8 +91,16 @@
 </div>
 
 <script>
-// ======= FLOW (Q1–Q35) =======
+// ======= FLOW (Q0–Q35) =======
+// Added Q0 as a start screen (info).
 const flowchart = [
+  /* START SCREEN */
+  { "id": "Q0", "type": "info",
+    "text": "Welcome! This tool helps you decide both IF and WHEN to act on an issue.\nYou’ll answer simple Yes/No questions (and a severity slider later). Tap Next to begin.",
+    "next": "Q1"
+  },
+
+  /* ===== IF YOU SHOULD ACT (Q1–Q23) ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
   { "id": "Q2",  "type": "question", "text": "Is there a known problem or potential QoL change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
   { "id": "Q3",  "type": "question", "text": "Is there cause for a potential problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q4" },
@@ -117,11 +125,11 @@ const flowchart = [
   { "id": "Q22", "type": "question", "text": "Is it logically worth solving/preventing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q24", "no": "Q23" },
   { "id": "Q23", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
 
-  /* ===== WHEN YOU SHOULD ACT (begins here) ===== */
+  /* ===== WHEN YOU SHOULD ACT (Q24+) ===== */
   { "id": "Q24", "type": "question", "text": "Does this address a current problem or potential QoL change?", "yes": "Q28", "no": "Q25" },
   { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q28" },
 
-  /* NEW: Severity selection (simple, visible). Text empty so only number/slider show. */
+  /* Severity selection */
   { "id": "Q26", "type": "info", "text": "Set the catastrophic severity if you waited too long to act. (1-10)", "next": "Q27" },
 
   { "id": "Q27", "type": "question", "text": "Would there be guaranteed clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
@@ -134,6 +142,7 @@ const flowchart = [
   { "id": "Q34", "type": "question", "text": "Is there a better time further down the road to solve/address this to maximize value?", "yes": "R7", "no": "R6" },
   { "id": "Q35", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R5" },
 
+  /* RESULTS */
   { "id": "R1", "type": "result", "text": "Worry about this once those things are addressed and the time is right." },
   { "id": "R2", "type": "result", "text": "Don’t worry about it." },
   { "id": "R3", "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find a solution or solutions. If not, put in as much effort as you deem worth it." },
@@ -214,14 +223,14 @@ const examples = {
 };
 
 // ======= STATE (severity threshold) =======
-// Start at severity=1 → threshold 90% if nothing stored.
+// Severity 1 → threshold 90% by default if nothing stored.
 const stored = parseInt(localStorage.getItem('pm_threshold_pct') || '0', 10);
 let currentThresholdPct = (!isNaN(stored) && stored > 0 && stored <= 100) ? stored : 90;
 
 // ======= APP LOGIC =======
 let historyStack = [];
-let currentNode = flowchart.find(n => n.id === "Q1");
-let currentSegment = "If You Should Act"; // default
+let currentNode = flowchart.find(n => n.id === "Q0");  // Start at Q0
+let currentSegment = "If You Should Act"; // default segment label
 
 function getSegmentForNodeId(id) {
   if (!id || id[0] !== 'Q') return currentSegment;
@@ -240,19 +249,16 @@ function getSegmentIcon(segment) { return segment === "If You Should Act" ? "⚖
 
 /* ---- Dynamic clause helpers for R8/R9 ---- */
 function buildThresholdClause() {
-  // severity 10 => threshold 0 → special phrase
   if (currentThresholdPct <= 0) {
     return 'there is even a small chance of failure';
   }
   return `the estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
 }
 function applyThresholdClauseTo(text) {
-  // Replace the known full clause first
   const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
   if (fullClause.test(text)) {
     return text.replace(fullClause, buildThresholdClause());
   }
-  // Fallback: narrower replacement if wording drifts
   const fallbackClause = /nearing or greater than\s*50%/i;
   if (fallbackClause.test(text)) {
     const repl = (currentThresholdPct <= 0)
@@ -260,7 +266,6 @@ function applyThresholdClauseTo(text) {
       : `nearing or greater than ${currentThresholdPct}%`;
     return text.replace(fallbackClause, repl);
   }
-  // Last resort: generic percentage swap
   if (currentThresholdPct > 0) {
     return text.replace(/50%/g, `${currentThresholdPct}%`);
   } else {
@@ -432,7 +437,7 @@ function openSharedPanel(panel, mode) {
   if (mode === 'viz') { if (vzBtn) vzBtn.textContent = 'Hide visualization'; if (exBtn) exBtn.textContent = 'Show examples'; }
 }
 
-/* ---------- Q26: Simple centered number + slider (with ticks) ---------- */
+/* ---------- Q26: centered number + slider (ticks) ---------- */
 function showOrHideRiskInline(node) {
   const container = document.getElementById('riskInline');
   container.innerHTML = '';
@@ -444,6 +449,7 @@ function showOrHideRiskInline(node) {
   container.style.display = 'block';
   container.setAttribute('aria-hidden','false');
 
+  // Prompt (shows above number/slider as part of node.text)
   // Large centered number
   const sevDisplay = document.createElement('div');
   sevDisplay.className = 'sev-display';
@@ -465,8 +471,8 @@ function showOrHideRiskInline(node) {
   sevDisplay.textContent = slider.value;
 
   function applyFromSeverity(sev) {
-    const thr = 100 - sev*10;
-    currentThresholdPct = thr;
+    const thr = 100 - sev*10;         // linear mapping
+    currentThresholdPct = thr;        // e.g., sev=1 => 90%
     sevDisplay.textContent = String(sev);
     localStorage.setItem('pm_threshold_pct', String(thr));
   }
@@ -536,7 +542,7 @@ function goBack() {
 }
 function restart() {
   historyStack = []; currentSegment = "If You Should Act";
-  currentNode = flowchart.find(n => n.id === "Q1"); renderNode(currentNode);
+  currentNode = flowchart.find(n => n.id === "Q0"); renderNode(currentNode);
 }
 
 /* ---------- Start ---------- */
