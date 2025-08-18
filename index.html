@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Flow Chart</title>
 
+<!-- Favicons -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
@@ -16,6 +17,8 @@
 <link rel="icon" type="image/png" sizes="384x384" href="favicon_384.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon_512.png">
 <link rel="manifest" href="site.webmanifest">
+<!-- Prefer highest-res by providing a generic icon last -->
+<link rel="icon" type="image/png" href="favicon_512.png">
 
 <style>
   :root { --btn-pad-y:10px; --btn-pad-x:12px; }
@@ -33,15 +36,13 @@
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
     border-bottom:2px solid #ddd; gap:12px;
-    transition: color .5s ease; /* only color animates now */
+    transition: color .5s ease; /* color-only flash */
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
-  /* Size and align the SVG logo in the Discernment heading */
   .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
 
-  /* Flash animations: text color only (no background highlight) */
-  .flash-gold { color: goldenrod !important; }
-  .flash-green { color: #2e7d32 !important; }
+  .flash-gold { color: goldenrod !important; }  /* WHEN */
+  .flash-green { color: #2e7d32 !important; }  /* IF */
 
   /* Buttons (global) */
   button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
@@ -51,15 +52,15 @@
   button.back { background:#555; color:#fff; flex:0 0 auto; }
   button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
   button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; flex:0 0 auto; }
-  button.active { outline: 2px solid #000; }
+  button.active { outline:2px solid #000; }
 
-  /* Skip button — same height as other buttons */
+  /* Skip button */
   .segment-heading .skip-btn {
     display:inline-flex; align-items:center; justify-content:center;
     flex:0 0 auto;
     padding:var(--btn-pad-y) var(--btn-pad-x);
-    font-size:1rem;        /* decouple from 1.8em header */
-    line-height:1;         /* avoid tall lines */
+    font-size:1rem;
+    line-height:1;
     border:none; border-radius:5px; cursor:pointer;
     background:#e9e9e9; color:#333;
   }
@@ -67,36 +68,28 @@
 
   .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
 
-  /* Controls just under the text — grid aligns with button row width */
+  /* Controls under the text */
   .controls-row {
     display:grid;
-    grid-template-columns: 1fr 1fr; /* two columns so 1 control = half width */
+    grid-template-columns: 1fr 1fr;
     gap:10px;
     margin:6px 0 18px 0;
   }
-  /* Keep generic buttons stretching within their grid cell */
   .controls-row button { width:100%; }
-
-  /* If you ever need a control to span full width, add class .full to that button. */
-  .controls-row .full { grid-column: 1 / -1; }
-
-  /* Ensure Examples/Viz/Reasoning stay half-width even if alone */
-  .controls-row .examples-btn:only-child,
-  .controls-row .viz-btn:only-child,
-  .controls-row .reasoning-btn:only-child { grid-column:auto; width:100%; }
+  .controls-row .full { grid-column:1 / -1; }
 
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
-    margin-bottom:18px; /* space above bottom buttons */
+    margin-bottom:18px;
   }
   .panel p { margin:6px 0; }
   .panel img { width:100%; height:auto; display:block; }
 
-  /* Buttons row at bottom */
+  /* Bottom buttons */
   .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
   .buttons.center { justify-content:center; }
 
-  /* Q26: centered number + slider with ticks */
+  /* Q25: centered number + slider with ticks */
   .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
   .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
   .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
@@ -124,15 +117,14 @@
 
       <!-- Controls placed close to text and aligned flush -->
       <div class="controls-row">
-        <!-- EXAMPLES on the LEFT; REASONING on the RIGHT -->
         <div id="examplesToggleWrapper" class="examples-toggle"></div>
         <div id="reasoningToggleWrapper" class="reasoning-toggle"></div>
       </div>
 
-      <!-- Shared panel (examples OR Q15/Q17 visualization) -->
+      <!-- Shared panel (examples OR Q14/Q16 visualization) -->
       <div id="sharedPanel" class="panel" aria-hidden="true"></div>
 
-      <!-- Always-visible risk slider on Q26 -->
+      <!-- Always-visible risk slider on Q25 -->
       <div id="riskInline" class="risk-inline" aria-hidden="true"></div>
 
       <!-- Percentage reasoning panel (R8/R9 only) -->
@@ -146,12 +138,14 @@
 </div>
 
 <script>
-// ======= FLOW (Q0–Q35) =======
+// ======= FLOW (Q0–Q34) =======
+// After removing original Q14, IDs >=15 were decremented by 1.
+// IF section is Q1–Q22; WHEN section starts at Q23.
 const flowchart = [
   /* START SCREEN */
   { "id": "Q0", "type": "info", "text": "Welcome! This tool helps you decide both IF and WHEN you should act on an issue.\nYou’ll answer simple Yes/No questions (and a slider later). Tap Next to begin.", "next": "Q1" },
 
-  /* ===== IF YOU SHOULD ACT (Q1–Q23) ===== */
+  /* ===== IF YOU SHOULD ACT (Q1–Q22) ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
   { "id": "Q2",  "type": "question", "text": "Is there a current real problem or desired functional QoL (quality of life) improvement, rather than just a 'problem'/preference that doesn’t affect performance or outcomes?", "yes": "Q5", "no": "Q3" },
   { "id": "Q3",  "type": "question", "text": "Is there cause for a potential real problem, rather than just a 'problem' that doesn’t affect performance or outcomes?", "yes": "Q5", "no": "Q4" },
@@ -161,36 +155,36 @@ const flowchart = [
   { "id": "Q7",  "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and worrying and obsessing won’t change anything and is unhealthy. Is there anything further you can do?", "yes": "Q9", "no": "Q8" },
   { "id": "Q8",  "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s within your control or in a better overall way?", "yes": "R4", "no": "R2" },
   { "id": "Q9",  "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be valuable in the future?", "yes": "Q10", "no": "Q11" },
-  { "id": "Q10", "type": "question", "text": "Would the information alone gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q24", "no": "Q11" },
+  { "id": "Q10", "type": "question", "text": "Would the information alone gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q23", "no": "Q11" },
   { "id": "Q11", "type": "question", "text": "Is it worth your resources to solve it?", "yes": "Q13", "no": "Q12" },
   { "id": "Q12", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
-  { "id": "Q13", "type": "question", "text": "Would the benefits of addressing this issue likely outweigh any downsides it might likely cause?", "yes": "Q15", "no": "Q12" },
-  { "id": "Q15", "type": "question", "text": "Does addressing this issue involve a diminishing returns curve for effort applied?", "yes": "Q16", "no": "Q17" },
-  { "id": "Q16", "type": "info",     "text": "Find the point of diminishing returns and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL without the addictive pull and possibly even in a better overall way. Use that better option whenever possible. If it’s unavailable, you may use the original approach—but only with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q17" },
-  { "id": "Q17", "type": "question", "text": "Does addressing this issue directly involve an inverted-U curve for specific effort applied with an objective sweet spot where clear information is available to you?", "yes": "Q18", "no": "Q19" },
-  { "id": "Q18", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q24" },
-  { "id": "Q19", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the issue was solved/addressed?", "yes": "Q20", "no": "R2" },
-  { "id": "Q20", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the long term?", "yes": "Q24", "no": "Q21" },
-  { "id": "Q21", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the short term?", "yes": "Q22", "no": "R2" },
-  { "id": "Q22", "type": "question", "text": "Is it logically worth solving/addressing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q24", "no": "Q23" },
-  { "id": "Q23", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
+  { "id": "Q13", "type": "question", "text": "Would the benefits of addressing this issue likely outweigh any downsides it might likely cause?", "yes": "Q14", "no": "Q12" },
+  { "id": "Q14", "type": "question", "text": "Does addressing this issue involve a diminishing returns curve for effort applied?", "yes": "Q15", "no": "Q16" },
+  { "id": "Q15", "type": "info",     "text": "Find the point of diminishing returns and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL without the addictive pull and possibly even in a better overall way. Use that better option whenever possible. If it’s unavailable, you may use the original approach—but only with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q16" },
+  { "id": "Q16", "type": "question", "text": "Does addressing this issue directly involve an inverted-U curve for specific effort applied with an objective sweet spot where clear information is available to you?", "yes": "Q17", "no": "Q18" },
+  { "id": "Q17", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q23" },
+  { "id": "Q18", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the issue was solved/addressed?", "yes": "Q19", "no": "R2" },
+  { "id": "Q19", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the long term?", "yes": "Q23", "no": "Q20" },
+  { "id": "Q20", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the short term?", "yes": "Q21", "no": "R2" },
+  { "id": "Q21", "type": "question", "text": "Is it logically worth solving/addressing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q23", "no": "Q22" },
+  { "id": "Q22", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
 
-  /* ===== WHEN YOU SHOULD ACT (Q24+) ===== */
-  { "id": "Q24", "type": "question", "text": "Does this address a future problem?", "yes": "Q25", "no": "Q28" },
-  { "id": "Q25", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q26", "no": "Q28" },
+  /* ===== WHEN YOU SHOULD ACT (Q23+) ===== */
+  { "id": "Q23", "type": "question", "text": "Does this address a future problem?", "yes": "Q24", "no": "Q27" },
+  { "id": "Q24", "type": "question", "text": "Does addressing this issue involve preventative maintenance?", "yes": "Q25", "no": "Q27" },
 
   /* Severity selection */
-  { "id": "Q26", "type": "info", "text": "Set the catastrophic severity if you waited too long to act. (1-10)", "next": "Q27" },
+  { "id": "Q25", "type": "info", "text": "Set the catastrophic severity if you waited too long to act. (1-10)", "next": "Q26" },
 
-  { "id": "Q27", "type": "question", "text": "Would there be guaranteed clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
-  { "id": "Q28", "type": "question", "text": "Is this the best solution you know of assuming you could do it now?", "yes": "Q30", "no": "Q29" },
-  { "id": "Q29", "type": "question", "text": "Have you considered all better solutions you know of?", "yes": "Q30", "no": "R4" },
-  { "id": "Q30", "type": "question", "text": "Is this solution currently available?", "yes": "Q34", "no": "Q32" },
-  { "id": "Q31", "type": "question", "text": "Is there a better time down the road to solve/address this to maximize value?", "yes": "Q32", "no": "R6" },
-  { "id": "Q32", "type": "question", "text": "Assuming you waited until it was available, would the benefits of using this solution outweigh the downsides of having to wait?", "yes": "Q35", "no": "Q33" },
-  { "id": "Q33", "type": "question", "text": "Is there a next best solution?", "yes": "R4", "no": "R3" },
-  { "id": "Q34", "type": "question", "text": "Is there a better time further down the road to solve/address this to maximize value?", "yes": "R7", "no": "R6" },
-  { "id": "Q35", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R5" },
+  { "id": "Q26", "type": "question", "text": "Would there be guaranteed clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
+  { "id": "Q27", "type": "question", "text": "Is this the best solution you know of assuming you could do it now?", "yes": "Q29", "no": "Q28" },
+  { "id": "Q28", "type": "question", "text": "Have you considered all better solutions you know of?", "yes": "Q29", "no": "R4" },
+  { "id": "Q29", "type": "question", "text": "Is this solution currently available?", "yes": "Q33", "no": "Q31" },
+  { "id": "Q30", "type": "question", "text": "Is there a better time down the road to solve/address this to maximize value?", "yes": "Q31", "no": "R6" },
+  { "id": "Q31", "type": "question", "text": "Assuming you waited until it was available, would the benefits of using this solution outweigh the downsides of having to wait?", "yes": "Q34", "no": "Q32" },
+  { "id": "Q32", "type": "question", "text": "Is there a next best solution?", "yes": "R4", "no": "R3" },
+  { "id": "Q33", "type": "question", "text": "Is there a better time further down the road to solve/address this to maximize value?", "yes": "R7", "no": "R6" },
+  { "id": "Q34", "type": "question", "text": "Is there a better time further down the road than when this solution is available to solve/address this to maximize value?", "yes": "R7", "no": "R5" },
 
   /* RESULTS */
   { "id": "R1", "type": "result", "text": "Worry about this once those things are addressed and the time is right." },
@@ -203,8 +197,8 @@ const flowchart = [
   { "id": "R8", "type": "result", "text": "Wait until those signs are indicated, the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." },
   { "id": "R9", "type": "result", "text": "Wait until the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." }
 ];
-  
-// ===== EXAMPLES (Applies vs Does not apply) =====
+
+/* ===== EXAMPLES (IDs match the renumbered flow) ===== */
 const examples = {
   Q1:[ "Example 1: A major work/school deadline is today; deciding on a new TV can wait. (Applies here)",
        "Example 2: A free afternoon with no pressing tasks; you can consider smaller decisions now. (Does not apply here)"],
@@ -232,60 +226,59 @@ const examples = {
        "Example 2: All other options are worse across time/cost/reliability. (Does not apply here)"],
   Q13:["Example 1: Repairing a roof leak prevents serious damage. (Applies here)",
        "Example 2: A risky modification voids the warranty for marginal benefit. (Does not apply here)"],
-  Q15:["Example 1: Polishing slides beyond ‘good enough’ adds little impact. (Applies here)",
+  Q14:["Example 1: Polishing slides beyond ‘good enough’ adds little impact. (Applies here)",
        "Example 2: Fixing a critical bug—each hour matters; no early plateau. (Does not apply here)"],
-  Q17:["Example 1: Exercise intensity has a sweet spot; too much/too little harms results. (Applies here)",
+  Q16:["Example 1: Exercise intensity has a sweet spot; too much/too little harms results. (Applies here)",
        "Example 2: Filing taxes—no optimal ‘intensity’; you just finish it. (Does not apply here)"],
-  Q19:["Example 1: Upgrading HDD to SSD is clearly noticeable. (Applies here)",
+  Q18:["Example 1: Upgrading HDD to SSD is clearly noticeable. (Applies here)",
        "Example 2: Gold-plated HDMI vs regular—no functional difference. (Does not apply here)"],
-  Q20:["Example 1: Sealing driveway cracks extends lifespan. (Applies here)",
+  Q19:["Example 1: Sealing driveway cracks extends lifespan. (Applies here)",
        "Example 2: A cosmetic fix that wears off in a week. (Does not apply here)"],
-  Q21:["Example 1: Decongestant allows sleep tonight. (Applies here)",
+  Q20:["Example 1: Decongestant allows sleep tonight. (Applies here)",
        "Example 2: Reorganizing a drawer doesn’t change today’s urgent issue. (Does not apply here)"],
-  Q22:["Example 1: Wearing a seatbelt is worth doing every time. (Applies here)",
+  Q21:["Example 1: Wearing a seatbelt is worth doing every time. (Applies here)",
        "Example 2: Washing the car daily isn’t worth it without special reason. (Does not apply here)"],
-  Q23:["Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
+  Q22:["Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
        "Example 2: No alternative provides a better long-term outcome. (Does not apply here)"],
-  Q24:["Example 1: Replacing a timing belt before expected lifespan ends. (Applies here)",
+  Q23:["Example 1: Replacing a timing belt before expected lifespan ends. (Applies here)",
        "Example 2: Fixing a screen that already cracked (current problem, not future). (Does not apply here)"],
-  Q25:["Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
+  Q24:["Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
        "Example 2: Repainting a wall for a new color. (Does not apply here)"],
-  Q27:["Example 1: Squealing brakes—clear warning sign. (Applies here)",
+  Q26:["Example 1: Squealing brakes—clear warning sign. (Applies here)",
        "Example 2: Timing belt—can fail without warning. (Does not apply here)"],
-  Q28:["Example 1: You’d pick this method if you could do it now. (Applies here)",
+  Q27:["Example 1: You’d pick this method if you could do it now. (Applies here)",
        "Example 2: You know a better option but aren’t choosing it. (Does not apply here)"],
-  Q29:["Example 1: You compared and ruled out better options. (Applies here)",
+  Q28:["Example 1: You compared and ruled out better options. (Applies here)",
        "Example 2: You haven’t checked obvious alternatives. (Does not apply here)"],
-  Q30:["Example 1: Part is in stock; appointments available. (Applies here)",
+  Q29:["Example 1: Part is in stock; appointments available. (Applies here)",
        "Example 2: Part is backordered for two weeks. (Does not apply here)"],
-  Q31:["Example 1: Off-season timing makes it cheaper and easier. (Applies here)",
+  Q30:["Example 1: Off-season timing makes it cheaper and easier. (Applies here)",
        "Example 2: Waiting won’t improve value; risk may rise. (Does not apply here)"],
-  Q32:["Example 1: Waiting a week saves a lot with little downside. (Applies here)",
+  Q31:["Example 1: Waiting a week saves a lot with little downside. (Applies here)",
        "Example 2: Waiting would cause outages or stress. (Does not apply here)"],
-  Q33:["Example 1: A solid Plan B works now. (Applies here)",
+  Q32:["Example 1: A solid Plan B works now. (Applies here)",
        "Example 2: No next-best option reasonably solves it. (Does not apply here)"],
-  Q34:["Example 1: Doing it during a scheduled break reduces disruption. (Applies here)",
+  Q33:["Example 1: Doing it during a scheduled break reduces disruption. (Applies here)",
        "Example 2: There’s no later window that beats now. (Does not apply here)"],
-  Q35:["Example 1: After availability, doing it during a later lull saves hassle. (Applies here)",
+  Q34:["Example 1: After availability, doing it during a later lull saves hassle. (Applies here)",
        "Example 2: Once available, sooner is clearly better. (Does not apply here)"]
 };
 
 // ======= STATE (severity threshold) =======
-// Default severity = 1 → threshold 90% (no localStorage).
+// Default severity = 1 → threshold 90%.
 let currentThresholdPct = 90;
 
 // ======= APP LOGIC =======
 let historyStack = [];
 let currentNode = flowchart.find(n => n.id === "Q0");  // Start at intro
 let currentSegment = "If You Should Act";               // default label
-let lastNodeId = "Q0";                                  // track last node
 
 function getSegmentForNodeId(id) {
   if (!id || id[0] !== 'Q') return currentSegment;
   const m = /^Q(\d+)$/.exec(id);
   if (!m) return currentSegment;
   const num = parseInt(m[1], 10);
-  return num >= 24 ? "When You Should Act" : "If You Should Act";
+  return num >= 23 ? "When You Should Act" : "If You Should Act";
 }
 
 function setHeadingText(nodeId) {
@@ -293,15 +286,18 @@ function setHeadingText(nodeId) {
   const skipBtn = document.getElementById('skipBtn');
 
   if (nodeId === 'Q0') {
-    // Use the SVG as a small logo next to "Discernment"
-    title.innerHTML = "<img src='favicon.svg' alt='Discernment Logo' class='logo'>Discernment";
+    // High-res logo next to Discernment with srcset for crisp render
+    title.innerHTML =
+      "<img src='favicon_512.png' " +
+      "srcset='favicon_64.png 1x, favicon_128.png 2x, favicon_256.png 3x, favicon_512.png 4x' " +
+      "alt='Discernment Logo' class='logo'>Discernment";
     skipBtn.style.display = 'none';
     return;
   }
 
   const text = (currentSegment === "If You Should Act")
-    ? "If You Should Act"
-    : "When You Should Act";
+    ? "⚖️ If You Should Act"
+    : "⏳ When You Should Act";
   title.textContent = text;
 
   // Show Skip only in IF segment
@@ -309,6 +305,8 @@ function setHeadingText(nodeId) {
 }
 
 function flashHeadingColor(targetSegment) {
+  // Never flash on the intro heading
+  if (currentNode && currentNode.id === 'Q0') return;
   const headingDiv = document.getElementById('segmentHeading');
   const cls = (targetSegment === "If You Should Act") ? 'flash-green' : 'flash-gold';
   headingDiv.classList.add(cls);
@@ -326,27 +324,23 @@ function renderNode(node) {
     collapseSharedPanel(); collapseReasoningPanel();
     showOrHideRiskInline(null);
     document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
-    setHeadingText(''); // keep whatever was set
+    setHeadingText('');
     document.getElementById('restartTop').style.display = 'inline-block';
     return;
   }
 
-  const previousId = lastNodeId;
+  const previousSegment = currentSegment;
   const thisSegment = getSegmentForNodeId(node.id);
 
-  // Flash on actual segment change (IF <-> WHEN)
-  if (thisSegment !== currentSegment) {
+  // Flash only on true segment changes (IF ↔ WHEN), never on Q0
+  if (thisSegment !== previousSegment && node.id !== 'Q0') {
     flashHeadingColor(thisSegment);
-  }
-  // Also flash green when leaving intro (Q0) into the first IF question
-  if (previousId === "Q0" && thisSegment === "If You Should Act") {
-    flashHeadingColor("If You Should Act");
   }
 
   currentSegment = thisSegment;
   setHeadingText(node.id);
 
-  // Main text (with dynamic clause for R8/R9)
+  // Text (with dynamic clause update for R8/R9)
   const textDiv = document.getElementById('text');
   let displayText = node.text || '';
   if (node.id === 'R8' || node.id === 'R9') {
@@ -354,16 +348,16 @@ function renderNode(node) {
   }
   textDiv.textContent = displayText;
 
-  // Back button visibility
+  // Back visibility
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
 
   // Examples / Viz controls & panel
   setupAuxToggles(node);
 
-  // Reasoning (button near text) on R8/R9
+  // Reasoning (R8/R9)
   setupReasoning(node);
 
-  // Risk slider inline on Q26 only
+  // Risk slider inline on Q25 only
   showOrHideRiskInline(node);
 
   // Bottom buttons
@@ -386,8 +380,6 @@ function renderNode(node) {
       btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
     }
   }
-
-  lastNodeId = node.id;
 }
 
 /* ---- Dynamic clause helpers for R8/R9 ---- */
@@ -398,7 +390,7 @@ function buildThresholdClause() {
 function applyThresholdClauseTo(text) {
   const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
   if (fullClause.test(text)) return text.replace(fullClause, buildThresholdClause());
-  const fallbackClause = /nearing or greater than\\s*50%/i;
+  const fallbackClause = /nearing or greater than\s*50%/i;
   if (fallbackClause.test(text)) {
     const repl = (currentThresholdPct <= 0)
       ? 'even a small chance of failure'
@@ -409,6 +401,7 @@ function applyThresholdClauseTo(text) {
   return text.replace(/0%/g, 'even a small chance of failure');
 }
 
+/* ---------- Panels ---------- */
 function collapseSharedPanel() {
   const panel = document.getElementById('sharedPanel');
   panel.style.display = 'none';
@@ -421,7 +414,6 @@ function collapseSharedPanel() {
     btn.textContent = label; btn.setAttribute('aria-expanded','false'); btn.classList.remove('active');
   });
 }
-
 function openSharedPanel(panel, mode) {
   panel.style.display = 'block';
   panel.setAttribute('aria-hidden','false');
@@ -446,7 +438,7 @@ function setupAuxToggles(node) {
 
   if (node.type !== 'question') return;
 
-  const isSpecial = node.id === 'Q15' || node.id === 'Q17';
+  const isSpecial = node.id === 'Q14' || node.id === 'Q16';
 
   const examplesBtn = document.createElement('button');
   examplesBtn.textContent = 'Show examples';
@@ -481,8 +473,8 @@ function setupAuxToggles(node) {
   if (isSpecial && vizBtn) {
     vizBtn.onclick = () => {
       const isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
-      const src = node.id === 'Q15' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
-      const alt = node.id === 'Q15'
+      const src = node.id === 'Q14' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
+      const alt = node.id === 'Q14'
         ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
         : 'Inverted-U Curve: Effort/Resources vs Functional Results';
       if (isOpenViz) {
@@ -510,17 +502,17 @@ function renderExamples(panel, nodeId) {
     panel.appendChild(p);
   });
 }
-
 function renderViz(panel, src, alt) {
   panel.innerHTML = '';
   const img = document.createElement('img'); img.src = src; img.alt = alt;
   panel.appendChild(img);
 }
 
+/* ---------- Q25: severity slider (ticks), default severity=1 ---------- */
 function showOrHideRiskInline(node) {
   const container = document.getElementById('riskInline');
   container.innerHTML = '';
-  if (!node || node.id !== 'Q26') {
+  if (!node || node.id !== 'Q25') {
     container.style.display = 'none';
     container.setAttribute('aria-hidden','true');
     return;
@@ -541,8 +533,8 @@ function showOrHideRiskInline(node) {
   slider.value = '1';
 
   function applyFromSeverity(sev) {
-    const thr = 100 - sev * 10;
-    currentThresholdPct = thr;
+    const thr = 100 - sev * 10;  // linear
+    currentThresholdPct = thr;   // sev=1 → 90%
     sevDisplay.textContent = String(sev);
   }
   applyFromSeverity(1);
@@ -557,6 +549,7 @@ function showOrHideRiskInline(node) {
   container.appendChild(ticks);
 }
 
+/* ---------- Reasoning panel (chart on R8/R9; button near text) ---------- */
 function setupReasoning(node) {
   const wrap = document.getElementById('reasoningToggleWrapper');
   const panel = document.getElementById('reasoningPanel');
@@ -585,6 +578,7 @@ function setupReasoning(node) {
   panel.appendChild(img);
 }
 
+/* ---------- Nav ---------- */
 function makeButton(label, cls, action) {
   const btn = document.createElement('button');
   btn.textContent = label; btn.className = cls; btn.onclick = action; return btn;
@@ -602,14 +596,13 @@ function goBack() {
 function restart() {
   historyStack = [];
   currentSegment = "If You Should Act";
-  lastNodeId = "Q0";
   currentNode = flowchart.find(n => n.id === "Q0");
   renderNode(currentNode);
 }
 
-/* ---------- Skip button: jump to Q24 ---------- */
+/* ---------- Skip button: jump to first WHEN (Q23) ---------- */
 document.getElementById('skipBtn').addEventListener('click', () => {
-  goToNode('Q24');
+  goToNode('Q23');
 });
 
 /* ---------- Initial render ---------- */
