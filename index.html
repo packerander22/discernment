@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Flow Chart</title>
 
-<!-- Favicons (keep all sizes) + prefer highest-res by adding generic link last -->
+<!-- Favicon set (keep all sizes) + prefer highest-res by adding generic link last -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
@@ -51,7 +51,8 @@
   button.next { background:#2196F3; color:#fff; }
   button.back { background:#555; color:#fff; flex:0 0 auto; }
   button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
-  button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; flex:0 0 auto; }
+  button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; }
+  .ctrl-btn { flex:1; } /* make control buttons fill their half */
   button.active { outline:2px solid #000; }
 
   /* Skip button */
@@ -68,20 +69,17 @@
 
   .text { font-size:1.3em; margin-bottom:12px; white-space:pre-wrap; }
 
-  /* Controls under the text: weighted two-column grid (ghost right column keeps alignment) */
+  /* Controls under the text: two equal halves; right acts as a ghost spacer when empty */
   .controls-row {
-    display:grid;
-    grid-template-columns: 1.25fr 0.75fr; /* left stretches closer to center */
+    display:flex;
     gap:10px;
     margin:6px 0 18px 0;
   }
-  .left-controls {
-    display:grid;
-    grid-template-columns: 1fr 1fr; /* Examples + Reasoning side-by-side */
+  .left-controls, .right-controls {
+    flex:1;
+    display:flex;
     gap:10px;
   }
-  .right-controls { display:grid; grid-template-columns: 1fr; gap:10px; }
-  .controls-row button { width:100%; }
 
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
@@ -120,7 +118,7 @@
     <div>
       <div id="text" class="text"></div>
 
-      <!-- Controls placed close to text and aligned flush -->
+      <!-- Controls placed close to text and aligned with Yes/No widths -->
       <div class="controls-row">
         <div id="leftControlsWrapper" class="left-controls"></div>
         <div id="rightControlsWrapper" class="right-controls"></div>
@@ -408,7 +406,7 @@ function collapseSharedPanel() {
     panel.setAttribute('aria-hidden','true');
     panel.dataset.mode = '';
   }
-  // Reset labels only if wrappers exist
+  // Reset labels
   const leftWrap  = document.getElementById('leftControlsWrapper');
   const rightWrap = document.getElementById('rightControlsWrapper');
   leftWrap?.querySelectorAll('.examples-btn')?.forEach(btn => {
@@ -422,7 +420,6 @@ function collapseSharedPanel() {
     btn.classList.remove('active');
   });
 }
-
 function collapseReasoningPanel() {
   const panel   = document.getElementById('reasoningPanel');
   const leftWrap = document.getElementById('leftControlsWrapper');
@@ -437,7 +434,6 @@ function collapseReasoningPanel() {
     btn.classList.remove('active');
   }
 }
-
 function openSharedPanel(panel, mode) {
   if (!panel) return;
   panel.style.display = 'block';
@@ -460,8 +456,8 @@ function openSharedPanel(panel, mode) {
 
 /* ---------- Controls under the text ---------- */
 function setupAuxToggles(node) {
-  const leftWrap = document.getElementById('leftControlsWrapper');   // LEFT inner grid
-  const rightWrap = document.getElementById('rightControlsWrapper'); // RIGHT column
+  const leftWrap = document.getElementById('leftControlsWrapper');   // LEFT half
+  const rightWrap = document.getElementById('rightControlsWrapper'); // RIGHT half
   const panel = document.getElementById('sharedPanel');
 
   leftWrap.innerHTML = '';
@@ -469,11 +465,11 @@ function setupAuxToggles(node) {
   collapseSharedPanel();
   panel.innerHTML = '';
 
-  // QUESTIONS: show Examples (left)
   if (node.type === 'question') {
+    // Examples (always left)
     const examplesBtn = document.createElement('button');
     examplesBtn.textContent = 'Show examples';
-    examplesBtn.className = 'examples-btn';
+    examplesBtn.className = 'examples-btn ctrl-btn';
     examplesBtn.setAttribute('aria-expanded', 'false');
     leftWrap.appendChild(examplesBtn);
 
@@ -486,17 +482,16 @@ function setupAuxToggles(node) {
         openSharedPanel(panel, 'examples');
         examplesBtn.setAttribute('aria-expanded','true');
         examplesBtn.classList.add('active');
-        // If a viz button exists, reset it
         const vizBtn = rightWrap.querySelector('.viz-btn');
         if (vizBtn) { vizBtn.setAttribute('aria-expanded','false'); vizBtn.classList.remove('active'); }
       }
     };
 
-    // Add Viz (right) for Q14 (diminishing returns) and Q16 (inverted-U)
+    // Visualization (right) only for Q14 (diminishing returns) and Q16 (inverted-U)
     if (node.id === 'Q14' || node.id === 'Q16') {
       const vizBtn = document.createElement('button');
       vizBtn.textContent = 'Show visualization';
-      vizBtn.className = 'viz-btn';
+      vizBtn.className = 'viz-btn ctrl-btn';
       vizBtn.setAttribute('aria-expanded', 'false');
       rightWrap.appendChild(vizBtn);
 
@@ -513,7 +508,6 @@ function setupAuxToggles(node) {
           openSharedPanel(panel, 'viz');
           vizBtn.setAttribute('aria-expanded','true');
           vizBtn.classList.add('active');
-          // reset examples
           examplesBtn.setAttribute('aria-expanded','false');
           examplesBtn.classList.remove('active');
         }
@@ -521,11 +515,11 @@ function setupAuxToggles(node) {
     }
   }
 
-  // RESULTS R8/R9: add Reasoning (left)
+  // RESULTS R8/R9: Reasoning button lives on the LEFT half
   if (node.id === 'R8' || node.id === 'R9') {
     const reasonBtn = document.createElement('button');
     reasonBtn.textContent = 'Show percentage reasoning';
-    reasonBtn.className = 'reasoning-btn';
+    reasonBtn.className = 'reasoning-btn ctrl-btn';
     reasonBtn.setAttribute('aria-expanded','false');
     reasonBtn.onclick = () => {
       const rp = document.getElementById('reasoningPanel');
