@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Flow Chart</title>
 
-<!-- Favicon set (keep all sizes) + prefer highest-res by adding generic link last -->
+<!-- Favicons (keep all sizes) + prefer highest-res by adding generic link last -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
@@ -68,22 +68,20 @@
 
   .text { font-size:1.3em; margin-bottom:12px; white-space:pre-wrap; }
 
-  /* Controls under the text: two main columns */
+  /* Controls under the text: weighted two-column grid (ghost right column keeps alignment) */
   .controls-row {
     display:grid;
-    grid-template-columns: 1fr 1fr; /* left and right columns */
+    grid-template-columns: 1.25fr 0.75fr; /* left stretches closer to center */
     gap:10px;
     margin:6px 0 18px 0;
   }
-  .controls-row button { width:100%; }
-
-  /* LEFT inner row: show Examples + Reasoning side-by-side */
   .left-controls {
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* Examples + Reasoning side-by-side */
     gap:10px;
   }
-  /* RIGHT controls (viz) stay single-column by default */
+  .right-controls { display:grid; grid-template-columns: 1fr; gap:10px; }
+  .controls-row button { width:100%; }
 
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
@@ -289,7 +287,7 @@ function setHeadingText(nodeId) {
   const skipBtn = document.getElementById('skipBtn');
 
   if (nodeId === 'Q0') {
-    // High-res logo next to "Discernment" with srcset for DPI variants
+    // High-res logo next to "Discernment" with srcset for DPI variants (only sizes we ship)
     title.innerHTML =
       "<img src='favicon_512.png' " +
       "srcset='favicon_64.png 1x, favicon_256.png 2x, favicon_512.png 3x' " +
@@ -523,7 +521,7 @@ function setupAuxToggles(node) {
     }
   }
 
-  // RESULTS R8/R9: add Reasoning (left), side-by-side with Examples if we ever add them here
+  // RESULTS R8/R9: add Reasoning (left)
   if (node.id === 'R8' || node.id === 'R9') {
     const reasonBtn = document.createElement('button');
     reasonBtn.textContent = 'Show percentage reasoning';
