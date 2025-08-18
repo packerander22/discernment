@@ -2,8 +2,6 @@
   "name": "Discernment Flowchart",
   "short_name": "Discernment",
   "description": "A flowchart app for making decisions with discernment.",
-  "start_url": "./",
-  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
