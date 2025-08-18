@@ -66,7 +66,7 @@
   }
   .segment-heading .skip-btn:hover { background:#dedede; }
 
-  .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
+  .text { font-size:1.3em; margin-bottom:12px; white-space:pre-wrap; }
 
   /* Controls under the text: two main columns */
   .controls-row {
@@ -408,43 +408,59 @@ function applyThresholdClauseTo(text) {
 /* ---------- Panels ---------- */
 function collapseSharedPanel() {
   const panel = document.getElementById('sharedPanel');
-  panel.style.display = 'none';
-  panel.setAttribute('aria-hidden','true');
-  panel.dataset.mode = '';
-
-  // Only reset labels for examples/viz buttons (not reasoning)
-  const leftWrap = document.getElementById('leftControlsWrapper');
+  if (panel) {
+    panel.style.display = 'none';
+    panel.setAttribute('aria-hidden','true');
+    panel.dataset.mode = '';
+  }
+  // Reset labels only if wrappers exist
+  const leftWrap  = document.getElementById('leftControlsWrapper');
   const rightWrap = document.getElementById('rightControlsWrapper');
-  leftWrap.querySelectorAll('.examples-btn').forEach(btn => {
+  leftWrap?.querySelectorAll('.examples-btn')?.forEach(btn => {
     btn.textContent = 'Show examples';
     btn.setAttribute('aria-expanded','false');
     btn.classList.remove('active');
   });
-  rightWrap.querySelectorAll('.viz-btn').forEach(btn => {
+  rightWrap?.querySelectorAll('.viz-btn')?.forEach(btn => {
     btn.textContent = 'Show visualization';
     btn.setAttribute('aria-expanded','false');
     btn.classList.remove('active');
   });
 }
+
 function collapseReasoningPanel() {
-  const panel = document.getElementById('reasoningPanel');
+  const panel   = document.getElementById('reasoningPanel');
   const leftWrap = document.getElementById('leftControlsWrapper');
-  if (!panel || !leftWrap) return;
-  panel.style.display = 'none';
-  panel.setAttribute('aria-hidden','true');
-  const btn = leftWrap.querySelector('.reasoning-btn');
-  if (btn) { btn.textContent = 'Show percentage reasoning'; btn.setAttribute('aria-expanded','false'); btn.classList.remove('active'); }
+  if (panel) {
+    panel.style.display = 'none';
+    panel.setAttribute('aria-hidden','true');
+  }
+  const btn = leftWrap?.querySelector('.reasoning-btn');
+  if (btn) {
+    btn.textContent = 'Show percentage reasoning';
+    btn.setAttribute('aria-expanded','false');
+    btn.classList.remove('active');
+  }
 }
+
 function openSharedPanel(panel, mode) {
+  if (!panel) return;
   panel.style.display = 'block';
   panel.setAttribute('aria-hidden','false');
   panel.dataset.mode = mode;
-  const leftWrap = document.getElementById('leftControlsWrapper');
+
+  const leftWrap  = document.getElementById('leftControlsWrapper');
   const rightWrap = document.getElementById('rightControlsWrapper');
-  const exBtn = leftWrap.querySelector('.examples-btn');
-  const vzBtn = rightWrap.querySelector('.viz-btn');
-  if (mode === 'examples') { if (exBtn) exBtn.textContent = 'Hide examples'; if (vzBtn) vzBtn.textContent = 'Show visualization'; }
-  if (mode === 'viz') { if (vzBtn) vzBtn.textContent = 'Hide visualization'; if (exBtn) exBtn.textContent = 'Show examples'; }
+  const exBtn = leftWrap?.querySelector('.examples-btn');
+  const vzBtn = rightWrap?.querySelector('.viz-btn');
+
+  if (mode === 'examples') {
+    if (exBtn) exBtn.textContent = 'Hide examples';
+    if (vzBtn) vzBtn.textContent = 'Show visualization';
+  } else if (mode === 'viz') {
+    if (vzBtn) vzBtn.textContent = 'Hide visualization';
+    if (exBtn) exBtn.textContent = 'Show examples';
+  }
 }
 
 /* ---------- Controls under the text ---------- */
