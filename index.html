@@ -381,33 +381,37 @@ function renderNode(node) {
 /* ---- Dynamic clause helpers for R8/R9 ---- */
 function buildThresholdClause() {
   if (currentThresholdPct <= 0) {
-    // Always overwrite everything with this sentence
+    // Full sentence replacement with italics
     return 'There is even a <i>SMALL</i> chance of failure.';
   }
   return `The estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
 }
 
 function applyThresholdClauseTo(text) {
-  // If threshold is 0 or less → overwrite the entire string
-  if (currentThresholdPct <= 0) {
-    return buildThresholdClause();
+  // Match full sentence with 50% baseline
+  const fullClause = /The estimated chance that current functional failure is nearing or greater than 50%[.]?/i;
+  if (fullClause.test(text)) {
+    return text.replace(fullClause, buildThresholdClause());
   }
 
-  // Otherwise, replace known variants of 50% with the new threshold
-  const baseClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
-  if (baseClause.test(text)) {
-    return text.replace(baseClause, buildThresholdClause());
+  // Match shortened variant "nearing or greater than 50%"
+  const fallbackClause = /nearing or greater than\s*50%/i;
+  if (fallbackClause.test(text)) {
+    return text.replace(
+      fallbackClause,
+      currentThresholdPct <= 0
+        ? buildThresholdClause() // replace whole sentence
+        : `nearing or greater than ${currentThresholdPct}%`
+    );
   }
 
-  const nearClause = /nearing or greater than\s*50%/i;
-  if (nearClause.test(text)) {
-    return text.replace(nearClause, `nearing or greater than ${currentThresholdPct}%`);
+  // Generic replacements if the above patterns aren't found
+  if (currentThresholdPct > 0) {
+    return text.replace(/50%/gi, `${currentThresholdPct}%`);
   }
 
-  // Fallback: replace any "50%" found anywhere
-  return text.replace(/50%/gi, `${currentThresholdPct}%`);
+  return text;
 }
-
 
 /* ---------- Panels ---------- */
 function collapseSharedPanel() {
