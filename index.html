@@ -381,29 +381,42 @@ function renderNode(node) {
 /* ---- Dynamic clause helpers for R8/R9 ---- */
 function buildThresholdClause() {
   if (currentThresholdPct <= 0) {
-    // Full sentence replacement with italics
     return 'There is even a <i>SMALL</i> chance of failure.';
   }
   return `The estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
 }
 
 function applyThresholdClauseTo(text) {
-  // Match full sentence with 50% baseline
-  const fullClause = /The estimated chance that current functional failure is nearing or greater than 50%[.]?/i;
-  if (fullClause.test(text)) {
-    return text.replace(fullClause, buildThresholdClause());
+  // Matches a full sentence containing the canonical clause, with or without punctuation
+  const fullSentenceRe =
+    /[^.?!]*the\s+estimated\s+chance\s+that\s+current\s+functional\s+failure\s+is\s+nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[.?!]?/gi;
+
+  // Matches any sentence that contains just the fragment "nearing or greater than 50%"
+  const fragmentSentenceRe =
+    /[^.?!]*nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[^.?!]*[.?!]?/gi;
+
+  const replacer = (match) => {
+    if (currentThresholdPct <= 0) {
+      // Replace the entire sentence
+      return buildThresholdClause();
+    }
+    // Keep sentence structure; update threshold
+    return match.replace(/(?:50\s*%|50\s*percent)/i, `${currentThresholdPct}%`);
+  };
+
+  let out = text.replace(fullSentenceRe, replacer);
+  if (out !== text) return out;
+
+  out = text.replace(fragmentSentenceRe, replacer);
+  if (out !== text) return out;
+
+  // Fallback: if positive threshold, update any bare "50%" occurrences elsewhere
+  if (currentThresholdPct > 0) {
+    return text.replace(/50\s*%/gi, `${currentThresholdPct}%`);
   }
 
-  // Match shortened variant "nearing or greater than 50%"
-  const fallbackClause = /nearing or greater than\s*50%/i;
-  if (fallbackClause.test(text)) {
-    return text.replace(
-      fallbackClause,
-      currentThresholdPct <= 0
-        ? buildThresholdClause() // replace whole sentence
-        : `nearing or greater than ${currentThresholdPct}%`
-    );
-  }
+  return text;
+}
 
   // Generic replacements if the above patterns aren't found
   if (currentThresholdPct > 0) {
