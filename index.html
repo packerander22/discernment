@@ -381,13 +381,19 @@ function renderNode(node) {
 /* ---- Dynamic clause helpers for R8/R9 ---- */
 function buildThresholdClause() {
   if (currentThresholdPct <= 0) {
-    // Full sentence replacement, with italicized "small"
+    // Always overwrite everything with this sentence
     return 'There is even a <i>SMALL</i> chance of failure.';
   }
   return `The estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
 }
 
 function applyThresholdClauseTo(text) {
+  // If threshold is 0 or less → overwrite the entire string
+  if (currentThresholdPct <= 0) {
+    return buildThresholdClause();
+  }
+
+  // Otherwise, replace known variants of 50% with the new threshold
   const baseClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
   if (baseClause.test(text)) {
     return text.replace(baseClause, buildThresholdClause());
@@ -395,21 +401,13 @@ function applyThresholdClauseTo(text) {
 
   const nearClause = /nearing or greater than\s*50%/i;
   if (nearClause.test(text)) {
-    return text.replace(
-      nearClause,
-      currentThresholdPct <= 0
-        ? buildThresholdClause() // full sentence replacement
-        : `nearing or greater than ${currentThresholdPct}%`
-    );
+    return text.replace(nearClause, `nearing or greater than ${currentThresholdPct}%`);
   }
 
-  if (currentThresholdPct > 0) {
-    return text.replace(/50%/gi, `${currentThresholdPct}%`);
-  }
-
-  // If nothing matched but threshold is 0 or below → replace entire text
-  return buildThresholdClause();
+  // Fallback: replace any "50%" found anywhere
+  return text.replace(/50%/gi, `${currentThresholdPct}%`);
 }
+
 
 /* ---------- Panels ---------- */
 function collapseSharedPanel() {
