@@ -345,7 +345,7 @@ function renderNode(node) {
   if (node.id === 'R8' || node.id === 'R9') {
     displayText = applyThresholdClauseTo(displayText);
   }
-  textDiv.textContent = displayText;
+  textDiv.innerHTML = displayText;
 
   // Back visibility
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
