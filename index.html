@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Flow Chart</title>
 
-<!-- Favicons -->
+<!-- Favicon set (keep all sizes) + prefer highest-res by adding generic link last -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
@@ -17,7 +17,7 @@
 <link rel="icon" type="image/png" sizes="384x384" href="favicon_384.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon_512.png">
 <link rel="manifest" href="site.webmanifest">
-<!-- Prefer highest-res by providing a generic icon last -->
+<!-- Highest-res default (browsers typically take the last rel=icon) -->
 <link rel="icon" type="image/png" href="favicon_512.png">
 
 <style>
@@ -66,17 +66,24 @@
   }
   .segment-heading .skip-btn:hover { background:#dedede; }
 
-  .text { font-size:1.2em; margin-bottom:12px; white-space:pre-wrap; }
+  .text { font-size:1.4em; margin-bottom:12px; white-space:pre-wrap; }
 
-  /* Controls under the text */
+  /* Controls under the text: two main columns */
   .controls-row {
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* left and right columns */
     gap:10px;
     margin:6px 0 18px 0;
   }
   .controls-row button { width:100%; }
-  .controls-row .full { grid-column:1 / -1; }
+
+  /* LEFT inner row: show Examples + Reasoning side-by-side */
+  .left-controls {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+  }
+  /* RIGHT controls (viz) stay single-column by default */
 
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
@@ -117,8 +124,8 @@
 
       <!-- Controls placed close to text and aligned flush -->
       <div class="controls-row">
-        <div id="examplesToggleWrapper" class="examples-toggle"></div>
-        <div id="reasoningToggleWrapper" class="reasoning-toggle"></div>
+        <div id="leftControlsWrapper" class="left-controls"></div>
+        <div id="rightControlsWrapper" class="right-controls"></div>
       </div>
 
       <!-- Shared panel (examples OR Q14/Q16 visualization) -->
@@ -139,8 +146,6 @@
 
 <script>
 // ======= FLOW (Q0–Q34) =======
-// After removing original Q14, IDs >=15 were decremented by 1.
-// IF section is Q1–Q22; WHEN section starts at Q23.
 const flowchart = [
   /* START SCREEN */
   { "id": "Q0", "type": "info", "text": "Welcome! This tool helps you decide both IF and WHEN you should act on an issue.\nYou’ll answer simple Yes/No questions (and a slider later). Tap Next to begin.", "next": "Q1" },
@@ -175,7 +180,6 @@ const flowchart = [
 
   /* Severity selection */
   { "id": "Q25", "type": "info", "text": "Set the catastrophic severity if you waited too long to act. (1-10)", "next": "Q26" },
-
   { "id": "Q26", "type": "question", "text": "Would there be guaranteed clear telltale signs of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
   { "id": "Q27", "type": "question", "text": "Is this the best solution you know of assuming you could do it now?", "yes": "Q29", "no": "Q28" },
   { "id": "Q28", "type": "question", "text": "Have you considered all better solutions you know of?", "yes": "Q29", "no": "R4" },
@@ -198,7 +202,7 @@ const flowchart = [
   { "id": "R9", "type": "result", "text": "Wait until the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." }
 ];
 
-/* ===== EXAMPLES (IDs match the renumbered flow) ===== */
+/* ===== EXAMPLES ===== */
 const examples = {
   Q1:[ "Example 1: A major work/school deadline is today; deciding on a new TV can wait. (Applies here)",
        "Example 2: A free afternoon with no pressing tasks; you can consider smaller decisions now. (Does not apply here)"],
@@ -264,8 +268,7 @@ const examples = {
        "Example 2: Once available, sooner is clearly better. (Does not apply here)"]
 };
 
-// ======= STATE (severity threshold) =======
-// Default severity = 1 → threshold 90%.
+// ======= STATE =======
 let currentThresholdPct = 90;
 
 // ======= APP LOGIC =======
@@ -286,7 +289,7 @@ function setHeadingText(nodeId) {
   const skipBtn = document.getElementById('skipBtn');
 
   if (nodeId === 'Q0') {
-    // High-res logo next to Discernment with srcset for crisp render
+    // High-res logo next to "Discernment" with srcset for DPI variants
     title.innerHTML =
       "<img src='favicon_512.png' " +
       "srcset='favicon_64.png 1x, favicon_128.png 2x, favicon_256.png 3x, favicon_512.png 4x' " +
@@ -321,7 +324,8 @@ function renderNode(node) {
     errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
     document.getElementById('text').textContent = '';
     document.getElementById('buttons').innerHTML = '';
-    collapseSharedPanel(); collapseReasoningPanel();
+    collapseSharedPanel();
+    collapseReasoningPanel();
     showOrHideRiskInline(null);
     document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
     setHeadingText('');
@@ -332,7 +336,7 @@ function renderNode(node) {
   const previousSegment = currentSegment;
   const thisSegment = getSegmentForNodeId(node.id);
 
-  // Flash only on true segment changes (IF ↔ WHEN), never on Q0
+  // Flash only on true segment changes (IF ↔ WHEN) and never on Q0
   if (thisSegment !== previousSegment && node.id !== 'Q0') {
     flashHeadingColor(thisSegment);
   }
@@ -354,7 +358,7 @@ function renderNode(node) {
   // Examples / Viz controls & panel
   setupAuxToggles(node);
 
-  // Reasoning (R8/R9)
+  // Reasoning (R8/R9) — now in LEFT inner row, side-by-side with Examples
   setupReasoning(node);
 
   // Risk slider inline on Q25 only
@@ -407,89 +411,140 @@ function collapseSharedPanel() {
   panel.style.display = 'none';
   panel.setAttribute('aria-hidden','true');
   panel.dataset.mode = '';
-  const exWrap = document.getElementById('examplesToggleWrapper');
-  const reWrap = document.getElementById('reasoningToggleWrapper');
-  [...exWrap.querySelectorAll('button'), ...reWrap.querySelectorAll('button')].forEach(btn => {
-    const label = btn.classList.contains('viz-btn') ? 'Show visualization' : 'Show examples';
-    btn.textContent = label; btn.setAttribute('aria-expanded','false'); btn.classList.remove('active');
+
+  // Only reset labels for examples/viz buttons (not reasoning)
+  const leftWrap = document.getElementById('leftControlsWrapper');
+  const rightWrap = document.getElementById('rightControlsWrapper');
+  leftWrap.querySelectorAll('.examples-btn').forEach(btn => {
+    btn.textContent = 'Show examples';
+    btn.setAttribute('aria-expanded','false');
+    btn.classList.remove('active');
   });
+  rightWrap.querySelectorAll('.viz-btn').forEach(btn => {
+    btn.textContent = 'Show visualization';
+    btn.setAttribute('aria-expanded','false');
+    btn.classList.remove('active');
+  });
+}
+function collapseReasoningPanel() {
+  const panel = document.getElementById('reasoningPanel');
+  const leftWrap = document.getElementById('leftControlsWrapper');
+  if (!panel || !leftWrap) return;
+  panel.style.display = 'none';
+  panel.setAttribute('aria-hidden','true');
+  const btn = leftWrap.querySelector('.reasoning-btn');
+  if (btn) { btn.textContent = 'Show percentage reasoning'; btn.setAttribute('aria-expanded','false'); btn.classList.remove('active'); }
 }
 function openSharedPanel(panel, mode) {
   panel.style.display = 'block';
   panel.setAttribute('aria-hidden','false');
   panel.dataset.mode = mode;
-  const exWrap = document.getElementById('examplesToggleWrapper');
-  const reWrap = document.getElementById('reasoningToggleWrapper');
-  const exBtn = exWrap.querySelector('.examples-btn');
-  const vzBtn = reWrap.querySelector('.viz-btn');
+  const leftWrap = document.getElementById('leftControlsWrapper');
+  const rightWrap = document.getElementById('rightControlsWrapper');
+  const exBtn = leftWrap.querySelector('.examples-btn');
+  const vzBtn = rightWrap.querySelector('.viz-btn');
   if (mode === 'examples') { if (exBtn) exBtn.textContent = 'Hide examples'; if (vzBtn) vzBtn.textContent = 'Show visualization'; }
   if (mode === 'viz') { if (vzBtn) vzBtn.textContent = 'Hide visualization'; if (exBtn) exBtn.textContent = 'Show examples'; }
 }
 
+/* ---------- Controls under the text ---------- */
 function setupAuxToggles(node) {
-  const exWrap = document.getElementById('examplesToggleWrapper');
-  const reWrap = document.getElementById('reasoningToggleWrapper');
+  const leftWrap = document.getElementById('leftControlsWrapper');   // LEFT inner grid
+  const rightWrap = document.getElementById('rightControlsWrapper'); // RIGHT column
   const panel = document.getElementById('sharedPanel');
 
-  exWrap.innerHTML = '';
-  reWrap.innerHTML = '';
+  leftWrap.innerHTML = '';
+  rightWrap.innerHTML = '';
   collapseSharedPanel();
   panel.innerHTML = '';
 
-  if (node.type !== 'question') return;
+  // QUESTIONS: show Examples (left)
+  if (node.type === 'question') {
+    const examplesBtn = document.createElement('button');
+    examplesBtn.textContent = 'Show examples';
+    examplesBtn.className = 'examples-btn';
+    examplesBtn.setAttribute('aria-expanded', 'false');
+    leftWrap.appendChild(examplesBtn);
 
-  const isSpecial = node.id === 'Q14' || node.id === 'Q16';
-
-  const examplesBtn = document.createElement('button');
-  examplesBtn.textContent = 'Show examples';
-  examplesBtn.className = 'examples-btn';
-  examplesBtn.setAttribute('aria-expanded', 'false');
-  exWrap.appendChild(examplesBtn);
-
-  let vizBtn = null;
-  if (isSpecial) {
-    vizBtn = document.createElement('button');
-    vizBtn.textContent = 'Show visualization';
-    vizBtn.className = 'viz-btn';
-    vizBtn.setAttribute('aria-expanded', 'false');
-    reWrap.appendChild(vizBtn);
-  }
-
-  examplesBtn.onclick = () => {
-    const isOpenExamples = panel.style.display === 'block' && panel.dataset.mode === 'examples';
-    if (isOpenExamples) {
-      collapseSharedPanel();
-      examplesBtn.setAttribute('aria-expanded','false');
-      examplesBtn.classList.remove('active');
-    } else {
-      renderExamples(panel, node.id);
-      openSharedPanel(panel, 'examples');
-      examplesBtn.setAttribute('aria-expanded','true');
-      examplesBtn.classList.add('active');
-      if (vizBtn) { vizBtn.setAttribute('aria-expanded','false'); vizBtn.classList.remove('active'); }
-    }
-  };
-
-  if (isSpecial && vizBtn) {
-    vizBtn.onclick = () => {
-      const isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
-      const src = node.id === 'Q14' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
-      const alt = node.id === 'Q14'
-        ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
-        : 'Inverted-U Curve: Effort/Resources vs Functional Results';
-      if (isOpenViz) {
+    examplesBtn.onclick = () => {
+      const isOpenExamples = panel.style.display === 'block' && panel.dataset.mode === 'examples';
+      if (isOpenExamples) {
         collapseSharedPanel();
-        vizBtn.setAttribute('aria-expanded','false');
-        vizBtn.classList.remove('active');
       } else {
-        renderViz(panel, src, alt);
-        openSharedPanel(panel, 'viz');
-        vizBtn.setAttribute('aria-expanded','true');
-        vizBtn.classList.add('active');
-        examplesBtn.setAttribute('aria-expanded','false');
-        examplesBtn.classList.remove('active');
+        renderExamples(panel, node.id);
+        openSharedPanel(panel, 'examples');
+        examplesBtn.setAttribute('aria-expanded','true');
+        examplesBtn.classList.add('active');
+        // If a viz button exists, reset it
+        const vizBtn = rightWrap.querySelector('.viz-btn');
+        if (vizBtn) { vizBtn.setAttribute('aria-expanded','false'); vizBtn.classList.remove('active'); }
       }
     };
+
+    // Add Viz (right) for Q14 (diminishing returns) and Q16 (inverted-U)
+    if (node.id === 'Q14' || node.id === 'Q16') {
+      const vizBtn = document.createElement('button');
+      vizBtn.textContent = 'Show visualization';
+      vizBtn.className = 'viz-btn';
+      vizBtn.setAttribute('aria-expanded', 'false');
+      rightWrap.appendChild(vizBtn);
+
+      vizBtn.onclick = () => {
+        const isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
+        const src = node.id === 'Q14' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
+        const alt = node.id === 'Q14'
+          ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
+          : 'Inverted-U Curve: Effort/Resources vs Functional Results';
+        if (isOpenViz) {
+          collapseSharedPanel();
+        } else {
+          renderViz(panel, src, alt);
+          openSharedPanel(panel, 'viz');
+          vizBtn.setAttribute('aria-expanded','true');
+          vizBtn.classList.add('active');
+          // reset examples
+          examplesBtn.setAttribute('aria-expanded','false');
+          examplesBtn.classList.remove('active');
+        }
+      };
+    }
+  }
+
+  // RESULTS R8/R9: add Reasoning (left), side-by-side with Examples if we ever add them here
+  if (node.id === 'R8' || node.id === 'R9') {
+    const reasonBtn = document.createElement('button');
+    reasonBtn.textContent = 'Show percentage reasoning';
+    reasonBtn.className = 'reasoning-btn';
+    reasonBtn.setAttribute('aria-expanded','false');
+    reasonBtn.onclick = () => {
+      const rp = document.getElementById('reasoningPanel');
+      const open = rp.style.display === 'block';
+      if (open) {
+        rp.style.display = 'none';
+        rp.setAttribute('aria-hidden','true');
+        reasonBtn.textContent = 'Show percentage reasoning';
+        reasonBtn.setAttribute('aria-expanded','false');
+        reasonBtn.classList.remove('active');
+      } else {
+        rp.style.display = 'block';
+        rp.setAttribute('aria-hidden','false');
+        reasonBtn.textContent = 'Hide percentage reasoning';
+        reasonBtn.setAttribute('aria-expanded','true');
+        reasonBtn.classList.add('active');
+      }
+    };
+    leftWrap.appendChild(reasonBtn);
+
+    // Fill the reasoning panel content
+    const rp = document.getElementById('reasoningPanel');
+    rp.innerHTML = '';
+    const p = document.createElement('p');
+    p.textContent = `Your current threshold is ${currentThresholdPct}%.`;
+    rp.appendChild(p);
+    const img = document.createElement('img');
+    img.src = 'linear_threshold_chart.png';
+    img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
+    rp.appendChild(img);
   }
 }
 
@@ -547,35 +602,6 @@ function showOrHideRiskInline(node) {
   ticks.id = 'riskTicks';
   for (let i=1;i<=10;i++){ const opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
   container.appendChild(ticks);
-}
-
-/* ---------- Reasoning panel (chart on R8/R9; button near text) ---------- */
-function setupReasoning(node) {
-  const wrap = document.getElementById('reasoningToggleWrapper');
-  const panel = document.getElementById('reasoningPanel');
-  wrap.innerHTML = ''; panel.innerHTML = ''; panel.style.display='none'; panel.setAttribute('aria-hidden','true');
-
-  if (node.id !== 'R8' && node.id !== 'R9') return;
-
-  const btn = document.createElement('button');
-  btn.textContent = 'Show percentage reasoning';
-  btn.className = 'reasoning-btn';
-  btn.setAttribute('aria-expanded','false');
-  btn.onclick = () => {
-    const open = panel.style.display === 'block';
-    if (open) { panel.style.display='none'; panel.setAttribute('aria-hidden','true'); btn.textContent='Show percentage reasoning'; btn.setAttribute('aria-expanded','false'); }
-    else { panel.style.display='block'; panel.setAttribute('aria-hidden','false'); btn.textContent='Hide percentage reasoning'; btn.setAttribute('aria-expanded','true'); }
-  };
-  wrap.appendChild(btn);
-
-  const p = document.createElement('p');
-  p.textContent = `Your current threshold is ${currentThresholdPct}%.`;
-  panel.appendChild(p);
-
-  const img = document.createElement('img');
-  img.src = 'linear_threshold_chart.png';
-  img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
-  panel.appendChild(img);
 }
 
 /* ---------- Nav ---------- */
