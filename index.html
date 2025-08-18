@@ -36,6 +36,8 @@
     transition: color .5s ease; /* only color animates now */
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
+  /* Size and align the SVG logo in the Discernment heading */
+  .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
 
   /* Flash animations: text color only (no background highlight) */
   .flash-gold { color: goldenrod !important; }
@@ -151,27 +153,26 @@ const flowchart = [
 
   /* ===== IF YOU SHOULD ACT (Q1–Q23) ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
-  { "id": "Q2",  "type": "question", "text": "Is there a known problem or desired QoL (quality of life) change that involves your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q3" },
-  { "id": "Q3",  "type": "question", "text": "Is there cause for a potential problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "Q4" },
-  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL problem that would directly affect your needs and wants of a subject not being met functionally?", "yes": "Q5", "no": "R2" },
-  { "id": "Q5",  "type": "question", "text": "Is there a solution to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL change)?", "yes": "Q6", "no": "R3" },
-  { "id": "Q6",  "type": "question", "text": "Can this solution or QoL change be brought about by your influence?", "yes": "Q9", "no": "Q7" },
+  { "id": "Q2",  "type": "question", "text": "Is there a current real problem or desired functional QoL (quality of life) improvement, rather than just a 'problem'/preference that doesn’t affect performance or outcomes?", "yes": "Q5", "no": "Q3" },
+  { "id": "Q3",  "type": "question", "text": "Is there cause for a potential real problem, rather than just a 'problem' that doesn’t affect performance or outcomes?", "yes": "Q5", "no": "Q4" },
+  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL real problem, rather than just a 'problem' that doesn’t affect performance or outcomes?", "yes": "Q5", "no": "R2" },
+  { "id": "Q5",  "type": "question", "text": "Is there a solution to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q6", "no": "R3" },
+  { "id": "Q6",  "type": "question", "text": "Can this solution or QoL improvement be guaranteed by your influence?", "yes": "Q9", "no": "Q7" },
   { "id": "Q7",  "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and worrying and obsessing won’t change anything and is unhealthy. Is there anything further you can do?", "yes": "Q9", "no": "Q8" },
   { "id": "Q8",  "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s within your control or in a better overall way?", "yes": "R4", "no": "R2" },
-  { "id": "Q9",  "type": "question", "text": "Does this solution or QoL change involve gaining information that would be valuable in the future?", "yes": "Q10", "no": "Q11" },
+  { "id": "Q9",  "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be valuable in the future?", "yes": "Q10", "no": "Q11" },
   { "id": "Q10", "type": "question", "text": "Would the information alone gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q24", "no": "Q11" },
   { "id": "Q11", "type": "question", "text": "Is it worth your resources to solve it?", "yes": "Q13", "no": "Q12" },
   { "id": "Q12", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
-  { "id": "Q13", "type": "question", "text": "Would the benefits of addressing this issue likely outweigh any downsides it might likely cause?", "yes": "Q15", "no": "Q14" },
-  { "id": "Q14", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it to you or in a better overall way?", "yes": "R4", "no": "R2" },
+  { "id": "Q13", "type": "question", "text": "Would the benefits of addressing this issue likely outweigh any downsides it might likely cause?", "yes": "Q15", "no": "Q12" },
   { "id": "Q15", "type": "question", "text": "Does addressing this issue involve a diminishing returns curve for effort applied?", "yes": "Q16", "no": "Q17" },
   { "id": "Q16", "type": "info",     "text": "Find the point of diminishing returns and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL without the addictive pull and possibly even in a better overall way. Use that better option whenever possible. If it’s unavailable, you may use the original approach—but only with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q17" },
   { "id": "Q17", "type": "question", "text": "Does addressing this issue directly involve an inverted-U curve for specific effort applied with an objective sweet spot where clear information is available to you?", "yes": "Q18", "no": "Q19" },
   { "id": "Q18", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that sweet spot. If not, put in as much effort as you deem worth it.", "next": "Q24" },
-  { "id": "Q19", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the problem/potential problem/QoL change was solved/prevented/changed (for example in a blind test compared side by side, and ignoring any differences irrelevant to the actual functionality of the intended purpose associated)?", "yes": "Q20", "no": "R2" },
-  { "id": "Q20", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the long term?", "yes": "Q24", "no": "Q21" },
-  { "id": "Q21", "type": "question", "text": "Would solving/preventing it help get rid of/prevent the problem (or improve QoL) in the short term?", "yes": "Q22", "no": "R2" },
-  { "id": "Q22", "type": "question", "text": "Is it logically worth solving/preventing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q24", "no": "Q23" },
+  { "id": "Q19", "type": "question", "text": "In practice, would a worthwhile functional difference likely be noticed if the issue was solved/addressed?", "yes": "Q20", "no": "R2" },
+  { "id": "Q20", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the long term?", "yes": "Q24", "no": "Q21" },
+  { "id": "Q21", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the short term?", "yes": "Q22", "no": "R2" },
+  { "id": "Q22", "type": "question", "text": "Is it logically worth solving/addressing EVERY time? (Or this time knowing it’s temporary?)", "yes": "Q24", "no": "Q23" },
   { "id": "Q23", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a better overall way?", "yes": "R4", "no": "R2" },
 
   /* ===== WHEN YOU SHOULD ACT (Q24+) ===== */
@@ -202,6 +203,72 @@ const flowchart = [
   { "id": "R8", "type": "result", "text": "Wait until those signs are indicated, the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." },
   { "id": "R9", "type": "result", "text": "Wait until the expected downsides of not acting now outweigh the downsides of acting now, AND the estimated chance that current functional failure is nearing or greater than 50%, then solve/address it. Consider any ways to reduce the downsides and/or the likelihood of it failing." }
 ];
+  
+// ===== EXAMPLES (Applies vs Does not apply) =====
+const examples = {
+  Q1:[ "Example 1: A major work/school deadline is today; deciding on a new TV can wait. (Applies here)",
+       "Example 2: A free afternoon with no pressing tasks; you can consider smaller decisions now. (Does not apply here)"],
+  Q2:[ "Example 1: The sink is leaking and wasting water—function isn’t being met. (Applies here)",
+       "Example 2: You want a different color of garbage bags. (Does not apply here)"],
+  Q3:[ "Example 1: Mousepad is dirty—this might cause tracking issues. (Applies here)",
+       "Example 2: Phone works perfectly; you just feel uneasy it might break. (Does not apply here)"],
+  Q4:[ "Example 1: Hands are dirty—this could cause mousepad to become dirty, which might cause tracking issues. (Applies here)",
+       "Example 2: You're worried you might contract an illness on your birthday next month. (Does not apply here)"],
+  Q5:[ "Example 1: A replacement faucet cartridge exists, even if backordered. (Applies here)",
+       "Example 2: A software bug has no known fix or workaround yet. (Does not apply here)"],
+  Q6:[ "Example 1: You can schedule a repair and approve payment, and it will get done. (Applies here)",
+       "Example 2: You might get turned down after asking someone on a date; you can do what you can, but ultimately can’t guarantee the outcome. (Does not apply here)"],
+  Q7:[ "Example 1: Your friends are saying things you don't feel comfortable hearing; you can't control what they say, but you can at least ask them to stop. (Applies here)",
+       "Example 2: The power in your city goes out, nothing you can do about it. (Does not apply here)"],
+  Q8:[ "Example 1: You use a generator for your house after the power goes out. (Applies here)",
+       "Example 2: All alternatives rely on things you can’t control. (Does not apply here)"],
+  Q9:[ "Example 1: You try a new medication to see how well it helps. (Applies here)",
+       "Example 2: A tedious workaround teaches nothing useful later. (Does not apply here)"],
+  Q10:["Example 1: A quick medical screening offers value with minimal downside. (Applies here)",
+       "Example 2: Disassembling an expensive device ‘just to see’ costs more than the information is worth. (Does not apply here)"],
+  Q11:["Example 1: A low-cost fix solves a pressing issue. (Applies here)",
+       "Example 2: An expensive fix for a tiny convenience gain. (Does not apply here)"],
+  Q12:["Example 1: Another shop offers same repair cheaper with warranty. (Applies here)",
+       "Example 2: All other options are worse across time/cost/reliability. (Does not apply here)"],
+  Q13:["Example 1: Repairing a roof leak prevents serious damage. (Applies here)",
+       "Example 2: A risky modification voids the warranty for marginal benefit. (Does not apply here)"],
+  Q15:["Example 1: Polishing slides beyond ‘good enough’ adds little impact. (Applies here)",
+       "Example 2: Fixing a critical bug—each hour matters; no early plateau. (Does not apply here)"],
+  Q17:["Example 1: Exercise intensity has a sweet spot; too much/too little harms results. (Applies here)",
+       "Example 2: Filing taxes—no optimal ‘intensity’; you just finish it. (Does not apply here)"],
+  Q19:["Example 1: Upgrading HDD to SSD is clearly noticeable. (Applies here)",
+       "Example 2: Gold-plated HDMI vs regular—no functional difference. (Does not apply here)"],
+  Q20:["Example 1: Sealing driveway cracks extends lifespan. (Applies here)",
+       "Example 2: A cosmetic fix that wears off in a week. (Does not apply here)"],
+  Q21:["Example 1: Decongestant allows sleep tonight. (Applies here)",
+       "Example 2: Reorganizing a drawer doesn’t change today’s urgent issue. (Does not apply here)"],
+  Q22:["Example 1: Wearing a seatbelt is worth doing every time. (Applies here)",
+       "Example 2: Washing the car daily isn’t worth it without special reason. (Does not apply here)"],
+  Q23:["Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
+       "Example 2: No alternative provides a better long-term outcome. (Does not apply here)"],
+  Q24:["Example 1: Replacing a timing belt before expected lifespan ends. (Applies here)",
+       "Example 2: Fixing a screen that already cracked (current problem, not future). (Does not apply here)"],
+  Q25:["Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
+       "Example 2: Repainting a wall for a new color. (Does not apply here)"],
+  Q27:["Example 1: Squealing brakes—clear warning sign. (Applies here)",
+       "Example 2: Timing belt—can fail without warning. (Does not apply here)"],
+  Q28:["Example 1: You’d pick this method if you could do it now. (Applies here)",
+       "Example 2: You know a better option but aren’t choosing it. (Does not apply here)"],
+  Q29:["Example 1: You compared and ruled out better options. (Applies here)",
+       "Example 2: You haven’t checked obvious alternatives. (Does not apply here)"],
+  Q30:["Example 1: Part is in stock; appointments available. (Applies here)",
+       "Example 2: Part is backordered for two weeks. (Does not apply here)"],
+  Q31:["Example 1: Off-season timing makes it cheaper and easier. (Applies here)",
+       "Example 2: Waiting won’t improve value; risk may rise. (Does not apply here)"],
+  Q32:["Example 1: Waiting a week saves a lot with little downside. (Applies here)",
+       "Example 2: Waiting would cause outages or stress. (Does not apply here)"],
+  Q33:["Example 1: A solid Plan B works now. (Applies here)",
+       "Example 2: No next-best option reasonably solves it. (Does not apply here)"],
+  Q34:["Example 1: Doing it during a scheduled break reduces disruption. (Applies here)",
+       "Example 2: There’s no later window that beats now. (Does not apply here)"],
+  Q35:["Example 1: After availability, doing it during a later lull saves hassle. (Applies here)",
+       "Example 2: Once available, sooner is clearly better. (Does not apply here)"]
+};
 
 // ======= STATE (severity threshold) =======
 // Default severity = 1 → threshold 90% (no localStorage).
@@ -226,14 +293,15 @@ function setHeadingText(nodeId) {
   const skipBtn = document.getElementById('skipBtn');
 
   if (nodeId === 'Q0') {
-    title.textContent = "⚖️ Discernment";
+    // Use the SVG as a small logo next to "Discernment"
+    title.innerHTML = "<img src='favicon.svg' alt='Discernment Logo' class='logo'>Discernment";
     skipBtn.style.display = 'none';
     return;
   }
 
   const text = (currentSegment === "If You Should Act")
-    ? "⚖️ If You Should Act"
-    : "⏳ When You Should Act";
+    ? "If You Should Act"
+    : "When You Should Act";
   title.textContent = text;
 
   // Show Skip only in IF segment
@@ -270,7 +338,7 @@ function renderNode(node) {
   if (thisSegment !== currentSegment) {
     flashHeadingColor(thisSegment);
   }
-  // NEW: Also flash green when leaving intro (Q0) into the first IF question
+  // Also flash green when leaving intro (Q0) into the first IF question
   if (previousId === "Q0" && thisSegment === "If You Should Act") {
     flashHeadingColor("If You Should Act");
   }
@@ -330,7 +398,7 @@ function buildThresholdClause() {
 function applyThresholdClauseTo(text) {
   const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
   if (fullClause.test(text)) return text.replace(fullClause, buildThresholdClause());
-  const fallbackClause = /nearing or greater than\s*50%/i;
+  const fallbackClause = /nearing or greater than\\s*50%/i;
   if (fallbackClause.test(text)) {
     const repl = (currentThresholdPct <= 0)
       ? 'even a small chance of failure'
