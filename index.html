@@ -176,7 +176,7 @@ const flowchart = [
   /* Severity selection */
   { "id": "Q25", "type": "info", "text": "Set the estimated catastrophic severity if you waited too long to act. (1-10)", "next": "Q26" },
   { "id": "Q26", "type": "question", "text": "Would there be <i>guaranteed clear telltale signs</i> of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "R8", "no": "R9" },
-  { "id": "Q27", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (assuming you could do it <i>now</i>)?", "yes": "Q29", "no": "Q28" },
+  { "id": "Q27", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria), assuming you could do it <i>now</i>?", "yes": "Q29", "no": "Q28" },
   { "id": "Q28", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q29", "no": "R4" },
   { "id": "Q29", "type": "question", "text": "Is this solution <i>currently</i> available?", "yes": "Q33", "no": "Q31" },
   { "id": "Q30", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q31", "no": "R6" },
@@ -380,21 +380,35 @@ function renderNode(node) {
 
 /* ---- Dynamic clause helpers for R8/R9 ---- */
 function buildThresholdClause() {
-  if (currentThresholdPct <= 0) return 'there is even a small chance of failure';
-  return `the estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
-}
-function applyThresholdClauseTo(text) {
-  const fullClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
-  if (fullClause.test(text)) return text.replace(fullClause, buildThresholdClause());
-  const fallbackClause = /nearing or greater than\s*50%/i;
-  if (fallbackClause.test(text)) {
-    const repl = (currentThresholdPct <= 0)
-      ? 'even a small chance of failure'
-      : `nearing or greater than ${currentThresholdPct}%`;
-    return text.replace(fallbackClause, repl);
+  if (currentThresholdPct <= 0) {
+    // Full sentence replacement, with italicized "small"
+    return 'There is even a <i>SMALL</i> chance of failure.';
   }
-  if (currentThresholdPct > 0) return text.replace(/50%/g, `${currentThresholdPct}%`);
-  return text.replace(/0%/g, 'even a small chance of failure');
+  return `The estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
+}
+
+function applyThresholdClauseTo(text) {
+  const baseClause = /the estimated chance that current functional failure is nearing or greater than 50%/i;
+  if (baseClause.test(text)) {
+    return text.replace(baseClause, buildThresholdClause());
+  }
+
+  const nearClause = /nearing or greater than\s*50%/i;
+  if (nearClause.test(text)) {
+    return text.replace(
+      nearClause,
+      currentThresholdPct <= 0
+        ? buildThresholdClause() // full sentence replacement
+        : `nearing or greater than ${currentThresholdPct}%`
+    );
+  }
+
+  if (currentThresholdPct > 0) {
+    return text.replace(/50%/gi, `${currentThresholdPct}%`);
+  }
+
+  // If nothing matched but threshold is 0 or below → replace entire text
+  return buildThresholdClause();
 }
 
 /* ---------- Panels ---------- */
