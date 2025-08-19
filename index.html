@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Guide</title>
 
-<!-- Favicon set (keep all sizes) + bulletproof fallbacks -->
+<!-- Favicon set (multiple sizes) + bulletproof fallbacks + cache-busting -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
@@ -41,8 +41,8 @@
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
 
-  .flash-gold { color: goldenrod !important; }
-  .flash-green { color: #2e7d32 !important; }
+  .flash-gold { color: goldenrod !important; }  /* WHEN */
+  .flash-green { color: #2e7d32 !important; }  /* IF */
 
   /* Buttons (global) */
   button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
@@ -68,13 +68,9 @@
 
   .text { font-size:1.3em; margin-bottom:12px; white-space:pre-wrap; }
 
-  /* Controls row: two equal halves */
-  .controls-row {
-    display:flex; gap:10px; margin:6px 0 18px 0;
-  }
-  .left-controls, .right-controls {
-    flex:1; display:flex; gap:10px;
-  }
+  /* Controls under the text: two equal halves */
+  .controls-row { display:flex; gap:10px; margin:6px 0 18px 0; }
+  .left-controls, .right-controls { flex:1; display:flex; gap:10px; }
 
   .panel {
     display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
@@ -87,7 +83,7 @@
   .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
   .buttons.center { justify-content:center; }
 
-  /* Q25: slider */
+  /* Q25 slider */
   .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
   .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
   .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
@@ -113,19 +109,19 @@
     <div>
       <div id="text" class="text"></div>
 
-      <!-- Controls placed close to text and aligned with Yes/No widths -->
+      <!-- Controls under the text -->
       <div class="controls-row">
         <div id="leftControlsWrapper" class="left-controls"></div>
         <div id="rightControlsWrapper" class="right-controls"></div>
       </div>
 
-      <!-- Shared panel (examples OR Q14/Q16 visualization) -->
+      <!-- Shared panel (examples OR visualization) -->
       <div id="sharedPanel" class="panel" aria-hidden="true"></div>
 
       <!-- Always-visible risk slider on Q25 -->
       <div id="riskInline" class="risk-inline" aria-hidden="true"></div>
 
-      <!-- Percentage reasoning panel (R8/R9 only) -->
+      <!-- Percentage reasoning (R8/R9 only) -->
       <div id="reasoningPanel" class="panel" aria-hidden="true"></div>
 
       <div id="errorBox" class="error"></div>
@@ -180,7 +176,7 @@ const flowchart = [
   { "id": "Q33", "type": "question", "text": "Is there a <i>better time</i> further down the road to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R6" },
   { "id": "Q34", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R5" },
 
-  /* RESULTS */
+  /* RESULTS (R8/R9 built via JS to handle bullets + threshold) */
   { "id": "R1", "type": "result", "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
   { "id": "R2", "type": "result", "text": "<i>Don’t worry about it.</i>" },
   { "id": "R3", "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },
@@ -188,8 +184,8 @@ const flowchart = [
   { "id": "R5", "type": "result", "text": "Wait until the <i>best solution</i> given the circumstances is available, then solve it once there aren’t any other more important things to do." },
   { "id": "R6", "type": "result", "text": "Address it sooner than later, once there aren’t any other more important things to do." },
   { "id": "R7", "type": "result", "text": "Wait until that time, then solve/address it. Consider any other options that could also work and be worth it until then." },
-  { "id": "R8", "type": "result", "text": "Wait until: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>expected downsides of NOT acting now</i> outweigh the <i>downsides OF acting now</i>.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>Then solve/address it. Consider also any ways to reduce the downsides and/or the likelihood of it failing." },
-  { "id": "R9", "type": "result", "text": "Wait until: <ul><li>The <i>expected downsides of NOT acting now</i> outweigh the <i>downsides OF acting now</i>.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>Then solve/address it. Consider also any ways to reduce the downsides and/or the likelihood of it failing." }
+  { "id": "R8", "type": "result", "text": "__R8_DYNAMIC__" },
+  { "id": "R9", "type": "result", "text": "__R9_DYNAMIC__" }
 ];
 
 /* ===== EXAMPLES ===== */
@@ -302,7 +298,7 @@ function flashHeadingColor(targetSegment) {
   setTimeout(() => headingDiv.classList.remove(cls), 1500);
 }
 
-/* Force-close any open panels when changing screens */
+/* Close any open panels when changing screens */
 function closeAllPanels() {
   collapseSharedPanel();
   collapseReasoningPanel();
@@ -310,7 +306,40 @@ function closeAllPanels() {
   if (risk) {
     risk.style.display = 'none';
     risk.setAttribute('aria-hidden','true');
+    risk.innerHTML = '';
   }
+}
+
+/* Build R8 / R9 HTML with bullet logic */
+function buildR8Html() {
+  const lastBullet = (currentThresholdPct <= 0)
+    ? 'There is even a <i>SMALL</i> chance of failure.'
+    : `The <i>estimated chance of failure</i> is nearing or greater than ${currentThresholdPct}%.`;
+
+  return `
+    Wait until:
+    <ul>
+      <li><i>Those telltale signs</i> indicate that failure is approaching.</li>
+      <li>The <i>expected downsides of NOT acting now</i> outweigh the <i>downsides OF acting now</i>.</li>
+      <li>${lastBullet}</li>
+    </ul>
+    Then solve/address it. Consider also any ways to reduce the downsides and/or the likelihood of it failing.
+  `;
+}
+
+function buildR9Html() {
+  const lastBullet = (currentThresholdPct <= 0)
+    ? 'There is even a <i>SMALL</i> chance of failure.'
+    : `The <i>estimated chance of failure</i> is nearing or greater than ${currentThresholdPct}%.`;
+
+  return `
+    Wait until:
+    <ul>
+      <li>The <i>expected downsides of NOT acting now</i> outweigh the <i>downsides OF acting now</i>.</li>
+      <li>${lastBullet}</li>
+    </ul>
+    Then solve/address it. Consider also any ways to reduce the downsides and/or the likelihood of it failing.
+  `;
 }
 
 function renderNode(node) {
@@ -331,24 +360,25 @@ function renderNode(node) {
 
   const previousSegment = currentSegment;
   const thisSegment = getSegmentForNodeId(node.id);
+
   if (thisSegment !== previousSegment && node.id !== 'Q0') {
     flashHeadingColor(thisSegment);
   }
+
   currentSegment = thisSegment;
   setHeadingText(node.id);
 
-  // Text (with dynamic clause update for R8/R9)
+  // Text
   const textDiv = document.getElementById('text');
-  let displayText = node.text || '';
-  if (node.id === 'R8' || node.id === 'R9') {
-    displayText = applyThresholdClauseTo(displayText);
-  }
-  textDiv.innerHTML = displayText;
+  let html = node.text || '';
+  if (node.id === 'R8') html = buildR8Html();
+  if (node.id === 'R9') html = buildR9Html();
+  textDiv.innerHTML = html;
 
   // Back visibility
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
 
-  // Examples / Viz controls & panel
+  // Controls
   setupAuxToggles(node);
 
   // Risk slider inline on Q25 only
@@ -374,30 +404,6 @@ function renderNode(node) {
       btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
     }
   }
-}
-
-/* ---- Dynamic clause helpers for R8/R9 (safe replacement, no nested <li>) ---- */
-function buildThresholdClause() {
-  // Returns only the phrase to replace "50%" with — no <li> wrapper
-  if (currentThresholdPct <= 0) {
-    return 'even a <i>SMALL</i> chance of failure';
-  }
-  return `${currentThresholdPct}%`;
-}
-
-function applyThresholdClauseTo(html) {
-  const pctPhrase = buildThresholdClause();
-
-  // Preferred: replace the common phrase "...nearing or greater than 50%"
-  let out = html.replace(
-    /nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)/gi,
-    `nearing or greater than ${pctPhrase}`
-  );
-  if (out !== html) return out;
-
-  // Fallback: replace bare "50%" or "50 percent"
-  out = html.replace(/(?:50\s*%|50\s*percent)/gi, pctPhrase);
-  return out;
 }
 
 /* ---------- Panels ---------- */
@@ -459,8 +465,8 @@ function openSharedPanel(panel, mode) {
 
 /* ---------- Controls under the text ---------- */
 function setupAuxToggles(node) {
-  const leftWrap = document.getElementById('leftControlsWrapper');
-  const rightWrap = document.getElementById('rightControlsWrapper');
+  const leftWrap = document.getElementById('leftControlsWrapper');   // LEFT half
+  const rightWrap = document.getElementById('rightControlsWrapper'); // RIGHT half
   const panel = document.getElementById('sharedPanel');
 
   leftWrap.innerHTML = '';
