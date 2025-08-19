@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Guide</title>
 
-<!-- Favicon set (multiple sizes) + bulletproof fallbacks + cache-busting -->
+<!-- Favicon set -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
@@ -16,8 +16,8 @@
 <link rel="icon" type="image/png" sizes="256x256" href="favicon_256.png">
 <link rel="icon" type="image/png" sizes="384x384" href="favicon_384.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon_512.png">
-<link rel="manifest" href="site.webmanifest">
 <link rel="shortcut icon" href="favicon.ico">
+<!-- cache-bust fallback -->
 <link rel="icon" type="image/png" href="favicon_512.png?v=2">
 
 <style>
@@ -41,8 +41,8 @@
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
 
-  .flash-gold { color: goldenrod !important; }  /* WHEN */
-  .flash-green { color: #2e7d32 !important; }  /* IF */
+  .flash-gold { color: goldenrod !important; }
+  .flash-green { color: #2e7d32 !important; }
 
   /* Buttons (global) */
   button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
@@ -60,7 +60,8 @@
     display:inline-flex; align-items:center; justify-content:center;
     flex:0 0 auto;
     padding:var(--btn-pad-y) var(--btn-pad-x);
-    font-size:1rem; line-height:1;
+    font-size:1rem;
+    line-height:1;
     border:none; border-radius:5px; cursor:pointer;
     background:#e9e9e9; color:#333;
   }
@@ -68,7 +69,7 @@
 
   .text { font-size:1.3em; margin-bottom:12px; white-space:pre-wrap; }
 
-  /* Controls under the text: two equal halves */
+  /* Controls row under the text */
   .controls-row { display:flex; gap:10px; margin:6px 0 18px 0; }
   .left-controls, .right-controls { flex:1; display:flex; gap:10px; }
 
@@ -91,6 +92,12 @@
   .risk-ticks { display:block; width:100%; }
 
   .error { color:#B00020; font-size:0.95em; margin-top:8px; }
+
+  /* >>> Compact results (R8/R9) spacing/indent <<< */
+  .result-text { margin: 0; padding: 0; }
+  .result-text p { margin: 0.4em 0; }       /* tighten top/bottom copy */
+  .result-text ul { margin: 0.25em 0; padding-left: 1.2em; } /* compact list + modest indent */
+  .result-text li { margin: 0.25em 0; }
 </style>
 </head>
 <body>
@@ -109,19 +116,13 @@
     <div>
       <div id="text" class="text"></div>
 
-      <!-- Controls under the text -->
       <div class="controls-row">
         <div id="leftControlsWrapper" class="left-controls"></div>
         <div id="rightControlsWrapper" class="right-controls"></div>
       </div>
 
-      <!-- Shared panel (examples OR visualization) -->
       <div id="sharedPanel" class="panel" aria-hidden="true"></div>
-
-      <!-- Always-visible risk slider on Q25 -->
       <div id="riskInline" class="risk-inline" aria-hidden="true"></div>
-
-      <!-- Percentage reasoning (R8/R9 only) -->
       <div id="reasoningPanel" class="panel" aria-hidden="true"></div>
 
       <div id="errorBox" class="error"></div>
@@ -176,7 +177,7 @@ const flowchart = [
   { "id": "Q33", "type": "question", "text": "Is there a <i>better time</i> further down the road to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R6" },
   { "id": "Q34", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R5" },
 
-  /* RESULTS (R8/R9 built via JS to handle bullets + threshold) */
+  /* RESULTS */
   { "id": "R1", "type": "result", "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
   { "id": "R2", "type": "result", "text": "<i>Don’t worry about it.</i>" },
   { "id": "R3", "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },
@@ -184,8 +185,8 @@ const flowchart = [
   { "id": "R5", "type": "result", "text": "Wait until the <i>best solution</i> given the circumstances is available, then solve it once there aren’t any other more important things to do." },
   { "id": "R6", "type": "result", "text": "Address it sooner than later, once there aren’t any other more important things to do." },
   { "id": "R7", "type": "result", "text": "Wait until that time, then solve/address it. Consider any other options that could also work and be worth it until then." },
-  { "id": "R8", "type": "result", "text": "__R8_DYNAMIC__" },
-  { "id": "R9", "type": "result", "text": "__R9_DYNAMIC__" }
+  { "id": "R8", "type": "result", "text": "Wait until: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>expected downsides of NOT acting now</i> outweigh the <i>downsides OF acting now</i>.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>Then solve/address it. Consider also any ways to reduce the downsides and/or the likelihood of it failing." },
+  { "id": "R9", "type": "result", "text": "Wait until: <ul><li>The <i>expected downsides of NOT acting now</i> outweigh the <i>downsides OF acting now</i>.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>Then solve/address it. Consider also any ways to reduce the downsides and/or the likelihood of it failing." }
 ];
 
 /* ===== EXAMPLES ===== */
@@ -276,7 +277,9 @@ function setHeadingText(nodeId) {
 
   if (nodeId === 'Q0') {
     title.innerHTML =
-      "<img src='favicon_512.png' srcset='favicon_64.png 1x, favicon_256.png 2x, favicon_512.png 3x' alt='Discernment Logo' class='logo'>Discernment Guide";
+      "<img src='favicon_512.png' " +
+      "srcset='favicon_64.png 1x, favicon_256.png 2x, favicon_512.png 3x' " +
+      "alt='Discernment Logo' class='logo'>Discernment Guide";
     skipBtn.style.display = 'none';
     return;
   }
@@ -298,7 +301,7 @@ function flashHeadingColor(targetSegment) {
   setTimeout(() => headingDiv.classList.remove(cls), 1500);
 }
 
-/* Close any open panels when changing screens */
+/* Force-close any open panels when changing screens */
 function closeAllPanels() {
   collapseSharedPanel();
   collapseReasoningPanel();
@@ -306,40 +309,18 @@ function closeAllPanels() {
   if (risk) {
     risk.style.display = 'none';
     risk.setAttribute('aria-hidden','true');
-    risk.innerHTML = '';
   }
 }
 
-/* Build R8 / R9 HTML with bullet logic */
-function buildR8Html() {
-  const lastBullet = (currentThresholdPct <= 0)
-    ? 'There is even a <i>SMALL</i> chance of failure.'
-    : `The <i>estimated chance of failure</i> is nearing or greater than ${currentThresholdPct}%.`;
-
-  return `
-    Wait until:
-    <ul>
-      <li><i>Those telltale signs</i> indicate that failure is approaching.</li>
-      <li>The <i>expected downsides of NOT acting now</i> outweigh the <i>downsides OF acting now</i>.</li>
-      <li>${lastBullet}</li>
-    </ul>
-    Then solve/address it. Consider also any ways to reduce the downsides and/or the likelihood of it failing.
-  `;
-}
-
-function buildR9Html() {
-  const lastBullet = (currentThresholdPct <= 0)
-    ? 'There is even a <i>SMALL</i> chance of failure.'
-    : `The <i>estimated chance of failure</i> is nearing or greater than ${currentThresholdPct}%.`;
-
-  return `
-    Wait until:
-    <ul>
-      <li>The <i>expected downsides of NOT acting now</i> outweigh the <i>downsides OF acting now</i>.</li>
-      <li>${lastBullet}</li>
-    </ul>
-    Then solve/address it. Consider also any ways to reduce the downsides and/or the likelihood of it failing.
-  `;
+/* ---- Threshold helpers for R8/R9 ---- */
+function applyThresholdClauseTo(html) {
+  // If threshold is 0, replace the entire "estimated chance" bullet with the special text.
+  if (currentThresholdPct <= 0) {
+    const liRe = /<li>[\s\S]*?estimated[^<]*chance[^<]*failure[\s\S]*?<\/li>/i;
+    return html.replace(liRe, '<li>There is even a <i>SMALL</i> chance of failure.</li>');
+  }
+  // Otherwise, just swap 50% → currentThresholdPct% in the bullet/sentence.
+  return html.replace(/(?:nearing\s+or\s+greater\s+than\s*)?50%/gi, `${currentThresholdPct}%`);
 }
 
 function renderNode(node) {
@@ -360,25 +341,25 @@ function renderNode(node) {
 
   const previousSegment = currentSegment;
   const thisSegment = getSegmentForNodeId(node.id);
-
-  if (thisSegment !== previousSegment && node.id !== 'Q0') {
-    flashHeadingColor(thisSegment);
-  }
+  if (thisSegment !== previousSegment && node.id !== 'Q0') flashHeadingColor(thisSegment);
 
   currentSegment = thisSegment;
   setHeadingText(node.id);
 
-  // Text
+  // Text (use innerHTML to honor italics and lists)
   const textDiv = document.getElementById('text');
-  let html = node.text || '';
-  if (node.id === 'R8') html = buildR8Html();
-  if (node.id === 'R9') html = buildR9Html();
-  textDiv.innerHTML = html;
+  let displayHTML = node.text || '';
+  if (node.id === 'R8' || node.id === 'R9') {
+    displayHTML = applyThresholdClauseTo(displayHTML);
+    textDiv.innerHTML = `<div class="result-text">${displayHTML}</div>`;
+  } else {
+    textDiv.innerHTML = displayHTML;
+  }
 
   // Back visibility
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
 
-  // Controls
+  // Examples / Viz controls & panel
   setupAuxToggles(node);
 
   // Risk slider inline on Q25 only
@@ -465,8 +446,8 @@ function openSharedPanel(panel, mode) {
 
 /* ---------- Controls under the text ---------- */
 function setupAuxToggles(node) {
-  const leftWrap = document.getElementById('leftControlsWrapper');   // LEFT half
-  const rightWrap = document.getElementById('rightControlsWrapper'); // RIGHT half
+  const leftWrap = document.getElementById('leftControlsWrapper');
+  const rightWrap = document.getElementById('rightControlsWrapper');
   const panel = document.getElementById('sharedPanel');
 
   leftWrap.innerHTML = '';
@@ -474,7 +455,7 @@ function setupAuxToggles(node) {
   collapseSharedPanel();
 
   if (node.type === 'question') {
-    // Examples (always left)
+    // Examples (left)
     const examplesBtn = document.createElement('button');
     examplesBtn.textContent = 'Show examples';
     examplesBtn.className = 'examples-btn ctrl-btn';
@@ -495,7 +476,7 @@ function setupAuxToggles(node) {
       }
     };
 
-    // Visualization (right) only for Q14 and Q16
+    // Visualization (right) only for Q14 / Q16
     if (node.id === 'Q14' || node.id === 'Q16') {
       const vizBtn = document.createElement('button');
       vizBtn.textContent = 'Show visualization';
@@ -544,7 +525,6 @@ function setupAuxToggles(node) {
         reasonBtn.textContent = 'Hide percentage reasoning';
         reasonBtn.setAttribute('aria-expanded','true');
         reasonBtn.classList.add('active');
-        // Content
         rp.innerHTML = '';
         const p = document.createElement('p');
         p.textContent = `Your current threshold is ${currentThresholdPct}%.`;
