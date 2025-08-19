@@ -388,23 +388,25 @@ function renderNode(node) {
 /* ---- Dynamic clause helpers for R8/R9 ---- */
 function buildThresholdClause() {
   if (currentThresholdPct <= 0) {
-    return 'There is even a <i>SMALL</i> chance of failure.';
+    // Own bullet point with italics
+    return '<li>There is even a <i>SMALL</i> chance of failure.</li>';
   }
   return `The estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
 }
 
 function applyThresholdClauseTo(text) {
-  // Full canonical sentence (no global flag, so only the first match)
+  // Match full canonical sentence
   const fullSentenceRe =
     /[^.?!]*the\s+estimated\s+chance\s+that\s+current\s+functional\s+failure\s+is\s+nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[.?!]?/i;
 
-  // Sentence containing just the fragment
+  // Match shorter variant
   const fragmentSentenceRe =
     /[^.?!]*nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[^.?!]*[.?!]?/i;
 
   const replacer = (match) => {
     if (currentThresholdPct <= 0) {
-      return buildThresholdClause(); // overwrite the whole sentence
+      // Replace whole sentence with its own <li>
+      return buildThresholdClause();
     }
     return match.replace(/(?:50\s*%|50\s*percent)/i, `${currentThresholdPct}%`);
   };
@@ -415,7 +417,6 @@ function applyThresholdClauseTo(text) {
   out = text.replace(fragmentSentenceRe, replacer);
   if (out !== text) return out;
 
-  // Fallback: just replace a bare "50%" if nothing else matches
   if (currentThresholdPct > 0) {
     return text.replace(/50\s*%/i, `${currentThresholdPct}%`);
   }
