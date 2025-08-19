@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment Guide</title>
 
-<!-- Favicon set (keep all sizes) + prefer highest-res by adding generic link last -->
+<!-- Favicon set (keep all sizes) + bulletproof fallbacks -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
@@ -17,7 +17,6 @@
 <link rel="icon" type="image/png" sizes="384x384" href="favicon_384.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon_512.png">
 <link rel="manifest" href="site.webmanifest">
-<!-- Bulletproof fallbacks / cache-busting -->
 <link rel="shortcut icon" href="favicon.ico">
 <link rel="icon" type="image/png" href="favicon_512.png?v=2">
 
@@ -37,13 +36,13 @@
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
     border-bottom:2px solid #ddd; gap:12px;
-    transition: color .5s ease; /* color-only flash */
+    transition: color .5s ease;
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
 
-  .flash-gold { color: goldenrod !important; }  /* WHEN */
-  .flash-green { color: #2e7d32 !important; }  /* IF */
+  .flash-gold { color: goldenrod !important; }
+  .flash-green { color: #2e7d32 !important; }
 
   /* Buttons (global) */
   button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
@@ -53,7 +52,7 @@
   button.back { background:#555; color:#fff; flex:0 0 auto; }
   button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
   button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; }
-  .ctrl-btn { flex:1; } /* make control buttons fill their half */
+  .ctrl-btn { flex:1; }
   button.active { outline:2px solid #000; }
 
   /* Skip button */
@@ -61,8 +60,7 @@
     display:inline-flex; align-items:center; justify-content:center;
     flex:0 0 auto;
     padding:var(--btn-pad-y) var(--btn-pad-x);
-    font-size:1rem;
-    line-height:1;
+    font-size:1rem; line-height:1;
     border:none; border-radius:5px; cursor:pointer;
     background:#e9e9e9; color:#333;
   }
@@ -70,16 +68,12 @@
 
   .text { font-size:1.3em; margin-bottom:12px; white-space:pre-wrap; }
 
-  /* Controls under the text: two equal halves; right acts as a ghost spacer when empty */
+  /* Controls row: two equal halves */
   .controls-row {
-    display:flex;
-    gap:10px;
-    margin:6px 0 18px 0;
+    display:flex; gap:10px; margin:6px 0 18px 0;
   }
   .left-controls, .right-controls {
-    flex:1;
-    display:flex;
-    gap:10px;
+    flex:1; display:flex; gap:10px;
   }
 
   .panel {
@@ -93,7 +87,7 @@
   .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
   .buttons.center { justify-content:center; }
 
-  /* Q25: centered number + slider with ticks */
+  /* Q25: slider */
   .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
   .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
   .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
@@ -285,7 +279,6 @@ function setHeadingText(nodeId) {
   const skipBtn = document.getElementById('skipBtn');
 
   if (nodeId === 'Q0') {
-    // High-res logo next to title
     title.innerHTML =
       "<img src='favicon_512.png' srcset='favicon_64.png 1x, favicon_256.png 2x, favicon_512.png 3x' alt='Discernment Logo' class='logo'>Discernment Guide";
     skipBtn.style.display = 'none';
@@ -309,7 +302,7 @@ function flashHeadingColor(targetSegment) {
   setTimeout(() => headingDiv.classList.remove(cls), 1500);
 }
 
-/* --- New: force-close any open panels when changing screens --- */
+/* Force-close any open panels when changing screens */
 function closeAllPanels() {
   collapseSharedPanel();
   collapseReasoningPanel();
@@ -321,7 +314,7 @@ function closeAllPanels() {
 }
 
 function renderNode(node) {
-  closeAllPanels(); // ensure nothing sticks from prior screen
+  closeAllPanels();
 
   const errorBox = document.getElementById('errorBox');
   errorBox.textContent = '';
@@ -338,11 +331,9 @@ function renderNode(node) {
 
   const previousSegment = currentSegment;
   const thisSegment = getSegmentForNodeId(node.id);
-
   if (thisSegment !== previousSegment && node.id !== 'Q0') {
     flashHeadingColor(thisSegment);
   }
-
   currentSegment = thisSegment;
   setHeadingText(node.id);
 
@@ -385,43 +376,28 @@ function renderNode(node) {
   }
 }
 
-/* ---- Dynamic clause helpers for R8/R9 ---- */
+/* ---- Dynamic clause helpers for R8/R9 (safe replacement, no nested <li>) ---- */
 function buildThresholdClause() {
+  // Returns only the phrase to replace "50%" with — no <li> wrapper
   if (currentThresholdPct <= 0) {
-    // Own bullet point with italics
-    return '<li>There is even a <i>SMALL</i> chance of failure.</li>';
+    return 'even a <i>SMALL</i> chance of failure';
   }
-  return `The estimated chance that current functional failure is nearing or greater than ${currentThresholdPct}%`;
+  return `${currentThresholdPct}%`;
 }
 
-function applyThresholdClauseTo(text) {
-  // Match full canonical sentence
-  const fullSentenceRe =
-    /[^.?!]*the\s+estimated\s+chance\s+that\s+current\s+functional\s+failure\s+is\s+nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[.?!]?/i;
+function applyThresholdClauseTo(html) {
+  const pctPhrase = buildThresholdClause();
 
-  // Match shorter variant
-  const fragmentSentenceRe =
-    /[^.?!]*nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[^.?!]*[.?!]?/i;
+  // Preferred: replace the common phrase "...nearing or greater than 50%"
+  let out = html.replace(
+    /nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)/gi,
+    `nearing or greater than ${pctPhrase}`
+  );
+  if (out !== html) return out;
 
-  const replacer = (match) => {
-    if (currentThresholdPct <= 0) {
-      // Replace whole sentence with its own <li>
-      return buildThresholdClause();
-    }
-    return match.replace(/(?:50\s*%|50\s*percent)/i, `${currentThresholdPct}%`);
-  };
-
-  let out = text.replace(fullSentenceRe, replacer);
-  if (out !== text) return out;
-
-  out = text.replace(fragmentSentenceRe, replacer);
-  if (out !== text) return out;
-
-  if (currentThresholdPct > 0) {
-    return text.replace(/50\s*%/i, `${currentThresholdPct}%`);
-  }
-
-  return text;
+  // Fallback: replace bare "50%" or "50 percent"
+  out = html.replace(/(?:50\s*%|50\s*percent)/gi, pctPhrase);
+  return out;
 }
 
 /* ---------- Panels ---------- */
@@ -483,8 +459,8 @@ function openSharedPanel(panel, mode) {
 
 /* ---------- Controls under the text ---------- */
 function setupAuxToggles(node) {
-  const leftWrap = document.getElementById('leftControlsWrapper');   // LEFT half
-  const rightWrap = document.getElementById('rightControlsWrapper'); // RIGHT half
+  const leftWrap = document.getElementById('leftControlsWrapper');
+  const rightWrap = document.getElementById('rightControlsWrapper');
   const panel = document.getElementById('sharedPanel');
 
   leftWrap.innerHTML = '';
