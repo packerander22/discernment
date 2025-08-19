@@ -17,8 +17,9 @@
 <link rel="icon" type="image/png" sizes="384x384" href="favicon_384.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon_512.png">
 <link rel="manifest" href="site.webmanifest">
-<!-- Highest-res default (browsers typically take the last rel=icon) -->
-<link rel="icon" type="image/png" href="favicon_512.png">
+<!-- Bulletproof fallbacks / cache-busting -->
+<link rel="shortcut icon" href="/favicon.ico">
+<link rel="icon" type="image/png" href="/favicon_512.png?v=2">
 
 <style>
   :root { --btn-pad-y:10px; --btn-pad-x:12px; }
@@ -238,7 +239,7 @@ const examples = {
   Q21:["Example 1: Wearing a seatbelt is worth doing every time. (Applies here)",
        "Example 2: Washing the car daily isn’t worth it without special reason. (Does not apply here)"],
   Q22:["Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
-       "Example 2: No alternative provides a better long-term outcome. (Does not apply here)"],
+       "Example 2: No next-best option reasonably solves it. (Does not apply here)"],
   Q23:["Example 1: Replacing a timing belt before expected lifespan ends. (Applies here)",
        "Example 2: Fixing a screen that already cracked (current problem, not future). (Does not apply here)"],
   Q24:["Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
@@ -284,11 +285,9 @@ function setHeadingText(nodeId) {
   const skipBtn = document.getElementById('skipBtn');
 
   if (nodeId === 'Q0') {
-    // High-res logo next to "Discernment" with srcset for DPI variants (only sizes we ship)
+    // High-res logo next to title
     title.innerHTML =
-      "<img src='favicon_512.png' " +
-      "srcset='favicon_64.png 1x, favicon_256.png 2x, favicon_512.png 3x' " +
-      "alt='Discernment Logo' class='logo'>Discernment Guide";
+      "<img src='favicon_512.png' srcset='favicon_64.png 1x, favicon_256.png 2x, favicon_512.png 3x' alt='Discernment Logo' class='logo'>Discernment Guide";
     skipBtn.style.display = 'none';
     return;
   }
@@ -303,7 +302,6 @@ function setHeadingText(nodeId) {
 }
 
 function flashHeadingColor(targetSegment) {
-  // Never flash on the intro heading
   if (currentNode && currentNode.id === 'Q0') return;
   const headingDiv = document.getElementById('segmentHeading');
   const cls = (targetSegment === "If You Should Act") ? 'flash-green' : 'flash-gold';
@@ -311,7 +309,20 @@ function flashHeadingColor(targetSegment) {
   setTimeout(() => headingDiv.classList.remove(cls), 1500);
 }
 
+/* --- New: force-close any open panels when changing screens --- */
+function closeAllPanels() {
+  collapseSharedPanel();
+  collapseReasoningPanel();
+  const risk = document.getElementById('riskInline');
+  if (risk) {
+    risk.style.display = 'none';
+    risk.setAttribute('aria-hidden','true');
+  }
+}
+
 function renderNode(node) {
+  closeAllPanels(); // ensure nothing sticks from prior screen
+
   const errorBox = document.getElementById('errorBox');
   errorBox.textContent = '';
 
@@ -319,11 +330,8 @@ function renderNode(node) {
     errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
     document.getElementById('text').textContent = '';
     document.getElementById('buttons').innerHTML = '';
-    collapseSharedPanel();
-    collapseReasoningPanel();
-    showOrHideRiskInline(null);
-    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
     setHeadingText('');
+    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
     document.getElementById('restartTop').style.display = 'inline-block';
     return;
   }
@@ -331,7 +339,6 @@ function renderNode(node) {
   const previousSegment = currentSegment;
   const thisSegment = getSegmentForNodeId(node.id);
 
-  // Flash only on true segment changes (IF ↔ WHEN) and never on Q0
   if (thisSegment !== previousSegment && node.id !== 'Q0') {
     flashHeadingColor(thisSegment);
   }
@@ -423,8 +430,8 @@ function collapseSharedPanel() {
     panel.style.display = 'none';
     panel.setAttribute('aria-hidden','true');
     panel.dataset.mode = '';
+    panel.innerHTML = '';
   }
-  // Reset labels
   const leftWrap  = document.getElementById('leftControlsWrapper');
   const rightWrap = document.getElementById('rightControlsWrapper');
   leftWrap?.querySelectorAll('.examples-btn')?.forEach(btn => {
@@ -444,6 +451,7 @@ function collapseReasoningPanel() {
   if (panel) {
     panel.style.display = 'none';
     panel.setAttribute('aria-hidden','true');
+    panel.innerHTML = '';
   }
   const btn = leftWrap?.querySelector('.reasoning-btn');
   if (btn) {
@@ -481,7 +489,6 @@ function setupAuxToggles(node) {
   leftWrap.innerHTML = '';
   rightWrap.innerHTML = '';
   collapseSharedPanel();
-  panel.innerHTML = '';
 
   if (node.type === 'question') {
     // Examples (always left)
@@ -505,7 +512,7 @@ function setupAuxToggles(node) {
       }
     };
 
-    // Visualization (right) only for Q14 (diminishing returns) and Q16 (inverted-U)
+    // Visualization (right) only for Q14 and Q16
     if (node.id === 'Q14' || node.id === 'Q16') {
       const vizBtn = document.createElement('button');
       vizBtn.textContent = 'Show visualization';
@@ -533,7 +540,7 @@ function setupAuxToggles(node) {
     }
   }
 
-  // RESULTS R8/R9: Reasoning button lives on the LEFT half
+  // RESULTS R8/R9: Reasoning button (left)
   if (node.id === 'R8' || node.id === 'R9') {
     const reasonBtn = document.createElement('button');
     reasonBtn.textContent = 'Show percentage reasoning';
@@ -554,20 +561,18 @@ function setupAuxToggles(node) {
         reasonBtn.textContent = 'Hide percentage reasoning';
         reasonBtn.setAttribute('aria-expanded','true');
         reasonBtn.classList.add('active');
+        // Content
+        rp.innerHTML = '';
+        const p = document.createElement('p');
+        p.textContent = `Your current threshold is ${currentThresholdPct}%.`;
+        rp.appendChild(p);
+        const img = document.createElement('img');
+        img.src = 'linear_threshold_chart.png';
+        img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
+        rp.appendChild(img);
       }
     };
     leftWrap.appendChild(reasonBtn);
-
-    // Fill the reasoning panel content
-    const rp = document.getElementById('reasoningPanel');
-    rp.innerHTML = '';
-    const p = document.createElement('p');
-    p.textContent = `Your current threshold is ${currentThresholdPct}%.`;
-    rp.appendChild(p);
-    const img = document.createElement('img');
-    img.src = 'linear_threshold_chart.png';
-    img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
-    rp.appendChild(img);
   }
 }
 
@@ -633,16 +638,19 @@ function makeButton(label, cls, action) {
   btn.textContent = label; btn.className = cls; btn.onclick = action; return btn;
 }
 function goToNode(id) {
+  closeAllPanels();
   const next = flowchart.find(n => n.id === id);
   historyStack.push(currentNode ? currentNode.id : '');
   currentNode = next; renderNode(currentNode);
 }
 function goBack() {
+  closeAllPanels();
   const prevId = historyStack.pop();
   const prev = flowchart.find(n => n.id === prevId);
   currentNode = prev || currentNode; renderNode(currentNode);
 }
 function restart() {
+  closeAllPanels();
   historyStack = [];
   currentSegment = "If You Should Act";
   currentNode = flowchart.find(n => n.id === "Q0");
@@ -651,6 +659,7 @@ function restart() {
 
 /* ---------- Skip button: jump to first WHEN (Q23) ---------- */
 document.getElementById('skipBtn').addEventListener('click', () => {
+  closeAllPanels();
   goToNode('Q23');
 });
 
