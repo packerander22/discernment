@@ -387,20 +387,18 @@ function buildThresholdClause() {
 }
 
 function applyThresholdClauseTo(text) {
-  // Matches a full sentence containing the canonical clause, with or without punctuation
+  // Full canonical sentence (no global flag, so only the first match)
   const fullSentenceRe =
-    /[^.?!]*the\s+estimated\s+chance\s+that\s+current\s+functional\s+failure\s+is\s+nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[.?!]?/gi;
+    /[^.?!]*the\s+estimated\s+chance\s+that\s+current\s+functional\s+failure\s+is\s+nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[.?!]?/i;
 
-  // Matches any sentence that contains just the fragment "nearing or greater than 50%"
+  // Sentence containing just the fragment
   const fragmentSentenceRe =
-    /[^.?!]*nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[^.?!]*[.?!]?/gi;
+    /[^.?!]*nearing\s+or\s+greater\s+than\s*(?:50\s*%|50\s*percent)[^.?!]*[.?!]?/i;
 
   const replacer = (match) => {
     if (currentThresholdPct <= 0) {
-      // Replace the entire sentence
-      return buildThresholdClause();
+      return buildThresholdClause(); // overwrite the whole sentence
     }
-    // Keep sentence structure; update threshold
     return match.replace(/(?:50\s*%|50\s*percent)/i, `${currentThresholdPct}%`);
   };
 
@@ -410,17 +408,9 @@ function applyThresholdClauseTo(text) {
   out = text.replace(fragmentSentenceRe, replacer);
   if (out !== text) return out;
 
-  // Fallback: if positive threshold, update any bare "50%" occurrences elsewhere
+  // Fallback: just replace a bare "50%" if nothing else matches
   if (currentThresholdPct > 0) {
-    return text.replace(/50\s*%/gi, `${currentThresholdPct}%`);
-  }
-
-  return text;
-}
-
-  // Generic replacements if the above patterns aren't found
-  if (currentThresholdPct > 0) {
-    return text.replace(/50%/gi, `${currentThresholdPct}%`);
+    return text.replace(/50\s*%/i, `${currentThresholdPct}%`);
   }
 
   return text;
