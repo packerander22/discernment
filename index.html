@@ -1,695 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Discernment Guide</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Discernment Flow Chart</title>
 
-<!-- Favicon set -->
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
-<link rel="icon" type="image/png" sizes="48x48" href="favicon_48.png">
-<link rel="icon" type="image/png" sizes="64x64" href="favicon_64.png">
-<link rel="apple-touch-icon" sizes="180x180" href="favicon_180.png">
-<link rel="icon" type="image/png" sizes="192x192" href="favicon_192.png">
-<link rel="icon" type="image/png" sizes="256x256" href="favicon_256.png">
-<link rel="icon" type="image/png" sizes="384x384" href="favicon_384.png">
-<link rel="icon" type="image/png" sizes="512x512" href="favicon_512.png">
-<link rel="shortcut icon" href="favicon.ico">
-<!-- cache-bust fallback -->
-<link rel="icon" type="image/png" href="favicon_512.png?v=2">
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon_16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon_48.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon_64.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon_180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon_192.png">
+  <link rel="icon" type="image/png" sizes="256x256" href="favicon_256.png">
+  <link rel="icon" type="image/png" sizes="384x384" href="favicon_384.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="favicon_512.png">
 
-<style>
-  :root { --btn-pad-y:10px; --btn-pad-x:12px; }
-  body { font-family: Arial, sans-serif; background:#f7f7f7; margin:0; padding:0; }
-  .container { max-width: 650px; margin:auto; padding:20px; }
-  .top-bar { display:flex; justify-content:space-between; margin-bottom:10px; }
-  .card {
-    background:#fff; padding:20px; border-radius:8px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.1); min-height:280px;
-    display:flex; flex-direction:column; justify-content:space-between;
-  }
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f9f9f9;
+      color: #333;
+      text-align: center;
+    }
 
-  .segment-heading {
-    display:flex; align-items:center; justify-content:space-between;
-    font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
-    border-bottom:2px solid #ddd; gap:12px;
-    transition: color .5s ease;
-  }
-  .segment-title { display:inline-flex; align-items:center; gap:8px; }
-  .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
+    header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background: #fff;
+      padding: 10px;
+      border-bottom: 2px solid #eee;
+    }
 
-  .flash-gold { color: goldenrod !important; }
-  .flash-green { color: #2e7d32 !important; }
+    header img {
+      height: 28px;
+      width: 28px;
+      margin-right: 8px;
+    }
 
-  /* Buttons (global) */
-  button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
-  button.yes { background:#4CAF50; color:#fff; }
-  button.no { background:#F44336; color:#fff; }
-  button.next { background:#2196F3; color:#fff; }
-  button.back { background:#555; color:#fff; flex:0 0 auto; }
-  button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
-  button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; }
-  .ctrl-btn { flex:1; }
-  button.active { outline:2px solid #000; }
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
 
-  .segment-heading .skip-btn {
-    display:inline-flex; align-items:center; justify-content:center;
-    flex:0 0 auto;
-    padding:var(--btn-pad-y) var(--btn-pad-x);
-    font-size:1rem;
-    line-height:1;
-    border:none; border-radius:5px; cursor:pointer;
-    background:#e9e9e9; color:#333;
-  }
-  .segment-heading .skip-btn:hover { background:#dedede; }
+    .container {
+      padding: 20px;
+    }
 
-  .text { font-size:1.3em; margin-bottom:12px; white-space:pre-wrap; }
+    .question {
+      font-size: 1.2rem;
+      margin: 20px 0 15px;
+    }
 
-  .controls-row { display:flex; gap:10px; margin:6px 0 18px 0; }
-  .left-controls, .right-controls { flex:1; display:flex; gap:10px; }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 20px 0;
+    }
 
-  .panel {
-    display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
-    margin-bottom:18px;
-  }
-  .panel p { margin:6px 0; }
-  .panel img { width:100%; height:auto; display:block; }
+    button {
+      padding: 12px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
 
-  .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
-  .buttons.center { justify-content:center; }
+    .yes { background: #4caf50; color: white; }
+    .no { background: #f44336; color: white; }
+    .examples, .reasoning, .visualization {
+      background: #ddd;
+      color: #333;
+    }
+    .next { background: #2196f3; color: white; }
 
-  /* Q25 slider */
-  .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
-  .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
-  .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
-  .risk-row input[type="range"] { width:100%; }
-  .risk-ticks { display:block; width:100%; }
+    /* Heatmap slider */
+    .slider-wrapper {
+      margin: 25px 0;
+    }
+    .slider-label {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 80%;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, blue 0%, yellow 50%, red 100%);
+      outline: none;
+    }
 
-  .error { color:#B00020; font-size:0.95em; margin-top:8px; }
+    /* Larger thumb + touch radius */
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 24px;
+      width: 24px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #000;
+      cursor: pointer;
+      margin-top: -8px;
+    }
 
-  /* Compact results/question blocks with lists */
-  .result-text { margin: 0; padding: 0; }
-  .result-text p { margin: 0.4em 0; }
-  .result-text ul { margin: 0.25em 0; padding-left: 1.2em; }
-  .result-text li { margin: 0.25em 0; }
-</style>
+    input[type="range"]::-moz-range-thumb {
+      height: 24px;
+      width: 24px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #000;
+      cursor: pointer;
+    }
+
+    /* Ensure graph, examples, reasoning buttons align with Yes/No */
+    .sub-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin: 12px auto 25px;
+      width: 80%;
+      gap: 12px;
+    }
+
+    .sub-buttons button {
+      flex: 1;
+    }
+
+    .result {
+      font-size: 1.1rem;
+      text-align: left;
+      margin: 0 auto;
+      width: 80%;
+      padding: 10px;
+      line-height: 1.4;
+    }
+
+    .result ul {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+
+    .result li {
+      margin: 5px 0;
+    }
+  </style>
 </head>
 <body>
+
+<header>
+  <img src="favicon_64.png" alt="Logo">
+  <h1>Discernment</h1>
+</header>
+
 <div class="container">
-  <div class="top-bar">
-    <button class="back" id="backBtn" onclick="goBack()">Back</button>
-    <button class="restart" id="restartTop" onclick="restart()">Restart</button>
+  <div class="question">Welcome! This flow chart guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue.<br>Tap Next to begin.</div>
+  <div class="buttons">
+    <button class="next">Next</button>
   </div>
 
-  <div class="card">
-    <div id="segmentHeading" class="segment-heading">
-      <span id="segmentTitle" class="segment-title"></span>
-      <button id="skipBtn" class="skip-btn" style="display:none;" title="Skip to when you should act">Skip ⏭</button>
-    </div>
+  <!-- Example slider screen -->
+  <div class="slider-wrapper">
+    <div class="slider-label">Set the catastrophic severity if you waited too long to act.</div>
+    <input type="range" id="severitySlider" min="1" max="10" value="1" step="1">
+    <div id="severityValue">1</div>
+  </div>
 
-    <div>
-      <div id="text" class="text"></div>
-
-      <div class="controls-row">
-        <div id="leftControlsWrapper" class="left-controls"></div>
-        <div id="rightControlsWrapper" class="right-controls"></div>
-      </div>
-
-      <div id="sharedPanel" class="panel" aria-hidden="true"></div>
-      <div id="riskInline" class="risk-inline" aria-hidden="true"></div>
-      <div id="reasoningPanel" class="panel" aria-hidden="true"></div>
-
-      <div id="errorBox" class="error"></div>
-    </div>
-
-    <div id="buttons" class="buttons"></div>
+  <!-- Example results screen -->
+  <div class="result">
+    <p>If <b>all</b> of the following are true:</p>
+    <ul>
+      <li>The expected downsides of NOT acting now outweigh acting now.</li>
+      <li>The estimated chance of failure is nearing or greater than 50%.</li>
+      <li>There are clear signs of failure.</li>
+    </ul>
+    <p>...then solve/address it.</p>
   </div>
 </div>
 
 <script>
-// ======= FLOW =======
-const flowchart = [
-  { "id": "Q0", "type": "info", "text": "Welcome! This flow chart guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and a slider later). Tap Next to begin.", "next": "Q1" },
-
-  /* ===== IF YOU SHOULD ACT ===== */
-  { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1", "no": "Q2" },
-  { "id": "Q2",  "type": "question", "text": "Is there a current <i>real problem</i> or desired functional QoL (quality of life) improvement, rather than just a <i>“problem”</i> or preference that doesn’t affect performance or outcomes?", "yes": "Q5", "no": "Q3" },
-  { "id": "Q3",  "type": "question", "text": "Is there cause for a potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q40", "no": "Q4" },
-  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5", "no": "R2" },
-  { "id": "Q40", "type": "question", "text": "Is the potential problem inevitable if left unaddressed?", "yes": "Q5", "no": "Q60" },
-  { "id": "Q60", "type": "question", "text": "Would the expected downsides of <i>NOT addressing this issue</i> outweigh the downsides <i>OF addressing this issue</i>?", "yes": "Q5", "no": "Q140", "same": "Q70" },
-  { "id": "Q70", "type": "question", "text": "Is the problem more likely to occur than not if left unaddressed?", "yes": "Q5", "no": "Q140" },
-  { "id": "Q5",  "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q6", "no": "R3" },
-  { "id": "Q6",  "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> by <i>your</i> influence?", "yes": "Q9", "no": "Q7" },
-  { "id": "Q7",  "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q9", "no": "Q8" },
-  { "id": "Q8",  "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s within your control or in a <i>better overall way</i>?", "yes": "R4", "no": "R2" },
-  { "id": "Q9",  "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q10", "no": "Q13" },
-  { "id": "Q10", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q23", "no": "Q13" },
-  { "id": "Q13", "type": "question", "text": "Would the <i>benefits</i> of addressing this issue outweigh any <i>downsides</i> it might likely cause?", "yes": "Q14", "no": "Q140", "same": "Q130" },
-  { "id": "Q130","type": "question", "text": "All things considered and despite the downsides involved, would you rather address it than not?", "yes": "Q14", "no": "Q140" },
-  { "id": "Q140","type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be \"yes\"?", "yes": "R30", "no": "Q150" },
-  { "id": "Q150","type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it or in a <i>better overall way</i>?", "yes": "R4", "no": "R2" },
-  { "id": "Q14", "type": "question", "text": "Does addressing this issue involve a <i>diminishing returns</i> curve for effort applied?", "yes": "Q15", "no": "Q16" },
-  { "id": "Q15", "type": "info",     "text": "Find the <i>point of diminishing returns</i> and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL <i>without the addictive pull</i> and possibly even in a <i>better overall way</i>. Treat this approach as a \"better,\" more effective overall solution. If it's not available, you may use the original approach if needed—but <i>only</i> with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q16" },
-  { "id": "Q16", "type": "question", "text": "Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an <i>objective sweet spot</i> where clear information is available to you?", "yes": "Q17", "no": "Q18" },
-  { "id": "Q17", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q23" },
-  { "id": "Q18", "type": "question", "text": "In practice and given time, would a <i>worthwhile functional difference</i> likely be noticed if the issue was solved/addressed?", "yes": "Q19", "no": "R2" },
-  { "id": "Q19", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q23", "no": "Q20" },
-  { "id": "Q20", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q21", "no": "R2" },
-  { "id": "Q21", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time</i>? (Or this time knowing it’s <i>temporary</i>?)", "yes": "Q23", "no": "Q22" },
-  { "id": "Q22", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a <i>better overall way</i>?", "yes": "R4", "no": "R2" },
-
-  /* ===== WHEN YOU SHOULD ACT ===== */
-  { "id": "Q23", "type": "question", "text": "Does this address a potential <i>future</i> problem?", "yes": "Q24", "no": "Q27" },
-  { "id": "Q24", "type": "question", "text": "Does addressing this issue involve <i>preventative maintenance</i>?", "yes": "Q290", "no": "Q27" },
-
-  /* Severity selection */
-  { "id": "Q25", "type": "info", "text": "Set the estimated catastrophic severity if you waited too long to act. (1-10)", "next": "Q26" },
-  { "id": "Q26", "type": "question", "text": "Would there be <i>guaranteed clear telltale signs</i> of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "Q42", "no": "Q43" },
-
-  /* Availability / timing */
-  { "id": "Q27", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria), assuming you could do it <i>now</i>?", "yes": "Q29", "no": "Q28" },
-  { "id": "Q28", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q29", "no": "R4" },
-  { "id": "Q290","type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria)?", "yes": "Q25", "no": "Q300" },
-  { "id": "Q300","type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q25", "no": "R4" },
-  { "id": "Q29", "type": "question", "text": "Is this solution <i>currently</i> available?", "yes": "Q33", "no": "Q31" },
-  { "id": "Q30", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q31", "no": "R6" },
-  { "id": "Q31", "type": "question", "text": "Assuming you waited until it was available, would the <i>benefits</i> of using this solution outweigh the <i>downsides</i> of having to wait?", "yes": "Q34", "no": "Q32" },
-  { "id": "Q32", "type": "question", "text": "Is there a <i>better</i> solution you know of?", "yes": "R4", "no": "R3" },
-  { "id": "Q33", "type": "question", "text": "Is there a <i>better time</i> further down the road to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R6" },
-  { "id": "Q34", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R5" },
-  { "id": "Q35", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R5" },
-
-  /* Timing logic questions using threshold */
-  { "id": "Q42", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R8" },
-  { "id": "Q43", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R7", "no": "R8" },
-
-  /* RESULTS */
-  { "id": "R1", "type": "result", "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
-  { "id": "R2", "type": "result", "text": "<i>Don’t worry about it:)</i>" },
-  { "id": "R30","type": "result", "text": "If that time ever does come, re-evaluate the issue. Until then, don't worry about it:)" },
-  { "id": "R3", "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },
-  { "id": "R4", "type": "result", "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },
-  { "id": "R5", "type": "result", "text": "Wait until the <i>best solution</i> given the circumstances is available, then solve it once there aren’t any other more important things to do." },
-  { "id": "R6", "type": "result", "text": "Address it <i>sooner than later</i>, once there aren’t any other more important things to do." },
-  { "id": "R7", "type": "result", "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Consider any other options that could also work and be worth it until then." },
-  { "id": "R8", "type": "result", "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) are met, once there aren’t any other more important things to do." }
-];
-
-/* ===== EXAMPLES ===== */
-const examples = {
-  Q1:[ "Example 1: A major work/school deadline is today; deciding on a new TV can wait. (Applies here)",
-       "Example 2: A free afternoon with no pressing tasks; you can consider smaller decisions now. (Does not apply here)"],
-  Q2:[ "Example 1: The sink is leaking and wasting water—function isn’t being met. (Applies here)",
-       "Example 2: You want a different color of garbage bags. (Does not apply here)"],
-  Q3:[ "Example 1: Mousepad is dirty—this might cause mouse tracking issues. (Applies here)",
-       "Example 2: Phone works perfectly; you just feel uneasy it might break. (Does not apply here)"],
-  Q4:[ "Example 1: Hands are dirty—this could cause mousepad to become dirty, which might cause mouse tracking issues. (Applies here)",
-       "Example 2: You're worried you might contract an illness on your birthday next month. (Does not apply here)"],
-  Q40:["Example 1: A metal part will eventually rust through if never coated. (Applies here)",
-       "Example 2: A cosmetic scuff won’t spread or worsen on its own. (Does not apply here)"],
-  Q60:["Example 1: Ignoring a small roof leak risks major damage; fixing has limited downsides. (Applies here)",
-       "Example 2: Preventive replacement is costly while failure impact is tiny. (Does not apply here)",
-       "Example 3: About even tradeoffs → use “Roughly the same.”"],
-  Q70:["Example 1: A failing hard drive showing SMART warnings is more likely than not to fail. (Applies here)",
-       "Example 2: A brand-new part with no symptoms is unlikely to fail soon. (Does not apply here)"],
-  Q5:[ "Example 1: A replacement faucet cartridge exists, even if backordered. (Applies here)",
-       "Example 2: A software bug has no known fix or workaround yet. (Does not apply here)"],
-  Q6:[ "Example 1: You can schedule a repair and approve payment, and it will get done. (Applies here)",
-       "Example 2: You might get turned down after asking someone on a date; you can do what you can, but ultimately can’t guarantee the outcome. (Does not apply here)"],
-  Q7:[ "Example 1: Your friends are saying things you don't feel comfortable hearing; you can't control what they say, but you can at least ask them to stop. (Applies here)",
-       "Example 2: The power in your city goes out, nothing you can do about it. (Does not apply here)"],
-  Q8:[ "Example 1: You use a generator for your house after the power goes out. (Applies here)",
-       "Example 2: All alternatives rely on things you can’t control. (Does not apply here)"],
-  Q9:[ "Example 1: You try a new medication to see how well it helps. (Applies here)",
-       "Example 2: A tedious workaround teaches nothing useful later. (Does not apply here)"],
-  Q10:["Example 1: A quick medical screening offers value with minimal downside. (Applies here)",
-       "Example 2: Disassembling an expensive device ‘just to see’ costs more than the information is worth. (Does not apply here)"],
-  Q13:["Example 1: Repairing a roof leak prevents serious damage. (Applies here)",
-       "Example 2: A risky modification voids the warranty for marginal benefit. (Does not apply here)",
-       "Example 3: Benefits and downsides feel about even → “Roughly the same.”"],
-  Q130:["Example 1: You’d rather fix a moderate issue despite some hassle. (Applies here)",
-        "Example 2: You’d rather avoid the fix because the hassle outweighs the benefit. (Does not apply here)"],
-  Q140:["Example 1: A quieter season next month could make it worth it. (Applies here)",
-        "Example 2: No realistic scenario would make it worth it. (Does not apply here)"],
-  Q150:["Example 1: Another method gets 90% of the benefit for half the cost. (Applies here)",
-        "Example 2: All alternatives are worse on key criteria. (Does not apply here)"],
-  Q14:["Example 1: Polishing slides beyond ‘good enough’ adds little impact. (Applies here)",
-       "Example 2: Fixing a critical bug—each hour matters; no early plateau. (Does not apply here)"],
-  Q16:["Example 1: Exercise intensity has a sweet spot; too much/too little harms results. (Applies here)",
-       "Example 2: Filing taxes—no optimal ‘intensity’; you just finish it. (Does not apply here)"],
-  Q18:["Example 1: Upgrading HDD to SSD is clearly noticeable. (Applies here)",
-       "Example 2: Gold-plated HDMI vs regular—no functional difference. (Does not apply here)"],
-  Q19:["Example 1: Sealing driveway cracks extends lifespan. (Applies here)",
-       "Example 2: A cosmetic fix that wears off in a week. (Does not apply here)"],
-  Q20:["Example 1: Decongestant allows sleep tonight. (Applies here)",
-       "Example 2: Reorganizing a drawer doesn’t change today’s urgent issue. (Does not apply here)"],
-  Q21:["Example 1: Wearing a seatbelt is worth doing every time. (Applies here)",
-       "Example 2: Washing the car daily isn’t worth it without special reason. (Does not apply here)"],
-  Q22:["Example 1: Replacing a worn-out laptop beats another costly repair. (Applies here)",
-       "Example 2: No next-best option reasonably solves it. (Does not apply here)"],
-  Q23:["Example 1: Replacing a timing belt before expected lifespan ends. (Applies here)",
-       "Example 2: Fixing a screen that already cracked (current problem, not future). (Does not apply here)"],
-  Q24:["Example 1: Changing HVAC filters to prevent breakdowns. (Applies here)",
-       "Example 2: Repainting a wall for a new color. (Does not apply here)"],
-  Q26:["Example 1: Squealing brakes—clear warning sign. (Applies here)",
-       "Example 2: Timing belt—can fail without warning. (Does not apply here)"],
-  Q27:["Example 1: You’d pick this method if you could do it now. (Applies here)",
-       "Example 2: You know a better option but aren’t choosing it. (Does not apply here)"],
-  Q28:["Example 1: You compared and ruled out better options. (Applies here)",
-       "Example 2: You haven’t checked obvious alternatives. (Does not apply here)"],
-  Q29:["Example 1: Part is in stock; appointments available. (Applies here)",
-       "Example 2: Part is backordered for two weeks. (Does not apply here)"],
-  Q30:["Example 1: Off-season timing makes it cheaper and easier. (Applies here)",
-       "Example 2: Waiting won’t improve value; risk may rise. (Does not apply here)"],
-  Q31:["Example 1: Waiting a week saves a lot with little downside. (Applies here)",
-       "Example 2: Waiting would cause outages or stress. (Does not apply here)"],
-  Q32:["Example 1: A solid Plan B works now. (Applies here)",
-       "Example 2: No next-best option reasonably solves it. (Does not apply here)"],
-  Q33:["Example 1: Doing it during a scheduled break reduces disruption. (Applies here)",
-       "Example 2: There’s no later window that beats now. (Does not apply here)"],
-  Q34:["Example 1: After availability, doing it during a later lull saves hassle. (Applies here)",
-       "Example 2: Once available, sooner is clearly better. (Does not apply here)"],
-  Q42:["Example 1: Brakes squeal (sign) and risk is climbing — act when signs + threshold are met.",
-       "Example 2: Fan starts grinding (sign); delaying risks bigger failure — act at threshold."],
-  Q43:["Example 1: Timing belt may fail without warning — act based on probability threshold.",
-       "Example 2: Random-state SSD failures — act when risk crosses threshold."]
-};
-
-// ======= STATE =======
-let currentThresholdPct = 90;  // from severity 1 by default
-let answeredYesQ6 = false;     // track to auto-skip Q14
-
-// ======= APP LOGIC =======
-let historyStack = [];
-let currentNode = flowchart.find(n => n.id === "Q0");
-let currentSegment = "If You Should Act";
-
-function getSegmentForNodeId(id) {
-  if (!id || id[0] !== 'Q') return currentSegment;
-  const m = /^Q(\d+)$/.exec(id);
-  if (!m) return currentSegment;
-  const num = parseInt(m[1], 10);
-  return num >= 23 ? "When You Should Act" : "If You Should Act";
-}
-
-function setHeadingText(nodeId) {
-  const title = document.getElementById('segmentTitle');
-  const skipBtn = document.getElementById('skipBtn');
-
-  if (nodeId === 'Q0') {
-    title.innerHTML =
-      "<img src='favicon_512.png' srcset='favicon_64.png 1x, favicon_256.png 2x, favicon_512.png 3x' alt='Discernment Logo' class='logo'>Discernment Guide";
-    skipBtn.style.display = 'none';
-    return;
-  }
-
-  const text = (currentSegment === "If You Should Act")
-    ? "⚖️ If You Should Act"
-    : "⏳ When You Should Act";
-  title.textContent = text;
-
-  skipBtn.style.display = (currentSegment === "If You Should Act") ? 'inline-block' : 'none';
-}
-
-function flashHeadingColor(targetSegment) {
-  if (currentNode && currentNode.id === 'Q0') return;
-  const headingDiv = document.getElementById('segmentHeading');
-  const cls = (targetSegment === "If You Should Act") ? 'flash-green' : 'flash-gold';
-  headingDiv.classList.add(cls);
-  setTimeout(() => headingDiv.classList.remove(cls), 1500);
-}
-
-/* Force-close any open panels when changing screens */
-function closeAllPanels() {
-  collapseSharedPanel();
-  collapseReasoningPanel();
-  const risk = document.getElementById('riskInline');
-  if (risk) {
-    risk.style.display = 'none';
-    risk.setAttribute('aria-hidden','true');
-  }
-}
-
-/* --- Q42/Q43 threshold formatting helpers --- */
-function formatQ42HTML(html) {
-  if (currentThresholdPct <= 0) {
-    // Replace ONLY the phrase "both of the following are true:" with special sentence (lowercase "there"),
-    // then remove the immediate bullet list that follows.
-    let out = html.replace(/both of the following are true\s*:/i, 'there is even a <i>SMALL</i> chance of failure.');
-    // Remove the first <ul>...</ul> after replacement
-    out = out.replace(/<ul>[\s\S]*?<\/ul>/i, '');
-    return out;
-  }
-  // Otherwise, just swap the percentage everywhere appropriate
-  return html.replace(/(?:nearing\s+or\s+greater\s+than\s*)?50%/gi, `${currentThresholdPct}%`);
-}
-
-function formatQ43HTML(html) {
-  if (currentThresholdPct <= 0) {
-    // Keep intro intact, but replace ONLY the exact clause sentence about the 50% threshold.
-    return html.replace(
-      /the\s*<i>estimated\s*chance\s*of\s*failure<\/i>\s*is\s*nearing\s*or\s*greater\s*than\s*50%\.?/i,
-      'there is even a <i>SMALL</i> chance of failure.'
-    );
-  }
-  // Non-10 severities: swap the percentage number only
-  return html.replace(/50%/gi, `${currentThresholdPct}%`);
-}
-
-function applyThresholdForNode(id, rawHTML) {
-  if (id === 'Q42') return formatQ42HTML(rawHTML);
-  if (id === 'Q43') return formatQ43HTML(rawHTML);
-  return rawHTML;
-}
-
-function renderNode(node) {
-  closeAllPanels();
-
-  const errorBox = document.getElementById('errorBox');
-  errorBox.textContent = '';
-
-  if (!node) {
-    errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
-    document.getElementById('text').textContent = '';
-    document.getElementById('buttons').innerHTML = '';
-    setHeadingText('');
-    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
-    document.getElementById('restartTop').style.display = 'inline-block';
-    return;
-  }
-
-  const prevSegment = currentSegment;
-  const thisSegment = getSegmentForNodeId(node.id);
-  if (thisSegment !== prevSegment && node.id !== 'Q0') flashHeadingColor(thisSegment);
-  currentSegment = thisSegment;
-  setHeadingText(node.id);
-
-  const textDiv = document.getElementById('text');
-  let html = node.text || '';
-  if (node.id === 'Q42' || node.id === 'Q43') {
-    html = applyThresholdForNode(node.id, html);
-    textDiv.innerHTML = `<div class="result-text">${html}</div>`;
-  } else {
-    textDiv.innerHTML = html;
-  }
-
-  document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
-
-  setupAuxToggles(node);
-  showOrHideRiskInline(node);
-
-  const btns = document.getElementById('buttons');
-  btns.innerHTML = '';
-  const restartTop = document.getElementById('restartTop');
-
-  if (node.type === 'result') {
-    restartTop.style.display = 'none';
-    btns.classList.add('center');
-    const restartCentered = makeButton('Restart', 'restart', () => restart());
-    restartCentered.style.flex = '0 0 auto';
-    btns.appendChild(restartCentered);
-  } else {
-    restartTop.style.display = 'inline-block';
-    btns.classList.remove('center');
-    if (node.type === 'question') {
-      // YES button
-      const yesBtn = makeButton('Yes', 'yes', () => {
-        if (node.id === 'Q6') answeredYesQ6 = true; // capture for later skip
-        goToNode(node.yes);
-      });
-      // NO button
-      const noBtn = makeButton('No', 'no', () => {
-        if (node.id === 'Q6') answeredYesQ6 = false;
-        goToNode(node.no);
-      });
-      btns.appendChild(yesBtn);
-      btns.appendChild(noBtn);
-
-      // Optional "Roughly the same" third path
-      if (node.same) {
-        const sameBtn = makeButton('Roughly the same', 'next', () => goToNode(node.same));
-        btns.appendChild(sameBtn);
-      }
-    } else if (node.type === 'info') {
-      btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
+  // Display slider value live
+  const slider = document.getElementById('severitySlider');
+  const value = document.getElementById('severityValue');
+  slider.addEventListener('input', () => {
+    value.textContent = slider.value;
+    if (window.navigator.vibrate) {
+      window.navigator.vibrate(10); // haptic bump
     }
-  }
-}
-
-/* ---------- Panels ---------- */
-function collapseSharedPanel() {
-  const panel = document.getElementById('sharedPanel');
-  if (panel) {
-    panel.style.display = 'none';
-    panel.setAttribute('aria-hidden','true');
-    panel.dataset.mode = '';
-    panel.innerHTML = '';
-  }
-  const leftWrap  = document.getElementById('leftControlsWrapper');
-  const rightWrap = document.getElementById('rightControlsWrapper');
-  leftWrap?.querySelectorAll('.examples-btn')?.forEach(btn => {
-    btn.textContent = 'Show examples';
-    btn.setAttribute('aria-expanded','false');
-    btn.classList.remove('active');
   });
-  rightWrap?.querySelectorAll('.viz-btn, .reasoning-btn')?.forEach(btn => {
-    const isViz = btn.classList.contains('viz-btn');
-    btn.textContent = isViz ? 'Show visualization' : 'Show percentage reasoning';
-    btn.setAttribute('aria-expanded','false');
-    btn.classList.remove('active');
-  });
-}
-function collapseReasoningPanel() {
-  const panel   = document.getElementById('reasoningPanel');
-  if (panel) {
-    panel.style.display = 'none';
-    panel.setAttribute('aria-hidden','true');
-    panel.innerHTML = '';
-  }
-}
-
-/* ---------- Controls under the text ---------- */
-function setupAuxToggles(node) {
-  const leftWrap = document.getElementById('leftControlsWrapper');
-  const rightWrap = document.getElementById('rightControlsWrapper');
-  const panel = document.getElementById('sharedPanel');
-
-  leftWrap.innerHTML = '';
-  rightWrap.innerHTML = '';
-  collapseSharedPanel();
-
-  if (node.type === 'question') {
-    // Examples (left)
-    const examplesBtn = document.createElement('button');
-    examplesBtn.textContent = 'Show examples';
-    examplesBtn.className = 'examples-btn ctrl-btn';
-    examplesBtn.setAttribute('aria-expanded', 'false');
-    leftWrap.appendChild(examplesBtn);
-
-    examplesBtn.onclick = () => {
-      const isOpenExamples = panel.style.display === 'block' && panel.dataset.mode === 'examples';
-      if (isOpenExamples) {
-        collapseSharedPanel();
-      } else {
-        renderExamples(panel, node.id);
-        openSharedPanel(panel, 'examples');
-        examplesBtn.setAttribute('aria-expanded','true');
-        examplesBtn.classList.add('active');
-        const rightBtn = rightWrap.querySelector('.viz-btn, .reasoning-btn');
-        if (rightBtn) { rightBtn.setAttribute('aria-expanded','false'); rightBtn.classList.remove('active'); }
-      }
-    };
-
-    // Visualization (right) only for Q14 / Q16
-    if (node.id === 'Q14' || node.id === 'Q16') {
-      const vizBtn = document.createElement('button');
-      vizBtn.textContent = 'Show visualization';
-      vizBtn.className = 'viz-btn ctrl-btn';
-      vizBtn.setAttribute('aria-expanded', 'false');
-      rightWrap.appendChild(vizBtn);
-
-      vizBtn.onclick = () => {
-        const isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
-        const src = node.id === 'Q14' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
-        const alt = node.id === 'Q14'
-          ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
-          : 'Inverted-U Curve: Effort/Resources vs Functional Results';
-        if (isOpenViz) {
-          collapseSharedPanel();
-        } else {
-          renderViz(panel, src, alt);
-          openSharedPanel(panel, 'viz');
-          vizBtn.setAttribute('aria-expanded','true');
-          vizBtn.classList.add('active');
-          examplesBtn.setAttribute('aria-expanded','false');
-          examplesBtn.classList.remove('active');
-        }
-      };
-    }
-
-    // Percentage reasoning (RIGHT) for Q42/Q43
-    if (node.id === 'Q42' || node.id === 'Q43') {
-      const reasonBtn = document.createElement('button');
-      reasonBtn.textContent = 'Show percentage reasoning';
-      reasonBtn.className = 'reasoning-btn ctrl-btn';
-      reasonBtn.setAttribute('aria-expanded','false');
-      rightWrap.appendChild(reasonBtn);
-
-      reasonBtn.onclick = () => {
-        const rp = document.getElementById('reasoningPanel');
-        const open = rp.style.display === 'block';
-        if (open) {
-          rp.style.display = 'none';
-          rp.setAttribute('aria-hidden','true');
-          reasonBtn.textContent = 'Show percentage reasoning';
-          reasonBtn.setAttribute('aria-expanded','false');
-          reasonBtn.classList.remove('active');
-        } else {
-          rp.style.display = 'block';
-          rp.setAttribute('aria-hidden','false');
-          reasonBtn.textContent = 'Hide percentage reasoning';
-          reasonBtn.setAttribute('aria-expanded','true');
-          reasonBtn.classList.add('active');
-          rp.innerHTML = '';
-          const p = document.createElement('p');
-          p.textContent = `Your current threshold is ${currentThresholdPct}%. (Threshold = 100% − Severity×10)`;
-          rp.appendChild(p);
-          const img = document.createElement('img');
-          img.src = 'linear_threshold_chart.png';
-          img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
-          rp.appendChild(img);
-        }
-      };
-    }
-  }
-}
-
-function openSharedPanel(panel, mode) {
-  if (!panel) return;
-  panel.style.display = 'block';
-  panel.setAttribute('aria-hidden','false');
-  panel.dataset.mode = mode;
-}
-
-function renderExamples(panel, nodeId) {
-  panel.innerHTML = '';
-  const lines = examples[nodeId] || ["Example 1: [edit me]","Example 2: [edit me]"];
-  lines.forEach(line => {
-    const p = document.createElement('p');
-    p.textContent = line;
-    panel.appendChild(p);
-  });
-}
-function renderViz(panel, src, alt) {
-  panel.innerHTML = '';
-  const img = document.createElement('img'); img.src = src; img.alt = alt;
-  panel.appendChild(img);
-}
-
-/* ---------- Q25: severity slider (ticks), default severity=1 ---------- */
-function showOrHideRiskInline(node) {
-  const container = document.getElementById('riskInline');
-  container.innerHTML = '';
-  if (!node || node.id !== 'Q25') {
-    container.style.display = 'none';
-    container.setAttribute('aria-hidden','true');
-    return;
-  }
-  container.style.display = 'block';
-  container.setAttribute('aria-hidden','false');
-
-  const sevDisplay = document.createElement('div');
-  sevDisplay.className = 'sev-display';
-  sevDisplay.id = 'sevDisplay';
-  sevDisplay.textContent = '1';
-  container.appendChild(sevDisplay);
-
-  const row = document.createElement('div'); row.className = 'risk-row';
-  const slider = document.createElement('input');
-  slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
-  slider.setAttribute('list','riskTicks');
-  slider.value = '1';
-
-  function applyFromSeverity(sev) {
-    const thr = 100 - sev * 10;  // linear: sev=1 → 90%, sev=10 → 0%
-    currentThresholdPct = thr;
-    sevDisplay.textContent = String(sev);
-  }
-  applyFromSeverity(1);
-
-  // Haptics on supported devices
-  function vibrateTick() {
-    if (navigator.vibrate) {
-      navigator.vibrate(8); // light bump
-    }
-  }
-
-  slider.oninput = () => {
-    applyFromSeverity(parseInt(slider.value, 10));
-    vibrateTick();
-    // If currently on Q42/Q43, re-render text live to reflect new threshold wording
-    if (currentNode && (currentNode.id === 'Q42' || currentNode.id === 'Q43')) {
-      const textDiv = document.getElementById('text');
-      let html = currentNode.text || '';
-      html = applyThresholdForNode(currentNode.id, html);
-      textDiv.innerHTML = `<div class="result-text">${html}</div>`;
-    }
-  };
-
-  row.appendChild(slider);
-  container.appendChild(row);
-
-  const ticks = document.createElement('datalist');
-  ticks.id = 'riskTicks';
-  for (let i=1;i<=10;i++){ const opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
-  container.appendChild(ticks);
-}
-
-/* ---------- Nav ---------- */
-function makeButton(label, cls, action) {
-  const btn = document.createElement('button');
-  btn.textContent = label; btn.className = cls; btn.onclick = action; return btn;
-}
-function goToNode(id) {
-  closeAllPanels();
-
-  // Auto-skip Q14 if Q6 was Yes (Q14 would also be "Yes" by default)
-  if (id === 'Q14' && answeredYesQ6) {
-    id = 'Q15';
-  }
-
-  const next = flowchart.find(n => n.id === id);
-  historyStack.push(currentNode ? currentNode.id : '');
-  currentNode = next;
-  renderNode(currentNode);
-}
-function goBack() {
-  closeAllPanels();
-  const prevId = historyStack.pop();
-  const prev = flowchart.find(n => n.id === prevId);
-  currentNode = prev || currentNode;
-  renderNode(currentNode);
-}
-function restart() {
-  closeAllPanels();
-  historyStack = [];
-  currentSegment = "If You Should Act";
-  answeredYesQ6 = false;
-  currentNode = flowchart.find(n => n.id === "Q0");
-  renderNode(currentNode);
-}
-
-/* ---------- Skip button: jump to first WHEN (Q23) ---------- */
-document.getElementById('skipBtn').addEventListener('click', () => {
-  closeAllPanels();
-  goToNode('Q23');
-});
-
-/* ---------- Initial render ---------- */
-renderNode(currentNode);
 </script>
+
 </body>
 </html>
