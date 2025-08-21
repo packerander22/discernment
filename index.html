@@ -90,6 +90,81 @@
   .result-text p { margin: 0.4em 0; }
   .result-text ul { margin: 0.25em 0; padding-left: 1.2em; }
   .result-text li { margin: 0.25em 0; }
+
+  /* === Slider visual customization (bigger, aligned, left-side heat fill) === */
+  .heat-slider {
+    --track-height: 12px;
+    --thumb-size: 28px;
+    --thumb-shadow: 0 1px 3px rgba(0,0,0,.25);
+    --track-bg: #e0e0e0;     /* right side */
+    --fill: #2d6cdf;         /* left side color (updated via JS) */
+    --pct: 0%;               /* fill percent (updated via JS) */
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: var(--thumb-size);
+    background: transparent; /* we'll paint the track */
+  }
+
+  /* WebKit track: paint left as solid heat color, right as neutral */
+  .heat-slider::-webkit-slider-runnable-track {
+    height: var(--track-height);
+    border-radius: calc(var(--track-height) / 2);
+    background:
+      linear-gradient(to right,
+        var(--fill) 0%,
+        var(--fill) var(--pct),
+        var(--track-bg) var(--pct),
+        var(--track-bg) 100%);
+  }
+  /* WebKit thumb: bigger & perfectly centered via margin-top math */
+  .heat-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #999;
+    box-shadow: var(--thumb-shadow);
+    margin-top: calc((var(--thumb-size) - var(--track-height)) / -2);
+    cursor: pointer;
+  }
+
+  /* Firefox track (neutral right) + progress (colored left) */
+  .heat-slider::-moz-range-track {
+    height: var(--track-height);
+    border-radius: calc(var(--track-height) / 2);
+    background: var(--track-bg);
+  }
+  .heat-slider::-moz-range-progress {
+    height: var(--track-height);
+    border-radius: calc(var(--track-height) / 2);
+    background: var(--fill);
+  }
+  .heat-slider::-moz-range-thumb {
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #999;
+    box-shadow: var(--thumb-shadow);
+    cursor: pointer;
+  }
+
+  /* (Optional) Edge/IE fallback */
+  .heat-slider::-ms-track {
+    height: var(--track-height);
+    border-color: transparent;
+    color: transparent;
+    background: transparent;
+  }
+  .heat-slider::-ms-fill-lower { background: var(--fill); border-radius: calc(var(--track-height)/2); }
+  .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
+  .heat-slider::-ms-thumb {
+    width: var(--thumb-size); height: var(--thumb-size);
+    border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow);
+  }
 </style>
 </head>
 <body>
@@ -127,10 +202,8 @@
 <script>
 /* =========================
    Renumbering map note:
-   Earlier we inserted Q38 and shifted Q38+ to Q39+.
-   This version also renumbers RESULTS so:
+   We inserted new Q38 and shifted Q39+; results reindexed so:
    R30→R3, old R3→R4, R4→R5, R5→R6, R6→R7, R7→R8, R8→R9
-   All references below have been updated accordingly.
 ========================= */
 
 // ======= FLOW (Q0–Q44) =======
@@ -208,13 +281,13 @@ const flowchart = [
   /* RESULTS (renumbered) */
   { "id": "R1",  "type": "result",   "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
   { "id": "R2",  "type": "result",   "text": "<i>Don’t worry about it:)</i>" },
-  { "id": "R3",  "type": "result",   "text": "If that time ever does come, re-evaluate the issue. Until then, don't worry about it:)" },                         <!-- was R30 -->
-  { "id": "R4",  "type": "result",   "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },  <!-- was R3 -->
-  { "id": "R5",  "type": "result",   "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },       <!-- was R4 -->
-  { "id": "R6",  "type": "result",   "text": "Wait until the <i>best solution</i> given the circumstances is available, then solve it once there aren’t any other more important things to do." },                              <!-- was R5 -->
-  { "id": "R7",  "type": "result",   "text": "Address it <i>sooner than later</i>, once there aren’t any other more important things to do." },                <!-- was R6 -->
-  { "id": "R8",  "type": "result",   "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Consider any other options that could also work and be worth it until then." },  <!-- was R7 -->
-  { "id": "R9",  "type": "result",   "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) come true, once there aren’t any other more important things to do." }                    <!-- was R8 -->
+  { "id": "R3",  "type": "result",   "text": "If that time ever does come, re-evaluate the issue. Until then, don't worry about it:)" },
+  { "id": "R4",  "type": "result",   "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },
+  { "id": "R5",  "type": "result",   "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },
+  { "id": "R6",  "type": "result",   "text": "Wait until the <i>best solution</i> given the circumstances is available, then solve it once there aren’t any other more important things to do." },
+  { "id": "R7",  "type": "result",   "text": "Address it <i>sooner than later</i>, once there aren’t any other more important things to do." },
+  { "id": "R8",  "type": "result",   "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Consider any other options that could also work and be worth it until then." },
+  { "id": "R9",  "type": "result",   "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) come true, once there aren’t any other more important things to do." }
 ];
 
 /* ===== EXAMPLES (keys unchanged) ===== */
@@ -338,70 +411,23 @@ function transformQ44(html) {
   return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, `${currentThresholdPct}%`);
 }
 
-function renderNode(node) {
-  closeAllPanels();
-
-  const errorBox = document.getElementById('errorBox');
-  errorBox.textContent = '';
-
-  if (!node) {
-    errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
-    document.getElementById('text').textContent = '';
-    document.getElementById('buttons').innerHTML = '';
-    setHeadingText('');
-    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
-    document.getElementById('restartTop').style.display = 'inline-block';
-    return;
-  }
-
-  const previousSegment = currentSegment;
-  const thisSegment = getSegmentForNodeId(node.id);
-  if (thisSegment !== previousSegment && node.id !== 'Q0') flashHeadingColor(thisSegment);
-
-  currentSegment = thisSegment;
-  setHeadingText(node.id);
-
-  const textDiv = document.getElementById('text');
-  let displayHTML = node.text || '';
-  if (node.id === 'Q43') {
-    displayHTML = transformQ43(displayHTML);
-    textDiv.innerHTML = `<div class="result-text">${displayHTML}</div>`;
-  } else if (node.id === 'Q44') {
-    displayHTML = transformQ44(displayHTML);
-    textDiv.innerHTML = `<div class="result-text">${displayHTML}</div>`;
+/* ---------- Slider color helpers ---------- */
+function heatColorForSeverity(sev) {
+  // sev 1..5: hue 220→60 (blue→yellow), sev 6..10: hue 60→0 (yellow→red)
+  let hue;
+  if (sev <= 5) {
+    const t = (sev - 1) / 4;          // 0..1
+    hue = 220 + (60 - 220) * t;       // 220→60
   } else {
-    textDiv.innerHTML = displayHTML;
+    const t = (sev - 6) / 4;          // 0..1
+    hue = 60 + (0 - 60) * t;          // 60→0
   }
-
-  document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
-
-  setupAuxToggles(node);
-  showOrHideRiskInline(node);
-
-  const btns = document.getElementById('buttons');
-  btns.innerHTML = '';
-  const restartTop = document.getElementById('restartTop');
-
-  if (node.type === 'result') {
-    restartTop.style.display = 'none';
-    btns.classList.add('center');
-    const restartCentered = makeButton('Restart', 'restart', () => restart());
-    restartCentered.style.flex = '0 0 auto';
-    btns.appendChild(restartCentered);
-  } else {
-    restartTop.style.display = 'inline-block';
-    btns.classList.remove('center');
-
-    if (node.type === 'question') {
-      const yesBtn = makeButton('Yes', 'yes', () => goToNode(node.yes));
-      const noBtn  = makeButton('No',  'no',  () => goToNode(node.no));
-      btns.appendChild(yesBtn);
-      btns.appendChild(noBtn);
-      if (node.same) btns.appendChild(makeButton('Roughly the same', 'same', () => goToNode(node.same)));
-    } else if (node.type === 'info') {
-      btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
-    }
-  }
+  return `hsl(${Math.round(hue)}, 100%, 50%)`;
+}
+function updateSliderFill(slider, sev) {
+  const pct = ((sev - 1) / 9) * 100; // 0..100 for ticks 1..10
+  slider.style.setProperty('--pct', pct + '%');
+  slider.style.setProperty('--fill', heatColorForSeverity(sev));
 }
 
 /* ---------- Panels ---------- */
@@ -565,7 +591,7 @@ function renderViz(panel, src, alt) {
   panel.appendChild(img);
 }
 
-/* ---------- Q29 severity slider with haptics ---------- */
+/* ---------- Q29 severity slider with haptics & heat fill ---------- */
 let lastVibeTs = 0;
 function hapticBump() {
   if (!('vibrate' in navigator)) return;
@@ -595,6 +621,7 @@ function showOrHideRiskInline(node) {
   const row = document.createElement('div'); row.className = 'risk-row';
   const slider = document.createElement('input');
   slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
+  slider.className = 'heat-slider';
   slider.setAttribute('list','riskTicks');
   slider.value = '1';
 
@@ -602,6 +629,9 @@ function showOrHideRiskInline(node) {
     const thr = 100 - sev * 10;  // linear mapping
     currentThresholdPct = thr;   // sev=1 → 90%, sev=10 → 0%
     sevDisplay.textContent = String(sev);
+    updateSliderFill(slider, sev);
+
+    // Live update the text on Q43/Q44 if currently visible
     if (currentNode && (currentNode.id === 'Q43' || currentNode.id === 'Q44')) {
       const textDiv = document.getElementById('text');
       let html = currentNode.text || '';
@@ -609,6 +639,8 @@ function showOrHideRiskInline(node) {
       textDiv.innerHTML = `<div class="result-text">${html}</div>`;
     }
   }
+
+  // Init visuals
   applyFromSeverity(1);
 
   slider.oninput = () => {
