@@ -30,6 +30,7 @@
     display:flex; flex-direction:column; justify-content:space-between;
   }
 
+  /* Header */
   .segment-heading {
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
@@ -37,7 +38,6 @@
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
-
   .flash-gold { color: goldenrod !important; }
   .flash-green { color: #2e7d32 !important; }
 
@@ -97,15 +97,14 @@
     --thumb-size: 28px;
     --thumb-shadow: 0 1px 3px rgba(0,0,0,.25);
     --track-bg: #e0e0e0;     /* right side */
-    --fill: #2d6cdf;         /* left side color (updated via JS) */
+    --fill: #2d6cdf;         /* left side (updated via JS) */
     --pct: 0%;               /* fill percent (updated via JS) */
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
     height: var(--thumb-size);
-    background: transparent; /* we'll paint the track */
+    background: transparent;
   }
-
   /* WebKit track: paint left as solid heat color, right as neutral */
   .heat-slider::-webkit-slider-runnable-track {
     height: var(--track-height);
@@ -131,7 +130,7 @@
     cursor: pointer;
   }
 
-  /* Firefox track (neutral right) + progress (colored left) */
+  /* Firefox */
   .heat-slider::-moz-range-track {
     height: var(--track-height);
     border-radius: calc(var(--track-height) / 2);
@@ -152,7 +151,7 @@
     cursor: pointer;
   }
 
-  /* (Optional) Edge/IE fallback */
+  /* Edge/IE (best-effort) */
   .heat-slider::-ms-track {
     height: var(--track-height);
     border-color: transparent;
@@ -160,7 +159,7 @@
     background: transparent;
   }
   .heat-slider::-ms-fill-lower { background: var(--fill); border-radius: calc(var(--track-height)/2); }
-  .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
+  .heat-slider::-ms-fill-upper { background: var(--track-height); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-thumb {
     width: var(--thumb-size); height: var(--thumb-size);
     border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow);
@@ -202,12 +201,13 @@
 <script>
 /* =========================
    Renumbering map note:
-   We inserted new Q38 and shifted Q39+; results reindexed so:
+   Inserted NEW Q38 (from Q37 "same") and shifted Q39+.
+   Results reindexed so:
    R30→R3, old R3→R4, R4→R5, R5→R6, R6→R7, R7→R8, R8→R9
 ========================= */
 
 // ======= FLOW (Q0–Q44) =======
-const flowchart = [
+var flowchart = [
   { "id": "Q0",  "type": "info",     "text": "Welcome! This flow chart guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and a slider later). Tap Next to begin.", "next": "Q1" },
 
   /* ===== IF YOU SHOULD ACT ===== */
@@ -262,13 +262,12 @@ const flowchart = [
   { "id": "Q35", "type": "question", "text": "Is this solution <i>currently</i> available?", "yes": "Q39", "no": "Q37" },
   { "id": "Q36", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q37", "no": "R7" },
 
-  /* Q37 now has a third path "same" to NEW Q38 */
+  /* Q37 with third path to NEW Q38 */
   { "id": "Q37", "type": "question", "text": "Assuming you waited until it was available, would the <i>benefits</i> of using this solution outweigh the <i>downsides</i> of having to wait?", "yes": "Q41", "no": "Q39", "same": "Q38" },
 
-  /* NEW Q38 (inserted) */
+  /* NEW Q38 */
   { "id": "Q38", "type": "question", "text": "All things considered and despite the downsides of waiting, would you rather use this solution?", "yes": "Q41", "no": "Q39" },
 
-  /* shifted by +1 from here */
   { "id": "Q39", "type": "question", "text": "Is there a <i>better</i> solution you know of?", "yes": "R5",  "no": "R4" },
   { "id": "Q40", "type": "question", "text": "Is there a <i>better time</i> further down the road to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R7" },
   { "id": "Q41", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
@@ -290,71 +289,71 @@ const flowchart = [
   { "id": "R9",  "type": "result",   "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) come true, once there aren’t any other more important things to do." }
 ];
 
-/* ===== EXAMPLES (keys unchanged) ===== */
-const examples = {
-  Q1:[ "Deadline today > TV shopping can wait. (Applies)", "Nothing urgent today; small decisions okay. (Does not apply)"],
-  Q2:[ "Sink leaking (function not met). (Applies)", "Prefer different bag color; no functional impact. (Does not apply)"],
-  Q3:[ "Laptop fan noise could signal failure. (Applies)", "Phone works fine; vague worry only. (Does not apply)"],
-  Q4:[ "Dust buildup could lead to overheating later. (Applies)", "Hand-wavy fear something ‘might’ happen. (Does not apply)"],
-  Q5:[ "Old lithium battery will eventually degrade. (Applies)", "A one-off pop-up likely won’t recur. (Does not apply)"],
-  Q6:[ "Not patching a critical vuln costs more than patching. (Applies)", "Cosmetic bug costs more to fix than to leave. (Does not apply)", "Roughly the same: patch disruptive but risk seems low. (Same)"],
-  Q7:[ "Slow leak likely to spread if ignored. (Applies)", "Contained glitch unlikely to recur. (Does not apply)"],
-  Q8:[ "Backordered replacement part exists. (Applies)", "No known fix or workaround yet. (Does not apply)"],
-  Q9:[ "You can approve repair and it will happen. (Applies)", "You can’t guarantee someone else’s decision. (Does not apply)"],
-  Q10:["Escalate once; beyond that it’s out of your hands. (Applies)", "Citywide outage: nothing else to do. (Does not apply)"],
-  Q11:["Generator under your control solves outage. (Applies)", "All options rely on luck/others. (Does not apply)"],
-  Q12:["Trial a tool to learn for future value. (Applies)", "Tedious workaround teaches nothing. (Does not apply)"],
-  Q13:["Quick screening with minimal downside yields info. (Applies)", "Disassembling expensive gear ‘just to see’ isn’t worth it. (Does not apply)"],
-  Q14:["Repairing roof leak prevents major damage. (Applies)", "Risky mod for marginal benefit. (Does not apply)", "Roughly the same: benefits ≈ downsides. (Same)"],
-  Q15:["Despite tradeoffs, you’d still rather fix it. (Applies)", "Given tradeoffs, you’d rather not. (Does not apply)"],
-  Q16:["Seasonal downtime could flip the calculus later. (Applies)", "No foreseeable time changes the calculus. (Does not apply)"],
-  Q17:["Alternative approach is cheaper/better overall. (Applies)", "No better option fits goals. (Does not apply)"],
-  Q18:["Polishing beyond ‘good enough’ adds little. (Applies)", "Critical bug: every hour matters. (Does not apply)"],
-  Q20:["Exercise intensity has a sweet spot. (Applies)", "Filing taxes—no ‘sweet spot,’ just finish. (Does not apply)"],
-  Q22:["HDD → SSD: noticeable improvement. (Applies)", "Gold HDMI vs regular: no difference. (Does not apply)"],
-  Q23:["Sealing driveway cracks extends life. (Applies)", "Cosmetic touch-up that fades in a week. (Does not apply)"],
-  Q24:["Decongestant restores sleep tonight. (Applies)", "Reorganizing a drawer won’t help urgent issue. (Does not apply)"],
-  Q25:["Seatbelt is always worth it. (Applies)", "Washing the car daily isn’t. (Does not apply)"],
-  Q26:["Replace worn laptop vs. another costly repair. (Applies)", "No alternative truly better long-term. (Does not apply)"],
-  Q27:["Replace timing belt before end-of-life. (Applies)", "Fixing already cracked screen is a current problem. (Does not apply)"],
-  Q28:["Changing HVAC filters to prevent breakdown. (Applies)", "Repainting for color (not preventative). (Does not apply)"],
-  Q30:["Squealing brakes give clear warning window. (Applies)", "Timing belt can fail without warning. (Does not apply)"],
-  Q31:["You’d pick this method if you could do it now. (Applies)", "You know a better option but aren’t picking it. (Does not apply)"],
-  Q32:["You compared and ruled out better options. (Applies)", "You haven’t checked obvious alternatives. (Does not apply)"],
-  Q33:["This truly is the best preventative option. (Applies)", "A stronger preventative option likely exists. (Does not apply)"],
-  Q34:["You’ve ruled out better preventative options. (Applies)", "You still need to look at alternatives. (Does not apply)"],
-  Q35:["Part in stock; appointments available. (Applies)", "Part backordered two weeks. (Does not apply)"],
-  Q36:["Off-season timing makes it cheaper/easier. (Applies)", "Waiting won’t improve value; risk rises. (Does not apply)"],
-  Q37:["Waiting saves a lot with little downside. (Applies)", "Waiting causes outages or stress. (Does not apply)", "Roughly the same: tradeoffs feel even. (Same)"],
-  Q38:["You’d rather use this solution despite wait costs. (Applies)", "You’d rather not use it given the wait costs. (Does not apply)"],
-  Q39:["Plan B works now. (Applies)", "No next-best option reasonably solves it. (Does not apply)"],
-  Q40:["Do it during a scheduled break. (Applies)", "No later window beats now. (Does not apply)"],
-  Q41:["After availability, a later lull saves hassle. (Applies)", "Once available, sooner is better. (Does not apply)"],
-  Q42:["An even later window improves value. (Applies)", "Doing it then is already best. (Does not apply)"],
-  Q43:["Warning signs + threshold crossed. (Applies)", "Neither condition has been met. (Does not apply)"],
-  Q44:["Probability crosses the threshold. (Applies)", "Probability remains below threshold. (Does not apply)"]
+/* ===== EXAMPLES (trimmed, keys aligned) ===== */
+var examples = {
+  Q1:["Deadline today > TV shopping can wait. (Applies)","Nothing urgent today; small decisions okay. (Does not apply)"],
+  Q2:["Sink leaking (function not met). (Applies)","Prefer different bag color; no functional impact. (Does not apply)"],
+  Q3:["Laptop fan noise could signal failure. (Applies)","Phone works fine; vague worry only. (Does not apply)"],
+  Q4:["Dust buildup could lead to overheating later. (Applies)","Hand-wavy fear something ‘might’ happen. (Does not apply)"],
+  Q5:["Old lithium battery will eventually degrade. (Applies)","A one-off pop-up likely won’t recur. (Does not apply)"],
+  Q6:["Not patching a critical vuln costs more than patching. (Applies)","Cosmetic bug costs more to fix than to leave. (Does not apply)","Roughly the same: patch disruptive but risk seems low. (Same)"],
+  Q7:["Slow leak likely to spread if ignored. (Applies)","Contained glitch unlikely to recur. (Does not apply)"],
+  Q8:["Backordered replacement part exists. (Applies)","No known fix or workaround yet. (Does not apply)"],
+  Q9:["You can approve repair and it will happen. (Applies)","You can’t guarantee someone else’s decision. (Does not apply)"],
+  Q10:["Escalate once; beyond that it’s out of your hands. (Applies)","Citywide outage: nothing else to do. (Does not apply)"],
+  Q11:["Generator under your control solves outage. (Applies)","All options rely on luck/others. (Does not apply)"],
+  Q12:["Trial a tool to learn for future value. (Applies)","Tedious workaround teaches nothing. (Does not apply)"],
+  Q13:["Quick screening with minimal downside yields info. (Applies)","Disassembling expensive gear ‘just to see’ isn’t worth it. (Does not apply)"],
+  Q14:["Repairing roof leak prevents major damage. (Applies)","Risky mod for marginal benefit. (Does not apply)","Roughly the same: benefits ≈ downsides. (Same)"],
+  Q15:["Despite tradeoffs, you’d still rather fix it. (Applies)","Given tradeoffs, you’d rather not. (Does not apply)"],
+  Q16:["Seasonal downtime could flip the calculus later. (Applies)","No foreseeable time changes the calculus. (Does not apply)"],
+  Q17:["Alternative approach is cheaper/better overall. (Applies)","No better option fits goals. (Does not apply)"],
+  Q18:["Polishing beyond ‘good enough’ adds little. (Applies)","Critical bug: every hour matters. (Does not apply)"],
+  Q20:["Exercise intensity has a sweet spot. (Applies)","Filing taxes—no ‘sweet spot,’ just finish. (Does not apply)"],
+  Q22:["HDD → SSD: noticeable improvement. (Applies)","Gold HDMI vs regular: no difference. (Does not apply)"],
+  Q23:["Sealing driveway cracks extends life. (Applies)","Cosmetic touch-up that fades in a week. (Does not apply)"],
+  Q24:["Decongestant restores sleep tonight. (Applies)","Reorganizing a drawer won’t help urgent issue. (Does not apply)"],
+  Q25:["Seatbelt is always worth it. (Applies)","Washing the car daily isn’t. (Does not apply)"],
+  Q26:["Replace worn laptop vs. another costly repair. (Applies)","No alternative truly better long-term. (Does not apply)"],
+  Q27:["Replace timing belt before end-of-life. (Applies)","Fixing already cracked screen is a current problem. (Does not apply)"],
+  Q28:["Changing HVAC filters to prevent breakdown. (Applies)","Repainting for color (not preventative). (Does not apply)"],
+  Q30:["Squealing brakes give clear warning window. (Applies)","Timing belt can fail without warning. (Does not apply)"],
+  Q31:["You’d pick this method if you could do it now. (Applies)","You know a better option but aren’t picking it. (Does not apply)"],
+  Q32:["You compared and ruled out better options. (Applies)","You haven’t checked obvious alternatives. (Does not apply)"],
+  Q33:["This truly is the best preventative option. (Applies)","A stronger preventative option likely exists. (Does not apply)"],
+  Q34:["You’ve ruled out better preventative options. (Applies)","You still need to look at alternatives. (Does not apply)"],
+  Q35:["Part in stock; appointments available. (Applies)","Part backordered two weeks. (Does not apply)"],
+  Q36:["Off-season timing makes it cheaper/easier. (Applies)","Waiting won’t improve value; risk rises. (Does not apply)"],
+  Q37:["Waiting saves a lot with little downside. (Applies)","Waiting causes outages or stress. (Does not apply)","Roughly the same: tradeoffs feel even. (Same)"],
+  Q38:["You’d rather use this solution despite wait costs. (Applies)","You’d rather not use it given the wait costs. (Does not apply)"],
+  Q39:["Plan B works now. (Applies)","No next-best option reasonably solves it. (Does not apply)"],
+  Q40:["Do it during a scheduled break. (Applies)","No later window beats now. (Does not apply)"],
+  Q41:["After availability, a later lull saves hassle. (Applies)","Once available, sooner is better. (Does not apply)"],
+  Q42:["An even later window improves value. (Applies)","Doing it then is already best. (Does not apply)"],
+  Q43:["Warning signs + threshold crossed. (Applies)","Neither condition has been met. (Does not apply)"],
+  Q44:["Probability crosses the threshold. (Applies)","Probability remains below threshold. (Does not apply)"]
 };
 
-// ======= STATE =======
-let currentThresholdPct = 90;
-let q6WasYes = false;
+/* ======= STATE ======= */
+var currentThresholdPct = 90;
+var q6WasYes = false;
 
-// ======= APP LOGIC =======
-let historyStack = [];
-let currentNode = flowchart.find(n => n.id === "Q0");
-let currentSegment = "If You Should Act";
+/* ======= APP LOGIC ======= */
+var historyStack = [];
+var currentNode = flowchart.find(function(n){ return n.id === "Q0"; });
+var currentSegment = "If You Should Act";
 
 function getSegmentForNodeId(id) {
-  if (!id || id[0] !== 'Q') return currentSegment;
-  const m = /^Q(\d+)$/.exec(id);
+  if (!id || id.charAt(0) !== 'Q') return currentSegment;
+  var m = /^Q(\d+)$/.exec(id);
   if (!m) return currentSegment;
-  const num = parseInt(m[1], 10);
+  var num = parseInt(m[1], 10);
   return num >= 27 ? "When You Should Act" : "If You Should Act";
 }
 
 function setHeadingText(nodeId) {
-  const title = document.getElementById('segmentTitle');
-  const skipBtn = document.getElementById('skipBtn');
+  var title = document.getElementById('segmentTitle');
+  var skipBtn = document.getElementById('skipBtn');
 
   if (nodeId === 'Q0') {
     title.innerHTML =
@@ -369,17 +368,17 @@ function setHeadingText(nodeId) {
 
 function flashHeadingColor(targetSegment) {
   if (currentNode && currentNode.id === 'Q0') return;
-  const headingDiv = document.getElementById('segmentHeading');
-  const cls = (targetSegment === "If You Should Act") ? 'flash-green' : 'flash-gold';
+  var headingDiv = document.getElementById('segmentHeading');
+  var cls = (targetSegment === "If You Should Act") ? 'flash-green' : 'flash-gold';
   headingDiv.classList.add(cls);
-  setTimeout(() => headingDiv.classList.remove(cls), 1500);
+  setTimeout(function(){ headingDiv.classList.remove(cls); }, 1500);
 }
 
 /* Close panels when changing screens */
 function closeAllPanels() {
   collapseSharedPanel();
   collapseReasoningPanel();
-  const risk = document.getElementById('riskInline');
+  var risk = document.getElementById('riskInline');
   if (risk) {
     risk.style.display = 'none';
     risk.setAttribute('aria-hidden','true');
@@ -389,8 +388,8 @@ function closeAllPanels() {
 /* --- Q6 → Q14 auto-skip hook --- */
 function beforeEnterNode(nextId) {
   if (nextId === 'Q14' && q6WasYes) {
-    const nodeQ14 = flowchart.find(n => n.id === 'Q14');
-    return nodeQ14 && nodeQ14.yes ? nodeQ14.yes : nextId;
+    var nodeQ14 = flowchart.find(function(n){ return n.id === 'Q14'; });
+    return (nodeQ14 && nodeQ14.yes) ? nodeQ14.yes : nextId;
   }
   return nextId;
 }
@@ -398,62 +397,68 @@ function beforeEnterNode(nextId) {
 /* ---------- Threshold transformers for Q43/Q44 ---------- */
 function transformQ43(html) {
   if (currentThresholdPct <= 0) {
-    const listBlockRe = /:\s*<ul>[\s\S]*?<\/ul>/i;
+    var listBlockRe = /:\s*<ul>[\s\S]*?<\/ul>/i;
     return html.replace(listBlockRe, ' there is even a <i>SMALL</i> chance of failure.');
   }
-  return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, `${currentThresholdPct}%`);
+  return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, String(currentThresholdPct) + '%');
 }
 function transformQ44(html) {
   if (currentThresholdPct <= 0) {
-    const probClauseRe = /the\s*<i>estimated\s+chance\s+of\s+failure<\/i>\s+is\s+nearing\s+or\s+greater\s+than\s*50%/i;
+    var probClauseRe = /the\s*<i>estimated\s+chance\s+of\s+failure<\/i>\s+is\s+nearing\s+or\s+greater\s+than\s*50%/i;
     return html.replace(probClauseRe, 'there is even a <i>SMALL</i> chance of failure');
   }
-  return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, `${currentThresholdPct}%`);
+  return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, String(currentThresholdPct) + '%');
 }
 
 /* ---------- Slider color helpers ---------- */
 function heatColorForSeverity(sev) {
-  // sev 1..5: hue 220→60 (blue→yellow), sev 6..10: hue 60→0 (yellow→red)
-  let hue;
+  var hue;
   if (sev <= 5) {
-    const t = (sev - 1) / 4;          // 0..1
-    hue = 220 + (60 - 220) * t;       // 220→60
+    var t1 = (sev - 1) / 4;         // 0..1
+    hue = 220 + (60 - 220) * t1;    // 220→60
   } else {
-    const t = (sev - 6) / 4;          // 0..1
-    hue = 60 + (0 - 60) * t;          // 60→0
+    var t2 = (sev - 6) / 4;         // 0..1
+    hue = 60 + (0 - 60) * t2;       // 60→0
   }
-  return `hsl(${Math.round(hue)}, 100%, 50%)`;
+  return 'hsl(' + Math.round(hue) + ', 100%, 50%)';
 }
 function updateSliderFill(slider, sev) {
-  const pct = ((sev - 1) / 9) * 100; // 0..100 for ticks 1..10
+  var pct = ((sev - 1) / 9) * 100; // 0..100 (ticks 1..10)
   slider.style.setProperty('--pct', pct + '%');
   slider.style.setProperty('--fill', heatColorForSeverity(sev));
 }
 
 /* ---------- Panels ---------- */
 function collapseSharedPanel() {
-  const panel = document.getElementById('sharedPanel');
+  var panel = document.getElementById('sharedPanel');
   if (panel) {
     panel.style.display = 'none';
     panel.setAttribute('aria-hidden','true');
     panel.dataset.mode = '';
     panel.innerHTML = '';
   }
-  const leftWrap  = document.getElementById('leftControlsWrapper');
-  const rightWrap = document.getElementById('rightControlsWrapper');
-  leftWrap?.querySelectorAll('.examples-btn')?.forEach(btn => {
-    btn.textContent = 'Show examples';
-    btn.setAttribute('aria-expanded','false');
-    btn.classList.remove('active');
-  });
-  rightWrap?.querySelectorAll('.viz-btn, .reasoning-btn')?.forEach(btn => {
-    btn.textContent = btn.classList.contains('reasoning-btn') ? 'Show percentage reasoning' : 'Show visualization';
-    btn.setAttribute('aria-expanded','false');
-    btn.classList.remove('active');
-  });
+  var leftWrap  = document.getElementById('leftControlsWrapper');
+  var rightWrap = document.getElementById('rightControlsWrapper');
+
+  if (leftWrap) {
+    var exBtns = leftWrap.querySelectorAll('.examples-btn');
+    for (var i=0;i<exBtns.length;i++) {
+      exBtns[i].textContent = 'Show examples';
+      exBtns[i].setAttribute('aria-expanded','false');
+      exBtns[i].classList.remove('active');
+    }
+  }
+  if (rightWrap) {
+    var rBtns = rightWrap.querySelectorAll('.viz-btn, .reasoning-btn');
+    for (var j=0;j<rBtns.length;j++) {
+      rBtns[j].textContent = rBtns[j].classList.contains('reasoning-btn') ? 'Show percentage reasoning' : 'Show visualization';
+      rBtns[j].setAttribute('aria-expanded','false');
+      rBtns[j].classList.remove('active');
+    }
+  }
 }
 function collapseReasoningPanel() {
-  const panel   = document.getElementById('reasoningPanel');
+  var panel = document.getElementById('reasoningPanel');
   if (panel) {
     panel.style.display = 'none';
     panel.setAttribute('aria-hidden','true');
@@ -466,10 +471,10 @@ function openSharedPanel(panel, mode) {
   panel.setAttribute('aria-hidden','false');
   panel.dataset.mode = mode;
 
-  const leftWrap  = document.getElementById('leftControlsWrapper');
-  const rightWrap = document.getElementById('rightControlsWrapper');
-  const exBtn = leftWrap?.querySelector('.examples-btn');
-  const vzBtn = rightWrap?.querySelector('.viz-btn');
+  var leftWrap  = document.getElementById('leftControlsWrapper');
+  var rightWrap = document.getElementById('rightControlsWrapper');
+  var exBtn = leftWrap ? leftWrap.querySelector('.examples-btn') : null;
+  var vzBtn = rightWrap ? rightWrap.querySelector('.viz-btn') : null;
 
   if (mode === 'examples') {
     if (exBtn) exBtn.textContent = 'Hide examples';
@@ -482,9 +487,9 @@ function openSharedPanel(panel, mode) {
 
 /* ---------- Controls under the text ---------- */
 function setupAuxToggles(node) {
-  const leftWrap = document.getElementById('leftControlsWrapper');
-  const rightWrap = document.getElementById('rightControlsWrapper');
-  const panel = document.getElementById('sharedPanel');
+  var leftWrap = document.getElementById('leftControlsWrapper');
+  var rightWrap = document.getElementById('rightControlsWrapper');
+  var panel = document.getElementById('sharedPanel');
 
   leftWrap.innerHTML = '';
   rightWrap.innerHTML = '';
@@ -492,14 +497,14 @@ function setupAuxToggles(node) {
 
   if (node.type === 'question') {
     // Examples (left)
-    const examplesBtn = document.createElement('button');
+    var examplesBtn = document.createElement('button');
     examplesBtn.textContent = 'Show examples';
     examplesBtn.className = 'examples-btn ctrl-btn';
     examplesBtn.setAttribute('aria-expanded', 'false');
     leftWrap.appendChild(examplesBtn);
 
-    examplesBtn.onclick = () => {
-      const isOpenExamples = panel.style.display === 'block' && panel.dataset.mode === 'examples';
+    examplesBtn.onclick = function() {
+      var isOpenExamples = panel.style.display === 'block' && panel.dataset.mode === 'examples';
       if (isOpenExamples) {
         collapseSharedPanel();
       } else {
@@ -507,23 +512,23 @@ function setupAuxToggles(node) {
         openSharedPanel(panel, 'examples');
         examplesBtn.setAttribute('aria-expanded','true');
         examplesBtn.classList.add('active');
-        const rightBtn = rightWrap.querySelector('.viz-btn, .reasoning-btn');
+        var rightBtn = rightWrap.querySelector('.viz-btn, .reasoning-btn');
         if (rightBtn) { rightBtn.setAttribute('aria-expanded','false'); rightBtn.classList.remove('active'); }
       }
     };
 
-    // Visualization (right) for Q18 / Q20
+    // Visualization (right) only for Q18 / Q20
     if (node.id === 'Q18' || node.id === 'Q20') {
-      const vizBtn = document.createElement('button');
+      var vizBtn = document.createElement('button');
       vizBtn.textContent = 'Show visualization';
       vizBtn.className = 'viz-btn ctrl-btn';
       vizBtn.setAttribute('aria-expanded', 'false');
       rightWrap.appendChild(vizBtn);
 
-      vizBtn.onclick = () => {
-        const isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
-        const src = node.id === 'Q18' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
-        const alt = node.id === 'Q18'
+      vizBtn.onclick = function() {
+        var isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
+        var src = node.id === 'Q18' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
+        var alt = node.id === 'Q18'
           ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
           : 'Inverted-U Curve: Effort/Resources vs Functional Results';
         if (isOpenViz) {
@@ -539,17 +544,17 @@ function setupAuxToggles(node) {
       };
     }
 
-    // Percentage reasoning button (RIGHT side) on Q43/Q44
+    // Percentage reasoning (RIGHT) on Q43/Q44
     if (node.id === 'Q43' || node.id === 'Q44') {
-      const reasonBtn = document.createElement('button');
+      var reasonBtn = document.createElement('button');
       reasonBtn.textContent = 'Show percentage reasoning';
       reasonBtn.className = 'reasoning-btn ctrl-btn';
       reasonBtn.setAttribute('aria-expanded','false');
       rightWrap.appendChild(reasonBtn);
 
-      reasonBtn.onclick = () => {
-        const rp = document.getElementById('reasoningPanel');
-        const open = rp.style.display === 'block';
+      reasonBtn.onclick = function() {
+        var rp = document.getElementById('reasoningPanel');
+        var open = rp.style.display === 'block';
         if (open) {
           rp.style.display = 'none';
           rp.setAttribute('aria-hidden','true');
@@ -563,10 +568,10 @@ function setupAuxToggles(node) {
           reasonBtn.setAttribute('aria-expanded','true');
           reasonBtn.classList.add('active');
           rp.innerHTML = '';
-          const p = document.createElement('p');
-          p.textContent = `Your current threshold is ${currentThresholdPct}%.`;
+          var p = document.createElement('p');
+          p.textContent = 'Your current threshold is ' + currentThresholdPct + '%.';
           rp.appendChild(p);
-          const img = document.createElement('img');
+          var img = document.createElement('img');
           img.src = 'linear_threshold_chart.png';
           img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
           rp.appendChild(img);
@@ -578,31 +583,31 @@ function setupAuxToggles(node) {
 
 function renderExamples(panel, nodeId) {
   panel.innerHTML = '';
-  const lines = examples[nodeId] || ["Example 1: [edit me]", "Example 2: [edit me]"];
-  lines.forEach(line => {
-    const p = document.createElement('p');
-    p.textContent = line;
+  var lines = examples[nodeId] || ["Example 1: [edit me]", "Example 2: [edit me]"];
+  for (var i=0;i<lines.length;i++) {
+    var p = document.createElement('p');
+    p.textContent = lines[i];
     panel.appendChild(p);
-  });
+  }
 }
 function renderViz(panel, src, alt) {
   panel.innerHTML = '';
-  const img = document.createElement('img'); img.src = src; img.alt = alt;
+  var img = document.createElement('img'); img.src = src; img.alt = alt;
   panel.appendChild(img);
 }
 
-/* ---------- Q29 severity slider with haptics & heat fill ---------- */
-let lastVibeTs = 0;
+/* ---------- Q29 slider with haptics & heat fill ---------- */
+var lastVibeTs = 0;
 function hapticBump() {
   if (!('vibrate' in navigator)) return;
-  const now = Date.now();
-  if (now - lastVibeTs < 80) return; // throttle
+  var now = Date.now();
+  if (now - lastVibeTs < 80) return;
   navigator.vibrate(10);
   lastVibeTs = now;
 }
 
 function showOrHideRiskInline(node) {
-  const container = document.getElementById('riskInline');
+  var container = document.getElementById('riskInline');
   container.innerHTML = '';
   if (!node || node.id !== 'Q29') {
     container.style.display = 'none';
@@ -612,39 +617,39 @@ function showOrHideRiskInline(node) {
   container.style.display = 'block';
   container.setAttribute('aria-hidden','false');
 
-  const sevDisplay = document.createElement('div');
+  var sevDisplay = document.createElement('div');
   sevDisplay.className = 'sev-display';
   sevDisplay.id = 'sevDisplay';
   sevDisplay.textContent = '1';
   container.appendChild(sevDisplay);
 
-  const row = document.createElement('div'); row.className = 'risk-row';
-  const slider = document.createElement('input');
+  var row = document.createElement('div'); row.className = 'risk-row';
+  var slider = document.createElement('input');
   slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
   slider.className = 'heat-slider';
   slider.setAttribute('list','riskTicks');
   slider.value = '1';
 
   function applyFromSeverity(sev) {
-    const thr = 100 - sev * 10;  // linear mapping
-    currentThresholdPct = thr;   // sev=1 → 90%, sev=10 → 0%
+    var thr = 100 - sev * 10;   // linear mapping
+    currentThresholdPct = thr;  // sev=1 → 90%, sev=10 → 0%
     sevDisplay.textContent = String(sev);
     updateSliderFill(slider, sev);
 
     // Live update the text on Q43/Q44 if currently visible
     if (currentNode && (currentNode.id === 'Q43' || currentNode.id === 'Q44')) {
-      const textDiv = document.getElementById('text');
-      let html = currentNode.text || '';
+      var textDiv = document.getElementById('text');
+      var html = currentNode.text || '';
       html = currentNode.id === 'Q43' ? transformQ43(html) : transformQ44(html);
-      textDiv.innerHTML = `<div class="result-text">${html}</div>`;
+      textDiv.innerHTML = '<div class="result-text">' + html + '</div>';
     }
   }
 
   // Init visuals
   applyFromSeverity(1);
 
-  slider.oninput = () => {
-    const sev = parseInt(slider.value, 10);
+  slider.oninput = function() {
+    var sev = parseInt(slider.value, 10);
     applyFromSeverity(sev);
     hapticBump();
   };
@@ -652,15 +657,15 @@ function showOrHideRiskInline(node) {
   row.appendChild(slider);
   container.appendChild(row);
 
-  const ticks = document.createElement('datalist');
+  var ticks = document.createElement('datalist');
   ticks.id = 'riskTicks';
-  for (let i=1;i<=10;i++){ const opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
+  for (var i=1;i<=10;i++){ var opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
   container.appendChild(ticks);
 }
 
 /* ---------- Nav ---------- */
 function makeButton(label, cls, action) {
-  const btn = document.createElement('button');
+  var btn = document.createElement('button');
   btn.textContent = label; btn.className = cls; btn.onclick = action; return btn;
 }
 function goToNode(id) {
@@ -669,32 +674,99 @@ function goToNode(id) {
   if (currentNode && currentNode.id === 'Q6' && id === currentNode.yes) {
     q6WasYes = true;
   }
-  const adjustedId = beforeEnterNode(id);
+  var adjustedId = beforeEnterNode(id);
 
-  const next = flowchart.find(n => n.id === adjustedId);
+  var next = flowchart.find(function(n){ return n.id === adjustedId; });
   historyStack.push(currentNode ? currentNode.id : '');
   currentNode = next; renderNode(currentNode);
 }
 function goBack() {
   closeAllPanels();
-  const prevId = historyStack.pop();
-  const prev = flowchart.find(n => n.id === prevId);
+  var prevId = historyStack.pop();
+  var prev = flowchart.find(function(n){ return n.id === prevId; });
   currentNode = prev || currentNode; renderNode(currentNode);
 }
 function restart() {
   closeAllPanels();
   historyStack = [];
   currentSegment = "If You Should Act";
-  currentNode = flowchart.find(n => n.id === "Q0");
+  currentNode = flowchart.find(function(n){ return n.id === "Q0"; });
   q6WasYes = false;
   renderNode(currentNode);
 }
 
 /* Skip to first WHEN screen (Q27) */
-document.getElementById('skipBtn').addEventListener('click', () => {
+document.getElementById('skipBtn').addEventListener('click', function() {
   closeAllPanels();
   goToNode('Q27');
 });
+
+/* ---------- Render ---------- */
+function renderNode(node) {
+  closeAllPanels();
+
+  var errorBox = document.getElementById('errorBox');
+  errorBox.textContent = '';
+
+  if (!node) {
+    errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
+    document.getElementById('text').textContent = '';
+    document.getElementById('buttons').innerHTML = '';
+    setHeadingText('');
+    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
+    document.getElementById('restartTop').style.display = 'inline-block';
+    return;
+  }
+
+  var previousSegment = currentSegment;
+  var thisSegment = getSegmentForNodeId(node.id);
+  if (thisSegment !== previousSegment && node.id !== 'Q0') flashHeadingColor(thisSegment);
+
+  currentSegment = thisSegment;
+  setHeadingText(node.id);
+
+  var textDiv = document.getElementById('text');
+  var displayHTML = node.text || '';
+  if (node.id === 'Q43') {
+    displayHTML = transformQ43(displayHTML);
+    textDiv.innerHTML = '<div class="result-text">' + displayHTML + '</div>';
+  } else if (node.id === 'Q44') {
+    displayHTML = transformQ44(displayHTML);
+    textDiv.innerHTML = '<div class="result-text">' + displayHTML + '</div>';
+  } else {
+    textDiv.innerHTML = displayHTML;
+  }
+
+  document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
+
+  setupAuxToggles(node);
+  showOrHideRiskInline(node);
+
+  var btns = document.getElementById('buttons');
+  btns.innerHTML = '';
+  var restartTop = document.getElementById('restartTop');
+
+  if (node.type === 'result') {
+    restartTop.style.display = 'none';
+    btns.classList.add('center');
+    var restartCentered = makeButton('Restart', 'restart', function(){ restart(); });
+    restartCentered.style.flex = '0 0 auto';
+    btns.appendChild(restartCentered);
+  } else {
+    restartTop.style.display = 'inline-block';
+    btns.classList.remove('center');
+
+    if (node.type === 'question') {
+      var yesBtn = makeButton('Yes', 'yes', function(){ goToNode(node.yes); });
+      var noBtn  = makeButton('No',  'no',  function(){ goToNode(node.no); });
+      btns.appendChild(yesBtn);
+      btns.appendChild(noBtn);
+      if (node.same) btns.appendChild(makeButton('Roughly the same', 'same', function(){ goToNode(node.same); }));
+    } else if (node.type === 'info') {
+      btns.appendChild(makeButton('Next', 'next', function(){ goToNode(node.next); }));
+    }
+  }
+}
 
 /* Initial render */
 renderNode(currentNode);
