@@ -86,6 +86,61 @@
   .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
   .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
   .risk-row input[type="range"] { width:100%; }
+
+  /* ===== Range styling (bigger thumb + left-only color) ===== */
+  .risk-row input[type="range"] {
+    --track-height: 16px;
+    --thumb-size: 28px;            /* larger thumb */
+    --left-color: #1976d2;         /* dynamic (blue→yellow→red) via JS */
+    --right-color: #e0e0e0;        /* unchanged right side */
+    --pct: 0%;                     /* dynamic fill percent via JS */
+    -webkit-appearance: none;
+    height: var(--track-height);
+    border-radius: calc(var(--track-height) / 2);
+    background: linear-gradient(to right,
+                var(--left-color) 0 var(--pct),
+                var(--right-color) var(--pct) 100%);
+    outline: none;
+    margin: 10px 0;
+    touch-action: pan-y;
+  }
+  /* WebKit track sits behind our gradient; keep it transparent */
+  .risk-row input[type="range"]::-webkit-slider-runnable-track {
+    height: var(--track-height);
+    background: transparent;
+    border-radius: calc(var(--track-height) / 2);
+  }
+  .risk-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #666;
+    margin-top: calc((var(--track-height) - var(--thumb-size)) / 2);
+    /* Big invisible halo increases grab area on touch */
+    box-shadow: 0 0 0 14px rgba(0,0,0,0);
+  }
+
+  /* Firefox: use progress + track for left/right colors */
+  .risk-row input[type="range"]::-moz-range-track {
+    height: var(--track-height);
+    background: var(--right-color);
+    border-radius: calc(var(--track-height) / 2);
+  }
+  .risk-row input[type="range"]::-moz-range-progress {
+    height: var(--track-height);
+    background: var(--left-color);
+    border-radius: calc(var(--track-height) / 2);
+  }
+  .risk-row input[type="range"]::-moz-range-thumb {
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #666;
+  }
+
   .risk-ticks { display:block; width:100%; }
 
   .error { color:#B00020; font-size:0.95em; margin-top:8px; }
@@ -161,18 +216,18 @@ const flowchart = [
   { "id": "Q6",  "type": "question", "text": "Would the expected downsides of <i>NOT addressing this issue</i> outweigh the downsides <i>OF addressing this issue</i>?", "yes": "Q8",  "no": "Q16", "same": "Q7" },
   { "id": "Q7",  "type": "question", "text": "Is the problem more likely to occur than not if left unaddressed?", "yes": "Q8",  "no": "Q16" },
 
-  { "id": "Q8",  "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q9",  "no": "R4" },  <!-- was R3 -->
+  { "id": "Q8",  "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q9",  "no": "R4" },
   { "id": "Q9",  "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> by <i>your</i> influence?", "yes": "Q12", "no": "Q10" },
   { "id": "Q10", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q12", "no": "Q11" },
-  { "id": "Q11", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s within your control or in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },  <!-- was R4 -->
+  { "id": "Q11", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s within your control or in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
 
   { "id": "Q12", "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q13", "no": "Q14" },
   { "id": "Q13", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q27", "no": "Q14" },
 
   { "id": "Q14", "type": "question", "text": "Would the <i>benefits</i> of addressing this issue outweigh any <i>downsides</i> it might likely cause?", "yes": "Q18", "no": "Q16", "same": "Q15" },
   { "id": "Q15", "type": "question", "text": "All things considered and despite the downsides involved, would you rather address it than not?", "yes": "Q18", "no": "Q16" },
-  { "id": "Q16", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "Q17" },  <!-- was R30 -->
-  { "id": "Q17", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it or in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },  <!-- was R4 -->
+  { "id": "Q16", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "Q17" },
+  { "id": "Q17", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL) in a way that’s worth it or in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
 
   { "id": "Q18", "type": "question", "text": "Does addressing this issue involve a <i>diminishing returns</i> curve for effort applied?", "yes": "Q19", "no": "Q20" },
   { "id": "Q19", "type": "info",     "text": "Find the <i>point of diminishing returns</i> and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL <i>without the addictive pull</i> and possibly even in a <i>better overall way</i>. Treat this approach as a \"better,\" more effective overall solution. If it's not available, you may use the original approach if needed—but <i>only</i> with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q20" },
@@ -183,7 +238,7 @@ const flowchart = [
   { "id": "Q23", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q27", "no": "Q24" },
   { "id": "Q24", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q25", "no": "R2" },
   { "id": "Q25", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time</i>? (Or this time knowing it’s <i>temporary</i>?)", "yes": "Q27", "no": "Q26" },
-  { "id": "Q26", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },  <!-- was R4 -->
+  { "id": "Q26", "type": "question", "text": "Is there an alternative solution that would solve the problem (or improve QoL), in the long term or in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
 
   /* ===== WHEN YOU SHOULD ACT ===== */
   { "id": "Q27", "type": "question", "text": "Does this address a potential <i>future</i> problem?", "yes": "Q28", "no": "Q31" },
@@ -194,33 +249,33 @@ const flowchart = [
   { "id": "Q30", "type": "question", "text": "Would there be <i>guaranteed clear telltale signs</i> of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "Q42", "no": "Q43" },
 
   { "id": "Q31", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria), assuming you could do it <i>now</i>?", "yes": "Q35", "no": "Q32" },
-  { "id": "Q32", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q35", "no": "R5" },  <!-- was R4 -->
+  { "id": "Q32", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q35", "no": "R5" },
 
   { "id": "Q33", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria)?", "yes": "Q29", "no": "Q34" },
-  { "id": "Q34", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q29", "no": "R5" },  <!-- was R4 -->
+  { "id": "Q34", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q29", "no": "R5" },
 
   { "id": "Q35", "type": "question", "text": "Is this solution <i>currently</i> available?", "yes": "Q39", "no": "Q37" },
-  { "id": "Q36", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q37", "no": "R7" },  <!-- was R6 -->
+  { "id": "Q36", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q37", "no": "R7" },
   { "id": "Q37", "type": "question", "text": "Assuming you waited until it was available, would the <i>benefits</i> of using this solution outweigh the <i>downsides</i> of having to wait?", "yes": "Q40", "no": "Q38" },
-  { "id": "Q38", "type": "question", "text": "Is there a <i>better</i> solution you know of?", "yes": "R5",  "no": "R4" },  <!-- was yes:R4,no:R3 -->
-  { "id": "Q39", "type": "question", "text": "Is there a <i>better time</i> further down the road to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R7" },  <!-- was yes:R7,no:R6 -->
-  { "id": "Q40", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },  <!-- was yes:R7,no:R5 -->
-  { "id": "Q41", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },  <!-- was yes:R7,no:R5 -->
+  { "id": "Q38", "type": "question", "text": "Is there a <i>better</i> solution you know of?", "yes": "R5",  "no": "R4" },
+  { "id": "Q39", "type": "question", "text": "Is there a <i>better time</i> further down the road to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R7" },
+  { "id": "Q40", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
+  { "id": "Q41", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
 
   /* WHEN thresholds */
-  { "id": "Q42", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },  <!-- was yes:R7,no:R8 -->
-  { "id": "Q43", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },  <!-- was yes:R7,no:R8 -->
+  { "id": "Q42", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
+  { "id": "Q43", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
 
   /* RESULTS (renumbered) */
   { "id": "R1",  "type": "result", "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
   { "id": "R2",  "type": "result", "text": "<i>Don’t worry about it:)</i>" },
-  { "id": "R3",  "type": "result", "text": "If that time ever does come, re-evaluate the issue. Until then, don't worry about it:)" },  <!-- was R30 -->
-  { "id": "R4",  "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },  <!-- was R3 -->
-  { "id": "R5",  "type": "result", "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },  <!-- was R4 -->
-  { "id": "R6",  "type": "result", "text": "Wait until the <i>best solution</i> given the circumstances is available, then solve it once there aren’t any other more important things to do." },  <!-- was R5 -->
-  { "id": "R7",  "type": "result", "text": "Address it <i>sooner than later</i>, once there aren’t any other more important things to do." },  <!-- was R6 -->
-  { "id": "R8",  "type": "result", "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Consider any other options that could also work and be worth it until then." },  <!-- was R7 -->
-  { "id": "R9",  "type": "result", "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) come true, once there aren’t any other more important things to do." }   <!-- was R8 -->
+  { "id": "R3",  "type": "result", "text": "If that time ever does come, re-evaluate the issue. Until then, don't worry about it:)" },
+  { "id": "R4",  "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },
+  { "id": "R5",  "type": "result", "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },
+  { "id": "R6",  "type": "result", "text": "Wait until the <i>best solution</i> given the circumstances is available, then solve it once there aren’t any other more important things to do." },
+  { "id": "R7",  "type": "result", "text": "Address it <i>sooner than later</i>, once there aren’t any other more important things to do." },
+  { "id": "R8",  "type": "result", "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Consider any other options that could also work and be worth it until then." },
+  { "id": "R9",  "type": "result", "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) come true, once there aren’t any other more important things to do." }
 ];
 
 /* ===== EXAMPLES (trimmed for brevity but aligned to IDs) ===== */
@@ -346,73 +401,129 @@ function transformQ43(html) {
   return html.replace(/(?:nearing\s+or\s+greater\s+than\s*)?50%/gi, `${currentThresholdPct}%`);
 }
 
-function renderNode(node) {
-  closeAllPanels();
+/* ---------- Color utility: Blue → Yellow → Red (per tick) ---------- */
+function lerp(a, b, t){ return a + (b - a) * t; }
+function rgb(r,g,b){ return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`; }
+function sevToColor(sev){
+  // 1..10 → blue(#1976d2) → yellow(#fbc02d) → red(#d32f2f)
+  const blue   = [25,118,210];
+  const yellow = [251,192,45];
+  const red    = [211, 47, 47];
 
-  const errorBox = document.getElementById('errorBox');
-  errorBox.textContent = '';
-
-  if (!node) {
-    errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
-    document.getElementById('text').textContent = '';
-    document.getElementById('buttons').innerHTML = '';
-    setHeadingText('');
-    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
-    document.getElementById('restartTop').style.display = 'inline-block';
-    return;
-  }
-
-  const previousSegment = currentSegment;
-  const thisSegment = getSegmentForNodeId(node.id);
-  if (thisSegment !== previousSegment && node.id !== 'Q0') flashHeadingColor(thisSegment);
-
-  currentSegment = thisSegment;
-  setHeadingText(node.id);
-
-  const textDiv = document.getElementById('text');
-  let displayHTML = node.text || '';
-  if (node.id === 'Q42') {
-    displayHTML = transformQ42(displayHTML);
-    textDiv.innerHTML = `<div class="result-text">${displayHTML}</div>`;
-  } else if (node.id === 'Q43') {
-    displayHTML = transformQ43(displayHTML);
-    textDiv.innerHTML = `<div class="result-text">${displayHTML}</div>`;
+  if (sev <= 5) {
+    const t = (sev - 1) / 4; // 1→0, 5→1
+    return rgb( lerp(blue[0], yellow[0], t),
+                lerp(blue[1], yellow[1], t),
+                lerp(blue[2], yellow[2], t) );
   } else {
-    textDiv.innerHTML = displayHTML;
-  }
-
-  document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
-
-  setupAuxToggles(node);
-  showOrHideRiskInline(node);
-
-  const btns = document.getElementById('buttons');
-  btns.innerHTML = '';
-  const restartTop = document.getElementById('restartTop');
-
-  if (node.type === 'result') {
-    restartTop.style.display = 'none';
-    btns.classList.add('center');
-    const restartCentered = makeButton('Restart', 'restart', () => restart());
-    restartCentered.style.flex = '0 0 auto';
-    btns.appendChild(restartCentered);
-  } else {
-    restartTop.style.display = 'inline-block';
-    btns.classList.remove('center');
-
-    if (node.type === 'question') {
-      // standard buttons
-      const yesBtn = makeButton('Yes', 'yes', () => goToNode(node.yes));
-      const noBtn  = makeButton('No',  'no',  () => goToNode(node.no));
-      btns.appendChild(yesBtn);
-      btns.appendChild(noBtn);
-      // blue "Roughly the same"
-      if (node.same) btns.appendChild(makeButton('Roughly the same', 'same', () => goToNode(node.same)));
-    } else if (node.type === 'info') {
-      btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
-    }
+    const t = (sev - 5) / 5; // 5→0, 10→1
+    return rgb( lerp(yellow[0], red[0], t),
+                lerp(yellow[1], red[1], t),
+                lerp(yellow[2], red[2], t) );
   }
 }
+
+/* ---------- Q29 severity slider with haptics + left-only color ---------- */
+let lastVibeTs = 0;
+function hapticBump() {
+  if (!('vibrate' in navigator)) return;
+  const now = Date.now();
+  if (now - lastVibeTs < 80) return; // simple throttle
+  navigator.vibrate(10);
+  lastVibeTs = now;
+}
+
+function showOrHideRiskInline(node) {
+  const container = document.getElementById('riskInline');
+  container.innerHTML = '';
+  if (!node || node.id !== 'Q29') {
+    container.style.display = 'none';
+    container.setAttribute('aria-hidden','true');
+    return;
+  }
+  container.style.display = 'block';
+  container.setAttribute('aria-hidden','false');
+
+  const sevDisplay = document.createElement('div');
+  sevDisplay.className = 'sev-display';
+  sevDisplay.id = 'sevDisplay';
+  sevDisplay.textContent = '1';
+  container.appendChild(sevDisplay);
+
+  const row = document.createElement('div'); row.className = 'risk-row';
+  const slider = document.createElement('input');
+  slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
+  slider.setAttribute('list','riskTicks');
+  slider.value = '1';
+
+  function applyFromSeverity(sev) {
+    const thr = 100 - sev * 10;  // linear mapping
+    currentThresholdPct = thr;   // sev=1 → 90%, sev=10 → 0%
+    sevDisplay.textContent = String(sev);
+
+    // Fill percent aligned to thumb (1..10 across track)
+    const pct = ((sev - 1) / 9) * 100; // 1→0%, 10→100%
+    const color = sevToColor(sev);
+
+    // For WebKit: gradient split at --pct; for Firefox: progress uses --left-color
+    slider.style.setProperty('--pct', pct + '%');
+    slider.style.setProperty('--left-color', color);
+  }
+  applyFromSeverity(1);
+
+  slider.oninput = () => {
+    applyFromSeverity(parseInt(slider.value, 10));
+    hapticBump();
+  };
+
+  row.appendChild(slider);
+  container.appendChild(row);
+
+  const ticks = document.createElement('datalist');
+  ticks.id = 'riskTicks';
+  for (let i=1;i<=10;i++){ const opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
+  container.appendChild(ticks);
+}
+
+/* ---------- Nav ---------- */
+function makeButton(label, cls, action) {
+  const btn = document.createElement('button');
+  btn.textContent = label; btn.className = cls; btn.onclick = action; return btn;
+}
+function goToNode(id) {
+  closeAllPanels();
+
+  // record Q6 YES to later auto-skip Q14
+  if (currentNode && currentNode.id === 'Q6' && id === currentNode.yes) {
+    q6WasYes = true;
+  }
+  // apply auto-skip rules before navigation
+  const adjustedId = beforeEnterNode(id);
+
+  const next = flowchart.find(n => n.id === adjustedId);
+  historyStack.push(currentNode ? currentNode.id : '');
+  currentNode = next; renderNode(currentNode);
+}
+function goBack() {
+  closeAllPanels();
+  const prevId = historyStack.pop();
+  const prev = flowchart.find(n => n.id === prevId);
+  currentNode = prev || currentNode; renderNode(currentNode);
+}
+function restart() {
+  closeAllPanels();
+  historyStack = [];
+  currentSegment = "If You Should Act";
+  currentNode = flowchart.find(n => n.id === "Q0");
+  q6WasYes = false;
+  renderNode(currentNode);
+}
+
+/* Skip to first WHEN screen in new numbering (Q27) */
+document.getElementById('skipBtn').addEventListener('click', () => {
+  closeAllPanels();
+  goToNode('Q27');
+});
 
 /* ---------- Panels ---------- */
 function collapseSharedPanel() {
@@ -575,95 +686,73 @@ function renderViz(panel, src, alt) {
   panel.appendChild(img);
 }
 
-/* ---------- Q29 severity slider with haptics ---------- */
-let lastVibeTs = 0;
-function hapticBump() {
-  if (!('vibrate' in navigator)) return;
-  const now = Date.now();
-  if (now - lastVibeTs < 80) return; // simple throttle
-  navigator.vibrate(10);
-  lastVibeTs = now;
-}
+function renderNode(node) {
+  closeAllPanels();
 
-function showOrHideRiskInline(node) {
-  const container = document.getElementById('riskInline');
-  container.innerHTML = '';
-  if (!node || node.id !== 'Q29') {
-    container.style.display = 'none';
-    container.setAttribute('aria-hidden','true');
+  const errorBox = document.getElementById('errorBox');
+  errorBox.textContent = '';
+
+  if (!node) {
+    errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
+    document.getElementById('text').textContent = '';
+    document.getElementById('buttons').innerHTML = '';
+    setHeadingText('');
+    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
+    document.getElementById('restartTop').style.display = 'inline-block';
     return;
   }
-  container.style.display = 'block';
-  container.setAttribute('aria-hidden','false');
 
-  const sevDisplay = document.createElement('div');
-  sevDisplay.className = 'sev-display';
-  sevDisplay.id = 'sevDisplay';
-  sevDisplay.textContent = '1';
-  container.appendChild(sevDisplay);
+  const previousSegment = currentSegment;
+  const thisSegment = getSegmentForNodeId(node.id);
+  if (thisSegment !== previousSegment && node.id !== 'Q0') flashHeadingColor(thisSegment);
 
-  const row = document.createElement('div'); row.className = 'risk-row';
-  const slider = document.createElement('input');
-  slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
-  slider.setAttribute('list','riskTicks');
-  slider.value = '1';
+  currentSegment = thisSegment;
+  setHeadingText(node.id);
 
-  function applyFromSeverity(sev) {
-    const thr = 100 - sev * 10;  // linear mapping
-    currentThresholdPct = thr;   // sev=1 → 90%, sev=10 → 0%
-    sevDisplay.textContent = String(sev);
+  const textDiv = document.getElementById('text');
+  let displayHTML = node.text || '';
+  if (node.id === 'Q42') {
+    displayHTML = transformQ42(displayHTML);
+    textDiv.innerHTML = `<div class="result-text">${displayHTML}</div>`;
+  } else if (node.id === 'Q43') {
+    displayHTML = transformQ43(displayHTML);
+    textDiv.innerHTML = `<div class="result-text">${displayHTML}</div>`;
+  } else {
+    textDiv.innerHTML = displayHTML;
   }
-  applyFromSeverity(1);
-  slider.oninput = () => { applyFromSeverity(parseInt(slider.value, 10)); hapticBump(); };
 
-  row.appendChild(slider);
-  container.appendChild(row);
+  document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
 
-  const ticks = document.createElement('datalist');
-  ticks.id = 'riskTicks';
-  for (let i=1;i<=10;i++){ const opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
-  container.appendChild(ticks);
-}
+  setupAuxToggles(node);
+  showOrHideRiskInline(node);
 
-/* ---------- Nav ---------- */
-function makeButton(label, cls, action) {
-  const btn = document.createElement('button');
-  btn.textContent = label; btn.className = cls; btn.onclick = action; return btn;
-}
-function goToNode(id) {
-  closeAllPanels();
+  const btns = document.getElementById('buttons');
+  btns.innerHTML = '';
+  const restartTop = document.getElementById('restartTop');
 
-  // record Q6 YES to later auto-skip Q14
-  if (currentNode && currentNode.id === 'Q6' && id === currentNode.yes) {
-    q6WasYes = true;
+  if (node.type === 'result') {
+    restartTop.style.display = 'none';
+    btns.classList.add('center');
+    const restartCentered = makeButton('Restart', 'restart', () => restart());
+    restartCentered.style.flex = '0 0 auto';
+    btns.appendChild(restartCentered);
+  } else {
+    restartTop.style.display = 'inline-block';
+    btns.classList.remove('center');
+
+    if (node.type === 'question') {
+      const yesBtn = makeButton('Yes', 'yes', () => goToNode(node.yes));
+      const noBtn  = makeButton('No',  'no',  () => goToNode(node.no));
+      btns.appendChild(yesBtn);
+      btns.appendChild(noBtn);
+      if (node.same) btns.appendChild(makeButton('Roughly the same', 'same', () => goToNode(node.same)));
+    } else if (node.type === 'info') {
+      btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
+    }
   }
-  // apply auto-skip rules before navigation
-  const adjustedId = beforeEnterNode(id);
-
-  const next = flowchart.find(n => n.id === adjustedId);
-  historyStack.push(currentNode ? currentNode.id : '');
-  currentNode = next; renderNode(currentNode);
-}
-function goBack() {
-  closeAllPanels();
-  const prevId = historyStack.pop();
-  const prev = flowchart.find(n => n.id === prevId);
-  currentNode = prev || currentNode; renderNode(currentNode);
-}
-function restart() {
-  closeAllPanels();
-  historyStack = [];
-  currentSegment = "If You Should Act";
-  currentNode = flowchart.find(n => n.id === "Q0");
-  q6WasYes = false;
-  renderNode(currentNode);
 }
 
-/* Skip to first WHEN screen in new numbering (Q27) */
-document.getElementById('skipBtn').addEventListener('click', () => {
-  closeAllPanels();
-  goToNode('Q27');
-});
+/* ---------- Nav helpers already above ---------- */
 
 /* Initial render */
 renderNode(currentNode);
