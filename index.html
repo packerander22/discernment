@@ -33,7 +33,6 @@
     --tick-color: rgba(0,0,0,.35);
     --tick-thickness: 2px;
     --tick-length: 8px;
-    --tick-gap: 6px;     /* gap from track edge */
   }
 
   body { font-family: Arial, sans-serif; background:#f7f7f7; margin:0; padding:0; }
@@ -98,19 +97,13 @@
   .risk-row input[type="range"] { width:100%; }
   .risk-ticks { display:block; width:100%; }
 
-  .error { color:#B00020; font-size:0.95em; margin-top:8px; }
-
-  /* Compact list spacing */
-  .result-text { margin: 0; padding: 0; }
-  .result-text p { margin: 0.4em 0; }
-  .result-text ul { margin: 0.25em 0; padding-left: 1.2em; }
-  .result-text li { margin: 0.25em 0; }
+  .error { color:#B00020; font-size:0.95em; }
 
   /* === Slider visual customization (bigger, aligned, left-side heat fill) === */
   .slider-wrap {
     position: relative;
     width: 100%;
-    height: calc(var(--thumb-size) + var(--tick-length) * 2 + var(--tick-gap) * 2);
+    height: calc(var(--thumb-size) + var(--tick-length) * 2 + 8px);
     display: flex;
     align-items: center; /* keeps thumb vertically aligned */
     justify-content: center;
@@ -137,7 +130,7 @@
         var(--track-bg) var(--pct),
         var(--track-bg) 100%);
   }
-  /* WebKit thumb: bigger & centered via negative margin */
+  /* WebKit thumb: centered via negative margin */
   .heat-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -151,19 +144,21 @@
     cursor: pointer;
   }
 
-  /* Tick rows (outside the track) */
+  /* Tick rows (outside the track), inset to match THUMB TRAVEL (half-thumb each side) */
   .tick-row {
     position: absolute;
-    left: 0; right: 0;
+    left: calc(var(--thumb-size) / 2);
+    right: calc(var(--thumb-size) / 2);
     height: var(--tick-length);
     pointer-events: none;
     z-index: 0; /* under slider */
   }
+  /* Touch the track edge (tiny 1px overlap to avoid a hairline seam) */
   .tick-row.top {
-    bottom: calc(50% + var(--track-height)/2 + var(--tick-gap));
+    bottom: calc(50% + var(--track-height)/2 - 1px);
   }
   .tick-row.bottom {
-    top: calc(50% + var(--track-height)/2 + var(--tick-gap));
+    top: calc(50% + var(--track-height)/2 - 1px);
   }
   .tick {
     position: absolute;
@@ -333,7 +328,7 @@ var flowchart = [
 ];
 
 /* ===== EXAMPLES (trimmed) ===== */
-var examples = {/* unchanged from your last file, omitted for brevity */};
+var examples = {/* same as before */};
 
 /* ======= STATE ======= */
 var currentThresholdPct = 90;
@@ -411,11 +406,10 @@ function transformQ44(html) {
   return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, String(currentThresholdPct) + '%');
 }
 
-/* ---------- Slider color helpers (even more aggressive red) ---------- */
+/* ---------- Slider color helpers (aggressive red) ---------- */
 function heatColorForSeverity(sev) {
-  // sev 1..10 -> ratio 0..1, exponent 0.4 pushes red earlier
-  var ratio = Math.pow((sev - 1) / 9, 0.4);
-  var hue = 220 * (1 - ratio); // 220=blue → 0=red
+  var ratio = Math.pow((sev - 1) / 9, 0.4); // push red earlier
+  var hue = 220 * (1 - ratio);              // 220=blue → 0=red
   return 'hsl(' + Math.round(hue) + ', 100%, 50%)';
 }
 function updateSliderFill(slider, sev) {
@@ -424,7 +418,7 @@ function updateSliderFill(slider, sev) {
   slider.style.setProperty('--fill', heatColorForSeverity(sev));
 }
 
-/* ---------- Panels (unchanged mechanics) ---------- */
+/* ---------- Panels ---------- */
 function collapseSharedPanel() {
   var panel = document.getElementById('sharedPanel');
   if (panel) {
@@ -605,11 +599,11 @@ function hapticBump() {
 function createTickRow(className, parent) {
   var row = document.createElement('div');
   row.className = 'tick-row ' + className;
-  // create ticks at exact integer positions 1..10
+  // create ticks at exact integer positions 1..10 (thumb center points)
   for (var i=1;i<=10;i++){
     var tick = document.createElement('div');
     tick.className = 'tick';
-    var pct = ((i - 1) / 9) * 100; // aligns with thumb center math
+    var pct = ((i - 1) / 9) * 100; // 0..100 across thumb travel
     tick.style.left = pct + '%';
     row.appendChild(tick);
   }
@@ -654,7 +648,6 @@ function showOrHideRiskInline(node) {
   row.appendChild(wrap);
   container.appendChild(row);
 
-  // datalist ticks for native tick hints
   var ticks = document.createElement('datalist');
   ticks.id = 'riskTicks';
   for (var i=1;i<=10;i++){ var opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
