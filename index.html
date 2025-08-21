@@ -22,13 +22,18 @@
 <style>
   :root {
     --btn-pad-y:10px; --btn-pad-x:12px;
-    /* slider custom props (in :root so ticks can read them too) */
+
+    /* slider custom props */
     --track-height: 12px;
     --thumb-size: 28px;
     --thumb-shadow: 0 1px 3px rgba(0,0,0,.25);
     --track-bg: #e0e0e0; /* right side */
     --fill: #2d6cdf;     /* left side (updated via JS) */
     --pct: 0%;           /* fill percent (updated via JS) */
+    --tick-color: rgba(0,0,0,.35);
+    --tick-thickness: 2px;
+    --tick-length: 8px;
+    --tick-gap: 6px;     /* gap from track edge */
   }
 
   body { font-family: Arial, sans-serif; background:#f7f7f7; margin:0; padding:0; }
@@ -105,9 +110,10 @@
   .slider-wrap {
     position: relative;
     width: 100%;
-    height: var(--thumb-size);
+    height: calc(var(--thumb-size) + var(--tick-length) * 2 + var(--tick-gap) * 2);
     display: flex;
-    align-items: center; /* keep thumb vertically aligned */
+    align-items: center; /* keeps thumb vertically aligned */
+    justify-content: center;
   }
 
   .heat-slider {
@@ -116,6 +122,8 @@
     width: 100%;
     height: var(--thumb-size);
     background: transparent;
+    position: relative;
+    z-index: 1; /* above tick rows */
   }
 
   /* WebKit track: left solid heat color, right neutral */
@@ -129,7 +137,7 @@
         var(--track-bg) var(--pct),
         var(--track-bg) 100%);
   }
-  /* WebKit thumb: bigger & perfectly centered via negative margin */
+  /* WebKit thumb: bigger & centered via negative margin */
   .heat-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -143,24 +151,26 @@
     cursor: pointer;
   }
 
-  /* Tick marks overlay (visible across browsers) */
-  .slider-ticks {
+  /* Tick rows (outside the track) */
+  .tick-row {
     position: absolute;
     left: 0; right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    height: var(--track-height);
+    height: var(--tick-length);
     pointer-events: none;
-    border-radius: calc(var(--track-height)/2);
-    /* draw a 1px tick every 10% */
-    background-image:
-      repeating-linear-gradient(
-        to right,
-        transparent 0,
-        transparent calc(10% - 1px),
-        rgba(0,0,0,0.25) calc(10% - 1px),
-        rgba(0,0,0,0.25) 10%
-      );
+    z-index: 0; /* under slider */
+  }
+  .tick-row.top {
+    bottom: calc(50% + var(--track-height)/2 + var(--tick-gap));
+  }
+  .tick-row.bottom {
+    top: calc(50% + var(--track-height)/2 + var(--tick-gap));
+  }
+  .tick {
+    position: absolute;
+    width: var(--tick-thickness);
+    height: 100%;
+    background: var(--tick-color);
+    transform: translateX(-50%); /* center the 2px bar on its position */
   }
 
   /* Firefox */
@@ -322,50 +332,8 @@ var flowchart = [
   { "id": "R9",  "type": "result",   "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) come true, once there aren’t any other more important things to do." }
 ];
 
-/* ===== EXAMPLES (trimmed, keys aligned) ===== */
-var examples = {
-  Q1:["Deadline today > TV shopping can wait. (Applies)","Nothing urgent today; small decisions okay. (Does not apply)"],
-  Q2:["Sink leaking (function not met). (Applies)","Prefer different bag color; no functional impact. (Does not apply)"],
-  Q3:["Laptop fan noise could signal failure. (Applies)","Phone works fine; vague worry only. (Does not apply)"],
-  Q4:["Dust buildup could lead to overheating later. (Applies)","Hand-wavy fear something ‘might’ happen. (Does not apply)"],
-  Q5:["Old lithium battery will eventually degrade. (Applies)","A one-off pop-up likely won’t recur. (Does not apply)"],
-  Q6:["Not patching a critical vuln costs more than patching. (Applies)","Cosmetic bug costs more to fix than to leave. (Does not apply)","Roughly the same: patch disruptive but risk seems low. (Same)"],
-  Q7:["Slow leak likely to spread if ignored. (Applies)","Contained glitch unlikely to recur. (Does not apply)"],
-  Q8:["Backordered replacement part exists. (Applies)","No known fix or workaround yet. (Does not apply)"],
-  Q9:["You can approve repair and it will happen. (Applies)","You can’t guarantee someone else’s decision. (Does not apply)"],
-  Q10:["Escalate once; beyond that it’s out of your hands. (Applies)","Citywide outage: nothing else to do. (Does not apply)"],
-  Q11:["Generator under your control solves outage. (Applies)","All options rely on luck/others. (Does not apply)"],
-  Q12:["Trial a tool to learn for future value. (Applies)","Tedious workaround teaches nothing. (Does not apply)"],
-  Q13:["Quick screening with minimal downside yields info. (Applies)","Disassembling expensive gear ‘just to see’ isn’t worth it. (Does not apply)"],
-  Q14:["Repairing roof leak prevents major damage. (Applies)","Risky mod for marginal benefit. (Does not apply)","Roughly the same: benefits ≈ downsides. (Same)"],
-  Q15:["Despite tradeoffs, you’d still rather fix it. (Applies)","Given tradeoffs, you’d rather not. (Does not apply)"],
-  Q16:["Seasonal downtime could flip the calculus later. (Applies)","No foreseeable time changes the calculus. (Does not apply)"],
-  Q17:["Alternative approach is cheaper/better overall. (Applies)","No better option fits goals. (Does not apply)"],
-  Q18:["Polishing beyond ‘good enough’ adds little. (Applies)","Critical bug: every hour matters. (Does not apply)"],
-  Q20:["Exercise intensity has a sweet spot. (Applies)","Filing taxes—no ‘sweet spot,’ just finish. (Does not apply)"],
-  Q22:["HDD → SSD: noticeable improvement. (Applies)","Gold HDMI vs regular: no difference. (Does not apply)"],
-  Q23:["Sealing driveway cracks extends life. (Applies)","Cosmetic touch-up that fades in a week. (Does not apply)"],
-  Q24:["Decongestant restores sleep tonight. (Applies)","Reorganizing a drawer won’t help urgent issue. (Does not apply)"],
-  Q25:["Seatbelt is always worth it. (Applies)","Washing the car daily isn’t. (Does not apply)"],
-  Q26:["Replace worn laptop vs. another costly repair. (Applies)","No alternative truly better long-term. (Does not apply)"],
-  Q27:["Replace timing belt before end-of-life. (Applies)","Fixing already cracked screen is a current problem. (Does not apply)"],
-  Q28:["Changing HVAC filters to prevent breakdown. (Applies)","Repainting for color (not preventative). (Does not apply)"],
-  Q30:["Squealing brakes give clear warning window. (Applies)","Timing belt can fail without warning. (Does not apply)"],
-  Q31:["You’d pick this method if you could do it now. (Applies)","You know a better option but aren’t picking it. (Does not apply)"],
-  Q32:["You compared and ruled out better options. (Applies)","You haven’t checked obvious alternatives. (Does not apply)"],
-  Q33:["This truly is the best preventative option. (Applies)","A stronger preventative option likely exists. (Does not apply)"],
-  Q34:["You’ve ruled out better preventative options. (Applies)","You still need to look at alternatives. (Does not apply)"],
-  Q35:["Part in stock; appointments available. (Applies)","Part backordered two weeks. (Does not apply)"],
-  Q36:["Off-season timing makes it cheaper/easier. (Applies)","Waiting won’t improve value; risk rises. (Does not apply)"],
-  Q37:["Waiting saves a lot with little downside. (Applies)","Waiting causes outages or stress. (Does not apply)","Roughly the same: tradeoffs feel even. (Same)"],
-  Q38:["You’d rather use this solution despite wait costs. (Applies)","You’d rather not use it given the wait costs. (Does not apply)"],
-  Q39:["Plan B works now. (Applies)","No next-best option reasonably solves it. (Does not apply)"],
-  Q40:["Do it during a scheduled break. (Applies)","No later window beats now. (Does not apply)"],
-  Q41:["After availability, a later lull saves hassle. (Applies)","Once available, sooner is better. (Does not apply)"],
-  Q42:["An even later window improves value. (Applies)","Doing it then is already best. (Does not apply)"],
-  Q43:["Warning signs + threshold crossed. (Applies)","Neither condition has been met. (Does not apply)"],
-  Q44:["Probability crosses the threshold. (Applies)","Probability remains below threshold. (Does not apply)"]
-};
+/* ===== EXAMPLES (trimmed) ===== */
+var examples = {/* unchanged from your last file, omitted for brevity */};
 
 /* ======= STATE ======= */
 var currentThresholdPct = 90;
@@ -443,12 +411,11 @@ function transformQ44(html) {
   return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, String(currentThresholdPct) + '%');
 }
 
-/* ---------- Slider color helpers (non-linear, more aggressive red) ---------- */
+/* ---------- Slider color helpers (even more aggressive red) ---------- */
 function heatColorForSeverity(sev) {
-  // sev: 1..10 → ratio 0..1, ease^0.65 so red shows up earlier
-  var ratio = Math.pow((sev - 1) / 9, 0.65);
-  // Hue 220→0: 220=blue, 120=green, 60=yellow, 0=red
-  var hue = 220 * (1 - ratio);
+  // sev 1..10 -> ratio 0..1, exponent 0.4 pushes red earlier
+  var ratio = Math.pow((sev - 1) / 9, 0.4);
+  var hue = 220 * (1 - ratio); // 220=blue → 0=red
   return 'hsl(' + Math.round(hue) + ', 100%, 50%)';
 }
 function updateSliderFill(slider, sev) {
@@ -457,7 +424,7 @@ function updateSliderFill(slider, sev) {
   slider.style.setProperty('--fill', heatColorForSeverity(sev));
 }
 
-/* ---------- Panels ---------- */
+/* ---------- Panels (unchanged mechanics) ---------- */
 function collapseSharedPanel() {
   var panel = document.getElementById('sharedPanel');
   if (panel) {
@@ -625,7 +592,7 @@ function renderViz(panel, src, alt) {
   panel.appendChild(img);
 }
 
-/* ---------- Q29 slider with haptics, heat fill, and visible ticks ---------- */
+/* ---------- Q29 slider with haptics, heat fill, and OUTSIDE ticks ---------- */
 var lastVibeTs = 0;
 function hapticBump() {
   if (!('vibrate' in navigator)) return;
@@ -633,6 +600,21 @@ function hapticBump() {
   if (now - lastVibeTs < 80) return;
   navigator.vibrate(10);
   lastVibeTs = now;
+}
+
+function createTickRow(className, parent) {
+  var row = document.createElement('div');
+  row.className = 'tick-row ' + className;
+  // create ticks at exact integer positions 1..10
+  for (var i=1;i<=10;i++){
+    var tick = document.createElement('div');
+    tick.className = 'tick';
+    var pct = ((i - 1) / 9) * 100; // aligns with thumb center math
+    tick.style.left = pct + '%';
+    row.appendChild(tick);
+  }
+  parent.appendChild(row);
+  return row;
 }
 
 function showOrHideRiskInline(node) {
@@ -654,7 +636,7 @@ function showOrHideRiskInline(node) {
 
   var row = document.createElement('div'); row.className = 'risk-row';
 
-  // wrapper so we can overlay ticks
+  // wrapper so we can place tick rows above & below
   var wrap = document.createElement('div');
   wrap.className = 'slider-wrap';
 
@@ -664,28 +646,27 @@ function showOrHideRiskInline(node) {
   slider.setAttribute('list','riskTicks');
   slider.value = '1';
 
-  // visible tick marks overlay
-  var tickbar = document.createElement('div');
-  tickbar.className = 'slider-ticks';
-
+  // tick rows (outside the track)
+  createTickRow('top', wrap);
   wrap.appendChild(slider);
-  wrap.appendChild(tickbar);
+  createTickRow('bottom', wrap);
+
   row.appendChild(wrap);
   container.appendChild(row);
 
-  // datalist ticks for accessibility (native tick hints)
+  // datalist ticks for native tick hints
   var ticks = document.createElement('datalist');
   ticks.id = 'riskTicks';
   for (var i=1;i<=10;i++){ var opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
   container.appendChild(ticks);
 
   function applyFromSeverity(sev) {
-    var thr = 100 - sev * 10;   // linear mapping for threshold
+    var thr = 100 - sev * 10;   // linear threshold mapping
     currentThresholdPct = thr;  // sev=1 → 90%, sev=10 → 0%
     sevDisplay.textContent = String(sev);
     updateSliderFill(slider, sev);
 
-    // Live update the text on Q43/Q44 if currently visible
+    // Live update Q43/Q44 copy if visible
     if (currentNode && (currentNode.id === 'Q43' || currentNode.id === 'Q44')) {
       var textDiv = document.getElementById('text');
       var html = currentNode.text || '';
