@@ -936,24 +936,28 @@ function renderNode(node) {
   btns.innerHTML = '';
   var restartTop = document.getElementById('restartTop');
 
+    const restartTop = document.getElementById('restartTop');
+
   if (node.type === 'result') {
+    // keep the centered Restart on result screens, hide the top-bar one
     restartTop.style.display = 'none';
     btns.classList.add('center');
-    var restartCentered = makeButton('Restart', 'restart', function(){ restart(); });
+    const restartCentered = makeButton('Restart', 'restart', () => restart());
     restartCentered.style.flex = '0 0 auto';
     btns.appendChild(restartCentered);
   } else {
-    restartTop.style.display = 'inline-block';
+    // SHOW top-bar Restart only after leaving Q0
+    restartTop.style.display = (node.id === 'Q0') ? 'none' : 'inline-block';
     btns.classList.remove('center');
-
+  
     if (node.type === 'question') {
-      var yesBtn = makeButton('Yes', 'yes', function(){ goToNode(node.yes); });
-      var noBtn  = makeButton('No',  'no',  function(){ goToNode(node.no); });
+      const yesBtn = makeButton('Yes', 'yes', () => goToNode(node.yes));
+      const noBtn  = makeButton('No',  'no',  () => goToNode(node.no));
       btns.appendChild(yesBtn);
       btns.appendChild(noBtn);
-      if (node.same) btns.appendChild(makeButton('Roughly the same', 'same', function(){ goToNode(node.same); }));
+      if (node.same) btns.appendChild(makeButton('Roughly the same', 'same', () => goToNode(node.same)));
     } else if (node.type === 'info') {
-      btns.appendChild(makeButton('Next', 'next', function(){ goToNode(node.next); }));
+      btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
     }
   }
 }
