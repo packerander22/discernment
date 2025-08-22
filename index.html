@@ -32,7 +32,7 @@
     --pct: 0%;           /* fill percent (updated via JS) */
     --tick-color: rgba(0,0,0,.35);
     --tick-thickness: 2px;
-    --tick-length: 8px;
+    --tick-length: 6px;
   }
 
   body { font-family: Arial, sans-serif; background:#f7f7f7; margin:0; padding:0; }
@@ -396,14 +396,21 @@ function transformQ43(html) {
     var listBlockRe = /:\s*<ul>[\s\S]*?<\/ul>/i;
     return html.replace(listBlockRe, ' there is even a <i>SMALL</i> chance of failure.');
   }
-  return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, String(currentThresholdPct) + '%');
+  return html.replace(
+    /(?:nearing\s+or\s+greater\s*than\s*)?50%/gi,
+    'nearing or greater than ' + String(currentThresholdPct) + '%'
+  );
 }
+
 function transformQ44(html) {
   if (currentThresholdPct <= 0) {
     var probClauseRe = /the\s*<i>estimated\s+chance\s+of\s+failure<\/i>\s+is\s+nearing\s+or\s+greater\s+than\s*50%/i;
     return html.replace(probClauseRe, 'there is even a <i>SMALL</i> chance of failure');
   }
-  return html.replace(/(?:nearing\s+or\s+greater\s*than\s*)?50%/gi, String(currentThresholdPct) + '%');
+  return html.replace(
+    /(?:nearing\s+or\s+greater\s*than\s*)?50%/gi,
+    'nearing or greater than ' + String(currentThresholdPct) + '%'
+  );
 }
 
 /* ---------- Slider color helpers (aggressive red) ---------- */
