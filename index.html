@@ -24,7 +24,7 @@
     --btn-pad-y:10px; --btn-pad-x:12px;
 
     /* slider custom props */
-    --track-height: 8px;              /* make thinner here only */
+    --track-height: 8px;              /* adjust thickness here */
     --thumb-size: 28px;
     --thumb-shadow: 0 1px 3px rgba(0,0,0,.25);
     --track-bg: #e0e0e0;              /* right side */
@@ -99,15 +99,14 @@
 
   .error { color:#B00020; font-size:0.95em; }
 
-  /* === Slider visual customization (bigger, aligned, left-side heat fill) === */
+  /* === Slider (ticks aligned above/below the track, iOS-safe) === */
   .slider-wrap {
     position: relative;
     width: 100%;
     height: calc(var(--thumb-size) + var(--tick-length) * 2 + 8px);
     display: flex;
-    align-items: center; /* keeps thumb vertically aligned */
+    align-items: center;
     justify-content: center;
-    /* guard against accidental selection / weird scrolls */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
@@ -121,7 +120,7 @@
     height: var(--thumb-size);
     background: transparent;
     position: relative;
-    z-index: 1; /* above tick rows */
+    z-index: 1;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
@@ -139,7 +138,7 @@
         var(--track-bg) var(--pct),
         var(--track-bg) 100%);
   }
-  /* WebKit thumb: centered via negative margin */
+  /* WebKit thumb: center vertically relative to track height */
   .heat-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -153,33 +152,15 @@
     cursor: pointer;
   }
 
-  /* Tick rows sit outside the track and are aligned by gradient math */
-  .tick-row {
-    position: absolute;
-    left: 0;                         /* full width, we’ll offset with bg-position */
-    right: 0;
-    height: var(--tick-length);
-    pointer-events: none;
-    z-index: 0;
-  }
-  
-  /* Touch the track edge using transforms (no 1px seams at any zoom/DPR) */
-  .tick-row.top {
-    bottom: 50%;
-    transform: translateY(calc(-50% - var(--track-height)/2));
-  }
-  .tick-row.bottom {
-    top: 50%;
-    transform: translateY(calc(50% + var(--track-height)/2 - var(--tick-length)));
-  }
-  
-  /* Draw ticks with a repeating gradient so spacing = exact thumb step width */
-  .tick-row::before {
+  /* Ticks drawn on the slider itself to avoid iOS misalignment */
+  .heat-slider::before,
+  .heat-slider::after {
     content: "";
     position: absolute;
-    inset: 0;
-  
-    /* each stripe = a tick; repeat every step width */
+    left: calc(var(--thumb-size) / 2);
+    right: calc(var(--thumb-size) / 2);
+    height: var(--tick-length);
+    pointer-events: none;
     background-image: repeating-linear-gradient(
       to right,
       var(--tick-color) 0,
@@ -187,11 +168,17 @@
       transparent var(--tick-thickness),
       transparent calc((100% - var(--thumb-size)) / 9)
     );
-  
-    /* start the repetition exactly at the left thumb center */
-    background-repeat: repeat-x;
     background-size: calc((100% - var(--thumb-size)) / 9) 100%;
-    background-position: left calc(var(--thumb-size) / 2) top;
+    background-repeat: repeat-x;
+  }
+  /* hug the track edges with tiny overlap to avoid hairline gaps */
+  .heat-slider::before {
+    top: 50%;
+    transform: translateY(calc(-50% - var(--track-height)/2 - 1px));
+  }
+  .heat-slider::after {
+    top: 50%;
+    transform: translateY(calc(-50% + var(--track-height)/2 + 1px));
   }
 
   /* Firefox */
@@ -263,8 +250,7 @@
 </div>
 
 <script>
-
-// ======= FLOW (Q0–Q44) =======
+/* ======= FLOW (Q0–Q44) ======= */
 var flowchart = [
   { "id": "Q0",  "type": "info",     "text": "Welcome! This flow chart guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and a slider later). Tap Next to begin.", "next": "Q1" },
 
@@ -296,7 +282,7 @@ var flowchart = [
   { "id": "Q20", "type": "question", "text": "Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an <i>objective sweet spot</i> where clear information is available to you?", "yes": "Q21", "no": "Q22" },
   { "id": "Q21", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q27" },
 
-  { "id": "Q22", "type": "question", "text": "In practice and given time, would a <i>worthwhile functional difference</i> likely be noticed if the issue was solved/addressed?", "yes": "Q23", "no": "R2" },
+  { "id": "Q22", "type": "question", "text": "In practice and given time, would a <i>functional difference</i> likely be noticed if the issue was solved/addressed?", "yes": "Q23", "no": "R2" },
   { "id": "Q23", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q27", "no": "Q24" },
   { "id": "Q24", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q25", "no": "R2" },
   { "id": "Q25", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time</i>? (Or this time knowing it’s <i>temporary</i>?)", "yes": "Q27", "no": "Q26" },
@@ -349,47 +335,173 @@ var flowchart = [
 
 /* ===== EXAMPLES (trimmed) ===== */
 var examples = {
-  "Q1": ["Deadline today > TV shopping can wait. (Applies)","Nothing urgent today; small decisions okay. (Does not apply)"],
-  "Q2": ["Sink leaking (function not met). (Applies)","Prefer different bag color; no functional impact. (Does not apply)"],
-  "Q3": ["Laptop fan noise could signal failure. (Applies)","Phone works fine; vague worry only. (Does not apply)"],
-  "Q4": ["Dust buildup could lead to overheating later. (Applies)","Hand-wavy fear something ‘might’ happen. (Does not apply)"],
-  "Q5": ["Old lithium battery will eventually degrade. (Applies)","A one-off pop-up likely won’t recur. (Does not apply)"],
-  "Q6": ["Not patching a critical vuln costs more than patching. (Applies)","Cosmetic bug costs more to fix than to leave. (Does not apply)","Roughly the same: patch disruptive but risk seems low. (Same)"],
-  "Q7": ["Slow leak likely to spread if ignored. (Applies)","Contained glitch unlikely to recur. (Does not apply)"],
-  "Q8": ["Backordered replacement part exists. (Applies)","No known fix or workaround yet. (Does not apply)"],
-  "Q9": ["You can approve repair and it will happen. (Applies)","You can’t guarantee someone else’s decision. (Does not apply)"],
-  "Q10": ["Escalate once; beyond that it’s out of your hands. (Applies)","Citywide outage: nothing else to do. (Does not apply)"],
-  "Q11": ["Generator under your control solves outage. (Applies)","All options rely on luck/others. (Does not apply)"],
-  "Q12": ["Trial a tool to learn for future value. (Applies)","Tedious workaround teaches nothing. (Does not apply)"],
-  "Q13": ["Quick screening with minimal downside yields info. (Applies)","Disassembling expensive gear ‘just to see’ isn’t worth it. (Does not apply)"],
-  "Q14": ["Repairing roof leak prevents major damage. (Applies)","Risky mod for marginal benefit. (Does not apply)","Roughly the same: benefits ≈ downsides. (Same)"],
-  "Q15": ["Despite tradeoffs, you’d still rather fix it. (Applies)","Given tradeoffs, you’d rather not. (Does not apply)"],
-  "Q16": ["Seasonal downtime could flip the calculus later. (Applies)","No foreseeable time changes the calculus. (Does not apply)"],
-  "Q17": ["Alternative approach is cheaper/better overall. (Applies)","No better option fits goals. (Does not apply)"],
-  "Q18": ["Polishing beyond ‘good enough’ adds little. (Applies)","Critical bug: every hour matters. (Does not apply)"],
-  "Q20": ["Exercise intensity has a sweet spot. (Applies)","Filing taxes—no ‘sweet spot,’ just finish. (Does not apply)"],
-  "Q22": ["HDD → SSD: noticeable improvement. (Applies)","Gold HDMI vs regular: no difference. (Does not apply)"],
-  "Q23": ["Sealing driveway cracks extends life. (Applies)","Cosmetic touch-up that fades in a week. (Does not apply)"],
-  "Q24": ["Decongestant restores sleep tonight. (Applies)","Reorganizing a drawer won’t help urgent issue. (Does not apply)"],
-  "Q25": ["Seatbelt is always worth it. (Applies)","Washing the car daily isn’t. (Does not apply)"],
-  "Q26": ["Replace worn laptop vs. another costly repair. (Applies)","No alternative truly better long-term. (Does not apply)"],
-  "Q27": ["Replace timing belt before end-of-life. (Applies)","Fixing already cracked screen is a current problem. (Does not apply)"],
-  "Q28": ["Changing HVAC filters to prevent breakdown. (Applies)","Repainting for color (not preventative). (Does not apply)"],
-  "Q30": ["Squealing brakes give clear warning window. (Applies)","Timing belt can fail without warning. (Does not apply)"],
-  "Q31": ["You’d pick this method if you could do it now. (Applies)","You know a better option but aren’t picking it. (Does not apply)"],
-  "Q32": ["You compared and ruled out better options. (Applies)","You haven’t checked obvious alternatives. (Does not apply)"],
-  "Q33": ["This truly is the best preventative option. (Applies)","A stronger preventative option likely exists. (Does not apply)"],
-  "Q34": ["You’ve ruled out better preventative options. (Applies)","You still need to look at alternatives. (Does not apply)"],
-  "Q35": ["Part in stock; appointments available. (Applies)","Part backordered two weeks. (Does not apply)"],
-  "Q36": ["Off-season timing makes it cheaper/easier. (Applies)","Waiting won’t improve value; risk rises. (Does not apply)"],
-  "Q37": ["Waiting saves a lot with little downside. (Applies)","Waiting causes outages or stress. (Does not apply)","Roughly the same: tradeoffs feel even. (Same)"],
-  "Q38": ["You’d rather use this solution despite wait costs. (Applies)","You’d rather not use it given the wait costs. (Does not apply)"],
-  "Q39": ["Plan B works now. (Applies)","No next-best option reasonably solves it. (Does not apply)"],
-  "Q40": ["Do it during a scheduled break. (Applies)","No later window beats now. (Does not apply)"],
-  "Q41": ["After availability, a later lull saves hassle. (Applies)","Once available, sooner is better. (Does not apply)"],
-  "Q42": ["An even later window improves value. (Applies)","Doing it then is already best. (Does not apply)"],
-  "Q43": ["Warning signs + threshold crossed. (Applies)","Neither condition has been met. (Does not apply)"],
-  "Q44": ["Probability crosses the threshold. (Applies)","Probability remains below threshold. (Does not apply)"]
+  "Q1": [
+    "Deadline today > TV shopping can wait. (Applies)",
+    "Nothing urgent today; small decisions okay. (Does not apply)"
+  ],
+  "Q2": [
+    "Sink leaking (function not met). (Applies)",
+    "Prefer different bag color; no functional impact. (Does not apply)"
+  ],
+  "Q3": [
+    "Laptop fan noise could signal failure. (Applies)",
+    "Phone works fine; vague worry only. (Does not apply)"
+  ],
+  "Q4": [
+    "Dust buildup could lead to overheating later. (Applies)",
+    "Hand-wavy fear something ‘might’ happen. (Does not apply)"
+  ],
+  "Q5": [
+    "Old lithium battery will eventually degrade. (Applies)",
+    "A one-off pop-up likely won’t recur. (Does not apply)"
+  ],
+  "Q6": [
+    "Not patching a critical vuln costs more than patching. (Applies)",
+    "Cosmetic bug costs more to fix than to leave. (Does not apply)",
+    "Roughly the same: patch disruptive but risk seems low. (Same)"
+  ],
+  "Q7": [
+    "Slow leak likely to spread if ignored. (Applies)",
+    "Contained glitch unlikely to recur. (Does not apply)"
+  ],
+  "Q8": [
+    "Backordered replacement part exists. (Applies)",
+    "No known fix or workaround yet. (Does not apply)"
+  ],
+  "Q9": [
+    "You can approve repair and it will happen. (Applies)",
+    "You can’t guarantee someone else’s decision. (Does not apply)"
+  ],
+  "Q10": [
+    "Escalate once; beyond that it’s out of your hands. (Applies)",
+    "Citywide outage: nothing else to do. (Does not apply)"
+  ],
+  "Q11": [
+    "Generator under your control solves outage. (Applies)",
+    "All options rely on luck/others. (Does not apply)"
+  ],
+  "Q12": [
+    "Trial a tool to learn for future value. (Applies)",
+    "Tedious workaround teaches nothing. (Does not apply)"
+  ],
+  "Q13": [
+    "Quick screening with minimal downside yields info. (Applies)",
+    "Disassembling expensive gear ‘just to see’ isn’t worth it. (Does not apply)"
+  ],
+  "Q14": [
+    "Repairing roof leak prevents major damage. (Applies)",
+    "Risky mod for marginal benefit. (Does not apply)",
+    "Roughly the same: benefits ≈ downsides. (Same)"
+  ],
+  "Q15": [
+    "Despite tradeoffs, you’d still rather fix it. (Applies)",
+    "Given tradeoffs, you’d rather not. (Does not apply)"
+  ],
+  "Q16": [
+    "Seasonal downtime could flip the calculus later. (Applies)",
+    "No foreseeable time changes the calculus. (Does not apply)"
+  ],
+  "Q17": [
+    "Alternative approach is cheaper/better overall. (Applies)",
+    "No better option fits goals. (Does not apply)"
+  ],
+  "Q18": [
+    "Polishing beyond ‘good enough’ adds little. (Applies)",
+    "Critical bug: every hour matters. (Does not apply)"
+  ],
+  "Q20": [
+    "Exercise intensity has a sweet spot. (Applies)",
+    "Filing taxes—no ‘sweet spot,’ just finish. (Does not apply)"
+  ],
+  "Q22": [
+    "HDD → SSD: noticeable improvement. (Applies)",
+    "Gold HDMI vs regular: no difference. (Does not apply)"
+  ],
+  "Q23": [
+    "Sealing driveway cracks extends life. (Applies)",
+    "Cosmetic touch-up that fades in a week. (Does not apply)"
+  ],
+  "Q24": [
+    "Decongestant restores sleep tonight. (Applies)",
+    "Reorganizing a drawer won’t help urgent issue. (Does not apply)"
+  ],
+  "Q25": [
+    "Seatbelt is always worth it. (Applies)",
+    "Washing the car daily isn’t. (Does not apply)"
+  ],
+  "Q26": [
+    "Replace worn laptop vs. another costly repair. (Applies)",
+    "No alternative truly better long-term. (Does not apply)"
+  ],
+  "Q27": [
+    "Replace timing belt before end-of-life. (Applies)",
+    "Fixing already cracked screen is a current problem. (Does not apply)"
+  ],
+  "Q28": [
+    "Changing HVAC filters to prevent breakdown. (Applies)",
+    "Repainting for color (not preventative). (Does not apply)"
+  ],
+  "Q30": [
+    "Squealing brakes give clear warning window. (Applies)",
+    "Timing belt can fail without warning. (Does not apply)"
+  ],
+  "Q31": [
+    "You’d pick this method if you could do it now. (Applies)",
+    "You know a better option but aren’t picking it. (Does not apply)"
+  ],
+  "Q32": [
+    "You compared and ruled out better options. (Applies)",
+    "You haven’t checked obvious alternatives. (Does not apply)"
+  ],
+  "Q33": [
+    "This truly is the best preventative option. (Applies)",
+    "A stronger preventative option likely exists. (Does not apply)"
+  ],
+  "Q34": [
+    "You’ve ruled out better preventative options. (Applies)",
+    "You still need to look at alternatives. (Does not apply)"
+  ],
+  "Q35": [
+    "Part in stock; appointments available. (Applies)",
+    "Part backordered two weeks. (Does not apply)"
+  ],
+  "Q36": [
+    "Off-season timing makes it cheaper/easier. (Applies)",
+    "Waiting won’t improve value; risk rises. (Does not apply)"
+  ],
+  "Q37": [
+    "Waiting saves a lot with little downside. (Applies)",
+    "Waiting causes outages or stress. (Does not apply)",
+    "Roughly the same: tradeoffs feel even. (Same)"
+  ],
+  "Q38": [
+    "You’d rather use this solution despite wait costs. (Applies)",
+    "You’d rather not use it given the wait costs. (Does not apply)"
+  ],
+  "Q39": [
+    "Plan B works now. (Applies)",
+    "No next-best option reasonably solves it. (Does not apply)"
+  ],
+  "Q40": [
+    "Do it during a scheduled break. (Applies)",
+    "No later window beats now. (Does not apply)"
+  ],
+  "Q41": [
+    "After availability, a later lull saves hassle. (Applies)",
+    "Once available, sooner is better. (Does not apply)"
+  ],
+  "Q42": [
+    "An even later window improves value. (Applies)",
+    "Doing it then is already best. (Does not apply)"
+  ],
+  "Q43": [
+    "Warning signs + threshold crossed. (Applies)",
+    "Neither condition has been met. (Does not apply)"
+  ],
+  "Q44": [
+    "Probability crosses the threshold. (Applies)",
+    "Probability remains below threshold. (Does not apply)"
+  ]
 };
 
 /* ======= STATE ======= */
@@ -657,7 +769,7 @@ function renderViz(panel, src, alt) {
   panel.appendChild(img);
 }
 
-/* ---------- Q29 slider with haptics, heat fill, and OUTSIDE ticks ---------- */
+/* ---------- Q29 slider with haptics & heat fill (ticks via CSS) ---------- */
 var lastVibeTs = 0;
 function hapticBump() {
   if (!('vibrate' in navigator)) return;
@@ -668,13 +780,6 @@ function hapticBump() {
   if (now - lastVibeTs < 80) return;
   navigator.vibrate(10);
   lastVibeTs = now;
-}
-
-function createTickRow(className, parent) {
-  var row = document.createElement('div');
-  row.className = 'tick-row ' + className;   // no child ticks needed
-  parent.appendChild(row);
-  return row;
 }
 
 function showOrHideRiskInline(node) {
@@ -696,7 +801,7 @@ function showOrHideRiskInline(node) {
 
   var row = document.createElement('div'); row.className = 'risk-row';
 
-  // wrapper so we can place tick rows above & below
+  // wrapper (ticks are drawn by slider ::before/::after)
   var wrap = document.createElement('div');
   wrap.className = 'slider-wrap';
 
@@ -706,11 +811,7 @@ function showOrHideRiskInline(node) {
   slider.setAttribute('list','riskTicks');
   slider.value = '1';
 
-  // tick rows (outside the track)
-  createTickRow('top', wrap);
   wrap.appendChild(slider);
-  createTickRow('bottom', wrap);
-
   row.appendChild(wrap);
   container.appendChild(row);
 
@@ -747,7 +848,7 @@ function showOrHideRiskInline(node) {
 /* ---------- Nav ---------- */
 function makeButton(label, cls, action) {
   var btn = document.createElement('button');
-  btn.type = 'button';  // avoid form-submit behavior if ever wrapped in a form
+  btn.type = 'button';
   btn.textContent = label;
   btn.className = cls;
   btn.onclick = action;
@@ -768,12 +869,9 @@ function goToNode(id) {
 function goBack() {
   closeAllPanels();
   var prevId = historyStack.pop();
-
-  // If moving back to or before Q6, clear the auto-skip flag so Q14 behaves normally
   if (prevId && /^Q(\d+)$/.test(prevId) && parseInt(RegExp.$1,10) <= 6) {
     q6WasYes = false;
   }
-
   var prev = flowchart.find(function(n){ return n.id === prevId; });
   currentNode = prev || currentNode; renderNode(currentNode);
 }
