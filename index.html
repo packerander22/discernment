@@ -197,7 +197,7 @@
     background: transparent;
   }
   .heat-slider::-ms-fill-lower { background: var(--fill); border-radius: calc(var(--track-height)/2); }
-  .heat-slider::-ms-fill-upper { background: var(--track-height); border-radius: calc(var(--track-height)/2); }
+  .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-thumb {
     width: var(--thumb-size); height: var(--thumb-size);
     border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow);
@@ -934,10 +934,9 @@ function renderNode(node) {
 
   var btns = document.getElementById('buttons');
   btns.innerHTML = '';
-  var restartTop = document.getElementById('restartTop');
-
-    const restartTop = document.getElementById('restartTop');
-
+  
+  const restartTop = document.getElementById('restartTop');
+  
   if (node.type === 'result') {
     // keep the centered Restart on result screens, hide the top-bar one
     restartTop.style.display = 'none';
