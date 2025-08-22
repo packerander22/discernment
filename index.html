@@ -153,17 +153,17 @@
     cursor: pointer;
   }
 
-  /* Tick rows (outside the track), inset to match THUMB TRAVEL (half-thumb each side) */
+  /* Tick rows sit outside the track and are aligned by gradient math */
   .tick-row {
     position: absolute;
-    left: calc(var(--thumb-size) / 2);
-    right: calc(var(--thumb-size) / 2);
+    left: 0;                         /* full width, we’ll offset with bg-position */
+    right: 0;
     height: var(--tick-length);
     pointer-events: none;
-    z-index: 0; /* under slider */
+    z-index: 0;
   }
-
-  /* Use transforms so rows touch the track edge at any zoom/DPI */
+  
+  /* Touch the track edge using transforms (no 1px seams at any zoom/DPR) */
   .tick-row.top {
     bottom: 50%;
     transform: translateY(calc(-50% - var(--track-height)/2));
@@ -172,13 +172,26 @@
     top: 50%;
     transform: translateY(calc(50% + var(--track-height)/2 - var(--tick-length)));
   }
-
-  .tick {
+  
+  /* Draw ticks with a repeating gradient so spacing = exact thumb step width */
+  .tick-row::before {
+    content: "";
     position: absolute;
-    width: var(--tick-thickness);
-    height: 100%;
-    background: var(--tick-color);
-    transform: translateX(-50%); /* center the bar on its position */
+    inset: 0;
+  
+    /* each stripe = a tick; repeat every step width */
+    background-image: repeating-linear-gradient(
+      to right,
+      var(--tick-color) 0,
+      var(--tick-color) var(--tick-thickness),
+      transparent var(--tick-thickness),
+      transparent calc((100% - var(--thumb-size)) / 9)
+    );
+  
+    /* start the repetition exactly at the left thumb center */
+    background-repeat: repeat-x;
+    background-size: calc((100% - var(--thumb-size)) / 9) 100%;
+    background-position: left calc(var(--thumb-size) / 2) top;
   }
 
   /* Firefox */
@@ -659,15 +672,7 @@ function hapticBump() {
 
 function createTickRow(className, parent) {
   var row = document.createElement('div');
-  row.className = 'tick-row ' + className;
-  // create ticks at exact integer positions 1..10 (thumb center points)
-  for (var i=1;i<=10;i++){
-    var tick = document.createElement('div');
-    tick.className = 'tick';
-    var pct = ((i - 1) / 9) * 100; // 0..100 across thumb travel
-    tick.style.left = pct + '%';
-    row.appendChild(tick);
-  }
+  row.className = 'tick-row ' + className;   // no child ticks needed
   parent.appendChild(row);
   return row;
 }
