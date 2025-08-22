@@ -7,17 +7,17 @@
 
 <!-- Favicon set -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon_16transparent.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon_32transparent.png">
-<link rel="icon" type="image/png" sizes="48x48" href="favicon_48transparent.png">
-<link rel="icon" type="image/png" sizes="64x64" href="favicon_64transparent.png">
-<link rel="apple-touch-icon" sizes="180x180" href="favicon_180transparent.png">
-<link rel="icon" type="image/png" sizes="192x192" href="favicon_192transparent.png">
-<link rel="icon" type="image/png" sizes="256x256" href="favicon_256transparent.png">
-<link rel="icon" type="image/png" sizes="384x384" href="favicon_384transparent.png">
-<link rel="icon" type="image/png" sizes="512x512" href="favicon_512transparent.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon_16_transparent.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon_32_transparent.png">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon_48_transparent.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon_64_transparent.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon_180_transparent.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon_192_transparent.png">
+<link rel="icon" type="image/png" sizes="256x256" href="favicon_256_transparent.png">
+<link rel="icon" type="image/png" sizes="384x384" href="favicon_384_transparent.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon_512_transparent.png">
 <link rel="shortcut icon" href="favicon.ico">
-<link rel="icon" type="image/png" href="favicon_512transparent.png?v=2">
+<link rel="icon" type="image/png" href="favicon_512_transparent.png?v=2">
 
 <style>
   :root {
@@ -118,7 +118,7 @@
     appearance: none;
     width: 100%;
     height: var(--thumb-size);
-    background: transparent;
+    background: _transparent;
     position: relative;
     z-index: 1; /* above tick rows */
     -webkit-touch-callout: none;
@@ -202,9 +202,9 @@
   /* Edge/IE (best-effort) */
   .heat-slider::-ms-track {
     height: var(--track-height);
-    border-color: transparent;
-    color: transparent;
-    background: transparent;
+    border-color: _transparent;
+    color: _transparent;
+    background: _transparent;
   }
   .heat-slider::-ms-fill-lower { background: var(--fill); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
@@ -398,7 +398,7 @@ function setHeadingText(nodeId) {
 
   if (nodeId === 'Q0') {
     title.innerHTML =
-      "<img src='favicon_512transparent.png' srcset='favicon_64transparent.png 1x, favicon_256transparent.png 2x, favicon_512transparent.png 3x' alt='Discernment Logo' class='logo'>Discernment Guide";
+      "<img src='favicon_512_transparent.png' srcset='favicon_64_transparent.png 1x, favicon_256_transparent.png 2x, favicon_512_transparent.png 3x' alt='Discernment Logo' class='logo'>Discernment Guide";
     skipBtn.style.display = 'none';
     return;
   }
@@ -570,7 +570,7 @@ function setupAuxToggles(node) {
 
       vizBtn.onclick = function() {
         var isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
-        var src = node.id === 'Q18' ? 'diminishing_returns_curvetransparent.png' : 'inverted_u_curvetransparent.png';
+        var src = node.id === 'Q18' ? 'diminishing_returns_curve_transparent.png' : 'inverted_u_curve_transparent.png';
         var alt = node.id === 'Q18'
           ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
           : 'Inverted-U Curve: Effort/Resources vs Functional Results';
@@ -616,7 +616,7 @@ function setupAuxToggles(node) {
           p.textContent = 'Your current threshold is ' + currentThresholdPct + '%.';
           rp.appendChild(p);
           var img = document.createElement('img');
-          img.src = 'linear_threshold_charttransparent.png';
+          img.src = 'linear_threshold_chart_transparent.png';
           img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
           rp.appendChild(img);
         }
