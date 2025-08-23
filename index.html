@@ -796,6 +796,11 @@ function renderNode(node) {
     document.getElementById('restartTop').style.display = 'inline-block';
     return;
   }
+  
+    // If we’re back on the intro, allow the "If" header to flash again next time
+  if (node.id === 'Q0') {
+    hasFlashedIf = false;
+  }
 
   var previousSegment = currentSegment;
   var thisSegment = getSegmentForNodeId(node.id);
