@@ -392,11 +392,11 @@ function getSegmentForNodeId(id) {
   return num >= 27 ? "When You Should Act" : "If You Should Act";
 }
 
-function setHeadingText(nodeId) {
+function setHeadingText(node) {
   var title = document.getElementById('segmentTitle');
   var skipBtn = document.getElementById('skipBtn');
 
-  if (nodeId === 'Q0') {
+  if (node.id === 'Q0') {
     // Intro screen: logo + full title
     title.innerHTML =
       "<img src='./favicon_256_transparent.png' alt='Discernment Logo' class='logo'>Discernment: A Decision-Making Guide";
@@ -411,8 +411,12 @@ function setHeadingText(nodeId) {
 
   title.innerHTML = segText;
 
-  // Skip button only during "If" segment
-  skipBtn.style.display = (currentSegment === "If You Should Act") ? 'inline-block' : 'none';
+  // Show Skip only in the "If" segment AND only when this screen is not a result
+  if (currentSegment === "If You Should Act" && node.type !== 'result') {
+    skipBtn.style.display = 'inline-block';
+  } else {
+    skipBtn.style.display = 'none';
+  }
 }
 
 function flashHeadingColor(targetSegment) {
@@ -820,7 +824,7 @@ function renderNode(node) {
   }
 
   currentSegment = thisSegment;
-  setHeadingText(node.id);
+  setHeadingText(node);
 
   var textDiv = document.getElementById('text');
   var displayHTML = node.text || '';
