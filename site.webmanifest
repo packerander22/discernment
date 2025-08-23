@@ -2,36 +2,36 @@
   "name": "Discernment: A Decision-Making Guide",
   "short_name": "Discernment",
   "description": "A flow chart guide for making decisions.",
-  "id": "/",
-  "start_url": "/",
-  "scope": "/",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "favicon_192_transparent.png",
+      "src": "./favicon_192_transparent.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "favicon_256_transparent.png",
+      "src": "./favicon_256_transparent.png",
       "sizes": "256x256",
       "type": "image/png"
     },
     {
-      "src": "favicon_384_transparent.png",
+      "src": "./favicon_384_transparent.png",
       "sizes": "384x384",
       "type": "image/png"
     },
     {
-      "src": "favicon_512_transparent.png",
+      "src": "./favicon_512_transparent.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "favicon_maskable_512_transparent.png",
+      "src": "./favicon_maskable_512_transparent.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
