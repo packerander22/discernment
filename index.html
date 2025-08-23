@@ -8,20 +8,20 @@
 <meta name="theme-color" content="#ffffff">
 
 <!-- Preload header logo to reduce flicker -->
-<link rel="preload" as="image" href="favicon_256_transparent.png">
+<link rel="preload" as="image" href="./favicon_256_transparent.png">
 
-<!-- Favicon set -->
-<link rel="icon" type="image/svg+xml" href="favicon_transparent.svg">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon_16_transparent.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon_32_transparent.png">
-<link rel="icon" type="image/png" sizes="48x48" href="favicon_48_transparent.png">
-<link rel="icon" type="image/png" sizes="64x64" href="favicon_64_transparent.png">
-<link rel="apple-touch-icon" sizes="180x180" href="favicon_180_transparent.png">
-<link rel="icon" type="image/png" sizes="192x192" href="favicon_192_transparent.png">
-<link rel="icon" type="image/png" sizes="256x256" href="favicon_256_transparent.png">
-<link rel="icon" type="image/png" sizes="384x384" href="favicon_384_transparent.png">
-<link rel="icon" type="image/png" sizes="512x512" href="favicon_512_transparent.png">
-<link rel="shortcut icon" href="favicon_transparent.ico">
+<!-- ./favicon set -->
+<link rel="icon" type="image/svg+xml" href="./favicon_transparent.svg">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon_16_transparent.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon_32_transparent.png">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon_48_transparent.png">
+<link rel="icon" type="image/png" sizes="64x64" href="./favicon_64_transparent.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./favicon_180_transparent.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./favicon_192_transparent.png">
+<link rel="icon" type="image/png" sizes="256x256" href="./favicon_256_transparent.png">
+<link rel="icon" type="image/png" sizes="384x384" href="./favicon_384_transparent.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./favicon_512_transparent.png">
+<link rel="shortcut icon" href="./favicon_transparent.ico">
 
 <style>
   :root {
@@ -403,7 +403,7 @@ function setHeadingText(nodeId) {
   var skipBtn = document.getElementById('skipBtn');
 
   // Base header always present
-  var base = "<img src='favicon_256_transparent.png' alt='Discernment Logo' class='logo'>Discernment: A Decision-Making Guide";
+  var base = "<img src='./favicon_256_transparent.png' alt='Discernment Logo' class='logo'>Discernment: A Decision-Making Guide";
 
   // Subtitle only after Q0
   var subtitle = "";
@@ -584,7 +584,7 @@ function setupAuxToggles(node) {
 
       vizBtn.onclick = function() {
         var isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
-        var src = node.id === 'Q18' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
+        var src = node.id === 'Q18' ? './diminishing_returns_curve.png' : './inverted_u_curve.png';
         var alt = node.id === 'Q18'
           ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
           : 'Inverted-U Curve: Effort/Resources vs Functional Results';
@@ -630,7 +630,7 @@ function setupAuxToggles(node) {
           p.textContent = 'Your current threshold is ' + currentThresholdPct + '%.';
           rp.appendChild(p);
           var img = document.createElement('img');
-          img.src = 'linear_threshold_chart.png';
+          img.src = './linear_threshold_chart.png';
           img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
           rp.appendChild(img);
         }
