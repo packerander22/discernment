@@ -375,6 +375,9 @@ var examples = {
 /* ======= STATE ======= */
 var currentThresholdPct = 90;
 var q6WasYes = false;
+/* NEW: track first flash per segment */
+var hasFlashedIf = false;
+var hasFlashedWhen = false;
 
 /* ======= APP LOGIC ======= */
 var historyStack = [];
@@ -765,6 +768,9 @@ function restart() {
   currentSegment = "If You Should Act";
   currentNode = flowchart.find(function(n){ return n.id === "Q0"; });
   q6WasYes = false;
+  /* reset flash flags on restart */
+  hasFlashedIf = false;
+  hasFlashedWhen = false;
   renderNode(currentNode);
 }
 
@@ -793,7 +799,20 @@ function renderNode(node) {
 
   var previousSegment = currentSegment;
   var thisSegment = getSegmentForNodeId(node.id);
-  if (thisSegment !== previousSegment && node.id !== 'Q0') flashHeadingColor(thisSegment);
+
+  // Flash when switching segments OR the first time each segment is shown after Q0
+  var shouldFlash =
+    node.id !== 'Q0' && (
+      thisSegment !== previousSegment ||
+      (thisSegment === "If You Should Act" && !hasFlashedIf) ||
+      (thisSegment === "When You Should Act" && !hasFlashedWhen)
+    );
+
+  if (shouldFlash) {
+    flashHeadingColor(thisSegment);
+    if (thisSegment === "If You Should Act") hasFlashedIf = true;
+    if (thisSegment === "When You Should Act") hasFlashedWhen = true;
+  }
 
   currentSegment = thisSegment;
   setHeadingText(node.id);
