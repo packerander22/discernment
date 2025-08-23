@@ -27,12 +27,12 @@
     --btn-pad-y:10px; --btn-pad-x:12px;
 
     /* slider custom props */
-    --track-height: 8px;              /* make thinner here only */
+    --track-height: 8px;
     --thumb-size: 28px;
     --thumb-shadow: 0 1px 3px rgba(0,0,0,.25);
-    --track-bg: #e0e0e0;              /* right side */
-    --fill: #2d6cdf;                  /* left side (updated via JS) */
-    --pct: 0%;                        /* fill percent (updated via JS) */
+    --track-bg: #e0e0e0;
+    --fill: #2d6cdf;
+    --pct: 0%;
     --tick-color: rgba(0,0,0,.35);
     --tick-thickness: 2px;
     --tick-length: 6px;
@@ -55,7 +55,6 @@
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
-  .segment-title .subtitle { font-size:0.7em; font-weight:normal; color:#555; }
   .flash-gold { color: goldenrod !important; }
   .flash-green { color: #2e7d32 !important; }
 
@@ -103,13 +102,13 @@
 
   .error { color:#B00020; font-size:0.95em; }
 
-  /* === Slider visual customization (bigger, aligned, left-side heat fill) === */
+  /* === Slider visual customization === */
   .slider-wrap {
     position: relative;
     width: 100%;
     height: calc(var(--thumb-size) + var(--tick-length) * 2 + 8px);
     display: flex;
-    align-items: center; /* keeps thumb vertically aligned */
+    align-items: center;
     justify-content: center;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -124,14 +123,13 @@
     height: var(--thumb-size);
     background: transparent;
     position: relative;
-    z-index: 1; /* above tick rows */
+    z-index: 1;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
     touch-action: pan-x;
   }
 
-  /* WebKit track: left solid heat color, right neutral */
   .heat-slider::-webkit-slider-runnable-track {
     height: var(--track-height);
     border-radius: calc(var(--track-height) / 2);
@@ -142,7 +140,6 @@
         var(--track-bg) var(--pct),
         var(--track-bg) 100%);
   }
-  /* WebKit thumb: centered via negative margin */
   .heat-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -156,16 +153,14 @@
     cursor: pointer;
   }
 
-  /* Tick rows (individual ticks), aligned to thumb centers */
   .tick-row {
     position: absolute;
     left: calc(var(--thumb-size) / 2);
     right: calc(var(--thumb-size) / 2);
     height: var(--tick-length);
     pointer-events: none;
-    z-index: 0; /* under slider */
+    z-index: 0;
   }
-  /* anchor from center with ±2px guard so ticks “kiss” the track edge */
   .tick-row.top {
     top: 50%;
     transform: translateY(calc(-50% - var(--track-height)/2 - 2px));
@@ -179,10 +174,9 @@
     width: var(--tick-thickness);
     height: 100%;
     background: var(--tick-color);
-    transform: translateX(-50%); /* center the 2px bar on its position */
+    transform: translateX(-50%);
   }
 
-  /* Firefox */
   .heat-slider::-moz-range-track {
     height: var(--track-height);
     border-radius: calc(var(--track-height) / 2);
@@ -203,7 +197,6 @@
     cursor: pointer;
   }
 
-  /* Edge/IE (best-effort) */
   .heat-slider::-ms-track {
     height: var(--track-height);
     border-color: transparent;
@@ -396,28 +389,27 @@ function getSegmentForNodeId(id) {
   return num >= 27 ? "When You Should Act" : "If You Should Act";
 }
 
-/* === Updated: Stable header (logo + title always), with changing subtitle === */
 function setHeadingText(nodeId) {
   var title = document.getElementById('segmentTitle');
   var skipBtn = document.getElementById('skipBtn');
 
-  // Base header always present
-  var base = "<img src='./favicon_256_transparent.png' alt='Discernment Logo' class='logo'>Discernment: A Decision-Making Guide";
-
-  // Subtitle only after Q0
-  var subtitle = "";
-  if (nodeId !== 'Q0') {
-    subtitle = (currentSegment === "If You Should Act")
-      ? " <span class='subtitle'>— ⚖️ If You Should Act</span>"
-      : " <span class='subtitle'>— ⏳ When You Should Act</span>";
+  if (nodeId === 'Q0') {
+    // Intro screen: logo + full title
+    title.innerHTML =
+      "<img src='./favicon_256_transparent.png' alt='Discernment Logo' class='logo'>Discernment: A Decision-Making Guide";
+    skipBtn.style.display = 'none';
+    return;
   }
 
-  title.innerHTML = base + subtitle;
+  // After intro: emoji acts as icon, no logo
+  var segText = (currentSegment === "If You Should Act")
+    ? "⚖️ If You Should Act"
+    : "⏳ When You Should Act";
 
-  // Skip only during "If" segment (and hidden on Q0)
-  skipBtn.style.display = (nodeId !== 'Q0' && currentSegment === "If You Should Act")
-    ? 'inline-block'
-    : 'none';
+  title.innerHTML = segText;
+
+  // Skip button only during "If" segment
+  skipBtn.style.display = (currentSegment === "If You Should Act") ? 'inline-block' : 'none';
 }
 
 function flashHeadingColor(targetSegment) {
@@ -472,12 +464,12 @@ function transformQ44(html) {
 
 /* ---------- Slider color helpers (aggressive red) ---------- */
 function heatColorForSeverity(sev) {
-  var ratio = Math.pow((sev - 1) / 9, 0.4); // push red earlier
-  var hue = 220 * (1 - ratio);              // 220=blue → 0=red
+  var ratio = Math.pow((sev - 1) / 9, 0.4);
+  var hue = 220 * (1 - ratio);
   return 'hsl(' + Math.round(hue) + ', 100%, 50%)';
 }
 function updateSliderFill(slider, sev) {
-  var pct = ((sev - 1) / 9) * 100; // 0..100 (ticks 1..10)
+  var pct = ((sev - 1) / 9) * 100;
   slider.style.setProperty('--pct', pct + '%');
   slider.style.setProperty('--fill', heatColorForSeverity(sev));
 }
@@ -669,11 +661,10 @@ function hapticBump() {
 function createTickRow(className, parent) {
   var row = document.createElement('div');
   row.className = 'tick-row ' + className;
-  // create ticks at exact integer positions 1..10 (thumb center points)
   for (var i=1;i<=10;i++){
     var tick = document.createElement('div');
     tick.className = 'tick';
-    var pct = ((i - 1) / 9) * 100; // 0..100 across thumb travel
+    var pct = ((i - 1) / 9) * 100;
     tick.style.left = pct + '%';
     row.appendChild(tick);
   }
@@ -700,7 +691,6 @@ function showOrHideRiskInline(node) {
 
   var row = document.createElement('div'); row.className = 'risk-row';
 
-  // wrapper so we can place tick rows above & below
   var wrap = document.createElement('div');
   wrap.className = 'slider-wrap';
 
@@ -710,7 +700,6 @@ function showOrHideRiskInline(node) {
   slider.setAttribute('list','riskTicks');
   slider.value = '1';
 
-  // tick rows (outside the track)
   createTickRow('top', wrap);
   wrap.appendChild(slider);
   createTickRow('bottom', wrap);
@@ -724,12 +713,11 @@ function showOrHideRiskInline(node) {
   container.appendChild(ticks);
 
   function applyFromSeverity(sev) {
-    var thr = 100 - sev * 10;   // linear threshold mapping
-    currentThresholdPct = thr;  // sev=1 → 90%, sev=10 → 0%
+    var thr = 100 - sev * 10;
+    currentThresholdPct = thr;
     sevDisplay.textContent = String(sev);
     updateSliderFill(slider, sev);
 
-    // Live update Q43/Q44 copy if visible
     if (currentNode && (currentNode.id === 'Q43' || currentNode.id === 'Q44')) {
       var textDiv = document.getElementById('text');
       var html = currentNode.text || '';
@@ -738,7 +726,6 @@ function showOrHideRiskInline(node) {
     }
   }
 
-  // Init visuals
   applyFromSeverity(1);
 
   slider.oninput = function() {
@@ -834,14 +821,12 @@ function renderNode(node) {
   const restartTop = document.getElementById('restartTop');
 
   if (node.type === 'result') {
-    // keep the centered Restart on result screens, hide the top-bar one
     restartTop.style.display = 'none';
     btns.classList.add('center');
     const restartCentered = makeButton('Restart', 'restart', () => restart());
     restartCentered.style.flex = '0 0 auto';
     btns.appendChild(restartCentered);
   } else {
-    // SHOW top-bar Restart only after leaving Q0
     restartTop.style.display = (node.id === 'Q0') ? 'none' : 'inline-block';
     btns.classList.remove('center');
   
