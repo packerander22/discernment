@@ -473,4 +473,393 @@ function transformQ44(html) {
 
 /* ---------- Slider color helpers (aggressive red) ---------- */
 function heatColorForSeverity(sev) {
-  var ratio = Math.pow((sev - 1) / 9,
+  var ratio = Math.pow((sev - 1) / 9, 0.4); // push red earlier
+  var hue = 220 * (1 - ratio);              // 220=blue → 0=red
+  return 'hsl(' + Math.round(hue) + ', 100%, 50%)';
+}
+function updateSliderFill(slider, sev) {
+  var pct = ((sev - 1) / 9) * 100; // 0..100 (ticks 1..10)
+  slider.style.setProperty('--pct', pct + '%');
+  slider.style.setProperty('--fill', heatColorForSeverity(sev));
+}
+
+/* ---------- Panels ---------- */
+function collapseSharedPanel() {
+  var panel = document.getElementById('sharedPanel');
+  if (panel) {
+    panel.style.display = 'none';
+    panel.setAttribute('aria-hidden','true');
+    panel.dataset.mode = '';
+    panel.innerHTML = '';
+  }
+  var leftWrap  = document.getElementById('leftControlsWrapper');
+  var rightWrap = document.getElementById('rightControlsWrapper');
+
+  if (leftWrap) {
+    var exBtns = leftWrap.querySelectorAll('.examples-btn');
+    for (var i=0;i<exBtns.length;i++) {
+      exBtns[i].textContent = 'Show examples';
+      exBtns[i].setAttribute('aria-expanded','false');
+      exBtns[i].classList.remove('active');
+    }
+  }
+  if (rightWrap) {
+    var rBtns = rightWrap.querySelectorAll('.viz-btn, .reasoning-btn');
+    for (var j=0;j<rBtns.length;j++) {
+      rBtns[j].textContent = rBtns[j].classList.contains('reasoning-btn') ? 'Show percentage reasoning' : 'Show visualization';
+      rBtns[j].setAttribute('aria-expanded','false');
+      rBtns[j].classList.remove('active');
+    }
+  }
+}
+function collapseReasoningPanel() {
+  var panel = document.getElementById('reasoningPanel');
+  if (panel) {
+    panel.style.display = 'none';
+    panel.setAttribute('aria-hidden','true');
+    panel.innerHTML = '';
+  }
+}
+function openSharedPanel(panel, mode) {
+  if (!panel) return;
+  panel.style.display = 'block';
+  panel.setAttribute('aria-hidden','false');
+  panel.dataset.mode = mode;
+
+  var leftWrap  = document.getElementById('leftControlsWrapper');
+  var rightWrap = document.getElementById('rightControlsWrapper');
+  var exBtn = leftWrap ? leftWrap.querySelector('.examples-btn') : null;
+  var vzBtn = rightWrap ? rightWrap.querySelector('.viz-btn') : null;
+
+  if (mode === 'examples') {
+    if (exBtn) exBtn.textContent = 'Hide examples';
+    if (vzBtn) vzBtn.textContent = 'Show visualization';
+  } else if (mode === 'viz') {
+    if (vzBtn) vzBtn.textContent = 'Hide visualization';
+    if (exBtn) exBtn.textContent = 'Show examples';
+  }
+}
+
+/* ---------- Controls under the text ---------- */
+function setupAuxToggles(node) {
+  var leftWrap = document.getElementById('leftControlsWrapper');
+  var rightWrap = document.getElementById('rightControlsWrapper');
+  var panel = document.getElementById('sharedPanel');
+
+  leftWrap.innerHTML = '';
+  rightWrap.innerHTML = '';
+  collapseSharedPanel();
+
+  if (node.type === 'question') {
+    // Examples (left)
+    var examplesBtn = document.createElement('button');
+    examplesBtn.type = 'button';
+    examplesBtn.textContent = 'Show examples';
+    examplesBtn.className = 'examples-btn ctrl-btn';
+    examplesBtn.setAttribute('aria-expanded', 'false');
+    leftWrap.appendChild(examplesBtn);
+
+    examplesBtn.onclick = function() {
+      var isOpenExamples = panel.style.display === 'block' && panel.dataset.mode === 'examples';
+      if (isOpenExamples) {
+        collapseSharedPanel();
+      } else {
+        renderExamples(panel, node.id);
+        openSharedPanel(panel, 'examples');
+        examplesBtn.setAttribute('aria-expanded','true');
+        examplesBtn.classList.add('active');
+        var rightBtn = rightWrap.querySelector('.viz-btn, .reasoning-btn');
+        if (rightBtn) { rightBtn.setAttribute('aria-expanded','false'); rightBtn.classList.remove('active'); }
+      }
+    };
+
+    // Visualization (right) only for Q18 / Q20
+    if (node.id === 'Q18' || node.id === 'Q20') {
+      var vizBtn = document.createElement('button');
+      vizBtn.type = 'button';
+      vizBtn.textContent = 'Show visualization';
+      vizBtn.className = 'viz-btn ctrl-btn';
+      vizBtn.setAttribute('aria-expanded', 'false');
+      rightWrap.appendChild(vizBtn);
+
+      vizBtn.onclick = function() {
+        var isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
+        var src = node.id === 'Q18' ? 'diminishing_returns_curve.png' : 'inverted_u_curve.png';
+        var alt = node.id === 'Q18'
+          ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
+          : 'Inverted-U Curve: Effort/Resources vs Functional Results';
+        if (isOpenViz) {
+          collapseSharedPanel();
+        } else {
+          renderViz(panel, src, alt);
+          openSharedPanel(panel, 'viz');
+          vizBtn.setAttribute('aria-expanded','true');
+          vizBtn.classList.add('active');
+          examplesBtn.setAttribute('aria-expanded','false');
+          examplesBtn.classList.remove('active');
+        }
+      };
+    }
+
+    // Percentage reasoning (RIGHT) on Q43/Q44
+    if (node.id === 'Q43' || node.id === 'Q44') {
+      var reasonBtn = document.createElement('button');
+      reasonBtn.type = 'button';
+      reasonBtn.textContent = 'Show percentage reasoning';
+      reasonBtn.className = 'reasoning-btn ctrl-btn';
+      reasonBtn.setAttribute('aria-expanded','false');
+      rightWrap.appendChild(reasonBtn);
+
+      reasonBtn.onclick = function() {
+        var rp = document.getElementById('reasoningPanel');
+        var open = rp.style.display === 'block';
+        if (open) {
+          rp.style.display = 'none';
+          rp.setAttribute('aria-hidden','true');
+          reasonBtn.textContent = 'Show percentage reasoning';
+          reasonBtn.setAttribute('aria-expanded','false');
+          reasonBtn.classList.remove('active');
+        } else {
+          rp.style.display = 'block';
+          rp.setAttribute('aria-hidden','false');
+          reasonBtn.textContent = 'Hide percentage reasoning';
+          reasonBtn.setAttribute('aria-expanded','true');
+          reasonBtn.classList.add('active');
+          rp.innerHTML = '';
+          var p = document.createElement('p');
+          p.textContent = 'Your current threshold is ' + currentThresholdPct + '%.';
+          rp.appendChild(p);
+          var img = document.createElement('img');
+          img.src = 'linear_threshold_chart.png';
+          img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
+          rp.appendChild(img);
+        }
+      };
+    }
+  }
+}
+
+function renderExamples(panel, nodeId) {
+  panel.innerHTML = '';
+  var lines = examples[nodeId] || ["Example 1: [edit me]", "Example 2: [edit me]"];
+  for (var i=0;i<lines.length;i++) {
+    var p = document.createElement('p');
+    p.textContent = lines[i];
+    panel.appendChild(p);
+  }
+}
+function renderViz(panel, src, alt) {
+  panel.innerHTML = '';
+  var img = document.createElement('img'); img.src = src; img.alt = alt;
+  panel.appendChild(img);
+}
+
+/* ---------- Q29 slider with haptics, heat fill, and OUTSIDE ticks ---------- */
+var lastVibeTs = 0;
+function hapticBump() {
+  if (!('vibrate' in navigator)) return;
+  var mq = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (mq && mq.matches) return;
+
+  var now = Date.now();
+  if (now - lastVibeTs < 80) return;
+  navigator.vibrate(10);
+  lastVibeTs = now;
+}
+
+function createTickRow(className, parent) {
+  var row = document.createElement('div');
+  row.className = 'tick-row ' + className;
+  // create ticks at exact integer positions 1..10 (thumb center points)
+  for (var i=1;i<=10;i++){
+    var tick = document.createElement('div');
+    tick.className = 'tick';
+    var pct = ((i - 1) / 9) * 100; // 0..100 across thumb travel
+    tick.style.left = pct + '%';
+    row.appendChild(tick);
+  }
+  parent.appendChild(row);
+  return row;
+}
+
+function showOrHideRiskInline(node) {
+  var container = document.getElementById('riskInline');
+  container.innerHTML = '';
+  if (!node || node.id !== 'Q29') {
+    container.style.display = 'none';
+    container.setAttribute('aria-hidden','true');
+    return;
+  }
+  container.style.display = 'block';
+  container.setAttribute('aria-hidden','false');
+
+  var sevDisplay = document.createElement('div');
+  sevDisplay.className = 'sev-display';
+  sevDisplay.id = 'sevDisplay';
+  sevDisplay.textContent = '1';
+  container.appendChild(sevDisplay);
+
+  var row = document.createElement('div'); row.className = 'risk-row';
+
+  // wrapper so we can place tick rows above & below
+  var wrap = document.createElement('div');
+  wrap.className = 'slider-wrap';
+
+  var slider = document.createElement('input');
+  slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
+  slider.className = 'heat-slider';
+  slider.setAttribute('list','riskTicks');
+  slider.value = '1';
+
+  // tick rows (outside the track)
+  createTickRow('top', wrap);
+  wrap.appendChild(slider);
+  createTickRow('bottom', wrap);
+
+  row.appendChild(wrap);
+  container.appendChild(row);
+
+  var ticks = document.createElement('datalist');
+  ticks.id = 'riskTicks';
+  for (var i=1;i<=10;i++){ var opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
+  container.appendChild(ticks);
+
+  function applyFromSeverity(sev) {
+    var thr = 100 - sev * 10;   // linear threshold mapping
+    currentThresholdPct = thr;  // sev=1 → 90%, sev=10 → 0%
+    sevDisplay.textContent = String(sev);
+    updateSliderFill(slider, sev);
+
+    // Live update Q43/Q44 copy if visible
+    if (currentNode && (currentNode.id === 'Q43' || currentNode.id === 'Q44')) {
+      var textDiv = document.getElementById('text');
+      var html = currentNode.text || '';
+      html = currentNode.id === 'Q43' ? transformQ43(html) : transformQ44(html);
+      textDiv.innerHTML = '<div class="result-text">' + html + '</div>';
+    }
+  }
+
+  // Init visuals
+  applyFromSeverity(1);
+
+  slider.oninput = function() {
+    var sev = parseInt(slider.value, 10);
+    applyFromSeverity(sev);
+    hapticBump();
+  };
+}
+
+/* ---------- Nav ---------- */
+function makeButton(label, cls, action) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = label; btn.className = cls; btn.onclick = action; return btn;
+}
+function goToNode(id) {
+  closeAllPanels();
+
+  if (currentNode && currentNode.id === 'Q6' && id === currentNode.yes) {
+    q6WasYes = true;
+  }
+  var adjustedId = beforeEnterNode(id);
+
+  var next = flowchart.find(function(n){ return n.id === adjustedId; });
+  historyStack.push(currentNode ? currentNode.id : '');
+  currentNode = next; renderNode(currentNode);
+}
+function goBack() {
+  closeAllPanels();
+  var prevId = historyStack.pop();
+  var prev = flowchart.find(function(n){ return n.id === prevId; });
+  currentNode = prev || currentNode; renderNode(currentNode);
+}
+function restart() {
+  closeAllPanels();
+  historyStack = [];
+  currentSegment = "If You Should Act";
+  currentNode = flowchart.find(function(n){ return n.id === "Q0"; });
+  q6WasYes = false;
+  renderNode(currentNode);
+}
+
+/* Skip to first WHEN screen (Q27) */
+document.getElementById('skipBtn').addEventListener('click', function() {
+  closeAllPanels();
+  goToNode('Q27');
+});
+
+/* ---------- Render ---------- */
+function renderNode(node) {
+  closeAllPanels();
+
+  var errorBox = document.getElementById('errorBox');
+  errorBox.textContent = '';
+
+  if (!node) {
+    errorBox.textContent = "Error: Could not render this step (missing node). Check JSON IDs and links.";
+    document.getElementById('text').textContent = '';
+    document.getElementById('buttons').innerHTML = '';
+    setHeadingText('');
+    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
+    document.getElementById('restartTop').style.display = 'inline-block';
+    return;
+  }
+
+  var previousSegment = currentSegment;
+  var thisSegment = getSegmentForNodeId(node.id);
+  if (thisSegment !== previousSegment && node.id !== 'Q0') flashHeadingColor(thisSegment);
+
+  currentSegment = thisSegment;
+  setHeadingText(node.id);
+
+  var textDiv = document.getElementById('text');
+  var displayHTML = node.text || '';
+  if (node.id === 'Q43') {
+    displayHTML = transformQ43(displayHTML);
+    textDiv.innerHTML = '<div class="result-text">' + displayHTML + '</div>';
+  } else if (node.id === 'Q44') {
+    displayHTML = transformQ44(displayHTML);
+    textDiv.innerHTML = '<div class="result-text">' + displayHTML + '</div>';
+  } else {
+    textDiv.innerHTML = displayHTML;
+  }
+
+  document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
+
+  setupAuxToggles(node);
+  showOrHideRiskInline(node);
+
+  var btns = document.getElementById('buttons');
+  btns.innerHTML = '';
+
+  const restartTop = document.getElementById('restartTop');
+
+  if (node.type === 'result') {
+    // keep the centered Restart on result screens, hide the top-bar one
+    restartTop.style.display = 'none';
+    btns.classList.add('center');
+    const restartCentered = makeButton('Restart', 'restart', () => restart());
+    restartCentered.style.flex = '0 0 auto';
+    btns.appendChild(restartCentered);
+  } else {
+    // SHOW top-bar Restart only after leaving Q0
+    restartTop.style.display = (node.id === 'Q0') ? 'none' : 'inline-block';
+    btns.classList.remove('center');
+  
+    if (node.type === 'question') {
+      const yesBtn = makeButton('Yes', 'yes', () => goToNode(node.yes));
+      const noBtn  = makeButton('No',  'no',  () => goToNode(node.no));
+      btns.appendChild(yesBtn);
+      btns.appendChild(noBtn);
+      if (node.same) btns.appendChild(makeButton('Roughly the same', 'same', () => goToNode(node.same)));
+    } else if (node.type === 'info') {
+      btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
+    }
+  }
+}
+
+/* Initial render */
+renderNode(currentNode);
+</script>
+</body>
+</html>
