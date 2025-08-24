@@ -194,7 +194,7 @@
     background: #fff;
     border: 2px solid #999;
     box-shadow: var(--thumb-shadow);
-    cursor: pointer.
+    cursor: pointer;
   }
 
   .heat-slider::-ms-track {
@@ -310,11 +310,11 @@ var flowchart = [
   { "id": "Q41", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
   { "id": "Q42", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
 
-  /* WHEN thresholds (shifted: old Q42→Q43, old Q43→Q44) */
+  /* WHEN thresholds */
   { "id": "Q43", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
   { "id": "Q44", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
 
-  /* RESULTS (renumbered) */
+  /* RESULTS */
   { "id": "R1",  "type": "result",   "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
   { "id": "R2",  "type": "result",   "text": "<i>Don’t worry about it:)</i>" },
   { "id": "R3",  "type": "result",   "text": "If that time ever does come, re-evaluate the issue. Until then, consider any other solutions that could work and be worth it." },
@@ -326,11 +326,172 @@ var flowchart = [
   { "id": "R9",  "type": "result",   "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) come true, once there aren’t any other more important things to do." }
 ];
 
-/* ===== EXAMPLES (trimmed for brevity here—keep your full object) ===== */
+/* ===== EXAMPLES (exactly two per question; no info or results) ===== */
 var examples = {
-  "Q1": ["Deadline today > TV shopping can wait. (Applies)","Nothing urgent today; small decisions okay. (Does not apply)"],
-  /* ... keep all your existing examples ... */
-  "Q44": ["Probability crosses the threshold. (Applies)","Probability remains below threshold. (Does not apply)"]
+  "Q1":  [
+    "Deadline today; laundry and TV can wait. (Applies)",
+    "Nothing time-sensitive; just idly browsing stores. (Does not apply)"
+  ],
+  "Q2":  [
+    "Sink is leaking—function not met. (Applies)",
+    "Prefer a different laptop color; current one works fine. (Does not apply)"
+  ],
+  "Q3":  [
+    "Laptop fan grinding could signal near failure. (Applies)",
+    "Fridge works normally; vague worry only. (Does not apply)"
+  ],
+  "Q4":  [
+    "Dust buildup could later overheat PC. (Applies)",
+    "Hand-wavy fear something ‘might’ happen with no basis. (Does not apply)"
+  ],
+  "Q5":  [
+    "Old lithium battery will degrade if ignored. (Applies)",
+    "A one-off browser pop-up likely won’t recur. (Does not apply)"
+  ],
+  "Q6":  [
+    "Not patching a critical vuln likely costs more than patching. (Applies)",
+    "Fixing a tiny cosmetic UI glitch costs more than leaving it. (Does not apply)"
+  ],
+  "Q7":  [
+    "Slow water leak will spread if unaddressed. (Applies)",
+    "Harmless log warning unlikely to reappear. (Does not apply)"
+  ],
+  "Q8":  [
+    "Backordered replacement fan exists. (Applies)",
+    "No known fix or workaround for the defect. (Does not apply)"
+  ],
+  "Q9":  [
+    "You can approve and schedule the repair yourself. (Applies)",
+    "Relies on a committee that often stalls. (Does not apply)"
+  ],
+  "Q10": [
+    "You can escalate once more and file a ticket with owner. (Applies)",
+    "Citywide outage—nothing you can influence. (Does not apply)"
+  ],
+  "Q11": [
+    "Portable generator under your control solves outage. (Applies)",
+    "All options depend on a third party’s decision. (Does not apply)"
+  ],
+  "Q12": [
+    "Trialing the tool teaches skills you’ll reuse later. (Applies)",
+    "Tedious re-entry work teaches nothing new. (Does not apply)"
+  ],
+  "Q13": [
+    "Quick pilot test yields signal at low cost. (Applies)",
+    "Disassembling expensive gear ‘just to see’. (Does not apply)"
+  ],
+  "Q14": [
+    "Repairing a roof leak prevents major damage. (Applies)",
+    "Risky mod for marginal benefit. (Does not apply)"
+  ],
+  "Q15": [
+    "Despite hassle, you’d still rather replace the noisy fan. (Applies)",
+    "Given tradeoffs, you’d rather live with it. (Does not apply)"
+  ],
+  "Q16": [
+    "Seasonal downtime later would flip the calculus. (Applies)",
+    "No foreseeable timing would change the answer. (Does not apply)"
+  ],
+  "Q17": [
+    "Alternative approach is cheaper and longer-lasting. (Applies)",
+    "No option clearly better overall. (Does not apply)"
+  ],
+  "Q18": [
+    "Extra polishing of slides adds little impact past ‘good enough’. (Applies)",
+    "Sev-1 incident: every hour meaningfully improves outcomes. (Does not apply)"
+  ],
+  "Q20": [
+    "Exercise intensity has an objective sweet spot. (Applies)",
+    "Filing taxes: no sweet spot—just finish it. (Does not apply)"
+  ],
+  "Q22": [
+    "HDD → SSD gives noticeable improvement. (Applies)",
+    "Gold-plated HDMI vs regular: no functional difference. (Does not apply)"
+  ],
+  "Q23": [
+    "Sealing driveway cracks extends life. (Applies)",
+    "Touch-up paint that fades in a week. (Does not apply)"
+  ],
+  "Q24": [
+    "Decongestant restores sleep tonight. (Applies)",
+    "Rearranging a drawer won’t help the urgent issue. (Does not apply)"
+  ],
+  "Q25": [
+    "Wearing a seatbelt is always worth it. (Applies)",
+    "Washing the car daily isn’t worth it. (Does not apply)"
+  ],
+  "Q26": [
+    "Replace failing laptop instead of another costly repair. (Applies)",
+    "No alternative provides better long-term value. (Does not apply)"
+  ],
+  "Q27": [
+    "Replace timing belt before end-of-life. (Applies)",
+    "Cracked screen is already a current problem. (Does not apply)"
+  ],
+  "Q28": [
+    "Change HVAC filter to prevent breakdown. (Applies)",
+    "Repaint solely for color preference. (Does not apply)"
+  ],
+  "Q30": [
+    "Brakes squeal well before failure—clear warning window. (Applies)",
+    "Timing belt may snap without warning. (Does not apply)"
+  ],
+  "Q31": [
+    "If available now, you’d still choose this method. (Applies)",
+    "You know a better option but aren’t choosing it. (Does not apply)"
+  ],
+  "Q32": [
+    "You reviewed and ruled out better options. (Applies)",
+    "You ignored an obvious alternative. (Does not apply)"
+  ],
+  "Q33": [
+    "This truly is the best preventative option. (Applies)",
+    "A stronger preventative option likely exists. (Does not apply)"
+  ],
+  "Q34": [
+    "You’ve checked; no better preventative exists. (Applies)",
+    "You haven’t compared alternatives yet. (Does not apply)"
+  ],
+  "Q35": [
+    "Part is in stock; appointments available. (Applies)",
+    "Part is back-ordered for weeks. (Does not apply)"
+  ],
+  "Q36": [
+    "Off-season timing makes it cheaper/easier. (Applies)",
+    "Waiting adds risk without savings. (Does not apply)"
+  ],
+  "Q37": [
+    "Waiting two weeks for a sale saves $$ with low downside. (Applies)",
+    "Delaying lets damage spread. (Does not apply)"
+  ],
+  "Q38": [
+    "Despite delay costs, you’d rather use the better solution. (Applies)",
+    "You’d rather not wait; current option is fine. (Does not apply)"
+  ],
+  "Q39": [
+    "Plan B works now with acceptable tradeoffs. (Applies)",
+    "No next-best option reasonably solves it. (Does not apply)"
+  ],
+  "Q40": [
+    "Do it during scheduled downtime to maximize value. (Applies)",
+    "No later window beats now. (Does not apply)"
+  ],
+  "Q41": [
+    "After availability, a later lull reduces friction. (Applies)",
+    "Once available, earlier is better overall. (Does not apply)"
+  ],
+  "Q42": [
+    "An even later window clearly improves value. (Applies)",
+    "That time is already the best window. (Does not apply)"
+  ],
+  "Q43": [
+    "Warnings appear and probability nears/exceeds your threshold. (Applies)",
+    "No warning signs and probability still below threshold. (Does not apply)"
+  ],
+  "Q44": [
+    "Estimated failure chance nears/exceeds your threshold. (Applies)",
+    "Estimated failure chance remains below threshold. (Does not apply)"
+  ]
 };
 
 /* ======= STATE ======= */
@@ -522,9 +683,7 @@ function setupAuxToggles(node) {
     }
   };
 
-  // RIGHT: Only one graph button per slide:
-  // - Q18/Q20 → Visualization graph
-  // - Q43/Q44 → Percentage reasoning graph
+  // RIGHT: Only one graph button per applicable slide
   if (node.id === 'Q18' || node.id === 'Q20') {
     var vizBtn = document.createElement('button');
     vizBtn.type = 'button';
@@ -563,7 +722,6 @@ function setupAuxToggles(node) {
         collapseSharedPanel();
       } else {
         panel.innerHTML = '';
-        // Build the percentage reasoning content here
         var p = document.createElement('p');
         p.textContent = 'Your current threshold is ' + currentThresholdPct + '%.';
         panel.appendChild(p);
