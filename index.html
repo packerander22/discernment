@@ -125,10 +125,6 @@
     background: transparent;
     position: relative;
     z-index: 1;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    touch-action: pan-x;
   }
 
   .heat-slider::-webkit-slider-runnable-track {
@@ -162,54 +158,18 @@
     pointer-events: none;
     z-index: 0;
   }
-  .tick-row.top {
-    top: 50%;
-    transform: translateY(calc(-50% - var(--track-height)/2 - 2px));
-  }
-  .tick-row.bottom {
-    top: 50%;
-    transform: translateY(calc(-50% + var(--track-height)/2 + 2px));
-  }
-  .tick {
-    position: absolute;
-    width: var(--tick-thickness);
-    height: 100%;
-    background: var(--tick-color);
-    transform: translateX(-50%);
-  }
+  .tick-row.top { top: 50%; transform: translateY(calc(-50% - var(--track-height)/2 - 2px)); }
+  .tick-row.bottom { top: 50%; transform: translateY(calc(-50% + var(--track-height)/2 + 2px)); }
+  .tick { position: absolute; width: var(--tick-thickness); height: 100%; background: var(--tick-color); transform: translateX(-50%); }
 
-  .heat-slider::-moz-range-track {
-    height: var(--track-height);
-    border-radius: calc(var(--track-height) / 2);
-    background: var(--track-bg);
-  }
-  .heat-slider::-moz-range-progress {
-    height: var(--track-height);
-    border-radius: calc(var(--track-height) / 2);
-    background: var(--fill);
-  }
-  .heat-slider::-moz-range-thumb {
-    width: var(--thumb-size);
-    height: var(--thumb-size);
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid #999;
-    box-shadow: var(--thumb-shadow);
-    cursor: pointer;
-  }
+  .heat-slider::-moz-range-track { height: var(--track-height); border-radius: calc(var(--track-height) / 2); background: var(--track-bg); }
+  .heat-slider::-moz-range-progress { height: var(--track-height); border-radius: calc(var(--track-height) / 2); background: var(--fill); }
+  .heat-slider::-moz-range-thumb { width: var(--thumb-size); height: var(--thumb-size); border-radius: 50%; background: #fff; border: 2px solid #999; box-shadow: var(--thumb-shadow); cursor: pointer; }
 
-  .heat-slider::-ms-track {
-    height: var(--track-height);
-    border-color: transparent;
-    color: transparent;
-    background: transparent;
-  }
+  .heat-slider::-ms-track { height: var(--track-height); border-color: transparent; color: transparent; background: transparent; }
   .heat-slider::-ms-fill-lower { background: var(--fill); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
-  .heat-slider::-ms-thumb {
-    width: var(--thumb-size); height: var(--thumb-size);
-    border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow);
-  }
+  .heat-slider::-ms-thumb { width: var(--thumb-size); height: var(--thumb-size); border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow); }
 </style>
 </head>
 <body>
@@ -500,6 +460,8 @@ var currentThresholdPct = 90;
 var q6WasYes = false;
 var hasFlashedIf = false;
 var hasFlashedWhen = false;
+/* NEW: track if the previous screen shown was a result, so we can re-flash when returning */
+var lastWasResult = false;
 
 /* ======= APP LOGIC ======= */
 var historyStack = [];
@@ -514,7 +476,7 @@ function getSegmentForNodeId(id) {
   return num >= 27 ? "When You Should Act" : "If You Should Act";
 }
 
-/* UPDATED: verdict heading for results */
+/* Verdict heading for results */
 function setHeadingText(node) {
   var title = document.getElementById('segmentTitle');
   var skipBtn = document.getElementById('skipBtn');
@@ -537,15 +499,10 @@ function setHeadingText(node) {
     : "⏳ When You Should Act";
 
   title.innerHTML = segText;
-
-  if (currentSegment === "If You Should Act" && node.type !== 'result') {
-    skipBtn.style.display = 'inline-block';
-  } else {
-    skipBtn.style.display = 'none';
-  }
+  skipBtn.style.display = (currentSegment === "If You Should Act" && node.type !== 'result') ? 'inline-block' : 'none';
 }
 
-/* UPDATED: flash purple for results; still green/gold for segments */
+/* Flash: purple for results; green for IF, gold for WHEN */
 function flashHeadingColor(targetSegment, node) {
   if (currentNode && currentNode.id === 'Q0') return;
   var headingDiv = document.getElementById('segmentHeading');
@@ -890,6 +847,7 @@ function restart() {
   q6WasYes = false;
   hasFlashedIf = false;
   hasFlashedWhen = false;
+  lastWasResult = false;
   renderNode(currentNode);
 }
 
@@ -923,10 +881,13 @@ function renderNode(node) {
   var previousSegment = currentSegment;
   var thisSegment = getSegmentForNodeId(node.id);
 
-  /* UPDATED: always flash on results, plus segment changes or first flashes */
+  /* Force a re-flash of IF/WHEN after any result screen */
+  var comingFromResult = lastWasResult && node.type !== 'result';
+
   var shouldFlash =
     node.id !== 'Q0' && (
       node.type === 'result' ||
+      comingFromResult ||
       thisSegment !== previousSegment ||
       (thisSegment === "If You Should Act" && !hasFlashedIf) ||
       (thisSegment === "When You Should Act" && !hasFlashedWhen)
@@ -938,8 +899,12 @@ function renderNode(node) {
     if (thisSegment === "When You Should Act") hasFlashedWhen = true;
   }
 
+  /* Update segment and heading */
   currentSegment = thisSegment;
   setHeadingText(node);
+
+  /* Track whether this node is a result to drive next flash behavior */
+  lastWasResult = (node.type === 'result');
 
   var textDiv = document.getElementById('text');
   var displayHTML = node.text || '';
