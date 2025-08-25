@@ -57,6 +57,7 @@
   .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
   .flash-gold { color: goldenrod !important; }
   .flash-green { color: #2e7d32 !important; }
+  .flash-purple { color: purple !important; } /* NEW for verdict flash */
 
   /* Buttons */
   button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
@@ -513,6 +514,7 @@ function getSegmentForNodeId(id) {
   return num >= 27 ? "When You Should Act" : "If You Should Act";
 }
 
+/* UPDATED: verdict heading for results */
 function setHeadingText(node) {
   var title = document.getElementById('segmentTitle');
   var skipBtn = document.getElementById('skipBtn');
@@ -520,6 +522,12 @@ function setHeadingText(node) {
   if (node.id === 'Q0') {
     title.innerHTML =
       "<img src='./favicon_256_transparent.png' alt='Discernment Logo' class='logo'>Discernment: A Decision-Making Guide";
+    skipBtn.style.display = 'none';
+    return;
+  }
+
+  if (node.type === 'result') {
+    title.textContent = "👍👎 Verdict";
     skipBtn.style.display = 'none';
     return;
   }
@@ -537,9 +545,16 @@ function setHeadingText(node) {
   }
 }
 
-function flashHeadingColor(targetSegment) {
+/* UPDATED: flash purple for results; still green/gold for segments */
+function flashHeadingColor(targetSegment, node) {
   if (currentNode && currentNode.id === 'Q0') return;
   var headingDiv = document.getElementById('segmentHeading');
+
+  if (node && node.type === 'result') {
+    headingDiv.classList.add('flash-purple');
+    setTimeout(function(){ headingDiv.classList.remove('flash-purple'); }, 1500);
+    return;
+  }
   var cls = (targetSegment === "If You Should Act") ? 'flash-green' : 'flash-gold';
   headingDiv.classList.add(cls);
   setTimeout(function(){ headingDiv.classList.remove(cls); }, 1500);
@@ -908,15 +923,17 @@ function renderNode(node) {
   var previousSegment = currentSegment;
   var thisSegment = getSegmentForNodeId(node.id);
 
+  /* UPDATED: always flash on results, plus segment changes or first flashes */
   var shouldFlash =
     node.id !== 'Q0' && (
+      node.type === 'result' ||
       thisSegment !== previousSegment ||
       (thisSegment === "If You Should Act" && !hasFlashedIf) ||
       (thisSegment === "When You Should Act" && !hasFlashedWhen)
     );
 
   if (shouldFlash) {
-    flashHeadingColor(thisSegment);
+    flashHeadingColor(thisSegment, node);
     if (thisSegment === "If You Should Act") hasFlashedIf = true;
     if (thisSegment === "When You Should Act") hasFlashedWhen = true;
   }
