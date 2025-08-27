@@ -453,6 +453,7 @@ var examples = {
 /* ======= STATE ======= */
 var currentThresholdPct = 90;
 var q6WasYes = false;
+var q7WasYes = false;
 var hasFlashedIf = false;
 var hasFlashedWhen = false;
 /* NEW: track if the previous screen shown was a result, so we can re-flash when returning */
@@ -524,7 +525,7 @@ function closeAllPanels() {
 
 /* --- Q6 → Q14 auto-skip hook --- */
 function beforeEnterNode(nextId) {
-  if (nextId === 'Q14' && q6WasYes) {
+  if (nextId === 'Q14' && (q6WasYes || q7WasYes)) {
     var nodeQ14 = flowchart.find(function(n){ return n.id === 'Q14'; });
     return (nodeQ14 && nodeQ14.yes) ? nodeQ14.yes : nextId;
   }
@@ -822,8 +823,11 @@ function goToNode(id) {
   if (currentNode && currentNode.id === 'Q6' && id === currentNode.yes) {
     q6WasYes = true;
   }
-  var adjustedId = beforeEnterNode(id);
+  if (currentNode && currentNode.id === 'Q7' && id === currentNode.yes) {
+    q7WasYes = true;   // <-- set when Q7 = Yes
+  }
 
+  var adjustedId = beforeEnterNode(id);
   var next = flowchart.find(function(n){ return n.id === adjustedId; });
   historyStack.push(currentNode ? currentNode.id : '');
   currentNode = next; renderNode(currentNode);
@@ -840,6 +844,7 @@ function restart() {
   currentSegment = "If You Should Act";
   currentNode = flowchart.find(function(n){ return n.id === "Q0"; });
   q6WasYes = false;
+  q7WasYes = false;
   hasFlashedIf = false;
   hasFlashedWhen = false;
   lastWasResult = false;
