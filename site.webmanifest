@@ -1,7 +1,7 @@
 {
   "name": "Discernment: A Decision-Making Guide",
   "short_name": "Discernment",
-  "description": "A flow chart guide for making decisions.",
+  "description": "An interactive flow chart guide for making decisions.",
   "id": "discernment-v4",
   "start_url": "/discernment/",
   "scope": "/discernment/",
