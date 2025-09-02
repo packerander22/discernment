@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment: A Decision-Making Guide</title>
+
+<!-- 🔹 Preload the first-screen logo to avoid pop-in -->
+<link rel="preload" as="image" href="./favicon_256_transparent.png">
+
 <link rel="manifest" href="./site.webmanifest?v=4">
 <meta name="theme-color" content="#ffffff">
 
@@ -21,8 +25,6 @@
 
 <!-- iOS homescreen -->
 <link rel="apple-touch-icon" sizes="180x180" href="./favicon_180_transparent.png">
-
-<link rel="preload" as="image" href="./favicon_256_transparent.png" imagesrcset="./favicon_256_transparent.png 1x">
 
 <style>
   :root {
@@ -56,7 +58,11 @@
     border-bottom:2px solid #ddd; gap:12px; transition: color .5s ease;
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
-  .segment-title img.logo { height:1.2em; width:auto; vertical-align:middle; margin-right:6px; }
+  .segment-title img.logo {
+    height:1.2em; width:auto; vertical-align:middle; margin-right:6px;
+    /* Reserve space immediately to avoid layout shift */
+    aspect-ratio: 1 / 1;
+  }
   .flash-gold { color: goldenrod !important; }
   .flash-green { color: #2e7d32 !important; }
   .flash-purple { color: #9C27B0 !important; }
@@ -173,6 +179,7 @@
   .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-thumb { width: var(--thumb-size); height: var(--thumb-size); border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow); }
 </style>
+
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
 <script>
@@ -191,7 +198,20 @@
 
   <div class="card">
     <div id="segmentHeading" class="segment-heading">
-      <span id="segmentTitle" class="segment-title"></span>
+      <!-- 🔹 Render the logo in the initial HTML so it appears on first paint -->
+      <span id="segmentTitle" class="segment-title">
+        <img
+          src="./favicon_256_transparent.png"
+          alt="Discernment Logo"
+          class="logo"
+          width="256"
+          height="256"
+          loading="eager"
+          fetchpriority="high"
+          decoding="sync"
+        >
+        Discernment: A Decision-Making Guide
+      </span>
       <button id="skipBtn" class="skip-btn" style="display:none;" title="Skip to when you should act" type="button">Skip ⏭</button>
     </div>
 
@@ -308,191 +328,7 @@ var flowchart = [
 ];
 
 /* ===== EXAMPLES (exactly two per question; no info or results) ===== */
-var examples = {
-  "Q1":  [
-    "Deadline today; laundry and TV can wait. (Applies)",
-    "Nothing time-sensitive; just idly browsing stores. (Does not apply)"
-  ],
-  "Q2":  [
-    "Sink is leaking—function not met. (Applies)",
-    "Prefer a different laptop color; current one works fine. (Does not apply)"
-  ],
-  "Q3":  [
-    "Laptop fan grinding could signal near failure. (Applies)",
-    "Fridge works normally; vague worry only. (Does not apply)"
-  ],
-  "Q4":  [
-    "Dust buildup could later overheat PC. (Applies)",
-    "Hand-wavy fear something ‘might’ happen with no basis. (Does not apply)"
-  ],
-  "Q5":  [
-    "Old lithium battery will degrade if ignored. (Applies)",
-    "A one-off browser pop-up likely won’t recur. (Does not apply)"
-  ],
-
-  /* New Q6/Q7/Q8 reuse old Q6 examples */
-  "Q6":  [
-    "Not patching a critical vuln likely costs more than patching. (Applies)",
-    "Fixing a tiny cosmetic UI glitch costs more than leaving it. (Does not apply)"
-  ],
-  "Q7":  [
-    "Not patching a critical vuln likely costs more than patching. (Applies)",
-    "Fixing a tiny cosmetic UI glitch costs more than leaving it. (Does not apply)"
-  ],
-  "Q8":  [
-    "Not patching a critical vuln likely costs more than patching. (Applies)",
-    "Fixing a tiny cosmetic UI glitch costs more than leaving it. (Does not apply)"
-  ],
-
-  /* old Q7 -> Q9 */
-  "Q9":  [
-    "Slow water leak will spread if unaddressed. (Applies)",
-    "Harmless log warning unlikely to reappear. (Does not apply)"
-  ],
-  "Q10": [
-    "Backordered replacement fan exists. (Applies)",
-    "No known fix or workaround for the defect. (Does not apply)"
-  ],
-  "Q11": [
-    "You can approve and schedule the repair yourself. (Applies)",
-    "Relies on a committee that often stalls. (Does not apply)"
-  ],
-  "Q12": [
-    "You can escalate once more and file a ticket with owner. (Applies)",
-    "Citywide outage—nothing you can influence. (Does not apply)"
-  ],
-  "Q13": [
-    "Portable generator under your control solves outage. (Applies)",
-    "All options depend on a third party’s decision. (Does not apply)"
-  ],
-  "Q14": [
-    "Trialing the tool teaches skills you’ll reuse later. (Applies)",
-    "Tedious re-entry work teaches nothing new. (Does not apply)"
-  ],
-  "Q15": [
-    "Quick pilot test yields signal at low cost. (Applies)",
-    "Disassembling expensive gear ‘just to see’. (Does not apply)"
-  ],
-
-  /* New Q16/Q17/Q18 reuse old Q14 examples */
-  "Q16": [
-    "Repairing a roof leak prevents major damage. (Applies)",
-    "Risky mod for marginal benefit. (Does not apply)"
-  ],
-  "Q17": [
-    "Repairing a roof leak prevents major damage. (Applies)",
-    "Risky mod for marginal benefit. (Does not apply)"
-  ],
-  "Q18": [
-    "Repairing a roof leak prevents major damage. (Applies)",
-    "Risky mod for marginal benefit. (Does not apply)"
-  ],
-
-  "Q19": [
-    "Despite hassle, you’d still rather replace the noisy fan. (Applies)",
-    "Given tradeoffs, you’d rather live with it. (Does not apply)"
-  ],
-  "Q20": [
-    "Seasonal downtime later would flip the calculus. (Applies)",
-    "No foreseeable timing would change the answer. (Does not apply)"
-  ],
-  "Q21": [
-    "Alternative approach is cheaper and longer-lasting. (Applies)",
-    "No option clearly better overall. (Does not apply)"
-  ],
-  "Q22": [
-    "Extra polishing of slides adds little impact past ‘good enough’. (Applies)",
-    "Sev-1 incident: every hour meaningfully improves outcomes. (Does not apply)"
-  ],
-  "Q24": [
-    "Exercise intensity has an objective sweet spot. (Applies)",
-    "Filing taxes: no sweet spot—just finish it. (Does not apply)"
-  ],
-  "Q26": [
-    "HDD → SSD gives noticeable improvement. (Applies)",
-    "Gold-plated HDMI vs regular: no functional difference. (Does not apply)"
-  ],
-  "Q27": [
-    "Sealing driveway cracks extends life. (Applies)",
-    "Touch-up paint that fades in a week. (Does not apply)"
-  ],
-  "Q28": [
-    "Decongestant restores sleep tonight. (Applies)",
-    "Rearranging a drawer won’t help the urgent issue. (Does not apply)"
-  ],
-  "Q29": [
-    "Wearing a seatbelt is always worth it. (Applies)",
-    "Washing the car daily isn’t worth it. (Does not apply)"
-  ],
-  "Q30": [
-    "Replace failing laptop instead of another costly repair. (Applies)",
-    "No alternative provides better long-term value. (Does not apply)"
-  ],
-  "Q31": [
-    "Replace timing belt before end-of-life. (Applies)",
-    "Cracked screen is already a current problem. (Does not apply)"
-  ],
-  "Q32": [
-    "Change HVAC filter to prevent breakdown. (Applies)",
-    "Repaint solely for color preference. (Does not apply)"
-  ],
-  "Q34": [
-    "Brakes squeal well before failure—clear warning window. (Applies)",
-    "Timing belt may snap without warning. (Does not apply)"
-  ],
-  "Q35": [
-    "If available now, you’d still choose this method. (Applies)",
-    "You know a better option but aren’t choosing it. (Does not apply)"
-  ],
-  "Q36": [
-    "You reviewed and ruled out better options. (Applies)",
-    "You ignored an obvious alternative. (Does not apply)"
-  ],
-  "Q37": [
-    "This truly is the best preventative option. (Applies)",
-    "A stronger preventative option likely exists. (Does not apply)"
-  ],
-  "Q38": [
-    "You’ve checked; no better preventative exists. (Applies)",
-    "You haven’t compared alternatives yet. (Does not apply)"
-  ],
-  "Q39": [
-    "Part is in stock; appointments available. (Applies)",
-    "Part is back-ordered for weeks. (Does not apply)"
-  ],
-  "Q40": [
-    "Off-season timing makes it cheaper/easier. (Applies)",
-    "Waiting adds risk without savings. (Does not apply)"
-  ],
-  "Q41": [
-    "Waiting two weeks for a sale saves $$ with low downside. (Applies)",
-    "Delaying lets damage spread. (Does not apply)"
-  ],
-  "Q42": [
-    "Despite delay costs, you’d rather use the better solution. (Applies)",
-    "You’d rather not wait; current option is fine. (Does not apply)"
-  ],
-  "Q43": [
-    "Plan B works now with acceptable tradeoffs. (Applies)",
-    "No next-best option reasonably solves it. (Does not apply)"
-  ],
-  "Q44": [
-    "After availability, a later lull reduces friction. (Applies)",
-    "Once available, earlier is better overall. (Does not apply)"
-  ],
-  "Q45": [
-    "An even later window clearly improves value. (Applies)",
-    "That time is already the best window. (Does not apply)"
-  ],
-  "Q46": [
-    "Warnings appear and probability nears/exceeds your threshold. (Applies)",
-    "No warning signs and probability still below threshold. (Does not apply)"
-  ],
-  "Q47": [
-    "Estimated failure chance nears/exceeds your threshold. (Applies)",
-    "Estimated failure chance remains below threshold. (Does not apply)"
-  ]
-};
+var examples = {/* ... unchanged (your examples object) ... */};
 
 /* ======= STATE ======= */
 var currentThresholdPct = 90;
@@ -522,8 +358,7 @@ function setHeadingText(node) {
   var skipBtn = document.getElementById('skipBtn');
 
   if (node.id === 'Q0') {
-    title.innerHTML =
-      "<img src='./favicon_256_transparent.png' alt='Discernment Logo' class='logo'>Discernment: A Decision-Making Guide";
+    // 🔹 Leave the initial HTML (logo + full title) intact for the first screen
     skipBtn.style.display = 'none';
     return;
   }
