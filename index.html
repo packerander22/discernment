@@ -338,6 +338,8 @@ var hasFlashedIf = false;
 var hasFlashedWhen = false;
 /* NEW: track if the previous screen shown was a result, so we can re-flash when returning */
 var lastWasResult = false;
+/* Cache the original header HTML so we can restore it later */
+var originalTitleHTML = null;
 
 /* ======= APP LOGIC ======= */
 var historyStack = [];
@@ -358,7 +360,8 @@ function setHeadingText(node) {
   var skipBtn = document.getElementById('skipBtn');
 
   if (node.id === 'Q0') {
-    // 🔹 Leave the initial HTML (logo + full title) intact for the first screen
+    // Restore the original header (logo + full title)
+    if (originalTitleHTML) title.innerHTML = originalTitleHTML;
     skipBtn.style.display = 'none';
     return;
   }
@@ -373,8 +376,11 @@ function setHeadingText(node) {
     ? "⚖️ If You Should Act"
     : "⏳ When You Should Act";
 
-  title.innerHTML = segText;
-  skipBtn.style.display = (currentSegment === "If You Should Act" && node.type !== 'result') ? 'inline-block' : 'none';
+  // Segment labels don’t need HTML; use textContent to avoid accidental markup
+  title.textContent = segText;
+  skipBtn.style.display = (currentSegment === "If You Should Act" && node.type !== 'result')
+    ? 'inline-block'
+    : 'none';
 }
 
 /* Flash: purple for results; green for IF, gold for WHEN */
@@ -729,6 +735,13 @@ function restart() {
   hasFlashedIf = false;
   hasFlashedWhen = false;
   lastWasResult = false;
+
+  // Restore header before render, in case anything reads it early
+  if (originalTitleHTML) {
+    document.getElementById('segmentTitle').innerHTML = originalTitleHTML;
+    document.getElementById('skipBtn').style.display = 'none';
+  }
+
   renderNode(currentNode);
 }
 
@@ -739,6 +752,11 @@ document.getElementById('skipBtn').addEventListener('click', function() {
 });
 
 /* ---------- Render ---------- */
+/* Initial render */
+if (!originalTitleHTML) {
+  originalTitleHTML = document.getElementById('segmentTitle').innerHTML;
+}
+renderNode(currentNode);
 function renderNode(node) {
   closeAllPanels();
 
