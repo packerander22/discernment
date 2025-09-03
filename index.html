@@ -250,9 +250,9 @@ var flowchart = [
   { "id": "Q5",  "type": "question", "text": "Is the potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
 
   /* ==== Q6 split into trio (cost-before, cost-after, total) ==== */
-  { "id": "Q6",  "type": "question", "text": "Would the expected downsides of NOT addressing this issue outweigh the expected <i>upfront</i> costs/efforts OF addressing it?", "yes": "Q7", "no": "Q20" },
-  { "id": "Q7",  "type": "question", "text": "Would the expected downsides of NOT addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> OF addressing it?", "yes": "Q8", "no": "Q20" },
-  { "id": "Q8",  "type": "question", "text": "Would the overall downsides of NOT addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides?", "yes": "Q10", "no": "Q20", "same": "Q9" },
+  { "id": "Q6",  "type": "question", "text": "Would the expected downsides of NOT addressing this issue outweigh the expected <i>upfront</i> costs/efforts OF addressing it (for just this instance)?", "yes": "Q7", "no": "Q20" },
+  { "id": "Q7",  "type": "question", "text": "Would the expected downsides of NOT addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> OF addressing it (for just this instance)?", "yes": "Q8", "no": "Q20" },
+  { "id": "Q8",  "type": "question", "text": "Would the overall downsides of NOT addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q10", "no": "Q20", "same": "Q9" },
 
   /* (old Q7) */
   { "id": "Q9",  "type": "question", "text": "Is the problem more likely to occur than not if left unaddressed?", "yes": "Q10",  "no": "Q20" },
@@ -267,9 +267,9 @@ var flowchart = [
   { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q16" },
 
   /* ==== Q14 split into trio (cost-before, cost-after, total) ==== */
-  { "id": "Q16", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it?", "yes": "Q17", "no": "Q20" },
-  { "id": "Q17", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it?", "yes": "Q18", "no": "Q20" },
-  { "id": "Q18", "type": "question", "text": "Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides?", "yes": "Q22", "no": "Q20", "same": "Q19" },
+  { "id": "Q16", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it (for just this instance)?", "yes": "Q17", "no": "Q20" },
+  { "id": "Q17", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it (for just this instance)?", "yes": "Q18", "no": "Q20" },
+  { "id": "Q18", "type": "question", "text": "Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q22", "no": "Q20", "same": "Q19" },
 
   { "id": "Q19", "type": "question", "text": "All things considered, would you <i>rather</i> address it than not?", "yes": "Q22", "no": "Q20" },
   { "id": "Q20", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "Q21" },
@@ -280,7 +280,7 @@ var flowchart = [
   { "id": "Q24", "type": "question", "text": "Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an <i>objective sweet spot</i> where clear information is available to you?", "yes": "Q25", "no": "Q26" },
   { "id": "Q25", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q31" },
 
-  { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed?", "yes": "Q27", "no": "R2" },
+  { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed (assuming any potential future problems would occur)?", "yes": "Q27", "no": "R2" },
   { "id": "Q27", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q31", "no": "Q28" },
   { "id": "Q28", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q29", "no": "R2" },
   { "id": "Q29", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time this situation arises</i>? (Or at least this time knowing it’s <i>temporary</i>?)", "yes": "Q31", "no": "Q30" },
