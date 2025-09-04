@@ -239,17 +239,45 @@
     }
   }
 
-  /* Manual override via data-theme (appears only if user toggles) */
-  :root[data-theme="light"] { color-scheme: light; }
-  :root[data-theme="dark"]  {
-    color-scheme: dark;
-    --bg: #0f1115; --card: #171a21; --text: #e9edf1; --subtle-text: #c7cbd2;
-    --border: #2a2f3a; --shadow: 0 2px 6px rgba(0,0,0,0.35);
-    --btn-yes: #4CAF50; --btn-no: #EF5350; --btn-same: #42A5F5; --btn-next: #42A5F5;
-    --btn-back: #8e8e93; --btn-restart: #BA68C8; --btn-muted: #6c6f76; --btn-text: #ffffff;
-    --thumb-border: #b5bcc8; --tick-color: rgba(255,255,255,.38); --track-bg: #2a2f3a;
-    --if-accent: #5bd36a; --when-accent: #f1c24c; --result-accent: #c77dff;
+/* Manual override via data-theme (appears only if user toggles) */
+  :root[data-theme="light"] {
+    color-scheme: light;
+  
+    /* Re-apply all LIGHT tokens so they override the dark media query */
+    --bg: #f7f7f7;
+    --card: #ffffff;
+    --text: #111111;
+    --subtle-text: #333333;
+    --border: #dddddd;
+    --shadow: 0 2px 6px rgba(0,0,0,0.10);
+  
+    --btn-yes: #4CAF50;
+    --btn-no: #F44336;
+    --btn-same: #1E88E5;
+    --btn-next: #2196F3;
+    --btn-back: #555555;
+    --btn-restart: #9C27B0;
+    --btn-muted: #9E9E9E;
+    --btn-text: #ffffff;
+  
+    --thumb-border: #999999;
+    --tick-color: rgba(0,0,0,.35);
+    --track-bg: #e0e0e0;
+  
+    --if-accent: #2e7d32;
+    --when-accent: goldenrod;
+    --result-accent: #9C27B0;
   }
+
+:root[data-theme="dark"]  {
+  color-scheme: dark;
+  --bg: #0f1115; --card: #171a21; --text: #e9edf1; --subtle-text: #c7cbd2;
+  --border: #2a2f3a; --shadow: 0 2px 6px rgba(0,0,0,0.35);
+  --btn-yes: #4CAF50; --btn-no: #EF5350; --btn-same: #42A5F5; --btn-next: #42A5F5;
+  --btn-back: #8e8e93; --btn-restart: #BA68C8; --btn-muted: #6c6f76; --btn-text: #ffffff;
+  --thumb-border: #b5bcc8; --tick-color: rgba(255,255,255,.38); --track-bg: #2a2f3a;
+  --if-accent: #5bd36a; --when-accent: #f1c24c; --result-accent: #c77dff;
+}
 
   /* Map existing components to tokens (non-destructive overrides) */
   body { background: var(--bg); color: var(--text); }
@@ -355,47 +383,53 @@
   const themeBtn = document.getElementById('themeToggle');
   const mqDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
 
-  // Returns the saved setting, not the computed appearance.
-  // 'system' means "follow OS" (no data-theme on :root).
-  function getSetting() {
-    const saved = localStorage.getItem('theme'); // 'light' | 'dark' | 'system' | null
-    return (saved === 'light' || saved === 'dark' || saved === 'system') ? saved : 'system';
+  // ensure a single theme-color meta we can control
+  let metaTheme = document.querySelector('meta[name="theme-color"]:not([media])');
+  if (!metaTheme) {
+    metaTheme = document.createElement('meta');
+    metaTheme.name = 'theme-color';
+    document.head.appendChild(metaTheme);
   }
 
-  // Effective appearance (useful for choosing next label, etc.)
+  function getSetting() {
+    const saved = localStorage.getItem('theme'); // 'light' | 'dark' | 'system'
+    return (saved === 'light' || saved === 'dark' || saved === 'system') ? saved : 'system';
+  }
   function getEffectiveTheme(setting) {
     if (setting === 'dark') return 'dark';
     if (setting === 'light') return 'light';
-    // system
     return (mqDark && mqDark.matches) ? 'dark' : 'light';
   }
-
-  function applySetting(setting) {
-    if (setting === 'system') {
-      root.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'system');
-    } else {
-      root.dataset.theme = setting; // 'light' or 'dark'
-      localStorage.setItem('theme', setting);
-    }
-    setButtonLabel(); // keep button text in sync
+  function setThemeColor(effective) {
+    // match the colors you used in your meta tags
+    metaTheme.setAttribute('content', effective === 'dark' ? '#0b0b0d' : '#ffffff');
   }
 
   function setButtonLabel() {
     if (!themeBtn) return;
-    const setting = getSetting();         // system | dark | light
+    const setting = getSetting();               // system | dark | light
     const effective = getEffectiveTheme(setting); // dark | light
-    // Show the *setting* (System/Dark/Light), not just effective appearance
-    const label = setting.charAt(0).toUpperCase() + setting.slice(1);
-    themeBtn.textContent = 'Theme: ' + label;
-    // Optional: tooltip shows current effective (useful when System follows OS)
+    themeBtn.textContent = 'Theme: ' + (setting.charAt(0).toUpperCase() + setting.slice(1));
     themeBtn.title = 'Effective: ' + (effective === 'dark' ? 'Dark' : 'Light');
   }
 
-  // Initialize from saved (default to system)
+  function applySetting(setting) {
+    if (setting === 'system') {
+      root.removeAttribute('data-theme');   // follow OS
+      localStorage.setItem('theme', 'system');
+    } else {
+      root.dataset.theme = setting;         // force explicit theme
+      localStorage.setItem('theme', setting);
+    }
+    const effective = getEffectiveTheme(setting);
+    setThemeColor(effective);
+    setButtonLabel();
+  }
+
+  // init
   applySetting(getSetting());
 
-  // Cycle order: System → Dark → Light → System
+  // cycle System → Dark → Light → System
   if (themeBtn) {
     themeBtn.onclick = function(){
       const setting = getSetting();
@@ -405,14 +439,17 @@
     };
   }
 
-  // If following system, update label on OS theme changes
+  // if following system, update label + theme-color when OS changes
   if (mqDark) {
     mqDark.addEventListener('change', () => {
-      if (getSetting() === 'system') setButtonLabel();
+      if (getSetting() === 'system') {
+        setButtonLabel();
+        setThemeColor(getEffectiveTheme('system'));
+      }
     });
   }
 
-  // Expose label refresh for when the button becomes visible on Q0
+  // allow other code to refresh label when the button first appears
   window.__refreshThemeButtonLabel = setButtonLabel;
 })();
 
@@ -1095,15 +1132,16 @@ function renderNode(node) {
     textDiv.innerHTML = displayHTML;
   }
 
-  // 🔹 Show the Theme toggle only on Q0 and refresh its label to the current effective theme
-  var themeBtn = document.getElementById('themeToggle');
-  if (themeBtn) {
-    themeBtn.style.display = (node.id === 'Q0') ? 'inline-block' : 'none';
-    if (node.id === 'Q0' && typeof window.__refreshThemeButtonLabel === 'function') {
+  // 🔹 Show the Theme toggle only on Q0
+    var themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+      themeBtn.style.display = (node.id === 'Q0') ? 'inline-block' : 'none';
+  
+    // When it first appears, refresh the label so it's accurate
+    if (node.id === 'Q0' && window.__refreshThemeButtonLabel) {
       window.__refreshThemeButtonLabel();
     }
   }
-
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
 
   setupAuxToggles(node);
