@@ -10,6 +10,9 @@
 
 <link rel="manifest" href="./site.webmanifest?v=4">
 <meta name="theme-color" content="#ffffff">
+<!-- 🔹 Address bar / browser UI color that follows system theme -->
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
 
 <!-- Icons -->
 <link rel="icon" type="image/svg+xml" href="./favicon_transparent.svg">
@@ -174,6 +177,117 @@
   .heat-slider::-ms-fill-lower { background: var(--fill); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-thumb { width: var(--thumb-size); height: var(--thumb-size); border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow); }
+  
+  /* ================================
+     THEME TOKENS + OVERRIDES (added)
+     ================================ */
+  :root { color-scheme: light dark; }
+
+  /* Light defaults */
+  :root {
+    --bg: #f7f7f7;
+    --card: #ffffff;
+    --text: #111111;
+    --subtle-text: #333333;
+    --border: #dddddd;
+    --shadow: 0 2px 6px rgba(0,0,0,0.10);
+
+    --btn-yes: #4CAF50;
+    --btn-no: #F44336;
+    --btn-same: #1E88E5;
+    --btn-next: #2196F3;
+    --btn-back: #555555;
+    --btn-restart: #9C27B0;
+    --btn-muted: #9E9E9E;
+    --btn-text: #ffffff;
+
+    --thumb-border: #999999;
+    --tick-color: rgba(0,0,0,.35);
+    --track-bg: #e0e0e0;
+
+    --if-accent: #2e7d32;
+    --when-accent: goldenrod;
+    --result-accent: #9C27B0;
+  }
+
+  /* Dark overrides follow system */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115;
+      --card: #171a21;
+      --text: #e9edf1;
+      --subtle-text: #c7cbd2;
+      --border: #2a2f3a;
+      --shadow: 0 2px 6px rgba(0,0,0,0.35);
+
+      --btn-yes: #4CAF50;
+      --btn-no: #EF5350;
+      --btn-same: #42A5F5;
+      --btn-next: #42A5F5;
+      --btn-back: #8e8e93;
+      --btn-restart: #BA68C8;
+      --btn-muted: #6c6f76;
+      --btn-text: #ffffff;
+
+      --thumb-border: #b5bcc8;
+      --tick-color: rgba(255,255,255,.38);
+      --track-bg: #2a2f3a;
+
+      --if-accent: #5bd36a;
+      --when-accent: #f1c24c;
+      --result-accent: #c77dff;
+    }
+  }
+
+  /* Manual override via data-theme (appears only if user toggles) */
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"]  {
+    color-scheme: dark;
+    --bg: #0f1115; --card: #171a21; --text: #e9edf1; --subtle-text: #c7cbd2;
+    --border: #2a2f3a; --shadow: 0 2px 6px rgba(0,0,0,0.35);
+    --btn-yes: #4CAF50; --btn-no: #EF5350; --btn-same: #42A5F5; --btn-next: #42A5F5;
+    --btn-back: #8e8e93; --btn-restart: #BA68C8; --btn-muted: #6c6f76; --btn-text: #ffffff;
+    --thumb-border: #b5bcc8; --tick-color: rgba(255,255,255,.38); --track-bg: #2a2f3a;
+    --if-accent: #5bd36a; --when-accent: #f1c24c; --result-accent: #c77dff;
+  }
+
+  /* Map existing components to tokens (non-destructive overrides) */
+  body { background: var(--bg); color: var(--text); }
+  .card {
+    background: var(--card);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .segment-heading { border-bottom: 2px solid var(--border); }
+  .flash-gold  { color: var(--when-accent) !important; }
+  .flash-green { color: var(--if-accent) !important; }
+  .flash-purple{ color: var(--result-accent) !important; }
+
+  .panel { background: color-mix(in oklab, var(--card), var(--bg) 8%); border:1px solid var(--border); }
+  .risk-inline { background: color-mix(in oklab, var(--card), var(--bg) 8%); border:1px solid var(--border); }
+  .tick { background: var(--tick-color); }
+  .heat-slider::-webkit-slider-thumb { border: 2px solid var(--thumb-border); }
+  .heat-slider::-moz-range-thumb { border: 2px solid var(--thumb-border); }
+  .heat-slider::-ms-thumb { border: 2px solid var(--thumb-border); }
+
+  .segment-heading .skip-btn {
+    background: color-mix(in oklab, var(--card), var(--text) 12%);
+    color: var(--subtle-text);
+  }
+  .segment-heading .skip-btn:hover {
+    background: color-mix(in oklab, var(--card), var(--text) 20%);
+  }
+
+  /* Buttons pick up theme tokens */
+  button { color: var(--btn-text); }
+  button.yes      { background: var(--btn-yes); }
+  button.no       { background: var(--btn-no); }
+  button.same     { background: var(--btn-same); }
+  button.next     { background: var(--btn-next); }
+  button.back     { background: var(--btn-back); }
+  button.restart  { background: var(--btn-restart); }
+  button.examples-btn, button.viz-btn, button.reasoning-btn { background: var(--btn-muted); }
 </style>
 
 <!-- Google tag (gtag.js) -->
@@ -189,6 +303,8 @@
 <div class="container">
   <div class="top-bar">
     <button class="back" id="backBtn" onclick="goBack()" type="button">Back</button>
+    <!-- 🔹 Theme toggle (added). Only shown on Q0 via JS -->
+    <button class="back" id="themeToggle" type="button" style="display:none;">Theme</button>
     <button class="restart" id="restartTop" onclick="restart()" type="button">Restart</button>
   </div>
 
@@ -233,6 +349,25 @@
 </div>
 
 <script>
+/* ======= THEME INIT + TOGGLE (added) ======= */
+(function initTheme(){
+  const root = document.documentElement;
+  const saved = localStorage.getItem('theme'); // 'light' | 'dark' | null
+  if (saved === 'light' || saved === 'dark') {
+    root.dataset.theme = saved;
+  }
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.onclick = function(){
+      const next = root.dataset.theme === 'dark' ? 'light' :
+                   root.dataset.theme === 'light' ? 'dark' :
+                   (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark');
+      root.dataset.theme = next;
+      localStorage.setItem('theme', next);
+    };
+  }
+})();
+
 /* ======= FLOW (Q0–Q47 + About) ======= */
 var flowchart = [
   { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and a slider later). Answer everything to the best of your knowledge, and if you don't know something, do what you can to find out (once there aren't any other more important things to do).", "next": "Q1" },
@@ -325,7 +460,7 @@ var flowchart = [
   /* ===== ABOUT MENU + PAGES ===== */
   { "id": "AB0", "type": "aboutMenu", "heading": "About", "text": "Choose a section to learn more about the guide and its background." },
   { "id": "AB1", "type": "about", "heading": "About Me", "text": "Hi! My name is Packer, I’m the creator of this guide. I've had OCD for as long as I can remember, and one of the hardest things for me is knowing whether or not I should worry about or address something, which led me to create this guide over the course of a year and a half—molded from many, <i>many</i> mistakes in my actions. It's not about being content with imperfection, or striving to make everything perfect, but rather about <i>discerning</i> what to do (or not do), and when to do it. This guide aims to help others make decisions, regardless of if they suffer from OCD, anxiety, or not, as the logic it uses can be applied to all areas of life.\n\nTo contact or support me, I'm reachable at:\npackerander22@gmail.com" },
-  { "id": "AB2", "type": "about", "heading": "Guide Concepts Explained", "text": "<p>This guide is built to prevent wasted effort, “analysis paralysis,” and unhealthy worry, by walking through the two essential questions of decision-making: <b>Should I act?</b> (IF) and <b>When should I act?</b> (WHEN). Along the way, it uses concepts from psychology, economics, and systems thinking. Below is a deep dive into each principle.</p><h3>1. Real Problems vs. Cosmetic Problems</h3><p>Not every “problem” is a <i>real</i> problem.</p><ul><li><b>Real problems</b> affect functionality, outcomes, or safety.</li><li><b>Cosmetic or preference problems</b> only affect comfort, appearance, or personal taste.</li></ul><p><b>Why it matters:</b> By distinguishing real issues from cosmetic ones, you avoid spending time and energy on things that don’t change results in a meaningful way.</p><h3>2. Potential vs. Inevitable Problems</h3><p>A potential problem may or may not happen. An inevitable problem <i>will</i> happen if ignored.</p><ul><li>Example: a frayed charging cable is <i>inevitably</i> going to fail.</li><li>Example: a squeaky door hinge <i>might</i> get worse, but may never actually break.</li></ul><p><b>Why it matters:</b> If something is inevitable, addressing it early usually prevents bigger costs later.</p><h3>3. Costs vs. Benefits</h3><p>Every action carries a trade-off:</p><ul><li><b>Upfront costs/efforts:</b> time, money, energy you invest to act.</li><li><b>Resulting downsides:</b> new risks or hassles created by the fix itself.</li><li><b>Combined total:</b> both categories together, measured against what happens if you do nothing.</li></ul><p><b>Why it matters:</b> You should only act if the combined downsides of doing nothing outweigh the costs and downsides of acting.</p><h3>4. Alternative Solutions</h3><p>Sometimes the first idea isn’t the best. If one option is blocked, unavailable, or costly, there may be:</p><ul><li>A simpler fix</li><li>A substitute method</li><li>A better long-term solution</li></ul><p><b>Why it matters:</b> Alternatives may solve the problem with fewer downsides or even provide extra benefits you hadn’t considered.</p><h3>5. Information Value</h3><p>Not all outcomes are measured in fixes — sometimes <i>knowledge itself</i> is the payoff.</p><ul><li>Example: Testing two study methods teaches you which is better, even if the test costs a little time.</li></ul><p><b>Why it matters:</b> Information can make future decisions faster, cheaper, and more effective.</p><h3>6. Diminishing Returns</h3><p>Effort doesn’t always scale with results. Beyond a certain point, each extra unit of effort produces smaller and smaller improvements.</p><ul><li>Example: polishing an essay draft — the first edits remove major errors, but the 12th pass adds almost no improvement.</li></ul><p><b>Why it matters:</b> Once you hit the point of diminishing returns, it’s better to stop and move on. Over-investing wastes time and energy.</p><h3>7. Inverted-U Curve (Sweet Spot)</h3><p>Sometimes both <i>too little</i> and <i>too much</i> effort reduce results.</p><ul><li>Example: exercise intensity — too low does nothing, too high risks injury, but a middle zone maximizes fitness.</li></ul><p><b>Why it matters:</b> Finding the “sweet spot” of effort gives you the best balance of results without wasted energy or harm.</p><h3>8. Functional Difference (Blind Test)</h3><p>A functional difference is one you could actually notice in a side-by-side comparison that matters for the intended purpose.</p><ul><li>Example: Upgrading headphones where sound clarity is <i>actually audible</i>, vs. buying ones that only look different.</li></ul><p><b>Why it matters:</b> This filters out irrelevant changes and focuses only on meaningful, functional improvements.</p><h3>9. Long-Term vs. Short-Term Benefits</h3><p>Some actions provide temporary relief; others solve problems for good.</p><ul><li><b>Short-term:</b> taking a painkiller.</li><li><b>Long-term:</b> fixing posture to prevent the pain.</li></ul><p><b>Why it matters:</b> Short-term fixes may be fine for temporary situations, but lasting solutions often justify greater investment.</p><h3>10. Always vs. Sometimes Worth It</h3><p>Some actions are universally worth it every time.</p><ul><li>Example: wearing a seatbelt.</li></ul><p>Other actions are conditional, depending on context.</p><p><b>Why it matters:</b> Universal actions can become habits (low effort, high safety), while conditional actions need thoughtful evaluation each time.</p><h3>11. Preventative Maintenance</h3><p>This is solving a problem <i>before it happens</i>.</p><ul><li>Example: changing oil to prevent engine damage.</li><li>Example: backing up files before a drive fails.</li></ul><p><b>Why it matters:</b> Preventative actions often cost less and are less disruptive than emergency fixes after failure.</p><h3>12. Severity and Thresholds</h3><p>Severity measures the <i>worst-case outcome</i> if failure happens. Thresholds define the acceptable risk level.</p><ul><li>If severity is high (life-threatening, catastrophic), you act sooner.</li><li>If severity is low (inconvenient but minor), you can wait longer.</li></ul><p><b>Why it matters:</b> Severity calibrates urgency. It prevents overreaction to small issues and underreaction to critical ones.</p><h3>13. Telltale Signs</h3><p>Many problems give warnings before failure:</p><ul><li>Example: brake squeal before pads wear out.</li><li>Example: storage full warning before data loss.</li></ul><p><b>Why it matters:</b> Recognizing telltale signs gives you a safe buffer to act, rather than rushing at the last second or acting too early.</p><h3>14. Timing and Availability</h3><p>Even if a solution exists, timing matters:</p><ul><li>Sometimes it’s best to wait for resources, discounts, or better conditions.</li><li>Other times, delay makes things worse.</li></ul><p><b>Why it matters:</b> Correct timing ensures maximum value from your investment of time and resources.</p><h3>15. Better Alternatives Down the Road</h3><p>Sometimes waiting enables a <i>next best</i> or superior solution.</p><ul><li>Example: holding off on buying a phone because a newer, significantly better model releases next month.</li></ul><p><b>Why it matters:</b> Strategic patience can yield better outcomes than rushing.</p><h3>16. Putting It All Together</h3><p>The guide’s structure reflects real-world decision logic:</p><ol><li>Is this a real or inevitable problem?</li><li>Do benefits outweigh costs?</li><li>Are alternatives better?</li><li>Is the solution functional and noticeable?</li><li>Where’s the sweet spot for effort?</li><li>What’s the severity and threshold?</li><li>Are there warning signs or better timing?</li></ol><p><b>Why it matters:</b> By layering these concepts, the guide prevents wasted energy and helps you make decisions that are both rational and sustainable.</p>" }
+  { "id": "AB2", "type": "about", "heading": "Guide Concepts Explained", "text": "<p>This guide is built to prevent wasted effort, “analysis paralysis,” and unhealthy worry, by walking through the two essential questions of decision-making: <b>Should I act?</b> (IF) and <b>When should I act?</b> (WHEN). Along the way, it uses concepts from psychology, economics, and systems thinking. Below is a deep dive into each principle.</p><h3>1. Real Problems vs. Cosmetic Problems</h3><p>Not every “problem” is a <i>real</i> problem.</p><ul><li><b>Real problems</b> affect functionality, outcomes, or safety.</li><li><b>Cosmetic or preference problems</b> only affect comfort, appearance, or personal taste.</li></ul><p><b>Why it matters:</b> By distinguishing real issues from cosmetic ones, you avoid spending time and energy on things that don’t change results in a meaningful way.</p><h3>2. Potential vs. Inevitable Problems</h3><p>A potential problem may or may not happen. An inevitable problem <i>will</i> happen if ignored.</p><ul><li>Example: a frayed charging cable is <i>inevitably</i> going to fail.</li><li>Example: a squeaky door hinge <i>might</i> get worse, but may never actually break.</li></ul><p><b>Why it matters:</b> If something is inevitable, addressing it early usually prevents bigger costs later.</p><h3>3. Costs vs. Benefits</h3><p>Every action carries a trade-off:</p><ul><li><b>Upfront costs/efforts:</b> time, money, energy you invest to act.</li><li><b>Resulting downsides:</b> new risks or hassles created by the fix itself.</li><li><b>Combined total:</b> both categories together, measured against what happens if you do nothing.</li></ul><p><b>Why it matters:</b> You should only act if the combined downsides of doing nothing outweigh the costs and downsides of acting.</p><h3>4. Alternative Solutions</h3><p>Sometimes the first idea isn’t the best. If one option is blocked, unavailable, or costly, there may be:</p><ul><li>A simpler fix</li><li>A substitute method</li><li>A better long-term solution</li></ul><p><b>Why it matters:</b> Alternatives may solve the problem with fewer downsides or even provide extra benefits you hadn’t considered.</p><h3>5. Information Value</h3><p>Not all outcomes are measured in fixes — sometimes <i>knowledge itself</i> is the payoff.</p><ul><li>Example: Testing two study methods teaches you which is better, even if the test costs a little time.</li></ul><p><b>Why it matters:</b> Information can make future decisions faster, cheaper, and more effective.</p><h3>6. Diminishing Returns</h3><p>Effort doesn’t always scale with results. Beyond a certain point, each extra unit of effort produces smaller and smaller improvements.</p><ul><li>Example: polishing an essay draft — the first edits remove major errors, but the 12th pass adds almost no improvement.</li></ul><p><b>Why it matters:</b> Once you hit the point of diminishing returns, it’s better to stop and move on. Over-investing wastes time and energy.</p><h3>7. Inverted-U Curve (Sweet Spot)</h3><p>Sometimes both <i>too little</i> and <i>too much</i> effort reduce results.</p><ul><li>Example: exercise intensity — too low does nothing, too high risks injury, but a middle zone maximizes fitness.</li></ul><p><b>Why it matters:</b> Finding the “sweet spot” of effort gives you the best balance of results without wasted energy or harm, and unlike diminishing returns, you're not chasing a realisticly unreachable perfection. Spending as much time, effort, or resources as you see fit in finding this sweet spot will only get you closer to it, and can therefore be justified.</p><h3>8. Functional Difference (Blind Test)</h3><p>A functional difference is one you could actually notice in a side-by-side comparison that matters for the intended purpose.</p><ul><li>Example: Upgrading headphones where sound clarity is <i>actually audible</i>, vs. buying ones that only look different.</li></ul><p><b>Why it matters:</b> This filters out irrelevant changes and focuses only on meaningful, functional improvements.</p><h3>9. Long-Term vs. Short-Term Benefits</h3><p>Some actions provide temporary relief; others solve problems for good.</p><ul><li><b>Short-term:</b> taking a painkiller.</li><li><b>Long-term:</b> fixing posture to prevent the pain.</li></ul><p><b>Why it matters:</b> Short-term fixes may be fine for temporary situations, but lasting solutions often justify greater investment.</p><h3>10. Always vs. Sometimes Worth It</h3><p>Some actions are universally worth it every time.</p><ul><li>Example: wearing a seatbelt.</li></ul><p>Other actions are conditional, depending on context.</p><p><b>Why it matters:</b> Universal actions can become habits (low effort, high safety), while conditional actions need thoughtful evaluation each time.</p><h3>11. Preventative Maintenance</h3><p>This is solving a problem <i>before it happens</i>.</p><ul><li>Example: changing oil to prevent engine damage.</li><li>Example: backing up files before a drive fails.</li></ul><p><b>Why it matters:</b> Preventative actions often cost less and are less disruptive than emergency fixes after failure.</p><h3>12. Severity and Thresholds</h3><p>Severity measures the <i>worst-case outcome</i> if failure happens. Thresholds define the acceptable risk level.</p><ul><li>If severity is high (life-threatening, catastrophic), you act sooner.</li><li>If severity is low (inconvenient but minor), you can wait longer.</li></ul><p><b>Why it matters:</b> Severity calibrates urgency. It prevents overreaction to small issues and underreaction to critical ones.</p><h3>13. Telltale Signs</h3><p>Many problems give warnings before failure:</p><ul><li>Example: brake squeal before pads wear out.</li><li>Example: storage full warning before data loss.</li></ul><p><b>Why it matters:</b> Recognizing telltale signs gives you a safe buffer to act, rather than rushing at the last second or acting too early.</p><h3>14. Timing and Availability</h3><p>Even if a solution exists, timing matters:</p><ul><li>Sometimes it’s best to wait for resources, discounts, or better conditions.</li><li>Other times, delay makes things worse.</li></ul><p><b>Why it matters:</b> Correct timing ensures maximum value from your investment of time and resources.</p><h3>15. Better Alternatives Down the Road</h3><p>Sometimes waiting enables a <i>next best</i> or superior solution.</p><ul><li>Example: holding off on buying a phone because a newer, significantly better model releases next month.</li></ul><p><b>Why it matters:</b> Strategic patience can yield better outcomes than rushing.</p><h3>16. Putting It All Together</h3><p>The guide’s structure reflects real-world decision logic:</p><ol><li>Is this a real or inevitable problem?</li><li>Do benefits outweigh costs?</li><li>Are alternatives better?</li><li>Is the solution functional and noticeable?</li><li>Where’s the sweet spot for effort?</li><li>What’s the severity and threshold?</li><li>Are there warning signs or better timing?</li></ol><p><b>Why it matters:</b> By layering these concepts, the guide prevents wasted energy and helps you make decisions that are both rational and sustainable.</p>" }
 ];
 
 /* ===== EXAMPLES (two per question; no info or results) ===== */
@@ -910,6 +1045,12 @@ function renderNode(node) {
     textDiv.innerHTML = '<div class="result-text">' + displayHTML + '</div>';
   } else {
     textDiv.innerHTML = displayHTML;
+  }
+
+  // 🔹 Show the Theme toggle only on Q0
+  var themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) {
+    themeBtn.style.display = (node.id === 'Q0') ? 'inline-block' : 'none';
   }
 
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
