@@ -337,24 +337,25 @@
 
   .ptlabel    { font-size: 16px; font-weight: 700; fill: var(--label-text); pointer-events:none; }
   .ptlabel-bg { fill: var(--label-bg); fill-opacity:.98; stroke: var(--border); rx:10; ry:10; }
-
-  /* Space under verdict */
-  .rule-block { margin-top: 10px; }
-  .verdict    { margin-top: 6px; font-weight: 700; }
-  .verdict.act { color: var(--if-accent); }
+  
+  /* ===== Rule + Verdict unified styles ===== */
+  .rule    { font-weight:700; margin-top:14px; }
+  .verdict { margin-top:12px; font-weight:700; }  /* top-only spacing */
+  .verdict.ok { color: var(--if-accent); }
+  .verdict.no { color: var(--subtle-text); }
 
   /* ==== MINI GRAPH styles (additive) ==== */
+  .mini-lead { margin-bottom: 10px; }
   .mini-wrap { display:block; border:1px solid var(--border); border-radius:8px; background: color-mix(in oklab, var(--card), var(--bg) 6%); padding:12px; margin:10px 0 16px; }
   .mini-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
   .mini-field { display:flex; flex-direction:column; gap:6px; }
   .mini-field input[type="number"], .mini-field select{
     padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--card); color:var(--text);
   }
+  
   .mini-muted { opacity:.65; }
-  .mini-rule { font-weight:700; margin:10px 0 6px; }
-  .mini-verdict { margin:0 0 14px; font-weight:700; }
-  .mini-verdict.ok { color: var(--if-accent); }
-  .mini-verdict.no { color: var(--subtle-text); }
+  .verdict.ok { color: var(--if-accent); }
+  .verdict.no { color: var(--subtle-text); }
   
   /* SVG */
   .mini-svg{width:100%;height:auto;display:block;touch-action:none}
@@ -371,9 +372,6 @@
   .mini-ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
   .mini-axes-label{font-weight:800; font-size:16px; fill: var(--text); opacity:.9}
   
-  /* extra outer padding so labels don’t collide numbers */
-  .mini-svg-pad-x { margin-left: 6px; }
-
 </style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
@@ -699,7 +697,11 @@ function miniXtoUnit(X,mode){ return mode==='percent' ? (100/X) : (mode==='micro
  */
 function renderMiniQ6(intoEl, node){
   intoEl.innerHTML = '';
-
+  // 🔹 Top text from flow JSON (so it appears above the UI)
+  const top = document.createElement('div');
+  top.className = 'mini-top';
+  top.innerHTML = node.text || '';
+  intoEl.appendChild(top);
   // fields
   var wrap = document.createElement('div'); wrap.className = 'mini-wrap';
   var fields = document.createElement('div'); fields.className = 'mini-fields';
@@ -731,13 +733,12 @@ function renderMiniQ6(intoEl, node){
   wrap.appendChild(svg);
 
   // rule + verdict
-  var rule = document.createElement('div'); rule.className='mini-rule';
+  var rule = document.createElement('div'); rule.className='rule';
   rule.innerHTML = 'Rule: Only if <span id="miniProbName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.';
-  var verdict = document.createElement('div'); verdict.className='mini-verdict'; verdict.id='miniVerdict';
+  var verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Verdict: Action should NOT be considered.';
   wrap.appendChild(rule); wrap.appendChild(verdict);
 
-  wrap.appendChild(Object.assign(document.createElement('div'),{style:'height:6px'}));
   intoEl.appendChild(wrap);
 
   // hydrate inputs with master
@@ -821,8 +822,10 @@ function renderMiniQ6(intoEl, node){
     xLab.setAttribute('x', pad.left+plotW/2);
     xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
-
-    yLab.setAttribute('transform', 'translate(16 ' + (pad.top+plotH/2) + ') rotate(-90)');
+    
+    // In renderMiniQ6 and renderMiniQ7
+    var Y_LABEL_X = 8; // tweak to taste
+    yLab.setAttribute('transform', 'translate(' + Y_LABEL_X + ' ' + (pad.top+plotH/2) + ') rotate(-90)');
     yLab.textContent = yr.label;
   }
 
@@ -956,7 +959,10 @@ btns.appendChild(cont);
  */
 function renderMiniQ7(intoEl, node){
   intoEl.innerHTML = '';
-
+  const top = document.createElement('div');
+  top.className = 'mini-top';
+  top.innerHTML = node.text || '';
+  intoEl.appendChild(top);
   var local = {
     S: miniMaster.S, C: miniMaster.C, mode: miniMaster.mode, val: miniMaster.val, X_user: miniMaster.X_user
   };
@@ -987,13 +993,12 @@ function renderMiniQ7(intoEl, node){
   var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg'); svg.setAttribute('viewBox','0 0 940 620'); wrap.appendChild(svg);
 
-  var rule = document.createElement('div'); rule.className='mini-rule';
+  var rule = document.createElement('div'); rule.className='rule';
   rule.innerHTML = 'Rule: Only if <span id="miniProbName2">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.';
-  var verdict = document.createElement('div'); verdict.className='mini-verdict'; verdict.id='miniVerdict2';
+  var verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict2';
   verdict.textContent = 'Verdict: Action should NOT be considered.';
   wrap.appendChild(rule); wrap.appendChild(verdict);
 
-  wrap.appendChild(Object.assign(document.createElement('div'),{style:'height:6px'}));
   intoEl.appendChild(wrap);
 
   // mirrors
@@ -1065,7 +1070,9 @@ function renderMiniQ7(intoEl, node){
     });
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
-    yLab.setAttribute('transform', 'translate(16 ' + (pad.top+plotH/2) + ') rotate(-90)');
+    // In renderMiniQ6 and renderMiniQ7
+    var Y_LABEL_X = 8; // tweak to taste
+    yLab.setAttribute('transform', 'translate(' + Y_LABEL_X + ' ' + (pad.top+plotH/2) + ') rotate(-90)');
     yLab.textContent = yRange(local.mode).label;
   }
   function buildCurve(){
