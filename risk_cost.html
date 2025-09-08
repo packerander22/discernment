@@ -199,10 +199,14 @@ function computeSCutoffForX(X){
 }
 
 /* =========================
-   Inputs (stable typing UX)
+   Inputs & early DOM refs
    ========================= */
 const sevEl = $('sev'), costEl = $('cost'), probModeEl = $('probMode'), probValEl = $('probVal');
 const cutoffLabel = $('cutoffLabel'), cutoffOut = $('cutoffOut'), ratioCutOut = $('ratioCutOut'), probRuleNameEl = $('probRuleName');
+
+/* Declare panels & example buttons EARLY so updateStats can see them */
+const exBtn1 = $('exBtn1'), exBtn2 = $('exBtn2');
+const panel1 = $('sharedPanel'), panel2 = $('sharedPanel2');
 
 function setProbInputConstraints(){
   const mode = probModeEl.value;
@@ -258,9 +262,12 @@ function updateStatsAndMaybeViz(){
 
   state.act = (state.X_user != null) ? (state.X_user <= Xc + 1e-15) : null;
 
-  if (panel1 && panel1.style && panel1.style.display==='block' &&
-      panel1.dataset && panel1.dataset.mode==='viz' &&
-      typeof window.__updateVizShared==='function') {
+  // Hardened guard so init order can’t break buttons
+  if (typeof panel1 !== 'undefined' &&
+      panel1 && panel1.style &&
+      panel1.style.display === 'block' &&
+      panel1.dataset && panel1.dataset.mode === 'viz' &&
+      typeof window.__updateVizShared === 'function') {
     window.__updateVizShared();
   }
 }
@@ -286,9 +293,6 @@ commitInputs();
 /* =========================
    Examples toggles
    ========================= */
-const exBtn1 = $('exBtn1'), exBtn2 = $('exBtn2');
-const panel1 = $('sharedPanel'), panel2 = $('sharedPanel2');
-
 function toggleExamples(panel, btn){
   const open = panel.style.display==='block' && panel.dataset.mode==='examples';
   if (open){ panel.style.display='none'; panel.dataset.mode=''; btn.textContent='Show Examples'; }
