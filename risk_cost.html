@@ -11,8 +11,8 @@
     --btn-yes:#4CAF50; --btn-no:#F44336; --btn-next:#2196F3; --btn-muted:#9E9E9E; --btn-text:#fff;
     --panel:#fafafa;
 
-    /* your flash greens */
-    --act-green:#2e7d32;              /* light */
+    /* greens */
+    --act-green:#2e7d32;            /* light */
     --act-green-ink:#2e7d32;
 
     /* chart theme (light) */
@@ -31,7 +31,7 @@
       --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-next:#42A5F5; --btn-muted:#6c6f76; --btn-text:#fff;
       --panel: color-mix(in oklab, #171a21, #0f1115 8%);
 
-      --act-green:#5bd36a;            /* dark */
+      --act-green:#5bd36a;          /* dark */
       --act-green-ink:#5bd36a;
 
       --axis:#cfd6e0;
@@ -71,9 +71,11 @@
 
   /* chart */
   svg{width:100%;height:auto;display:block;touch-action:none}
-  /* FIX: style SVG text with class="axis" directly so it honors dark mode */
-  text.axis { font-size:12px; fill: var(--axis); }
+
+  /* UPDATED: bigger/bolder axis text that honors dark mode */
+  text.axis { font-size:14px; font-weight:600; fill: var(--axis); }
   .axis     { fill: var(--axis); }
+  @media (max-width:420px){ text.axis{ font-size:13px; } }
 
   .grid { stroke: var(--grid); stroke-width:.85; }
   .curve{fill:none;stroke:var(--curve);stroke-width:2.25}
@@ -317,10 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* =========================
      Visualization (cached static; fast drag)
-     =========================
-     mutateGlobal = true  → Slide-1: dragging changes S/C globally + inputs
-     mutateGlobal = false → Slide-2: dragging only changes local mirrors; does NOT touch global state
-  */
+     ========================= */
   function openVizInto(panel, withMirrors, mutateGlobal){
     panel.innerHTML = '';
     panel.style.display='block'; panel.dataset.mode='viz';
@@ -348,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
       panel.appendChild(row); panel.appendChild(row2);
     }
 
-    // SVG scaffold (more left padding to avoid clipping)
+    // SVG scaffold
     const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
     svg.setAttribute('viewBox','0 0 980 700');
     svg.style.touchAction='none';
@@ -367,8 +366,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
     const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','ptlabel'); labelG.appendChild(labelTx);
 
-    // UPDATED: larger left padding to separate y-axis title from numbers
-    const pad = { left:160, right:40, top:48, bottom:120 };
+    /* UPDATED: keep plot in place; move labels instead */
+    const pad = { left:120, right:40, top:48, bottom:120 };
     const W=980, H=700, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
     const rMin=1, rMax=10;
 
@@ -382,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label: "Cutoff '1 in X' (log scale)" };
     }
 
-    /* ------- STATIC BUILD (axes, grid, curve, shading) — runs once ------- */
+    /* ------- STATIC BUILD (axes, grid, curve, shading) ------- */
     function buildStatic(mode){
       axesG.innerHTML=''; gridG.innerHTML='';
       // vertical grid + x ticks
@@ -397,9 +396,12 @@ document.addEventListener('DOMContentLoaded', () => {
         tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','axis');
         tx.textContent=r; axesG.appendChild(tx);
       }
-      // UPDATED: horizontal grid + y ticks with spacing and right-aligned numbers
+
+      // UPDATED: horizontal grid + y ticks moved left; y-axis title farther left
       const {yMin,yMax,ticks,label} = getYRange(mode);
-      const yTickX = pad.left - 28;
+      const yTickX = pad.left - 36;    // numbers left of plot
+      const yTitleX = pad.left - 100;  // title even farther left
+
       ticks.forEach(y=>{
         const py = yToPx(y,yMin,yMax);
         const gl=document.createElementNS('http://www.w3.org/2000/svg','line');
@@ -409,14 +411,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const ty=document.createElementNS('http://www.w3.org/2000/svg','text');
         ty.setAttribute('x', yTickX);
-        ty.setAttribute('y', py+4);
+        ty.setAttribute('y', py+5);
         ty.setAttribute('text-anchor','end');
         ty.setAttribute('class','axis');
         ty.textContent = (mode==='percent' ? (y>=1?y.toString():y.toExponential(1)) : y.toLocaleString());
         axesG.appendChild(ty);
       });
 
-      // axis labels with extra spacing
       const xlab=document.createElementNS('http://www.w3.org/2000/svg','text');
       xlab.setAttribute('x', pad.left+plotW/2);
       xlab.setAttribute('y', H-28);
@@ -424,14 +425,13 @@ document.addEventListener('DOMContentLoaded', () => {
       xlab.textContent="Severity / Cost Ratio (S / C)";
       axesG.appendChild(xlab);
 
-      // UPDATED: move rotated y-label further left (clear of tick numbers)
       const ylab=document.createElementNS('http://www.w3.org/2000/svg','text');
-      ylab.setAttribute('transform',`translate(${pad.left-70} ${pad.top+plotH/2}) rotate(-90)`);
+      ylab.setAttribute('transform',`translate(${yTitleX} ${pad.top+plotH/2}) rotate(-90)`);
       ylab.setAttribute('text-anchor','middle'); ylab.setAttribute('class','axis');
       ylab.textContent=getYRange(mode).label;
       axesG.appendChild(ylab);
 
-      // curve + shades (reduced N for speed; visually smooth)
+      // curve + shades (kept performant)
       const N=300, pts=[];
       for(let i=0;i<=N;i++){
         const r = 1 + 9*(i/N);
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     buildStatic(eMode);
 
-    // Renders just the moving parts (handle + label). Throttled with rAF.
+    // Renders just the moving parts (handle + label).
     let rafId = 0;
     function renderMoving(){
       const {yMin,yMax} = getYRange(eMode);
@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
     svg.addEventListener('pointermove', onPointerMove, {passive:false});
     window.addEventListener('pointerup', onPointerUp, {passive:false});
 
-    // initial render of moving layer
+    // initial render
     renderMoving();
 
     if (mutateGlobal){
@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Buttons (wired once)
+  // Buttons
   vizBtn1.addEventListener('click', ()=>{
     const open = panel1.style.display==='block' && panel1.dataset.mode==='viz';
     if (open){ panel1.style.display='none'; panel1.dataset.mode=''; vizBtn1.textContent='Show Calculation Visualization'; }
