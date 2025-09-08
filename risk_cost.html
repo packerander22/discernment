@@ -11,7 +11,7 @@
     --btn-yes:#4CAF50; --btn-no:#F44336; --btn-next:#2196F3; --btn-muted:#9E9E9E; --btn-text:#fff;
     --panel:#fafafa;
     --axis:#777;
-    --grid: #dcdcdc;      /* light grid */
+    --grid: #dcdcdc;
     --curve:#1f4cff;
     --shade-in:#6cbf6c22;
     --shade-out:#c7c7c733;
@@ -275,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /* Input bindings (guarded) */
   if (sevEl) { sevEl.addEventListener('change', commitInputs); sevEl.addEventListener('blur', commitInputs); }
   if (costEl){ costEl.addEventListener('change', commitInputs); costEl.addEventListener('blur', commitInputs); }
   if (probModeEl){ probModeEl.addEventListener('change', ()=>{ setProbInputConstraints(); commitInputs(); }); }
@@ -303,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
       panel.style.display='block'; panel.dataset.mode='examples'; btn.textContent='Hide Examples';
     }
   }
-  const exBtn1 = $('exBtn1'), exBtn2 = $('exBtn2');
   if (exBtn1 && panel1) exBtn1.addEventListener('click', ()=>toggleExamples(panel1, exBtn1));
   if (exBtn2 && panel2) exBtn2.addEventListener('click', ()=>toggleExamples(panel2, exBtn2));
 
@@ -331,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-    svg.setAttribute('viewBox','0 0 940 640'); // extra padding for labels
+    svg.setAttribute('viewBox','0 0 940 640');
     svg.style.touchAction='none';
     panel.appendChild(svg);
 
@@ -411,8 +409,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const d = pts.map(([x,y],i)=> (i?`L ${x},${y}`:`M ${x},${y}`)).join(' ');
       curve.setAttribute('d', d);
-
-      /* ↓↓↓ FIX: reuse the same yMin/yMax computed above — no redeclaration */
       shadeIn.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(yMin, yMin, yMax)} L ${rToPx(1)},${yToPx(yMin, yMin, yMax)} Z`);
       shadeOut.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(yMax, yMin, yMax)} L ${rToPx(1)},${yToPx(yMax, yMin, yMax)} Z`);
     }
@@ -442,7 +438,6 @@ document.addEventListener('DOMContentLoaded', () => {
       labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
       labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
-      /* Reflect statline in Slide-1 */
       $('cutoffLabel').textContent = cutoffLabelForMode(eMode);
       $('cutoffOut').textContent = (eMode==='oneInX') ? Math.round(Xc).toLocaleString() : (eMode==='percent' ? ceilPlaces(100/Xc,6) : ceilPlaces(1e6/Xc,2));
       const rCut = computeSCutoffForX(state.X_user ?? 2);
@@ -450,7 +445,6 @@ document.addEventListener('DOMContentLoaded', () => {
       $('probRuleName').textContent = probRuleName(eMode);
     }
 
-    /* Dragging (mobile-safe) — adjusts BOTH S and C */
     let dragging=false;
     function onPointerDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){} onPointerMove(e); }
     function onPointerMove(e){
