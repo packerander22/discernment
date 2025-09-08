@@ -510,8 +510,6 @@ function openVizInto(panel, withMirrors){
   updateVizCore();
 }
 
-const panel1 = $('sharedPanel'), panel2 = $('sharedPanel2'); // declare ONCE
-
 const vizBtn1 = $('vizBtn1'), vizBtn2 = $('vizBtn2');
 vizBtn1.addEventListener('click', ()=>{
   const open = panel1.style.display==='block' && panel1.dataset.mode==='viz';
