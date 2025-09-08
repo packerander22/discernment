@@ -303,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
       panel.style.display='block'; panel.dataset.mode='examples'; btn.textContent='Hide Examples';
     }
   }
+  const exBtn1 = $('exBtn1'), exBtn2 = $('exBtn2');
   if (exBtn1 && panel1) exBtn1.addEventListener('click', ()=>toggleExamples(panel1, exBtn1));
   if (exBtn2 && panel2) exBtn2.addEventListener('click', ()=>toggleExamples(panel2, exBtn2));
 
@@ -411,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const d = pts.map(([x,y],i)=> (i?`L ${x},${y}`:`M ${x},${y}`)).join(' ');
       curve.setAttribute('d', d);
 
-      const yMin = getYRange(mode).yMin, yMax = getYRange(mode).yMax;
+      /* ↓↓↓ FIX: reuse the same yMin/yMax computed above — no redeclaration */
       shadeIn.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(yMin, yMin, yMax)} L ${rToPx(1)},${yToPx(yMin, yMin, yMax)} Z`);
       shadeOut.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(yMax, yMin, yMax)} L ${rToPx(1)},${yToPx(yMax, yMin, yMax)} Z`);
     }
