@@ -10,13 +10,13 @@
   :root {
     --bg:#f7f7f7; --card:#ffffff; --text:#111; --subtle:#333; --border:#ddd; --shadow:0 2px 6px rgba(0,0,0,.1);
     --btn-yes:#4CAF50; --btn-no:#F44336; --btn-next:#2196F3; --btn-muted:#9E9E9E; --btn-text:#fff;
-    --panel:#fafafa;
+    --panel:#fafafa; --line:#999;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg:#0f1115; --card:#171a21; --text:#e9edf1; --subtle:#c7cbd2; --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,.35);
       --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-next:#42A5F5; --btn-muted:#6c6f76; --btn-text:#fff;
-      --panel: color-mix(in oklab, #171a21, #0f1115 8%);
+      --panel: color-mix(in oklab, #171a21, #0f1115 8%); --line:#b7b7b7;
     }
   }
 
@@ -33,16 +33,15 @@
   .buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;padding:0 16px 16px}
   button{border:0;border-radius:6px;padding:10px 12px;cursor:pointer;color:var(--btn-text);background:var(--btn-muted)}
   .next{background:var(--btn-next)} .examples-btn{background:var(--btn-muted)} .viz-btn{background:var(--btn-muted)}
-  .act{background:var(--btn-yes)} .dont{background:var(--btn-no)}
+  .yes{background:var(--btn-yes)} .no{background:var(--btn-no)}
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .field{display:flex;flex-direction:column;gap:6px;margin:6px 0}
   input[type="number"], select{padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text)}
-  .error{color:#B00020;font-size:.95em;margin-top:6px}
   .statline{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
   .pill{border:1px solid var(--border);border-radius:8px;padding:6px 8px;background:color-mix(in oklab, var(--card), var(--bg) 8%)}
-  .verdict{font-weight:700;padding:8px 12px;border-radius:8px;border:1px solid var(--border)}
-  .verdict.act{background:#e9f6ea;color:#205027;border-color:#cfe9d2}
-  .verdict.no{background:#f1f1f3;color:#30323a;border-color:#e3e3e8}
+  .rule{font-weight:600;margin-top:6px}
+  .badgelike{display:inline-block;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:color-mix(in oklab, var(--card), var(--bg) 8%)}
+
   /* chart */
   svg{width:100%;height:auto;display:block}
   .axis text{font-size:12px;fill:#777}
@@ -50,9 +49,8 @@
   .shade-in{fill:#6cbf6c22}
   .shade-out{fill:#c7c7c733}
   .handle{fill:#ff3b3b;stroke:#fff;stroke-width:2;cursor:pointer}
-  .ptlabel{font-size:12px;pointer-events:none}
-  .ptlabel-bg{fill:#fff;fill-opacity:.85;stroke:none}
-  .badgelike{display:inline-block;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:color-mix(in oklab, var(--card), var(--bg) 8%)}
+  .ptlabel{font-size:14px;font-weight:600;pointer-events:none}
+  .ptlabel-bg{fill:#fff;fill-opacity:.95;stroke:var(--border)}
 </style>
 </head>
 <body>
@@ -65,19 +63,19 @@
 
     <div class="content">
       <div id="text" class="text">
-        Enter the **severity**, **cost**, and **per-instance probability** of the downside if you *don’t* act now. We’ll calculate whether it’s worth acting (conservative rule: on the line = **Act**).
+        Enter the severity, cost, and per-instance probability of the downside if you don’t act now. We’ll show when action becomes justified (conservative rule: on the line = Act).
       </div>
 
-      <!-- INPUTS (S, C, Probability) -->
+      <!-- SLIDE 1 -->
       <div id="mini1" class="slide">
         <div class="field-row">
           <div class="field">
-            <label for="sev">Severity (S) — 1 to 10 (decimals allowed)</label>
-            <input id="sev" type="number" min="1" max="10" step="0.01" value="5" inputmode="decimal" />
+            <label for="sev">Severity (S) — up to 10</label>
+            <input id="sev" type="number" min="1" max="10" step="0.01" value="5" inputmode="decimal"/>
           </div>
           <div class="field">
-            <label for="cost">Cost (C) — 1 to 10 (decimals allowed)</label>
-            <input id="cost" type="number" min="1" max="10" step="0.01" value="1" inputmode="decimal" />
+            <label for="cost">Cost (C) — up to 10</label>
+            <input id="cost" type="number" min="1" max="10" step="0.01" value="1" inputmode="decimal"/>
           </div>
         </div>
 
@@ -92,11 +90,10 @@
           </div>
           <div class="field" id="probInputWrap">
             <label id="probLabel" for="probVal">Enter X (for “1 in X”)</label>
-            <input id="probVal" type="number" min="1" step="1" placeholder="e.g., 1000000" />
+            <!-- Not certain: X >= 2 -->
+            <input id="probVal" type="number" min="2" step="1" placeholder="e.g., 1000000"/>
           </div>
         </div>
-
-        <div class="error" id="err1" role="alert" aria-live="assertive"></div>
 
         <div class="controls-row">
           <div class="left-controls">
@@ -111,15 +108,15 @@
 
         <div class="statline">
           <div class="pill">S/C = <span id="ratioOut">5.00</span></div>
-          <div class="pill">X<sub>cutoff</sub> = <span id="xOut">1,000,000</span> (≈ <span id="pOut">0.0001</span>% ≈ <span id="mOut">1.0</span> µm)</div>
-          <div class="verdict no" id="verdictBox">Enter values to compute</div>
+          <div class="pill"><span id="cutoffLabel">Cutoff (X)</span>: <span id="cutoffOut">1,000,000</span></div>
         </div>
+        <div class="rule" id="ruleLine">Rule: Only if X ≤ Cutoff can action be considered.</div>
       </div>
 
-      <!-- MINI SLIDE 2 (if Don't act) -->
+      <!-- SLIDE 2 (Don’t act path) -->
       <div id="mini2" class="slide" style="display:none;">
         <div class="text">
-          It’s **not worth acting** based on the current values. Could any inputs reasonably **change** soon that would flip the verdict (e.g., higher probability, higher severity vs. cost)?
+          It’s not worth acting based on the current values. Could any inputs reasonably change soon (e.g., higher probability, or severity vs. cost) that would flip the verdict?
         </div>
         <div class="controls-row">
           <div class="left-controls">
@@ -132,266 +129,248 @@
         <div id="sharedPanel2" class="panel" aria-hidden="true"></div>
       </div>
 
-      <!-- MINI SLIDE 3 (if Act) -->
+      <!-- SLIDE 3 (Act path) -->
       <div id="mini3" class="slide" style="display:none;">
         <div class="text">
-          ✅ **Verdict: Act.** (This is a placeholder for the future section — “Mini Slide 3”.)
+          ✅ <b>Verdict: Act.</b> (Placeholder for the future section — “Mini Slide 3”.)
         </div>
       </div>
     </div>
 
-    <div class="buttons">
+    <div class="buttons" id="btnRow1">
       <button type="button" class="next" id="continueBtn">Continue</button>
+    </div>
+
+    <!-- Slide 2 bottom buttons (don’t have to do anything) -->
+    <div class="buttons" id="btnRow2" style="display:none;">
+      <button type="button" class="yes">Yes</button>
+      <button type="button" class="no">No</button>
     </div>
   </div>
 </div>
 
-<!-- ==== Logic & Visualization ==== -->
 <script>
 /* =========================
-   1) Validation & Utilities
+   Utilities & Core Formula
    ========================= */
-const $ = (id) => document.getElementById(id);
+const $ = id => document.getElementById(id);
 
 const state = {
   S: 5, C: 1,
   probMode: 'oneInX',
-  probVal: null, // as entered
-  X_user: null,  // normalized "1 in X"
-  lastVerdictAct: null, // boolean
+  probVal: 1000000,
+  X_user: 1000000, // normalized "1 in X"
+  act: null
 };
 
-// exact alpha from calibration at geometric midpoints
+// exact alpha from geometric midpoint calibration
 const ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
 
-// cutoff function X_cutoff(S/C)
+// cutoff: X_cutoff(S/C)
 function Xcutoff_from_ratio(r) {
   const t = Math.max(0, Math.min(1, (r - 1) / 9));
   const exponent = 6 * Math.pow(t, ALPHA);
   return Math.pow(10, exponent);
 }
 
-function clamp(val, lo, hi) { return Math.min(hi, Math.max(lo, val)); }
+function clamp(val, lo, hi){ return Math.min(hi, Math.max(lo, val)); }
+function ceilPlaces(x, p=2){ const f = 10**p; return Math.ceil(x*f)/f; } // display-only conservative rounding up
 
-function normalizeToX(mode, val) {
+function normalizeToX(mode, val){
   if (mode === 'oneInX') {
-    if (!(val > 0)) return null;
-    // Cap at certainty (X >= 1). If user tries X < 1, clamp to 1.
-    return Math.max(1, val);
+    if (!(val > 1)) return null;          // not certain; must be >=2
+    return val;
   }
   if (mode === 'percent') {
-    if (!(val > 0 && val <= 100)) return null;
-    return 100 / val; // 1 in X
+    if (!(val > 0 && val < 100)) return null; // 0<p<100
+    return 100 / val;
   }
   if (mode === 'micromort') {
-    if (!(val > 0)) return null;
-    // 1e6 micromorts = certainty (1 in 1). Clamp above that to 1.
-    if (val >= 1e6) return 1;
+    if (!(val > 0 && val < 1e6)) return null; // 0<µm<1e6
     return 1e6 / val;
   }
   return null;
 }
 
-function convertAllUnitsFromX(X) {
-  // For display: percentage and micromorts (never used for calc)
-  const p = 100 / X;
-  const m = 1e6 / X;
-  return { p, m };
+function cutoffInUnit(Xc, mode){
+  if (mode === 'percent') return 100 / Xc;       // %
+  if (mode === 'micromort') return 1e6 / Xc;     // µm
+  return Xc;                                     // X
 }
-
-function safeRoundUp(num, places=2) {
-  // For display-only rounding UP to be conservative; actual calcs use exacts
-  if (!isFinite(num)) return num;
-  const factor = Math.pow(10, places);
-  return Math.ceil(num * factor) / factor;
+function ruleLineForMode(mode){
+  if (mode === 'percent') return 'Rule: Only if % ≥ Cutoff can action be considered.';
+  if (mode === 'micromort') return 'Rule: Only if µm ≥ Cutoff can action be considered.';
+  return 'Rule: Only if X ≤ Cutoff can action be considered.';
+}
+function cutoffLabelForMode(mode){
+  if (mode === 'percent') return 'Cutoff (%)';
+  if (mode === 'micromort') return 'Cutoff (µm)';
+  return 'Cutoff (X)';
 }
 
 /* =========================
-   2) Inputs & Wiring
+   Slide 1 Inputs + Stats
    ========================= */
 const sevEl = $('sev');
 const costEl = $('cost');
 const probModeEl = $('probMode');
 const probValEl = $('probVal');
-const err1 = $('err1');
 
 const ratioOut = $('ratioOut');
-const xOut = $('xOut');
-const pOut = $('pOut');
-const mOut = $('mOut');
-const verdictBox = $('verdictBox');
+const cutoffLabel = $('cutoffLabel');
+const cutoffOut = $('cutoffOut');
+const ruleLine = $('ruleLine');
 
-function updateLabelsForMode() {
+function setProbInputConstraints(){
   const mode = probModeEl.value;
   const lab = $('probLabel');
   if (mode === 'oneInX') {
     lab.textContent = 'Enter X (for “1 in X”)';
-    probValEl.type = 'number'; probValEl.min = '1'; probValEl.step = '1';
+    probValEl.type = 'number'; probValEl.min = '2'; probValEl.max = ''; probValEl.step = '1';
     probValEl.placeholder = 'e.g., 1000000';
   } else if (mode === 'percent') {
-    lab.textContent = 'Enter probability as percentage (%)';
-    probValEl.type = 'number'; probValEl.min = '0.000001'; probValEl.max = '100'; probValEl.step = '0.0001';
+    lab.textContent = 'Enter percentage (%)';
+    probValEl.type = 'number'; probValEl.min = '0.000001'; probValEl.max = '99.999999'; probValEl.step = '0.0001';
     probValEl.placeholder = 'e.g., 0.01';
   } else {
     lab.textContent = 'Enter micromorts (µm)';
-    probValEl.type = 'number'; probValEl.min = '0.0001'; probValEl.step = '0.01';
-    probValEl.placeholder = 'e.g., 1 (one micromort)';
+    probValEl.type = 'number'; probValEl.min = '0.0001'; probValEl.max = '999999.99'; probValEl.step = '0.01';
+    probValEl.placeholder = 'e.g., 1';
   }
 }
-updateLabelsForMode();
 
-function readAndValidate() {
-  err1.textContent = '';
-  let S = Number(sevEl.value);
-  let C = Number(costEl.value);
+function readSlide1(){
+  let S = clamp(Number(sevEl.value), 1, 10);
+  let C = clamp(Number(costEl.value), 1, 10);
+  sevEl.value = S.toFixed(2);
+  costEl.value = C.toFixed(2);
+
   const mode = probModeEl.value;
-  const val = Number(probValEl.value);
+  let v = Number(probValEl.value);
+  // Enforce constraints by clamping to safe edges (prevents invalids)
+  if (mode === 'oneInX') { if (!(v >= 2)) v = 2; }
+  if (mode === 'percent') { if (!(v > 0)) v = 0.000001; if (!(v < 100)) v = 99.999999; }
+  if (mode === 'micromort') { if (!(v > 0)) v = 0.0001; if (!(v < 1e6)) v = 999999.99; }
+  probValEl.value = v;
 
-  // Validate S & C: (1..10], decimals allowed; severity cannot be 0
-  if (!(S > 0)) { err1.textContent = 'Severity must be > 0.'; return null; }
-  S = clamp(S, 1, 10);
-  C = clamp(C, 1, 10);
+  const X = normalizeToX(mode, v);
+  state.S = S; state.C = C; state.probMode = mode; state.probVal = v; state.X_user = X;
 
-  // Probability normalization
-  const X = normalizeToX(mode, val);
-  if (X == null) {
-    err1.textContent = 'Enter a valid probability (must be > 0 and ≤ certainty).';
-    return null;
-  }
-
-  state.S = S; state.C = C; state.probMode = mode; state.probVal = val; state.X_user = X;
-  return { S, C, X };
-}
-
-function computeAndRenderVerdict() {
-  const r = state.S / state.C;
+  const r = S / C;
   const Xc = Xcutoff_from_ratio(r);
 
-  // Outputs (display rounded up conservatively; internal calcs exact)
-  ratioOut.textContent = safeRoundUp(r, 2).toFixed(2);
-  xOut.textContent = Math.round(Xc).toLocaleString();
+  ratioOut.textContent = ceilPlaces(r, 2).toFixed(2);
+  cutoffLabel.textContent = cutoffLabelForMode(mode);
 
-  const { p, m } = convertAllUnitsFromX(Xc);
-  pOut.textContent = safeRoundUp(p, 6);
-  mOut.textContent = safeRoundUp(m, 2);
+  const c = cutoffInUnit(Xc, mode);
+  const cDisp = (mode === 'oneInX') ? Math.round(c).toLocaleString()
+               : (mode === 'percent') ? ceilPlaces(c, 6).toString()
+               : ceilPlaces(c, 2).toString();
+  cutoffOut.textContent = cDisp;
+  ruleLine.textContent = ruleLineForMode(mode);
 
-  // Conservative rule: Act if X_user ≤ X_cutoff
-  if (state.X_user == null) {
-    verdictBox.className = 'verdict no';
-    verdictBox.textContent = 'Enter values to compute';
-    state.lastVerdictAct = null;
-    return;
-  }
-  const act = state.X_user <= Xc + 1e-15; // epsilon
-  verdictBox.className = 'verdict ' + (act ? 'act' : 'no');
-  verdictBox.textContent = act ? 'Verdict: ACT (X ≤ X_cutoff)' : 'Verdict: Don’t act (X > X_cutoff)';
-  state.lastVerdictAct = act;
+  // conservative verdict (on line = Act), used for routing only
+  state.act = (X !== null) ? (X <= Xc + 1e-15) : null;
 }
 
-sevEl.addEventListener('input', () => { if (!readAndValidate()) return; computeAndRenderVerdict(); });
-costEl.addEventListener('input', () => { if (!readAndValidate()) return; computeAndRenderVerdict(); });
-probModeEl.addEventListener('change', () => { updateLabelsForMode(); if (!readAndValidate()) return; computeAndRenderVerdict(); });
-probValEl.addEventListener('input', () => { if (!readAndValidate()) return; computeAndRenderVerdict(); });
+probModeEl.addEventListener('change', ()=>{ setProbInputConstraints(); readSlide1(); });
+sevEl.addEventListener('input', readSlide1);
+costEl.addEventListener('input', readSlide1);
+probValEl.addEventListener('input', readSlide1);
+
+setProbInputConstraints();
+probValEl.value = '1000000';
+readSlide1();
 
 /* =========================
-   3) Shared Panel: Examples
+   Examples toggles
    ========================= */
-const exBtn1 = $('exBtn1');
-const exBtn2 = $('exBtn2');
-const panel1 = $('sharedPanel');
-const panel2 = $('sharedPanel2');
+const exBtn1 = $('exBtn1'), exBtn2 = $('exBtn2');
+const panel1 = $('sharedPanel'), panel2 = $('sharedPanel2');
 
-function toggleExamples(panel, btn) {
-  const open = panel.style.display === 'block' && panel.dataset.mode === 'examples';
-  if (open) {
-    panel.style.display = 'none'; panel.dataset.mode = '';
+function toggleExamples(panel, btn){
+  const open = panel.style.display==='block' && panel.dataset.mode==='examples';
+  if (open){
+    panel.style.display='none'; panel.dataset.mode='';
     btn.textContent = 'Show Examples';
   } else {
     panel.innerHTML = '';
-    const p1 = document.createElement('p'); p1.textContent = 'Examples:';
+    const p = document.createElement('p'); p.textContent = 'Examples:';
     const ul = document.createElement('ul');
-    ['Boiling water for nasal irrigation when risk is micromort-level.',
-     'Replacing a fraying charging cable before it fails.',
-     'Wearing a seatbelt: severe downside, minimal cost.'].forEach(t=>{
-      const li=document.createElement('li'); li.textContent=t; ul.appendChild(li);
-    });
-    panel.appendChild(p1); panel.appendChild(ul);
-    panel.style.display = 'block'; panel.dataset.mode = 'examples';
+    ['Boiling water for nasal irrigation at micromort-level risk.',
+     'Replacing fraying charging cable before failure.',
+     'Wearing a seatbelt: huge severity, minimal cost.'].forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
+    panel.appendChild(p); panel.appendChild(ul);
+    panel.style.display='block'; panel.dataset.mode='examples';
     btn.textContent = 'Hide Examples';
   }
 }
-
 exBtn1.addEventListener('click', ()=>toggleExamples(panel1, exBtn1));
 exBtn2.addEventListener('click', ()=>toggleExamples(panel2, exBtn2));
 
-/* ======================================
-   4) Visualization (graph) — one engine
-   ====================================== */
-const vizBtn1 = $('vizBtn1');
-const vizBtn2 = $('vizBtn2');
+/* =========================
+   Visualization (shared)
+   ========================= */
+const vizBtn1 = $('vizBtn1'), vizBtn2 = $('vizBtn2');
 
-function openVizInto(panel) {
-  const ok = readAndValidate();
-  if (!ok) return;
-
-  // Render container UI with edit inputs above the chart
+function openVizInto(panel){
   panel.innerHTML = '';
-  panel.style.display = 'block'; panel.dataset.mode = 'viz';
+  panel.style.display='block'; panel.dataset.mode='viz';
 
-  // Header edit row (S, C, probability mode + value)
+  // Grayed-out (read-only) mirrors of Slide 1, but unit dropdown is changeable here
   const editRow = document.createElement('div'); editRow.className = 'field-row';
-  const f1 = document.createElement('div'); f1.className = 'field';
-  f1.innerHTML = `<label>Severity (S)</label>
-                  <input id="editS" type="number" min="1" max="10" step="0.01" value="${state.S}">`;
-  const f2 = document.createElement('div'); f2.className = 'field';
-  f2.innerHTML = `<label>Cost (C)</label>
-                  <input id="editC" type="number" min="1" max="10" step="0.01" value="${state.C}">`;
+  const f1 = document.createElement('div'); f1.className='field';
+  f1.innerHTML = `<label>Severity (S) — up to 10</label>
+    <input id="editS" type="number" min="1" max="10" step="0.01" value="${state.S.toFixed(2)}" disabled/>`;
+  const f2 = document.createElement('div'); f2.className='field';
+  f2.innerHTML = `<label>Cost (C) — up to 10</label>
+    <input id="editC" type="number" min="1" max="10" step="0.01" value="${state.C.toFixed(2)}" disabled/>`;
   editRow.appendChild(f1); editRow.appendChild(f2);
 
-  const editRow2 = document.createElement('div'); editRow2.className = 'field-row';
-  const f3 = document.createElement('div'); f3.className = 'field';
+  const editRow2 = document.createElement('div'); editRow2.className='field-row';
+  const f3 = document.createElement('div'); f3.className='field';
   f3.innerHTML = `<label>Probability input mode</label>
     <select id="editMode">
       <option value="oneInX"${state.probMode==='oneInX'?' selected':''}>1 in X</option>
       <option value="percent"${state.probMode==='percent'?' selected':''}>Percentage (%)</option>
       <option value="micromort"${state.probMode==='micromort'?' selected':''}>Micromorts</option>
     </select>`;
-  const f4 = document.createElement('div'); f4.className = 'field';
-  const placeholder = state.probMode==='oneInX'?'e.g., 1000000': (state.probMode==='percent'?'e.g., 0.01':'e.g., 1');
+  const f4 = document.createElement('div'); f4.className='field';
+  let placeholder = state.probMode==='oneInX'?'e.g., 1000000': (state.probMode==='percent'?'e.g., 0.01':'e.g., 1');
   f4.innerHTML = `<label id="editProbLabel">${state.probMode==='oneInX'?'Enter X (for “1 in X”)': state.probMode==='percent'?'Enter percentage (%)':'Enter micromorts (µm)'}</label>
-                  <input id="editProb" type="number" step="0.0001" value="${state.probVal ?? ''}" placeholder="${placeholder}">`;
+    <input id="editProb" type="number" step="0.0001" value="${state.probVal}" placeholder="${placeholder}" disabled/>`;
   editRow2.appendChild(f3); editRow2.appendChild(f4);
 
   panel.appendChild(editRow);
   panel.appendChild(editRow2);
 
-  // Chart scaffold
+  /* Chart scaffold */
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.setAttribute('viewBox','0 0 900 560');
   panel.appendChild(svg);
 
-  // Axes groups
   const axesG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(axesG);
   const shadeIn = document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','shade-in'); svg.appendChild(shadeIn);
   const shadeOut= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeOut.setAttribute('class','shade-out'); svg.appendChild(shadeOut);
   const curve = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','curve'); svg.appendChild(curve);
-  const hLine = document.createElementNS('http://www.w3.org/2000/svg','line'); hLine.setAttribute('stroke','#999'); hLine.setAttribute('stroke-dasharray','5,5'); svg.appendChild(hLine);
-  const vLine = document.createElementNS('http://www.w3.org/2000/svg','line'); vLine.setAttribute('stroke','#999'); vLine.setAttribute('stroke-dasharray','5,5'); svg.appendChild(vLine);
-  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','handle'); handle.setAttribute('r','6'); svg.appendChild(handle);
+  const hLine = document.createElementNS('http://www.w3.org/2000/svg','line'); hLine.setAttribute('stroke','var(--line)'); hLine.setAttribute('stroke-dasharray','5,5'); svg.appendChild(hLine);
+  const vLine = document.createElementNS('http://www.w3.org/2000/svg','line'); vLine.setAttribute('stroke','var(--line)'); vLine.setAttribute('stroke-dasharray','5,5'); svg.appendChild(vLine);
+  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','handle'); handle.setAttribute('r','9'); svg.appendChild(handle);
+
   const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(labelG);
-  const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','6'); labelBg.setAttribute('ry','6'); labelG.appendChild(labelBg);
+  const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','8'); labelBg.setAttribute('ry','8'); labelG.appendChild(labelBg);
   const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','ptlabel'); labelG.appendChild(labelTx);
 
-  // Scales
+  /* Scales */
   const pad = { left:70, right:20, top:20, bottom:60 };
   const W=900, H=560, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   const rMin=1, rMax=10, yMin=1, yMax=1e6;
 
   const rToPx = (r)=> pad.left + (r-rMin)/(rMax-rMin)*plotW;
   const yToPx = (y)=> pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin)));
-  const pxToR = (px)=> rMin + (px-pad.left)/plotW*(rMax-rMin);
+  const pxToR = (px)=> clamp(rMin + (px-pad.left)/plotW*(rMax-rMin), rMin, rMax);
 
-  // Axes (vertical grid + labels; y labels only)
+  /* Axes */
   for (let r=1;r<=10;r++){
     const x=rToPx(r);
     const l=document.createElementNS('http://www.w3.org/2000/svg','line');
@@ -428,76 +407,70 @@ function openVizInto(panel) {
   }
   buildCurve();
 
-  // current editable values (separate from global state while panel is open)
+  // local working copies
   let eS = state.S, eC = state.C, eMode = state.probMode, eVal = state.probVal, eX = state.X_user;
 
-  const editS = $('editS'), editC = $('editC'), editMode = $('editMode'), editProb = $('editProb');
+  const editMode = $('editMode');
+  const editProb = $('editProb');
+  const editProbLabel = $('editProbLabel');
 
-  function refreshEditInputsPlaceholders() {
-    const lbl = $('editProbLabel');
-    if (eMode==='oneInX'){ lbl.textContent='Enter X (for “1 in X”)'; editProb.placeholder='e.g., 1000000'; editProb.step='1'; }
-    else if (eMode==='percent'){ lbl.textContent='Enter percentage (%)'; editProb.placeholder='e.g., 0.01'; editProb.step='0.0001'; }
-    else { lbl.textContent='Enter micromorts (µm)'; editProb.placeholder='e.g., 1'; editProb.step='0.01'; }
+  function refreshEditHeader(){
+    // mirror slide 1, read-only values are already set; only mode can change
+    if (eMode==='oneInX'){ editProbLabel.textContent='Enter X (for “1 in X”)'; }
+    else if (eMode==='percent'){ editProbLabel.textContent='Enter percentage (%)'; }
+    else { editProbLabel.textContent='Enter micromorts (µm)'; }
   }
 
-  function updateFromEdits() {
-    // clamp S,C for safety
-    eS = clamp(Number(editS.value), 1, 10);
-    eC = clamp(Number(editC.value), 1, 10);
-    editS.value = eS.toFixed(2);
-    editC.value = eC.toFixed(2);
+  function updateViz(){
+    // compute cutoffs and markers
+    const r = eS / eC;
+    const Xc = Xcutoff_from_ratio(r);
 
-    eMode = editMode.value;
-    eVal = Number(editProb.value);
-
-    const Xnorm = normalizeToX(eMode, eVal);
-    if (Xnorm == null) {
-      // hide markers but keep curve visible
-      hLine.setAttribute('visibility','hidden');
-      vLine.setAttribute('visibility','hidden');
-      handle.setAttribute('visibility','hidden');
-      labelG.setAttribute('visibility','hidden');
-      return;
-    }
-    eX = Xnorm;
-
-    // horizontal user probability line at eX
+    // horizontal at user X
     const hy = yToPx(eX);
     hLine.setAttribute('x1', rToPx(1)); hLine.setAttribute('x2', rToPx(10));
     hLine.setAttribute('y1', hy); hLine.setAttribute('y2', hy);
-    hLine.setAttribute('visibility','visible');
 
-    // vertical (S/C)_cutoff where eX intersects curve
-    const rCut = 1 + 9 * Math.pow( (Math.log10(eX)/6), 1/ALPHA );
-    const rClamped = clamp(rCut, 1, 10);
-    const vx = rToPx(rClamped);
+    // vertical at (S/C)_cutoff for eX
+    const rCut = 1 + 9 * Math.pow((Math.log10(eX)/6), 1/ALPHA);
+    const vx = rToPx(clamp(rCut, 1, 10));
     vLine.setAttribute('x1', vx); vLine.setAttribute('x2', vx);
     vLine.setAttribute('y1', yToPx(yMin)); vLine.setAttribute('y2', yToPx(yMax));
-    vLine.setAttribute('visibility','visible');
 
-    // handle sits at current S/C point on the curve (not at intersection)
-    const r = eS / eC;
-    const Xc = Xcutoff_from_ratio(r);
+    // handle at (r, Xc)
     const cx = rToPx(r), cy = yToPx(Xc);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
-    handle.setAttribute('visibility','visible');
 
-    // label beneath point
-    const txt = `S=${eS.toFixed(2)}, C=${eC.toFixed(2)}  ·  S/C=${(r).toFixed(3)}  ·  X≈${Math.round(Xc).toLocaleString()}`;
-    labelTx.textContent = txt;
-    const offsetY = 18;
-    labelTx.setAttribute('x', cx); labelTx.setAttribute('y', cy + offsetY); labelTx.setAttribute('text-anchor','middle');
+    // label box — ALWAYS ABOVE the curve, with padding; keep inside top bound
+    const label = `S=${eS.toFixed(2)}, C=${eC.toFixed(2)}  ·  S/C=${r.toFixed(3)}  ·  ${
+      (function(){
+        if (eMode==='percent') return 'Cutoff≈'+ceilPlaces(100/Xc,6)+'%';
+        if (eMode==='micromort') return 'Cutoff≈'+ceilPlaces(1e6/Xc,2)+' µm';
+        return 'Cutoff≈'+Math.round(Xc).toLocaleString();
+      })()
+    }`;
+    labelTx.textContent = label;
+    labelTx.setAttribute('text-anchor','middle');
+    const offsetY = 28; // large gap for readability
+    let ly = cy - offsetY;
+    const minTop = pad.top + 18;
+    if (ly < minTop) ly = minTop;
+    labelTx.setAttribute('x', cx);
+    labelTx.setAttribute('y', ly);
+
     const bb = labelTx.getBBox();
-    labelBg.setAttribute('x', bb.x - 6); labelBg.setAttribute('y', bb.y - 3);
-    labelBg.setAttribute('width', bb.width + 12); labelBg.setAttribute('height', bb.height + 6);
+    const padBox = 8;
+    labelBg.setAttribute('x', bb.x - padBox);
+    labelBg.setAttribute('y', bb.y - padBox);
+    labelBg.setAttribute('width', bb.width + 2*padBox);
+    labelBg.setAttribute('height', bb.height + 2*padBox);
 
-    // also push display stats & main verdict (use exact values internally)
-    state.S = eS; state.C = eC; state.probMode = eMode; state.probVal = eVal; state.X_user = eX;
-    computeAndRenderVerdict();
+    // also keep Slide 1 stats synced (read-only there)
+    // (We don’t rewrite Slide 1 unit here; user sees it when closing panel.)
   }
 
-  // dragging adjusts ratio while holding C (default) to keep UX simple
-  let dragging = false;
+  // dragging: change ratio by moving handle horizontally while holding C constant
+  let dragging=false;
   function onPointerDown(e){ dragging=true; svg.setPointerCapture(e.pointerId||1); onPointerMove(e); }
   function onPointerMove(e){
     if(!dragging) return;
@@ -505,11 +478,12 @@ function openVizInto(panel) {
     const sp = pt.matrixTransform(svg.getScreenCTM().inverse());
     const px = clamp(sp.x, pad.left, pad.left+plotW);
     const r = pxToR(px);
-    // hold C constant; update S
-    eC = clamp(Number(editC.value), 1, 10);
+    // hold C; update S, clamp within 1..10
+    eC = clamp(state.C, 1, 10);
     eS = clamp(r * eC, 1, 10);
-    editS.value = eS.toFixed(2);
-    updateFromEdits();
+    // reflect into the grayed inputs visually
+    const es = document.getElementById('editS'); if (es) es.value = eS.toFixed(2);
+    updateViz();
   }
   function onPointerUp(){ dragging=false; }
 
@@ -517,20 +491,25 @@ function openVizInto(panel) {
   svg.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
 
-  editS.addEventListener('input', updateFromEdits);
-  editC.addEventListener('input', updateFromEdits);
-  editMode.addEventListener('change', () => { refreshEditInputsPlaceholders(); updateFromEdits(); });
-  editProb.addEventListener('input', updateFromEdits);
+  // allow changing display unit in viz; does not change data
+  editMode.addEventListener('change', ()=>{
+    eMode = editMode.value;
+    refreshEditHeader();
+    updateViz();
+  });
 
-  refreshEditInputsPlaceholders();
-  updateFromEdits();
+  refreshEditHeader();
+  updateViz();
 }
 
+const panel1 = $('sharedPanel');
 vizBtn1.addEventListener('click', ()=>{
   const open = panel1.style.display==='block' && panel1.dataset.mode==='viz';
   if (open){ panel1.style.display='none'; panel1.dataset.mode=''; vizBtn1.textContent='Show Calculation Visualization'; }
   else { openVizInto(panel1); vizBtn1.textContent='Hide Calculation Visualization'; }
 });
+
+const panel2 = $('sharedPanel2');
 vizBtn2.addEventListener('click', ()=>{
   const open = panel2.style.display==='block' && panel2.dataset.mode==='viz';
   if (open){ panel2.style.display='none'; panel2.dataset.mode=''; vizBtn2.textContent='Show Calculation Reasoning'; }
@@ -538,51 +517,32 @@ vizBtn2.addEventListener('click', ()=>{
 });
 
 /* =========================
-   5) Continue → routing
+   Continue → route silently
    ========================= */
 const continueBtn = $('continueBtn');
-const mini1 = $('mini1'), mini2 = $('mini2'), mini3 = $('mini3'), miniTag = $('miniStepTag');
+const mini1 = $('mini1'), mini2 = $('mini2'), mini3 = $('mini3');
+const miniTag = $('miniStepTag');
+const btnRow1 = $('btnRow1');
+const btnRow2 = $('btnRow2');
 
 continueBtn.addEventListener('click', ()=>{
-  const ok = readAndValidate(); if (!ok) return computeAndRenderVerdict();
-  computeAndRenderVerdict();
-  // Route by conservative verdict
-  if (state.lastVerdictAct === true) {
-    // Act → Mini Slide 3 (Done)
+  // compute verdict silently using exact values (conservative)
+  const r = state.S / state.C;
+  const Xc = Xcutoff_from_ratio(r);
+  const act = (state.X_user !== null) ? (state.X_user <= Xc + 1e-15) : null;
+
+  if (act) {
+    // Act → Slide 3
     mini1.style.display='none'; mini2.style.display='none'; mini3.style.display='block';
     miniTag.textContent='Step 3 of 3';
-    continueBtn.style.display='none'; // end of mini flow
+    btnRow1.style.display='none'; btnRow2.style.display='none';
   } else {
-    // Don’t act → Mini Slide 2
+    // Don’t → Slide 2
     mini1.style.display='none'; mini2.style.display='block'; mini3.style.display='none';
     miniTag.textContent='Step 2 of 3';
-    // Continue from slide 2 just returns to slide 1 for now
-    continueBtn.textContent='Back to Slide 1';
-    continueBtn.onclick = ()=>{
-      mini1.style.display='block'; mini2.style.display='none'; mini3.style.display='none';
-      miniTag.textContent='Step 1 of 3';
-      continueBtn.textContent='Continue';
-      // restore default handler
-      continueBtn.onclick = null;
-      continueBtn.addEventListener('click', ()=>{}); // noop (listener already set earlier)
-      // Rebind primary handler
-      continueBtn.addEventListener('click', continueHandlerOnce, { once:true });
-    };
+    btnRow1.style.display='none'; btnRow2.style.display='flex';
   }
 });
-
-// Rebind-friendly continue (so the “Back to Slide 1” replacement above works cleanly)
-function continueHandlerOnce(){}
-
-/* Initialize from defaults */
-(function init(){
-  // set defaults for probability box
-  $('probMode').value = state.probMode;
-  updateLabelsForMode();
-  // prefill a safe example X so users see a verdict path quickly
-  $('probVal').value = '1000000';
-  if (readAndValidate()) computeAndRenderVerdict();
-})();
 </script>
 </body>
 </html>
