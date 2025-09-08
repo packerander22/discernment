@@ -10,24 +10,32 @@
     --bg:#f7f7f7; --card:#ffffff; --text:#111; --subtle:#333; --border:#ddd; --shadow:0 2px 6px rgba(0,0,0,.1);
     --btn-yes:#4CAF50; --btn-no:#F44336; --btn-next:#2196F3; --btn-muted:#9E9E9E; --btn-text:#fff;
     --panel:#fafafa;
-    --axis:#777;
-    --grid: #dcdcdc;
+
+    /* chart theme (light) */
+    --axis:#666;
+    --grid:#e3e3e3;
     --curve:#1f4cff;
     --shade-in:#6cbf6c22;
     --shade-out:#c7c7c733;
     --handle:#ff3b3b;
+    --label-bg: var(--card);
+    --label-stroke: var(--border);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg:#0f1115; --card:#171a21; --text:#e9edf1; --subtle:#c7cbd2; --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,.35);
       --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-next:#42A5F5; --btn-muted:#6c6f76; --btn-text:#fff;
       --panel: color-mix(in oklab, #171a21, #0f1115 8%);
+
+      /* chart theme (dark) */
       --axis:#aab2bf;
       --grid: color-mix(in oklab, #aab2bf, transparent 70%);
       --curve:#6aa8ff;
       --shade-in: color-mix(in oklab, #6cbf6c, transparent 85%);
       --shade-out: color-mix(in oklab, #c7c7c7, transparent 80%);
       --handle:#ff6a6a;
+      --label-bg: var(--card);
+      --label-stroke: var(--border);
     }
   }
 
@@ -53,18 +61,20 @@
   .statline{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
   .pill{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:color-mix(in oklab, var(--card), var(--bg) 8%)}
   .rule{font-weight:700;margin-top:6px}
+  .verdict{margin-top:6px}
+
   .badgelike{display:inline-block;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:color-mix(in oklab, var(--card), var(--bg) 8%)}
 
   /* chart */
   svg{width:100%;height:auto;display:block;touch-action:none}
   .axis text{font-size:12px;fill:var(--axis)}
-  .grid { stroke: var(--grid); stroke-width:1; }
+  .grid { stroke: var(--grid); stroke-width:.8; }
   .curve{fill:none;stroke:var(--curve);stroke-width:2.5}
   .shade-in{fill:var(--shade-in)}
   .shade-out{fill:var(--shade-out)}
   .handle{fill:var(--handle);stroke:#fff;stroke-width:2;cursor:pointer;touch-action:none}
   .ptlabel{font-size:15px;font-weight:700;pointer-events:none; fill: var(--text);}
-  .ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
+  .ptlabel-bg{fill:var(--label-bg);fill-opacity:.98;stroke:var(--label-stroke)}
 </style>
 </head>
 <body>
@@ -120,12 +130,13 @@
         <div id="sharedPanel" class="panel" aria-hidden="true"></div>
 
         <div class="statline">
-          <div class="pill"><span id="cutoffLabel">Cutoff (X)</span>: <span id="cutoffOut">1,000,000</span></div>
-          <div class="pill">S/C Cutoff: <span id="ratioCutOut">1.00</span></div>
+          <div class="pill"><span id="probCutLbl">Probability Cutoff</span>: <span id="cutoffOut">1,000,000</span></div>
+          <div class="pill">S/C Cutoff: <span id="ratioCutOut">5.00</span></div>
         </div>
         <div class="rule" id="ruleLine">
           Rule: Only if <span id="probRuleName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.
         </div>
+        <div class="verdict" id="verdictLine">Action should be considered.</div>
       </div>
 
       <!-- SLIDE 2 (Don’t act path) -->
@@ -165,19 +176,26 @@
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
-  /* ============ Helpers & math ============ */
+  /* =========================
+     Utilities & Core Formula
+     ========================= */
   const $ = id => document.getElementById(id);
+
   const EPS = 1e-9;
   const MAX_SC = 10;
 
   const state = { S:5, C:1, probMode:'oneInX', probVal:1000000, X_user:1000000, act:null };
+
+  // alpha from calibration (~0.486…)
   const ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
 
-  const Xcutoff_from_ratio = (r) => {
+  function Xcutoff_from_ratio(r) {
     const t = Math.max(0, Math.min(1, (r - 1) / 9));
     return Math.pow(10, 6 * Math.pow(t, ALPHA));
-  };
-  const computeSCutoffForX = (X) => 1 + 9 * Math.pow(Math.log10(X)/6, 1/ALPHA);
+  }
+  function computeSCutoffForX(X) {
+    return 1 + 9 * Math.pow(Math.log10(X)/6, 1/ALPHA);
+  }
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const ceilPlaces = (x,p=2)=>{ const f=10**p; return Math.ceil(x*f)/f; };
 
@@ -193,11 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return Xc;
   }
   const cutoffLabelForMode = (mode) =>
-    mode==='percent' ? 'Cutoff (%)' : (mode==='micromort' ? 'Cutoff (µm)' : 'Cutoff (X)');
+    mode==='percent' ? 'Probability Cutoff (%)' : (mode==='micromort' ? 'Probability Cutoff (µm)' : 'Probability Cutoff (X)');
   const probRuleName = (mode) =>
     mode==='percent' ? '%' : (mode==='micromort' ? 'µm' : 'X');
 
-  /* Move S and C together to nearest point on S=rC (least-squares) */
+  /* Move S and C together to nearest point on the line S = r*C (least-squares) */
   function chooseSCFromRatio(r, S0, C0){
     let C = (r * S0 + C0) / (r*r + 1);
     let S = r * C;
@@ -208,17 +226,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return { S: clamp(S, EPS, MAX_SC), C: clamp(C, EPS, MAX_SC) };
   }
 
-  /* ============ DOM refs ============ */
+  /* =========================
+     DOM refs
+     ========================= */
   const sevEl = $('sev'), costEl = $('cost'), probModeEl = $('probMode'), probValEl = $('probVal');
-  const cutoffLabel = $('cutoffLabel'), cutoffOut = $('cutoffOut'), ratioCutOut = $('ratioCutOut'), probRuleNameEl = $('probRuleName');
+  const cutoffOut = $('cutoffOut'), ratioCutOut = $('ratioCutOut'), probRuleNameEl = $('probRuleName'), probCutLbl = $('probCutLbl');
+  const verdictLine = $('verdictLine');
+
   const exBtn1 = $('exBtn1'), exBtn2 = $('exBtn2');
   const vizBtn1 = $('vizBtn1'), vizBtn2 = $('vizBtn2');
   const panel1 = $('sharedPanel'), panel2 = $('sharedPanel2');
+
   const continueBtn = $('continueBtn');
   const mini1 = $('mini1'), mini2 = $('mini2'), mini3 = $('mini3');
   const miniTag = $('miniStepTag'), btnRow1=$('btnRow1'), btnRow2=$('btnRow2');
 
-  /* ============ Inputs ============ */
+  /* =========================
+     Inputs & state commits
+     ========================= */
   function setProbInputConstraints(){
     const mode = probModeEl.value;
     const lab = $('probLabel');
@@ -226,6 +251,34 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (mode==='percent'){ lab.textContent='Enter percentage (%)'; probValEl.type='number'; probValEl.min='0.000001'; probValEl.max='99.999999'; probValEl.step='0.0001'; probValEl.placeholder='e.g., 0.01'; }
     else { lab.textContent='Enter micromorts (µm)'; probValEl.type='number'; probValEl.min='0.0001'; probValEl.max='999999.99'; probValEl.step='0.01'; probValEl.placeholder='e.g., 1'; }
     probRuleNameEl.textContent = probRuleName(mode);
+    probCutLbl.textContent = cutoffLabelForMode(mode);
+  }
+
+  function updateReadoutsAndVerdict(){
+    const r = state.S / state.C;
+    const Xc_prob = Xcutoff_from_ratio(r);             // Probability cutoff (depends on S/C)
+    const rCut = computeSCutoffForX(state.X_user ?? 2); // S/C cutoff (depends on probability)
+
+    // probability cutoff display (unit-aware)
+    const mode = state.probMode;
+    const cProb = cutoffInUnit(Xc_prob, mode);
+    cutoffOut.textContent = (mode==='oneInX') ? Math.round(cProb).toLocaleString()
+                       : (mode==='percent' ? ceilPlaces(cProb,6) : ceilPlaces(cProb,2));
+    ratioCutOut.textContent = rCut.toFixed(2);
+
+    // decision (both must be true)
+    const cond1 = (state.X_user != null) ? (state.X_user <= Xc_prob + 1e-15) : false;
+    const cond2 = r >= rCut - 1e-15;
+    const shouldAct = cond1 && cond2;
+    verdictLine.textContent = shouldAct ? 'Action should be considered.' : 'Action should not be considered.';
+    state.act = shouldAct;
+
+    // If Slide-1 viz is open, sync its drawing
+    if (panel1 && panel1.style.display==='block' &&
+        panel1.dataset.mode==='viz' &&
+        typeof window.__updateVizShared==='function') {
+      window.__updateVizShared();
+    }
   }
 
   function commitInputs() {
@@ -237,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const mode = probModeEl.value;
     let pv = parseFloat(probValEl.value);
     if (!isFinite(pv)) pv = state.probVal;
-
     if (mode==='oneInX'    && pv < 2)     pv = 2;
     if (mode==='percent')  { if (pv<=0) pv=0.000001; if (pv>=100) pv=99.999999; }
     if (mode==='micromort'){ if (pv<=0) pv=0.0001;   if (pv>=1e6) pv=999999.99; }
@@ -247,44 +299,24 @@ document.addEventListener('DOMContentLoaded', () => {
     probValEl.value = pv;
 
     state.S=S; state.C=C; state.probMode=mode; state.probVal=pv; state.X_user = normalizeToX(mode, pv);
-    updateStatsAndMaybeViz();
+    updateReadoutsAndVerdict();
   }
 
-  function updateStatsAndMaybeViz(){
-    const r = state.S / state.C;
-    const Xc = Xcutoff_from_ratio(r);
-    const mode = state.probMode;
-
-    cutoffLabel.textContent = cutoffLabelForMode(mode);
-    probRuleNameEl.textContent = probRuleName(mode);
-
-    const cProb = cutoffInUnit(Xc, mode);
-    cutoffOut.textContent = (mode==='oneInX') ? Math.round(cProb).toLocaleString()
-                       : (mode==='percent' ? ceilPlaces(cProb,6) : ceilPlaces(cProb,2));
-
-    const Xu = state.X_user ?? 2;
-    const rCut = computeSCutoffForX(Xu);
-    ratioCutOut.textContent = rCut.toFixed(2);
-
-    state.act = (state.X_user != null) ? (state.X_user <= Xc + 1e-15) : null;
-
-    if (panel1 && panel1.style.display==='block' &&
-        panel1.dataset.mode==='viz' &&
-        typeof window.__updateVizShared==='function') {
-      window.__updateVizShared();
-    }
-  }
-
-  if (sevEl) { sevEl.addEventListener('change', commitInputs); sevEl.addEventListener('blur', commitInputs); }
-  if (costEl){ costEl.addEventListener('change', commitInputs); costEl.addEventListener('blur', commitInputs); }
-  if (probModeEl){ probModeEl.addEventListener('change', ()=>{ setProbInputConstraints(); commitInputs(); }); }
-  if (probValEl){ probValEl.addEventListener('change', commitInputs); probValEl.addEventListener('blur', commitInputs); }
+  sevEl.addEventListener('change', commitInputs);
+  sevEl.addEventListener('blur', commitInputs);
+  costEl.addEventListener('change', commitInputs);
+  costEl.addEventListener('blur', commitInputs);
+  probModeEl.addEventListener('change', ()=>{ setProbInputConstraints(); commitInputs(); });
+  probValEl.addEventListener('change', commitInputs);
+  probValEl.addEventListener('blur', commitInputs);
 
   setProbInputConstraints();
-  if (probValEl) probValEl.value='1000000';
+  probValEl.value='1000000';
   commitInputs();
 
-  /* ============ Examples toggles ============ */
+  /* =========================
+     Examples toggles
+     ========================= */
   function toggleExamples(panel, btn){
     const open = panel.style.display==='block' && panel.dataset.mode==='examples';
     if (open){
@@ -302,34 +334,46 @@ document.addEventListener('DOMContentLoaded', () => {
       panel.style.display='block'; panel.dataset.mode='examples'; btn.textContent='Hide Examples';
     }
   }
-  if (exBtn1 && panel1) exBtn1.addEventListener('click', ()=>toggleExamples(panel1, exBtn1));
-  if (exBtn2 && panel2) exBtn2.addEventListener('click', ()=>toggleExamples(panel2, exBtn2));
+  $('exBtn1').addEventListener('click', ()=>toggleExamples(panel1, $('exBtn1')));
+  $('exBtn2').addEventListener('click', ()=>toggleExamples(panel2, $('exBtn2')));
 
-  /* ============ Visualization ============ */
-  function openVizInto(panel, withMirrors){
+  /* =========================
+     Visualization (shared)
+     =========================
+     mutateGlobal = true  → Slide-1: dragging changes S/C globally + inputs
+     mutateGlobal = false → Slide-2: dragging only changes local mirrors; does NOT touch global state
+  */
+  function openVizInto(panel, withMirrors, mutateGlobal){
     panel.innerHTML = '';
     panel.style.display='block'; panel.dataset.mode='viz';
 
+    // Local mirrors for this panel
+    let eMode = state.probMode;
+    let eS = state.S, eC = state.C;
+    let eX = state.X_user;
+
+    // Optional mirrors row (greyed out on slide 2)
     if (withMirrors){
       const row = document.createElement('div'); row.className='field-row';
       row.innerHTML =
-        `<div class="field"><label>Severity (S)</label><input id="editS" type="number" value="${state.S}" disabled/></div>
-         <div class="field"><label>Cost (C)</label><input id="editC" type="number" value="${state.C}" disabled/></div>`;
+        `<div class="field"><label>Severity (S)</label><input id="editS" type="number" value="${eS}" disabled/></div>
+         <div class="field"><label>Cost (C)</label><input id="editC" type="number" value="${eC}" disabled/></div>`;
       const row2 = document.createElement('div'); row2.className='field-row';
-      const label = (state.probMode==='oneInX'?'Enter X (for “1 in X”)': state.probMode==='percent'?'Enter percentage (%)':'Enter micromorts (µm)');
+      const label = (eMode==='oneInX'?'Enter X (for “1 in X”)': eMode==='percent'?'Enter percentage (%)':'Enter micromorts (µm)');
       row2.innerHTML =
         `<div class="field"><label>Probability input mode</label>
           <select id="editMode" disabled>
-            <option value="oneInX"${state.probMode==='oneInX'?' selected':''}>1 in X</option>
-            <option value="percent"${state.probMode==='percent'?' selected':''}>Percentage (%)</option>
-            <option value="micromort"${state.probMode==='micromort'?' selected':''}>Micromorts</option>
+            <option value="oneInX"${eMode==='oneInX'?' selected':''}>1 in X</option>
+            <option value="percent"${eMode==='percent'?' selected':''}>Percentage (%)</option>
+            <option value="micromort"${eMode==='micromort'?' selected':''}>Micromorts</option>
           </select></div>
-         <div class="field"><label id="editProbLabel">${label}</label><input id="editProb" type="number" value="${state.probVal}" disabled/></div>`;
+         <div class="field"><label id="editProbLabel">${label}</label><input id="editProb" type="number" value="${(state.probVal)}" disabled/></div>`;
       panel.appendChild(row); panel.appendChild(row2);
     }
 
+    // SVG scaffold (extra padding for label spacing)
     const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-    svg.setAttribute('viewBox','0 0 940 640');
+    svg.setAttribute('viewBox','0 0 980 700');
     svg.style.touchAction='none';
     panel.appendChild(svg);
 
@@ -346,8 +390,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
     const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','ptlabel'); labelG.appendChild(labelTx);
 
-    const pad = { left:96, right:30, top:36, bottom:100 };
-    const W=940, H=640, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
+    // generous plot padding for label/number spacing
+    const pad = { left:120, right:40, top:48, bottom:120 };
+    const W=980, H=700, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
     const rMin=1, rMax=10;
 
     function getYRange(mode){
@@ -361,6 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function drawAxes(mode){
       axesG.innerHTML=''; gridG.innerHTML='';
+      // vertical grid + x ticks
       for (let r=1;r<=10;r++){
         const x=rToPx(r);
         const gl=document.createElementNS('http://www.w3.org/2000/svg','line');
@@ -368,10 +414,11 @@ document.addEventListener('DOMContentLoaded', () => {
         gridG.appendChild(gl);
 
         const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
-        tx.setAttribute('x',x); tx.setAttribute('y',H-64);
+        tx.setAttribute('x',x); tx.setAttribute('y',H-78);
         tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','axis');
         tx.textContent=r; axesG.appendChild(tx);
       }
+      // horizontal grid + y ticks
       const {yMin,yMax,ticks,label} = getYRange(mode);
       ticks.forEach(y=>{
         const py = yToPx(y,yMin,yMax);
@@ -380,27 +427,32 @@ document.addEventListener('DOMContentLoaded', () => {
         gridG.appendChild(gl);
 
         const ty=document.createElementNS('http://www.w3.org/2000/svg','text');
-        ty.setAttribute('x',20); ty.setAttribute('y',py+5); ty.setAttribute('class','axis');
+        ty.setAttribute('x',36);
+        ty.setAttribute('y',py+5); ty.setAttribute('class','axis');
         ty.textContent = (mode==='percent' ? (y>=1?y.toString():y.toExponential(1)) : y.toLocaleString());
         axesG.appendChild(ty);
       });
 
+      // axis labels with extra spacing
       const xlab=document.createElementNS('http://www.w3.org/2000/svg','text');
-      xlab.setAttribute('x', pad.left+plotW/2); xlab.setAttribute('y', H-24);
+      xlab.setAttribute('x', pad.left+plotW/2);
+      xlab.setAttribute('y', H-28);
       xlab.setAttribute('text-anchor','middle'); xlab.setAttribute('class','axis');
-      xlab.textContent="Severity / Cost Ratio (S / C)"; axesG.appendChild(xlab);
+      xlab.textContent="Severity / Cost Ratio (S / C)";
+      axesG.appendChild(xlab);
 
       const ylab=document.createElementNS('http://www.w3.org/2000/svg','text');
-      ylab.setAttribute('transform',`translate(28 ${pad.top+plotH/2}) rotate(-90)`);
+      ylab.setAttribute('transform',`translate(56 ${pad.top+plotH/2}) rotate(-90)`);
       ylab.setAttribute('text-anchor','middle'); ylab.setAttribute('class','axis');
-      ylab.textContent=label; axesG.appendChild(ylab);
+      ylab.textContent=label;
+      axesG.appendChild(ylab);
     }
 
     function XtoYUnit(X,mode){ return (mode==='percent') ? (100/X) : (mode==='micromort' ? (1e6/X) : X); }
 
     function buildCurve(mode){
       const {yMin,yMax} = getYRange(mode);
-      const N=800, pts=[];
+      const N=900, pts=[];
       for(let i=0;i<=N;i++){
         const r = 1 + 9*(i/N);
         const X = Xcutoff_from_ratio(r);
@@ -409,13 +461,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const d = pts.map(([x,y],i)=> (i?`L ${x},${y}`:`M ${x},${y}`)).join(' ');
       curve.setAttribute('d', d);
-      shadeIn.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(yMin, yMin, yMax)} L ${rToPx(1)},${yToPx(yMin, yMin, yMax)} Z`);
-      shadeOut.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(yMax, yMin, yMax)} L ${rToPx(1)},${yToPx(yMax, yMin, yMax)} Z`);
+      shadeIn.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(getYRange(mode).yMin, getYRange(mode).yMin, getYRange(mode).yMax)} L ${rToPx(1)},${yToPx(getYRange(mode).yMin, getYRange(mode).yMin, getYRange(mode).yMax)} Z`);
+      shadeOut.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(getYRange(mode).yMax, getYRange(mode).yMin, getYRange(mode).yMax)} L ${rToPx(1)},${yToPx(getYRange(mode).yMax, getYRange(mode).yMin, getYRange(mode).yMax)} Z`);
     }
-
-    let eMode = state.probMode;
-    let eS = state.S, eC = state.C;
-    let eX = state.X_user;
 
     function updateVizCore(){
       const {yMin,yMax} = getYRange(eMode);
@@ -428,23 +476,35 @@ document.addEventListener('DOMContentLoaded', () => {
       const cx = rToPx(clamp(r,1,10)); const cy = yToPx(Yc, yMin, yMax);
       handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
+      // Draggable label on top (no “Cutoff” word; shows X≈…)
       const label = `S=${eS.toFixed(2)} , C=${eC.toFixed(2)}  ·  S/C=${(r).toFixed(3)}  ·  X≈${
         (eMode==='percent' ? (ceilPlaces(100/Xc,6)+'%') : (eMode==='micromort' ? (ceilPlaces(1e6/Xc,2)+' µm') : Math.round(Xc).toLocaleString()))
       }`;
       labelTx.textContent=label; labelTx.setAttribute('text-anchor','middle');
-      const offsetY=36; let ly = cy - offsetY; const minTop=pad.top + 22; if (ly<minTop) ly=minTop;
+      const offsetY=40; let ly = cy - offsetY; const minTop=pad.top + 26; if (ly<minTop) ly=minTop;
       labelTx.setAttribute('x', cx); labelTx.setAttribute('y', ly);
       const bb = labelTx.getBBox(); const padBox=10;
       labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
       labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
-      $('cutoffLabel').textContent = cutoffLabelForMode(eMode);
-      $('cutoffOut').textContent = (eMode==='oneInX') ? Math.round(Xc).toLocaleString() : (eMode==='percent' ? ceilPlaces(100/Xc,6) : ceilPlaces(1e6/Xc,2));
-      const rCut = computeSCutoffForX(state.X_user ?? 2);
-      $('ratioCutOut').textContent = rCut.toFixed(2);
-      $('probRuleName').textContent = probRuleName(eMode);
+      // If this is the Slide-2 viz with mirrors, keep them updated live
+      if (withMirrors){
+        const eSInp = panel.querySelector('#editS');
+        const eCInp = panel.querySelector('#editC');
+        if (eSInp) eSInp.value = eS.toFixed(2);
+        if (eCInp) eCInp.value = eC.toFixed(2);
+        const eProb = panel.querySelector('#editProb');
+        if (eProb) eProb.value = (state.probVal);
+      }
+
+      // If this is Slide-1 viz (mutateGlobal), reflect live cutoffs in statline below
+      if (mutateGlobal){
+        // update statline via global update function
+        updateReadoutsAndVerdict();
+      }
     }
 
+    // Dragging (mobile-safe)
     let dragging=false;
     function onPointerDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){} onPointerMove(e); }
     function onPointerMove(e){
@@ -454,13 +514,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const px = clamp(sp.x, pad.left, pad.left+plotW);
       const r = pxToR(px);
 
-      const chosen = chooseSCFromRatio(r, state.S, state.C);
+      const chosen = chooseSCFromRatio(r, mutateGlobal ? state.S : eS, mutateGlobal ? state.C : eC);
       eS = chosen.S; eC = chosen.C;
 
-      state.S = eS; state.C = eC;
-      $('sev').value = eS; $('cost').value = eC;
-
-      updateVizCore(); updateStatsAndMaybeViz();
+      if (mutateGlobal){
+        // push back to global + inputs
+        state.S = eS; state.C = eC;
+        $('sev').value = eS; $('cost').value = eC;
+      }
+      updateVizCore();
     }
     function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
 
@@ -468,46 +530,50 @@ document.addEventListener('DOMContentLoaded', () => {
     svg.addEventListener('pointermove', onPointerMove, {passive:false});
     window.addEventListener('pointerup', onPointerUp, {passive:false});
 
-    window.__updateVizShared = function(){
-      eMode = state.probMode; eS = state.S; eC = state.C; eX = state.X_user;
-      updateVizCore();
-    };
+    // Keep Slide-1 viz in sync when inputs change
+    if (mutateGlobal){
+      window.__updateVizShared = function(){
+        eMode = state.probMode; eS = state.S; eC = state.C; eX = state.X_user;
+        updateVizCore();
+      };
+    }
 
+    // initial render
     eMode = state.probMode; eS = state.S; eC = state.C; eX = state.X_user;
     updateVizCore();
   }
 
-  if (vizBtn1 && panel1) {
-    vizBtn1.addEventListener('click', ()=>{
-      const open = panel1.style.display==='block' && panel1.dataset.mode==='viz';
-      if (open){ panel1.style.display='none'; panel1.dataset.mode=''; vizBtn1.textContent='Show Calculation Visualization'; }
-      else { openVizInto(panel1, false); vizBtn1.textContent='Hide Calculation Visualization'; }
-    });
-  }
-  if (vizBtn2 && panel2) {
-    vizBtn2.addEventListener('click', ()=>{
-      const open = panel2.style.display==='block' && panel2.dataset.mode==='viz';
-      if (open){ panel2.style.display='none'; panel2.dataset.mode=''; vizBtn2.textContent='Show Calculation Reasoning'; }
-      else { openVizInto(panel2, true); vizBtn2.textContent='Hide Calculation Reasoning'; }
-    });
-  }
+  // Buttons (wired once)
+  $('vizBtn1').addEventListener('click', ()=>{
+    const open = panel1.style.display==='block' && panel1.dataset.mode==='viz';
+    if (open){ panel1.style.display='none'; panel1.dataset.mode=''; $('vizBtn1').textContent='Show Calculation Visualization'; }
+    else { openVizInto(panel1, false, true); $('vizBtn1').textContent='Hide Calculation Visualization'; }
+  });
+  $('vizBtn2').addEventListener('click', ()=>{
+    const open = panel2.style.display==='block' && panel2.dataset.mode==='viz';
+    if (open){ panel2.style.display='none'; panel2.dataset.mode=''; $('vizBtn2').textContent='Show Calculation Reasoning'; }
+    else { openVizInto(panel2, true, false); $('vizBtn2').textContent='Hide Calculation Reasoning'; }
+  });
 
-  /* ============ Continue routing ============ */
-  if (continueBtn){
-    continueBtn.addEventListener('click', ()=>{
-      const r = state.S / state.C;
-      const Xc = Xcutoff_from_ratio(r);
-      const act = (state.X_user !== null) ? (state.X_user <= Xc + 1e-15) : null;
+  /* =========================
+     Continue → route
+     ========================= */
+  $('continueBtn').addEventListener('click', ()=>{
+    // Use the same conjunctive rule
+    const r = state.S / state.C;
+    const Xc_prob = Xcutoff_from_ratio(r);
+    const rCut = computeSCutoffForX(state.X_user ?? 2);
+    const act = (state.X_user != null && state.X_user <= Xc_prob + 1e-15) && (r >= rCut - 1e-15);
 
-      if (act) {
-        mini1.style.display='none'; mini2.style.display='none'; mini3.style.display='block';
-        miniTag.textContent='Step 3 of 3'; btnRow1.style.display='none'; btnRow2.style.display='none';
-      } else {
-        mini1.style.display='none'; mini2.style.display='block'; mini3.style.display='none';
-        miniTag.textContent='Step 2 of 3'; btnRow1.style.display='none'; btnRow2.style.display='flex';
-      }
-    });
-  }
+    if (act) {
+      mini1.style.display='none'; mini2.style.display='none'; mini3.style.display='block';
+      miniTag.textContent='Step 3 of 3'; btnRow1.style.display='none'; btnRow2.style.display='none';
+    } else {
+      mini1.style.display='none'; mini2.style.display='block'; mini3.style.display='none';
+      miniTag.textContent='Step 2 of 3'; btnRow1.style.display='none'; btnRow2.style.display='flex';
+    }
+  });
+
 });
 </script>
 </body>
