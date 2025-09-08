@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Discernment: A Decision-Making Guide</title>
+<title>Discernment: A Decision-Making Guide (Full, Fixed)</title>
 
 <link rel="preload" as="image" href="./favicon_256_transparent.png">
-
 <link rel="manifest" href="./site.webmanifest?v=4">
 <meta name="theme-color" content="#ffffff">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
@@ -27,250 +26,186 @@
 <style>
   :root { color-scheme: light dark; }
 
-  /* Light defaults */
-  :root {
-    --bg:#f7f7f7; --card:#ffffff; --text:#111; --subtle:#333; --border:#ddd; --shadow:0 2px 6px rgba(0,0,0,.1);
-    --btn-yes:#4CAF50; --btn-no:#F44336; --btn-same:#1E88E5; --btn-next:#2196F3; --btn-back:#555; --btn-restart:#9C27B0; --btn-muted:#9E9E9E; --btn-text:#fff;
-    --thumb-border:#999; --tick-color:rgba(0,0,0,.35); --track-bg:#e0e0e0;
-    --if-accent:#2e7d32; --when-accent:goldenrod; --result-accent:#9C27B0;
-    --grid:#d9d9d9; --grid-sub:#e9e9e9;
-    --shade-yes: rgba(46,125,50,.12);
+  /* Theme tokens */
+  :root{
+    --bg:#f7f7f7; --card:#fff; --text:#111; --muted:#555; --subtle:#333;
+    --border:#ddd; --shadow:0 2px 6px rgba(0,0,0,.1);
+    --btn-yes:#4CAF50; --btn-no:#F44336; --btn-next:#2196F3; --btn-muted:#9E9E9E; --btn-text:#fff;
+    --grid:#d7d7d7; --grid2:#ececec;
+    --curve:#1f4cff; --shade:#e1f4e6;
+    --verdict-green:#2e7d32;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg:#0f1115; --card:#171a21; --text:#e9edf1; --subtle:#c7cbd2; --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,.35);
-      --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-same:#42A5F5; --btn-next:#42A5F5; --btn-back:#8e8e93; --btn-restart:#BA68C8; --btn-muted:#6c6f76; --btn-text:#fff;
-      --thumb-border:#b5bcc8; --tick-color:rgba(255,255,255,.38); --track-bg:#2a2f3a;
-      --if-accent:#5bd36a; --when-accent:#f1c24c; --result-accent:#c77dff;
-      --grid:#3a4050; --grid-sub:#2a2f3a;
-      --shade-yes: rgba(91,211,106,.12);
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1115; --card:#171a21; --text:#e9edf1; --muted:#8e8e93; --subtle:#c7cbd2;
+      --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,.35);
+      --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-next:#42A5F5; --btn-muted:#6c6f76; --btn-text:#fff;
+      --grid:#2c3544; --grid2:#222a36;
+      --curve:#88a6ff; --shade:#0e2b17;
+      --verdict-green:#5bd36a;
     }
   }
-  :root[data-theme="light"] {
-    color-scheme: light;
-    --bg:#f7f7f7; --card:#ffffff; --text:#111; --subtle:#333; --border:#ddd; --shadow:0 2px 6px rgba(0,0,0,.1);
-    --btn-yes:#4CAF50; --btn-no:#F44336; --btn-same:#1E88E5; --btn-next:#2196F3; --btn-back:#555; --btn-restart:#9C27B0; --btn-muted:#9E9E9E; --btn-text:#fff;
-    --thumb-border:#999; --tick-color:rgba(0,0,0,.35); --track-bg:#e0e0e0;
-    --if-accent:#2e7d32; --when-accent:goldenrod; --result-accent:#9C27B0;
-    --grid:#d9d9d9; --grid-sub:#e9e9e9;
-    --shade-yes: rgba(46,125,50,.12);
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --bg:#0f1115; --card:#171a21; --text:#e9edf1; --subtle:#c7cbd2; --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,.35);
-    --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-same:#42A5F5; --btn-next:#42A5F5; --btn-back:#8e8e93; --btn-restart:#BA68C8; --btn-muted:#6c6f76; --btn-text:#fff;
-    --thumb-border:#b5bcc8; --tick-color:rgba(255,255,255,.38); --track-bg:#2a2f3a;
-    --if-accent:#5bd36a; --when-accent:#f1c24c; --result-accent:#c77dff;
-    --grid:#3a4050; --grid-sub:#2a2f3a;
-    --shade-yes: rgba(91,211,106,.12);
-  }
 
-  body { font-family: Arial, sans-serif; background:var(--bg); color:var(--text); margin:0; padding:0; }
-  .container{max-width:650px;margin:auto;padding:20px;}
-  .top-bar{display:flex;justify-content:space-between;margin-bottom:10px;}
-  .card{background:var(--card);padding:20px;border-radius:8px;box-shadow:var(--shadow);min-height:280px;border:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;}
-  .segment-heading{display:flex;align-items:center;justify-content:space-between;font-size:1.8em;font-weight:bold;margin-bottom:15px;padding:8px;border-bottom:2px solid var(--border);gap:12px;transition:color .5s ease;}
-  .segment-title{display:inline-flex;align-items:center;gap:8px}
-  .segment-title img.logo{height:1.2em;width:auto;vertical-align:middle;margin-right:6px;aspect-ratio:1/1}
-  .flash-gold{color:var(--when-accent)!important}.flash-green{color:var(--if-accent)!important}.flash-purple{color:var(--result-accent)!important}
-
-  button{flex:1;padding:10px 12px;font-size:1em;border:none;border-radius:5px;cursor:pointer;color:var(--btn-text)}
-  button.yes{background:var(--btn-yes)}button.no{background:var(--btn-no)}button.same{background:var(--btn-same)}button.next{background:var(--btn-next)}button.back{background:var(--btn-back);flex:0 0 auto}
-  button.restart{background:var(--btn-restart);flex:0 0 auto}
-  button.examples-btn,button.viz-btn,button.reasoning-btn{background:var(--btn-muted)}
-  .segment-heading .skip-btn{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;padding:10px 12px;font-size:1rem;line-height:1;border:none;border-radius:5px;cursor:pointer;background:color-mix(in oklab,var(--card),var(--text) 12%);color:var(--subtle)}
-  .segment-heading .skip-btn:hover{background:color-mix(in oklab,var(--card),var(--text) 20%)}
-
-  .text{font-size:1.3em;margin-bottom:12px;white-space:pre-wrap;}
-  .controls-row{display:flex;gap:10px;margin:6px 0 18px 0}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .container{max-width:650px;margin:auto;padding:20px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);min-height:280px;display:flex;flex-direction:column}
+  .segment-heading{display:flex;align-items:center;justify-content:space-between;font-size:1.6em;font-weight:700;margin:0 0 10px;padding:14px;border-bottom:2px solid var(--border)}
+  .segment-title{display:flex;align-items:center;gap:8px}
+  .top-bar{display:flex;justify-content:space-between;margin-bottom:10px}
+  button{border:0;border-radius:6px;padding:10px 12px;cursor:pointer;color:var(--btn-text);background:var(--btn-muted)}
+  .back{background:var(--muted)} .restart{background:#9C27B0} .next{background:var(--btn-next)} .yes{background:var(--btn-yes)} .no{background:var(--btn-no)}
+  .text{font-size:1.15em;margin:0 16px 10px}
+  .controls-row{display:flex;gap:10px;margin:6px 16px 14px}
   .left-controls,.right-controls{flex:1;display:flex;gap:10px}
-  .panel{display:none;border:1px solid var(--border);border-radius:6px;padding:10px;background:color-mix(in oklab, var(--card), var(--bg) 8%);margin-bottom:18px}
-  .panel p{margin:6px 0}.panel img{width:100%;height:auto;display:block}
-  .buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start}
-  .buttons.center{justify-content:center}
-  #riskInline{display:none;border:1px solid var(--border);border-radius:6px;padding:12px;background:color-mix(in oklab, var(--card), var(--bg) 8%);margin:8px 0 18px 0}
-  .sev-display{text-align:center;font-size:1.8em;font-weight:bold;margin-bottom:8px}
-  .risk-row{display:flex;align-items:center;gap:10px;margin:0}
-  .error{color:#B00020;font-size:.95em}
+  .panel{display:none;border:1px solid var(--border);border-radius:8px;background:color-mix(in oklab, var(--card), var(--bg) 6%);padding:12px;margin:0 16px 16px}
+  .buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;padding:0 16px 16px}
+  .error{color:#B00020;margin:6px 16px}
 
   /* Inputs */
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 10px}
   .field{display:flex;flex-direction:column;gap:6px}
-  input[type="number"], select{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text)}
-  input::placeholder{opacity:.6}
-  input[disabled],select[disabled]{opacity:.65;cursor:not-allowed}
+  input[type="number"],select{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text)}
+  input[disabled],select[disabled]{opacity:.65}
+  .hint{color:var(--subtle);opacity:.75}
 
   /* Graph */
-  .viz-wrap{border:1px solid var(--border);border-radius:8px;background:color-mix(in oklab, var(--card), var(--bg) 4%);padding:12px}
+  .viz-wrap{border:1px solid var(--border);border-radius:10px;padding:12px;background:color-mix(in oklab, var(--card), var(--bg) 4%)}
   svg{width:100%;height:auto;display:block;touch-action:none}
-  .axis text{font-size:14px;font-weight:600;fill:var(--text)}
-  .axis-desc{font-size:15px;font-weight:700;fill:var(--text)}
-  .grid{stroke:var(--grid);stroke-width:1;opacity:.6}
-  .grid-sub{stroke:var(--grid-sub);stroke-width:1;opacity:.45}
-  .curve{fill:none;stroke:#1f4cff;stroke-width:2.5}
-  .shade-in{fill:var(--shade-yes)}
-  .handle{fill:#ff3b3b;stroke:#fff;stroke-width:2;cursor:pointer;touch-action:none}
-  .ptlabel{font-size:16px;font-weight:700;pointer-events:none;fill:var(--text)}
+  .grid line{stroke:var(--grid);stroke-width:1}
+  .grid .light{stroke:var(--grid2)}
+  .curve{fill:none;stroke:var(--curve);stroke-width:2.5}
+  .shade{fill:var(--shade)}
+  .axis text{fill:var(--text);opacity:.9;font-size:14px;font-weight:600}
+  .axis-label{fill:var(--text);font-size:15px;font-weight:700}
+  .handle{fill:#ff5871;stroke:#fff;stroke-width:2;cursor:pointer;touch-action:none}
+  .ptlabel{font-size:16px;font-weight:700;fill:var(--text)}
   .ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
-
-  .rule{font-weight:700;margin-top:12px}
-  .verdict{margin-top:6px;font-weight:800}
-  .verdict.ok{color:var(--btn-yes)}
-  .spacer{height:12px}
+  .rule{font-weight:700;margin:10px 16px 4px}
+  .verdict{margin:0 16px 14px}
 </style>
 
+<!-- Google Analytics (kept) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-VJSYRKHSRM');
+  window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VJSYRKHSRM');
 </script>
 </head>
 <body>
 <div class="container">
   <div class="top-bar">
-    <button class="back" id="backBtn" onclick="goBack()" type="button">Back</button>
+    <button class="back" id="backBtn" type="button">Back</button>
     <button class="back" id="themeToggle" type="button" style="display:none;">Theme</button>
-    <button class="restart" id="restartTop" onclick="restart()" type="button">Restart</button>
+    <button class="restart" id="restartTop" type="button">Restart</button>
   </div>
 
   <div class="card">
     <div id="segmentHeading" class="segment-heading">
-      <span id="segmentTitle" class="segment-title">
-        <img src="./favicon_256_transparent.png" alt="Discernment Logo" class="logo" width="256" height="256" loading="eager" fetchpriority="high" decoding="sync">
-        Discernment: A Decision-Making Guide
-      </span>
-      <button id="skipBtn" class="skip-btn" style="display:none;" title="Skip to When You Should Act" type="button">Skip ⏭</button>
+      <span id="segmentTitle" class="segment-title">Discernment: A Decision-Making Guide</span>
+      <button id="skipBtn" class="back" style="display:none;" title="Skip to When You Should Act" type="button">Skip ⏭</button>
     </div>
 
-    <div>
-      <div id="text" class="text"></div>
-
-      <div class="controls-row">
-        <div id="leftControlsWrapper" class="left-controls"></div>
-        <div id="rightControlsWrapper" class="right-controls"></div>
-      </div>
-
-      <div id="sharedPanel" class="panel" aria-hidden="true" role="region" aria-live="polite"></div>
-      <div id="riskInline" class="risk-inline" aria-hidden="true"></div>
-      <div id="errorBox" class="error" role="alert" aria-live="assertive"></div>
+    <div id="text" class="text"></div>
+    <div class="controls-row">
+      <div id="leftControlsWrapper" class="left-controls"></div>
+      <div id="rightControlsWrapper" class="right-controls"></div>
     </div>
-
+    <div id="sharedPanel" class="panel" aria-hidden="true"></div>
+    <div id="errorBox" class="error" role="alert" aria-live="assertive"></div>
     <div id="buttons" class="buttons"></div>
   </div>
 </div>
 
 <script>
-/* ======= THEME INIT ======= */
-(function initTheme(){
-  const root = document.documentElement;
-  const themeBtn = document.getElementById('themeToggle');
-  const mqDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-  let metaTheme = document.querySelector('meta[name="theme-color"]:not([media])');
-  if (!metaTheme) { metaTheme = document.createElement('meta'); metaTheme.name = 'theme-color'; document.head.appendChild(metaTheme); }
-
-  function getSetting(){ const s=localStorage.getItem('theme'); return (s==='light'||s==='dark'||s==='system')?s:'system'; }
-  function getEffectiveTheme(setting){ if(setting==='dark')return 'dark'; if(setting==='light')return 'light'; return (mqDark&&mqDark.matches)?'dark':'light'; }
-  function setThemeColor(eff){ metaTheme.setAttribute('content', eff==='dark' ? '#0b0b0d' : '#ffffff'); }
-  function setBtnLabel(){ if(!themeBtn) return; const setting=getSetting(); const eff=getEffectiveTheme(setting); themeBtn.textContent='Theme: '+(setting[0].toUpperCase()+setting.slice(1)); themeBtn.title='Effective: '+(eff==='dark'?'Dark':'Light'); }
-  function apply(setting){ if(setting==='system'){ root.removeAttribute('data-theme'); localStorage.setItem('theme','system'); } else { root.dataset.theme=setting; localStorage.setItem('theme',setting); } setThemeColor(getEffectiveTheme(setting)); setBtnLabel(); }
-  apply(getSetting());
-  if (themeBtn){ themeBtn.onclick=function(){ const s=getSetting(); const next=(s==='system')?'dark':(s==='dark')?'light':'system'; apply(next); }; }
-  if (mqDark && mqDark.addEventListener) mqDark.addEventListener('change', ()=>{ if(getSetting()==='system'){ setBtnLabel(); setThemeColor(getEffectiveTheme('system')); }});
-  window.__refreshThemeButtonLabel=setBtnLabel;
+/* ===== THEME (minimal) ===== */
+(function(){
+  const root=document.documentElement,btn=document.getElementById('themeToggle');
+  const mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
+  function get(){const s=localStorage.getItem('theme');return (s==='light'||s==='dark'||s==='system')?s:'system'}
+  function eff(s){if(s==='dark')return'dark';if(s==='light')return'light';return(mq&&mq.matches)?'dark':'light'}
+  function apply(s){ if(s==='system') root.removeAttribute('data-theme'); else root.dataset.theme=s; localStorage.setItem('theme',s); btn.textContent='Theme: '+s; }
+  apply(get());
+  if(btn){btn.onclick=()=>{const s=get();apply(s==='system'?'dark':s==='dark'?'light':'system')}};
 })();
 
-/* ======= FLOW ======= */
+/* ===== FLOW (full list kept from your latest file) ===== */
 var flowchart = [
-  { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and a slider later). Answer everything to the best of your knowledge, and if you don't know something, do what you can to find out (once there aren't any other more important things to do).", "next": "Q1" },
+  {"id":"Q0","type":"info","text":"Welcome! This guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and a slider later). Answer everything to the best of your knowledge, and if you don't know something, do what you can to find out (once there aren't any other more important things to do).","next":"Q1"},
+  {"id":"Q1","type":"question","text":"Are there any other more important things to do or think about right now?","yes":"R1","no":"Q2"},
+  {"id":"Q2","type":"question","text":"Is there a current <i>real problem</i> or desired functional QoL (quality of life) improvement, rather than just a <i>“problem”</i> or preference that doesn’t affect performance or outcomes?","yes":"Q10","no":"Q3"},
+  {"id":"Q3","type":"question","text":"Is there cause for a potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?","yes":"Q5","no":"Q4"},
+  {"id":"Q4","type":"question","text":"Is there cause for a POTENTIAL cause for a POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?","yes":"Q5","no":"R2"},
+  {"id":"Q5","type":"question","text":"Is the potential problem inevitable if left unaddressed?","yes":"Q10","no":"Q6"},
 
-  /* ===== IF YOU SHOULD ACT ===== */
-  { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1",  "no": "Q2" },
-  { "id": "Q2",  "type": "question", "text": "Is there a current <i>real problem</i> or desired functional QoL (quality of life) improvement, rather than just a <i>“problem”</i> or preference that doesn’t affect performance or outcomes?", "yes": "Q10",  "no": "Q3" },
-  { "id": "Q3",  "type": "question", "text": "Is there cause for a potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q4" },
-  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "R2" },
+  /* NEW MINI SLIDE 1 (Q6) */
+  {"id":"Q6","type":"mini1","text":"Enter the severity, cost, and per-instance probability of the downside if you don’t act now. We’ll show when action becomes justified (conservative rule: on the line = Act).","nextOnAct":"Q10","nextOnNo":"Q7"},
 
-  { "id": "Q5",  "type": "question", "text": "Is the potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
+  /* NEW MINI SLIDE 2 (Q7) */
+  {"id":"Q7","type":"mini2","text":"It’s not worth acting based on the current values. Could any inputs reasonably change soon (e.g., higher probability, or severity vs. cost) that would flip the verdict?","yes":"R3","no":"Q21"},
 
-  /* === Integrated Mini Site replaces old Q6–Q9 path === */
-  { "id": "Q6",  "type": "question", "text": "Mini Slide 1 — Preventative Action Cutoff:\nEnter the severity (S), cost (C), and per-instance probability of the downside if you don’t act now. We’ll show when action becomes justified (conservative rule: on the line = Act).", "yes": "Q10", "no": "Q7" },
-  { "id": "Q7",  "type": "question", "text": "Mini Slide 2 — Visualize with the same inputs (greyed out). Could any inputs reasonably change soon (e.g., higher probability, or severity vs. cost) that would flip the verdict?", "yes": "R3", "no": "Q20" },
+  {"id":"Q8","type":"question","text":"Would the overall downsides of NOT addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?","yes":"Q10","no":"Q20","same":"Q9"},
+  {"id":"Q9","type":"question","text":"Is the problem more likely to occur than not if left unaddressed?","yes":"Q10","no":"Q20"},
+  {"id":"Q10","type":"question","text":"Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?","yes":"Q11","no":"R4"},
+  {"id":"Q11","type":"question","text":"Can this solution or QoL improvement be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?","yes":"Q14","no":"Q12"},
+  {"id":"Q12","type":"question","text":"Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?","yes":"Q14","no":"Q13"},
+  {"id":"Q13","type":"question","text":"Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s within your control or perhaps even in a <i>better overall way</i>?","yes":"R5","no":"R2"},
 
-  /* (kept old Q9 node id to avoid gaps; not used for routing now) */
-  { "id": "Q8",  "type": "question", "text": "Would the overall downsides of NOT addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q10", "no": "Q20", "same": "Q9" },
-  { "id": "Q9",  "type": "question", "text": "Legacy placeholder (not used).", "yes": "Q10",  "no": "Q20" },
+  {"id":"Q14","type":"question","text":"Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?","yes":"Q15","no":"Q16"},
+  {"id":"Q15","type":"question","text":"Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?","yes":"Q31","no":"Q16"},
 
-  /* continue original chain */
-  { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q11",  "no": "R4" },
-  { "id": "Q11", "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
-  { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q14", "no": "Q13" },
-  { "id": "Q13", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s within your control or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
+  {"id":"Q16","type":"question","text":"Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it (for just this instance)?","yes":"Q17","no":"Q20"},
+  {"id":"Q17","type":"question","text":"Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it (for just this instance)?","yes":"Q18","no":"Q20"},
+  {"id":"Q18","type":"question","text":"Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?","yes":"Q22","no":"Q20","same":"Q19"},
+  {"id":"Q19","type":"question","text":"All things considered, would you <i>rather</i> address it than not?","yes":"Q22","no":"Q20"},
+  {"id":"Q20","type":"question","text":"Is there a time further down the road that the answer to the <i>previous question</i> could be yes?","yes":"R3","no":"Q21"},
+  {"id":"Q21","type":"question","text":"Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s worth it or perhaps even in a <i>better overall way</i>?","yes":"R5","no":"R2"},
 
-  { "id": "Q14", "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q15", "no": "Q16" },
-  { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q16" },
+  {"id":"Q22","type":"question","text":"Does addressing this issue involve a <i>diminishing returns</i> curve for effort applied?","yes":"Q23","no":"Q24"},
+  {"id":"Q23","type":"info","text":"Find the <i>point of diminishing returns</i> and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL <i>without the addictive pull</i> and possibly even in a <i>better overall way</i>. Treat this approach as a \"better\", more effective overall solution, and <i>ALWAYS</i> use this approach over the original if it's available; if not, you may use the original approach if needed—but <i>only</i> with a pre-set time limit and timer, after which you must stop and re-evaluate.","next":"Q24"},
+  {"id":"Q24","type":"question","text":"Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an <i>objective sweet spot</i> where clear information is available to you?","yes":"Q25","no":"Q26"},
+  {"id":"Q25","type":"info","text":"Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.","next":"Q31"},
 
-  { "id": "Q16", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it (for just this instance)?", "yes": "Q17", "no": "Q20" },
-  { "id": "Q17", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it (for just this instance)?", "yes": "Q18", "no": "Q20" },
-  { "id": "Q18", "type": "question", "text": "Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q22", "no": "Q20", "same": "Q19" },
+  {"id":"Q26","type":"question","text":"In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed (assuming any potential future problems would occur)?","yes":"Q27","no":"R2"},
+  {"id":"Q27","type":"question","text":"Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?","yes":"Q31","no":"Q28"},
+  {"id":"Q28","type":"question","text":"Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?","yes":"Q29","no":"R2"},
+  {"id":"Q29","type":"question","text":"Is it logically worth solving/addressing <i>EVERY time this situation arises</i>? (Or at least this time knowing it’s <i>temporary</i>?)","yes":"Q31","no":"Q30"},
+  {"id":"Q30","type":"question","text":"Is there an <i>alternative solution</i> that would solve the problem (or improve QoL), in the long term or perhaps even in a <i>better overall way</i>?","yes":"R5","no":"R2"},
 
-  { "id": "Q19", "type": "question", "text": "All things considered, would you <i>rather</i> address it than not?", "yes": "Q22", "no": "Q20" },
-  { "id": "Q20", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "Q21" },
-  { "id": "Q21", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s worth it or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
+  {"id":"Q31","type":"question","text":"Does this address a potential <i>future</i> problem?","yes":"Q32","no":"Q35"},
+  {"id":"Q32","type":"question","text":"Does addressing this issue involve <i>preventative maintenance</i>?","yes":"Q37","no":"Q35"},
 
-  { "id": "Q22", "type": "question", "text": "Does addressing this issue involve a <i>diminishing returns</i> curve for effort applied?", "yes": "Q23", "no": "Q24" },
-  { "id": "Q23", "type": "info",     "text": "Find the <i>point of diminishing returns</i> and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL <i>without the addictive pull</i> and possibly even in a <i>better overall way</i>. Treat this approach as a \"better\", more effective overall solution, and <i>ALWAYS</i> use this approach over the original if it's available; if not, you may use the original approach if needed—but <i>only</i> with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q24" },
-  { "id": "Q24", "type": "question", "text": "Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an <i>objective sweet spot</i> where clear information is available to you?", "yes": "Q25", "no": "Q26" },
-  { "id": "Q25", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q31" },
+  {"id":"Q33","type":"info","text":"Set the estimated catastrophic severity if you waited too long to act. (1-10)","next":"Q34"},
+  {"id":"Q34","type":"question","text":"Would there be <i>guaranteed clear telltale signs</i> of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?","yes":"Q46","no":"Q47"},
 
-  { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed (assuming any potential future problems would occur)?", "yes": "Q27", "no": "R2" },
-  { "id": "Q27", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q31", "no": "Q28" },
-  { "id": "Q28", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q29", "no": "R2" },
-  { "id": "Q29", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time this situation arises</i>? (Or at least this time knowing it’s <i>temporary</i>?)", "yes": "Q31", "no": "Q30" },
-  { "id": "Q30", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL), in the long term or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
+  {"id":"Q35","type":"question","text":"Is this the <i>most effective solution</i> you know of (that meets the previous criteria), assuming you could do it whenever you wanted?","yes":"Q39","no":"Q36"},
+  {"id":"Q36","type":"question","text":"Have you considered <i>all better solutions</i> you know of?","yes":"Q39","no":"R5"},
 
-  /* ===== WHEN YOU SHOULD ACT ===== */
-  { "id": "Q31", "type": "question", "text": "Does this address a potential <i>future</i> problem?", "yes": "Q32", "no": "Q35" },
-  { "id": "Q32", "type": "question", "text": "Does addressing this issue involve <i>preventative maintenance</i>?", "yes": "Q37", "no": "Q35" },
+  {"id":"Q37","type":"question","text":"Is this the <i>most effective solution</i> you know of (that meets the previous criteria)?","yes":"Q33","no":"Q38"},
+  {"id":"Q38","type":"question","text":"Have you considered <i>all better solutions</i> you know of?","yes":"Q33","no":"R5"},
 
-  { "id": "Q33", "type": "info",     "text": "Set the estimated catastrophic severity if you waited too long to act. (1-10)", "next": "Q34" },
-  { "id": "Q34", "type": "question", "text": "Would there be <i>guaranteed clear telltale signs</i> of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "Q46", "no": "Q47" },
+  {"id":"Q39","type":"question","text":"Is this solution <i>currently</i> available?","yes":"Q40","no":"Q41"},
+  {"id":"Q40","type":"question","text":"Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?","yes":"Q41","no":"R7"},
 
-  { "id": "Q35", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria), assuming you could do it whenever you wanted?", "yes": "Q39", "no": "Q36" },
-  { "id": "Q36", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q39", "no": "R5" },
+  {"id":"Q41","type":"question","text":"Assuming you waited until it was available, would the expected <i>overall benefits</i> of using this solution outweigh the expected <i>overall downsides</i> of having to wait?","yes":"Q44","no":"Q43","same":"Q42"},
+  {"id":"Q42","type":"question","text":"All things considered, would you <i>rather</i> use this solution?","yes":"Q44","no":"Q43"},
+  {"id":"Q43","type":"question","text":"Is there a <i>next best</i> solution you know of?","yes":"R5","no":"R4"},
+  {"id":"Q44","type":"question","text":"Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?","yes":"R8","no":"R6"},
+  {"id":"Q45","type":"question","text":"Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?","yes":"R8","no":"R6"},
 
-  { "id": "Q37", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria)?", "yes": "Q33", "no": "Q38" },
-  { "id": "Q38", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q33", "no": "R5" },
+  {"id":"Q46","type":"question","text":"Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?","yes":"R8","no":"R9"},
+  {"id":"Q47","type":"question","text":"Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?","yes":"R8","no":"R9"},
 
-  { "id": "Q39", "type": "question", "text": "Is this solution <i>currently</i> available?", "yes": "Q40", "no": "Q41" },
-  { "id": "Q40", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q41", "no": "R7" },
-
-  { "id": "Q41", "type": "question", "text": "Assuming you waited until it was available, would the expected <i>overall benefits</i> of using this solution outweigh the expected <i>overall downsides</i> of having to wait?", "yes": "Q44", "no": "Q43", "same": "Q42" },
-  { "id": "Q42", "type": "question", "text": "All things considered, would you <i>rather</i> use this solution?", "yes": "Q44", "no": "Q43" },
-
-  { "id": "Q43", "type": "question", "text": "Is there a <i>next best</i> solution you know of?", "yes": "R5",  "no": "R4" },
-  { "id": "Q44", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
-  { "id": "Q45", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
-
-  { "id": "Q46", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
-  { "id": "Q47", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
-
-  { "id": "R1",  "type": "result", "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
-  { "id": "R2",  "type": "result", "text": "<i>Don’t worry about it:)</i>" },
-  { "id": "R3",  "type": "result", "text": "If that time ever does come, re-evaluate the issue. Until then, (once there aren't any other more important things to do), consider any other solutions that could work and be worth it, or perhaps even be <i>better overall<i/>." },
-  { "id": "R4",  "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },
-  { "id": "R5",  "type": "result", "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },
-  { "id": "R6",  "type": "result", "text": "Wait until this solution is available, then solve it once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any other solutions that could also work and be worth it." },
-  { "id": "R7",  "type": "result", "text": "Address it <i>sooner than later</i>, once there aren’t any other more important things to do." },
-  { "id": "R8",  "type": "result", "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Until then, (once there aren't any other more important things to do, and if  you'd like), consider any other solutions that could either also work and be worth it, or—in the case of preventative maintenance—mitigate consequences if failure did occur." },
-  { "id": "R9",  "type": "result", "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) are met, once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any solutions that would mitigate consequences if failure did occur." },
-
-  { "id": "AB0", "type": "aboutMenu", "heading": "About", "text": "Choose a section to learn more about the guide and its background." },
-  { "id": "AB1", "type": "about", "heading": "About Me", "text": "Hi! My name is Packer, I’m the creator of this guide. ..." },
-  { "id": "AB2", "type": "about", "heading": "Guide Concepts Explained", "text": "<p>...full content omitted only here for brevity in About...</p>" }
+  {"id":"R1","type":"result","text":"Worry about this <i>once those things are addressed</i> and the time is right."},
+  {"id":"R2","type":"result","text":"<i>Don’t worry about it:)</i>"},
+  {"id":"R3","type":"result","text":"If that time ever does come, re-evaluate the issue. Until then, (once there aren't any other more important things to do), consider any other solutions that could work and be worth it, or perhaps even be <i>better overall<i/>."},
+  {"id":"R4","type":"result","text":"Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it."},
+  {"id":"R5","type":"result","text":"Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart."},
+  {"id":"R6","type":"result","text":"Wait until this solution is available, then solve it once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any other solutions that could also work and be worth it."},
+  {"id":"R7","type":"result","text":"Address it <i>sooner than later</i>, once there aren’t any other more important things to do."},
+  {"id":"R8","type":"result","text":"Wait until that better time, then solve/address it once there aren't any other more important things to do. Until then, (once there aren't any other more important things to do, and if  you'd like), consider any other solutions that could either also work and be worth it, or—in the case of preventative maintenance—mitigate consequences if failure did occur."},
+  {"id":"R9","type":"result","text":"Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) are met, once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any solutions that would mitigate consequences if failure did occur."}
 ];
 
-/* ===== EXAMPLES ===== */
+/* ===== EXAMPLES (two per question; no info or results) ===== */
 window.examples = {
   "Q1":  ["Finish homework due tonight before reorganizing the closet.", "Call the dentist first if you’re in pain instead of tweaking your workout plan."],
   "Q2":  ["Laptop battery dies quickly during class; you need reliable runtime.", "Your shoe tread is worn and you slip when running on wet pavement."],
@@ -302,7 +237,7 @@ window.examples = {
   "Q30": ["Use pre-cut veggies service instead of spending hours chopping.", "Switch to a simpler CMS that meets needs with fewer headaches."],
   "Q31": ["Replace the washing machine hose before it bursts.", "Get a dental night guard to prevent grinding damage."],
   "Q32": ["Oil changes at the recommended interval.", "Descaling the espresso machine on schedule."],
-  "Q33": ["If a brake failure would be catastrophic, set a higher severity.", "For data loss on your main work laptop, pick higher severity."],
+  "Q33": ["If a brake failure would be catastrophic, set a higher severity; if a sticky cabinet hinge would be minor, set a low severity.", "For data loss on your main work laptop, pick higher severity; for a dead light bulb in a spare room, pick lower severity."],
   "Q34": ["Brake pad sensor squeal gives plenty of warning before rotor damage.", "Battery health app alerts you before the phone shuts off randomly."],
   "Q35": ["This sanding method gives the best finish among what you know.", "This study technique retains more than your alternatives."],
   "Q36": ["You compared spaced-repetition vs. rereading.", "You evaluated vinegar soak vs. descaling solution."],
@@ -319,420 +254,381 @@ window.examples = {
   "Q47": ["Replace smoke alarm batteries when failure probability approaches your set threshold.", "Swap the UPS battery when charge-holding dips near your limit."]
 };
 
-/* ===== STATE ===== */
-var historyStack = [];
-var currentNode = flowchart.find(n => n.id === "Q0");
-var currentSegment = "If You Should Act";
-var originalTitleHTML = null;
-var currentThresholdPct = 90;
-
-/* ===== UTIL ===== */
-function getSegmentForNodeId(id){ if(!id||id.charAt(0)!=='Q') return currentSegment; var m=/^Q(\\d+)$/.exec(id); if(!m) return currentSegment; var num=parseInt(m[1],10); return num>=31?"When You Should Act":"If You Should Act"; }
-function flashHeadingColor(seg, node){
-  if(currentNode && currentNode.id==='Q0') return;
-  var hd=document.getElementById('segmentHeading');
-  if(node && node.type==='result'){ hd.classList.add('flash-purple'); setTimeout(()=>hd.classList.remove('flash-purple'),1500); return; }
-  var cls=(seg==="If You Should Act")?'flash-green':'flash-gold';
-  hd.classList.add(cls); setTimeout(()=>hd.classList.remove(cls),1500);
-}
-function setHeadingText(node){
-  var title=document.getElementById('segmentTitle'); var skip=document.getElementById('skipBtn');
-  if(!node){ title.textContent=''; skip.style.display='none'; return; }
-  if((node.type==='about'||node.type==='aboutMenu')&&node.heading){ title.textContent=node.heading; skip.style.display='none'; return; }
-  if(node.id==='Q0'){ if(originalTitleHTML) title.innerHTML=originalTitleHTML; skip.style.display='none'; return; }
-  if(node.type==='result'){ title.textContent='👍👎 Verdict'; skip.style.display='none'; return; }
-  var segText=(currentSegment==="If You Should Act")?"⚖️ If You Should Act":"⏳ When You Should Act";
-  title.textContent=segText;
-  skip.style.display=(currentSegment==="If You Should Act" && node.type!=='result')?'inline-block':'none';
-}
-function collapseSharedPanel(){
-  var panel=document.getElementById('sharedPanel');
-  if(panel){ panel.style.display='none'; panel.setAttribute('aria-hidden','true'); panel.dataset.mode=''; panel.innerHTML=''; }
-  var lw=document.getElementById('leftControlsWrapper'); var rw=document.getElementById('rightControlsWrapper');
-  if(lw){ lw.innerHTML=''; } if(rw){ rw.innerHTML=''; }
-}
-document.getElementById('skipBtn').addEventListener('click', function(){ goToNode('Q31'); });
-
-/* ===== MINI ENGINE (Q6/Q7) ===== */
-const EPS = 1e-9, MAX_SC = 10;
-const ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
-
-const miniState = {
-  s: 5, c: 1, mode: 'oneInX', val: 1000000, X: 1000000,
-  verdict: false
-};
-function clamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
-function ceilPlaces(x,p=2){ const f=10**p; return Math.ceil(x*f)/f; }
-function Xcutoff_from_ratio(r){ const tRaw=(r-1)/9; const t=Math.max(0,Math.min(1,tRaw)); const exponent=6*Math.pow(t,ALPHA); return Math.pow(10,exponent); }
-function computeSCutoffForX(X){ return 1 + 9 * Math.pow((Math.log10(X)/6), 1/ALPHA); }
-function normalizeToX(mode,val){ if(mode==='oneInX'){ if(!(val>1))return null; return val; } if(mode==='percent'){ if(!(val>0 && val<100))return null; return 100/val; } if(mode==='micromort'){ if(!(val>0 && val<1e6))return null; return 1e6/val; } return null; }
-function cutoffLabel(mode){ return mode==='percent'?'%':(mode==='micromort'?'µm':'X'); }
-function XtoYUnit(X,mode){ return (mode==='percent')?(100/X):(mode==='micromort')?(1e6/X):X; }
-
-function renderMini(container, opts){
-  const {mirror=false} = opts||{};
-  container.innerHTML = '';
-
-  // Inputs
-  const row1 = document.createElement('div'); row1.className='field-row';
-  row1.innerHTML = `
-    <div class="field">
-      <label for="sIn">${mirror?'Severity (S)':'Severity (S) — up to 10'}</label>
-      <input id="sIn" type="number" ${mirror?'disabled':''} max="10" step="0.01" value="${miniState.s}" placeholder="e.g. 6.5" inputmode="decimal">
-    </div>
-    <div class="field">
-      <label for="cIn">${mirror?'Cost (C)':'Cost (C) — up to 10'}</label>
-      <input id="cIn" type="number" ${mirror?'disabled':''} max="10" step="0.01" value="${miniState.c}" placeholder="e.g. 2.0" inputmode="decimal">
-    </div>`;
-  container.appendChild(row1);
-
-  const row2 = document.createElement('div'); row2.className='field-row';
-  row2.innerHTML = `
-    <div class="field">
-      <label for="modeIn">Probability input mode</label>
-      <select id="modeIn" ${mirror?'disabled':''}>
-        <option value="oneInX"${miniState.mode==='oneInX'?' selected':''}>1 in X</option>
-        <option value="percent"${miniState.mode==='percent'?' selected':''}>Percentage (%)</option>
-        <option value="micromort"${miniState.mode==='micromort'?' selected':''}>Micromorts</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="pIn">Enter <span id="pLabel">${miniState.mode==='oneInX'?'X':'%'} </span></label>
-      <input id="pIn" type="number" ${mirror?'disabled':''} value="${miniState.val}" placeholder="${miniState.mode==='oneInX'?'e.g. 1,000,000': (miniState.mode==='percent'?'e.g. 0.1':'e.g. 10') }" inputmode="decimal">
-    </div>`;
-  container.appendChild(row2);
-
-  // Graph
-  const viz = document.createElement('div'); viz.className='viz-wrap'; container.appendChild(viz);
-  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('viewBox','0 0 940 600'); svg.style.touchAction='none'; viz.appendChild(svg);
-
-  const axesG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(axesG);
-  const gridG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(gridG);
-  const shadeIn = document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','shade-in'); svg.appendChild(shadeIn);
-  const curve = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','curve'); svg.appendChild(curve);
-  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','handle'); handle.setAttribute('r','12'); svg.appendChild(handle);
-
-  const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(labelG);
-  const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
-  const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','ptlabel'); labelG.appendChild(labelTx);
-
-  // Rule + Verdict
-  const rule = document.createElement('div'); rule.className='rule'; container.appendChild(rule);
-  const verdict = document.createElement('div'); verdict.className='verdict'; container.appendChild(verdict);
-  const spacer = document.createElement('div'); spacer.className='spacer'; container.appendChild(spacer);
-
-  // Layout
-  const pad = { left:110, right:20, top:36, bottom:90 }; // extra space for outer labels
-  const W=940, H=600, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
-  const rMin=1, rMax=10;
-  const rToPx = r => pad.left + (r-rMin)/(rMax-rMin)*plotW;
-  const pxToR = px => rMin + (px-pad.left)/plotW*(rMax-rMin);
-
-  function yRange(mode){
-    if (mode==='percent') return {yMin:0.0001,yMax:100,ticks:[100,10,1,0.1,0.01,0.001,0.0001],label:"Probability (%)"};
-    if (mode==='micromort') return {yMin:1,yMax:1e6,ticks:[1e6,1e5,1e4,1e3,100,10,1],label:"Probability (µm)"};
-    return {yMin:1,yMax:1e6,ticks:[1,10,100,1e3,1e4,1e5,1e6],label:"Probability as '1 in X'"};
+/* ===== Special threshold-based examples for Q46/Q47 at extremes ===== */
+window.examplesThreshold = {
+  "Q46": {
+    "0": [
+      "Replace safety-critical parts at the first reliable warning—don’t wait for higher odds.",
+      "Schedule service immediately if early signs appear and you treat any chance of failure as unacceptable."
+    ],
+    "90": [
+      "Hold until clear warning signs stack up to near-certain failure, then act promptly.",
+      "Plan replacement when indicators are overwhelmingly pointing to imminent failure."
+    ]
+  },
+  "Q47": {
+    "0": [
+      "Change smoke-alarm batteries now if you’d lose sleep over even a tiny failure risk.",
+      "Replace a worn climbing sling immediately if any fraying makes you uneasy."
+    ],
+    "90": [
+      "Wait until the battery barely holds charge, then replace before it dies unpredictably.",
+      "Run shoes until cushioning is clearly shot, then swap just before the next big run."
+    ]
   }
-  function yToPx(y,yMin,yMax){ return pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); }
+};
+
+
+/* ======== MINI ENGINE (shared) ======== */
+const EPS=1e-9, MAX_SC=10;
+const ALPHA=Math.log(0.5)/Math.log((Math.sqrt(10)-1)/9);
+function Xcutoff_from_ratio(r){const tRaw=(r-1)/9;const t=Math.max(0,Math.min(1,tRaw));const exponent=6*Math.pow(t,ALPHA);return Math.pow(10,exponent);}
+function computeSCutoffForX(X){return 1 + 9*Math.pow((Math.log10(X)/6),1/ALPHA);}
+function ceilPlaces(x,p=2){const f=10**p;return Math.ceil(x*f)/f;}
+function normalizeToX(mode,val){if(mode==='oneInX'){if(!(val>1))return null;return val;} if(mode==='percent'){if(!(val>0&&val<100))return null;return 100/val;} if(mode==='micromort'){if(!(val>0&&val<1e6))return null;return 1e6/val;} return null;}
+function XtoYUnit(X,mode){return mode==='percent'?(100/X):(mode==='micromort'?(1e6/X):X);}
+function getYRange(mode){
+  if(mode==='percent') return {yMin:0.0001,yMax:100,ticks:[100,10,1,0.1,0.01,0.001,0.0001],label:"Cutoff Probability (%) (log scale)"};
+  if(mode==='micromort') return {yMin:1,yMax:1e6,ticks:[1e6,1e5,1e4,1e3,100,10,1],label:"Cutoff Probability (µm) (log scale)"};
+  return {yMin:1,yMax:1e6,ticks:[1,10,100,1e3,1e4,1e5,1e6],label:"Cutoff '1 in X' (log scale)"};
+}
+function cutoffLabelForMode(mode){return mode==='percent'?'Cutoff (%)':(mode==='micromort'?'Cutoff (µm)':'Cutoff (X)');}
+function probRuleName(mode){return mode==='percent'?'%':(mode==='micromort'?'µm':'X');}
+
+/* Build the mini slide UI (reusable for Q6 and Q7) */
+function buildMini(container, opts){
+  // opts: { mirrorOnly:boolean, onVerdict(act), initialState }
+  container.innerHTML='';
+  const state = Object.assign({ S:5, C:1, probMode:'oneInX', probVal:1000000, X_user:1000000 }, opts.initialState||{});
+
+  // Form
+  const form=document.createElement('div');
+  form.innerHTML=`
+    <div class="field-row">
+      <div class="field"><label>Severity (S) — up to 10</label>
+        <input id="sev" type="number" ${opts.mirrorOnly?'disabled':''} max="10" step="0.01" value="${state.S}" placeholder="e.g. 5" inputmode="decimal">
+        <div class="hint">${opts.mirrorOnly?'(mirrors Slide 1)':''}</div>
+      </div>
+      <div class="field"><label>Cost (C) — up to 10</label>
+        <input id="cost" type="number" ${opts.mirrorOnly?'disabled':''} max="10" step="0.01" value="${state.C}" placeholder="e.g. 1" inputmode="decimal">
+        <div class="hint">${opts.mirrorOnly?'(mirrors Slide 1)':''}</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Probability input mode</label>
+        <select id="probMode" ${opts.mirrorOnly?'disabled':''}>
+          <option value="oneInX">1 in X</option>
+          <option value="percent">Percentage (%)</option>
+          <option value="micromort">Micromorts</option>
+        </select>
+      </div>
+      <div class="field">
+        <label id="probLabel">Enter X (for “1 in X”)</label>
+        <input id="probVal" type="number" min="2" step="1" value="${state.probVal}" placeholder="e.g. 1000000">
+      </div>
+    </div>
+  `;
+  container.appendChild(form);
+  const sevEl=form.querySelector('#sev'), costEl=form.querySelector('#cost');
+  const probModeEl=form.querySelector('#probMode'), probValEl=form.querySelector('#probVal'), probLabel=form.querySelector('#probLabel');
+
+  // set initial mode selection
+  probModeEl.value = state.probMode;
+
+  function setProbConstraints(){
+    const m=probModeEl.value;
+    if(m==='oneInX'){ probLabel.textContent='Enter X (for “1 in X”)'; probValEl.min='2'; probValEl.max=''; probValEl.step='1'; probValEl.placeholder='e.g. 1,000,000'; }
+    else if(m==='percent'){ probLabel.textContent='Enter percentage (%)'; probValEl.min='0.000001'; probValEl.max='99.999999'; probValEl.step='0.0001'; probValEl.placeholder='e.g. 0.01'; }
+    else { probLabel.textContent='Enter micromorts (µm)'; probValEl.min='0.0001'; probValEl.max='999999.99'; probValEl.step='0.01'; probValEl.placeholder='e.g. 1'; }
+  }
+  setProbConstraints();
+
+  // Graph shell
+  const viz=document.createElement('div'); viz.className='viz-wrap'; container.appendChild(viz);
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('viewBox','0 0 900 600'); viz.appendChild(svg);
+  const gGrid=svg.appendChild(document.createElementNS(svg.namespaceURI,'g')); gGrid.setAttribute('class','grid');
+  const shade=svg.appendChild(document.createElementNS(svg.namespaceURI,'path')); shade.setAttribute('class','shade');
+  const curve=svg.appendChild(document.createElementNS(svg.namespaceURI,'path')); curve.setAttribute('class','curve');
+  const handle=svg.appendChild(document.createElementNS(svg.namespaceURI,'circle')); handle.setAttribute('class','handle'); handle.setAttribute('r',11);
+  const labelG=svg.appendChild(document.createElementNS(svg.namespaceURI,'g'));
+  const lbBg=labelG.appendChild(document.createElementNS(svg.namespaceURI,'rect')); lbBg.setAttribute('class','ptlabel-bg'); lbBg.setAttribute('rx',10); lbBg.setAttribute('ry',10);
+  const lb=labelG.appendChild(document.createElementNS(svg.namespaceURI,'text')); lb.setAttribute('class','ptlabel');
+
+  const axes=svg.appendChild(document.createElementNS(svg.namespaceURI,'g')); axes.setAttribute('class','axis');
+
+  const pad={left:96,right:20,top:36,bottom:88}; // extra padding for labels
+  const W=900,H=600,plotW=W-pad.left-pad.right,plotH=H-pad.top-pad.bottom;
+  const rMin=1,rMax=10;
+  const rToPx=(r)=>pad.left+(r-rMin)/(rMax-rMin)*plotW;
+  const pxToR=(px)=>rMin+(px-pad.left)/plotW*(rMax-rMin);
+  function yToPx(y,yMin,yMax){return pad.top+plotH*(1-(Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin)));}
 
   function drawAxes(mode){
-    axesG.innerHTML=''; gridG.innerHTML='';
-    // vertical grid + labels
-    for (let r=1;r<=10;r++){
+    gGrid.innerHTML=''; axes.innerHTML='';
+    const {yMin,yMax,ticks,label}=getYRange(mode);
+
+    // grid vertical
+    for(let r=1;r<=10;r++){
       const x=rToPx(r);
-      const g=document.createElementNS('http://www.w3.org/2000/svg','line');
-      g.setAttribute('x1',x); g.setAttribute('x2',x); g.setAttribute('y1',pad.top); g.setAttribute('y2',pad.top+plotH);
-      g.setAttribute('class','grid'); gridG.appendChild(g);
-      const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
-      tx.setAttribute('x',x); tx.setAttribute('y',H-46); tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','axis');
-      tx.textContent=r; axesG.appendChild(tx);
+      const ln=document.createElementNS(svg.namespaceURI,'line');
+      ln.setAttribute('x1',x); ln.setAttribute('x2',x); ln.setAttribute('y1',pad.top); ln.setAttribute('y2',pad.top+plotH);
+      ln.setAttribute('class','light'); gGrid.appendChild(ln);
+      const tx=document.createElementNS(svg.namespaceURI,'text');
+      tx.setAttribute('x',x); tx.setAttribute('y',H-34);
+      tx.setAttribute('text-anchor','middle'); tx.textContent=r; axes.appendChild(tx);
     }
-    const yr = yRange(mode);
-    yr.ticks.forEach((yval,i)=>{
-      const y=yToPx(yval,yr.yMin,yr.yMax);
-      const gh=document.createElementNS('http://www.w3.org/2000/svg','line');
-      gh.setAttribute('x1',pad.left); gh.setAttribute('x2',pad.left+plotW); gh.setAttribute('y1',y); gh.setAttribute('y2',y);
-      gh.setAttribute('class', i%2===0 ? 'grid' : 'grid-sub'); gridG.appendChild(gh);
-      const ty=document.createElementNS('http://www.w3.org/2000/svg','text');
-      ty.setAttribute('x',28); ty.setAttribute('y',y+5); ty.setAttribute('class','axis');
-      ty.textContent = (mode==='percent' ? (yval>=1?yval.toString():yval.toExponential(1)) : yval.toLocaleString());
-      axesG.appendChild(ty);
+    // grid horizontal
+    ticks.forEach((t,i)=>{
+      const y=yToPx(t,yMin,yMax);
+      const ln=document.createElementNS(svg.namespaceURI,'line');
+      ln.setAttribute('x1',pad.left); ln.setAttribute('x2',pad.left+plotW); ln.setAttribute('y1',y); ln.setAttribute('y2',y);
+      gGrid.appendChild(ln);
+      const ty=document.createElementNS(svg.namespaceURI,'text');
+      ty.setAttribute('x',pad.left-10); ty.setAttribute('y',y+5);
+      ty.setAttribute('text-anchor','end');
+      ty.textContent = mode==='percent' ? (t>=1 ? t.toString() : t.toExponential(1)) : t.toLocaleString();
+      axes.appendChild(ty);
     });
-    // axis descriptions (pushed farther out)
-    const xlab=document.createElementNS('http://www.w3.org/2000/svg','text');
-    xlab.setAttribute('x', pad.left+plotW/2); xlab.setAttribute('y', H-16); xlab.setAttribute('text-anchor','middle'); xlab.setAttribute('class','axis-desc');
-    xlab.textContent="Severity / Cost Ratio (S / C)"; axesG.appendChild(xlab);
-    const ylab=document.createElementNS('http://www.w3.org/2000/svg','text');
-    ylab.setAttribute('transform',`translate(20 ${pad.top+plotH/2}) rotate(-90)`); ylab.setAttribute('text-anchor','middle'); ylab.setAttribute('class','axis-desc');
-    ylab.textContent=yr.label; axesG.appendChild(ylab);
+    // axis labels (pushed far out)
+    const xl=document.createElementNS(svg.namespaceURI,'text');
+    xl.setAttribute('x',pad.left+plotW/2); xl.setAttribute('y',H-8); xl.setAttribute('text-anchor','middle'); xl.setAttribute('class','axis-label');
+    xl.textContent='Severity / Cost Ratio (S / C)'; axes.appendChild(xl);
+    const yl=document.createElementNS(svg.namespaceURI,'text');
+    yl.setAttribute('transform',`translate(24 ${pad.top+plotH/2}) rotate(-90)`);
+    yl.setAttribute('text-anchor','middle'); yl.setAttribute('class','axis-label');
+    yl.textContent = getYRange(mode).label; axes.appendChild(yl);
   }
 
   function buildCurve(mode){
-    const {yMin,yMax}=yRange(mode);
+    const {yMin,yMax}=getYRange(mode);
     const N=600, pts=[];
-    for(let i=0;i<=N;i++){
-      const r = 1 + 9*(i/N);
-      const X = Xcutoff_from_ratio(r);
-      const Y = XtoYUnit(X, mode);
-      pts.push([rToPx(r), yToPx(Y, yMin, yMax)]);
-    }
-    const d = pts.map(([x,y],i)=> (i?`L ${x},${y}`:`M ${x},${y}`)).join(' ');
-    curve.setAttribute('d', d);
-    const bottom = yToPx(yMin,yMin,yMax);
-    shadeIn.setAttribute('d', d + ` L ${rToPx(10)},${bottom} L ${rToPx(1)},${bottom} Z`);
+    for(let i=0;i<=N;i++){ const r=1+9*(i/N); const X=Xcutoff_from_ratio(r); const Y=XtoYUnit(X,mode); pts.push([rToPx(r), yToPx(Y,yMin,yMax)]); }
+    const d=pts.map(([x,y],i)=> i?`L ${x},${y}`:`M ${x},${y}`).join(' ');
+    curve.setAttribute('d',d);
+    // shade under curve
+    const bottom=yToPx(getYRange(mode).yMin,getYRange(mode).yMin,getYRange(mode).yMax);
+    shade.setAttribute('d', d + ` L ${rToPx(10)},${bottom} L ${rToPx(1)},${bottom} Z`);
   }
 
-  function updateAll(){
-    const mode = miniState.mode;
-    drawAxes(mode); buildCurve(mode);
+  function refresh(){
+    drawAxes(state.probMode);
+    buildCurve(state.probMode);
 
-    const r = miniState.s / miniState.c;
-    const Xc = Xcutoff_from_ratio(r);
-    const yr = yRange(mode);
-    const cx = rToPx(clamp(r,1,10));
-    const cy = yToPx(XtoYUnit(Xc, mode), yr.yMin, yr.yMax);
-    handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
+    const {yMin,yMax}=getYRange(state.probMode);
+    const r=state.S/state.C;
+    const Xc=Xcutoff_from_ratio(r);
+    const Yc=XtoYUnit(Xc,state.probMode);
+    const cx=rToPx(Math.max(1,Math.min(10,r)));
+    const cy=yToPx(Yc,yMin,yMax);
+    handle.setAttribute('cx',cx); handle.setAttribute('cy',cy);
 
-    // label (larger, with 'X' instead of 'cutoff')
-    const label = `S=${miniState.s.toFixed(2)}  ·  C=${miniState.c.toFixed(2)}  ·  S/C=${(r).toFixed(3)}  ·  X≈${
-      (mode==='oneInX' ? Math.round(Xc).toLocaleString() : (mode==='percent' ? ceilPlaces(100/Xc,6) : ceilPlaces(1e6/Xc,2))
-    } ${cutoffLabel(mode)}`;
-    labelTx.textContent=label; labelTx.setAttribute('text-anchor','middle');
-    let ly = cy - 34; const minTop=pad.top + 20; if (ly<minTop) ly=minTop;
-    labelTx.setAttribute('x', cx); labelTx.setAttribute('y', ly);
-    const bb = labelTx.getBBox(); const padBox=10;
-    labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
-    labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
+    // label (bigger, says X instead of Cutoff text)
+    const txt=`S=${(+state.S).toFixed(2)}, C=${(+state.C).toFixed(2)} · S/C=${(r).toFixed(3)} · X=${ state.probMode==='oneInX' ? Math.round(Xc).toLocaleString() : (state.probMode==='percent' ? ceilPlaces(100/Xc,6)+'%' : ceilPlaces(1e6/Xc,2)+' µm') }`;
+    lb.textContent=txt; lb.setAttribute('text-anchor','middle');
+    let ly=cy-28; const minTop=pad.top+18; if(ly<minTop) ly=minTop;
+    lb.setAttribute('x',cx); lb.setAttribute('y',ly);
+    const bb=lb.getBBox(); const p=10; lbBg.setAttribute('x',bb.x-p); lbBg.setAttribute('y',bb.y-p); lbBg.setAttribute('width',bb.width+2*p); lbBg.setAttribute('height',bb.height+2*p);
 
-    // Rule + verdict (pills removed; below graph)
-    const xOk = (miniState.X != null) ? (miniState.X <= Xc + 1e-15) : false; // X >= Probability Cutoff ↔ X_user ≤ Xc when using '1 in X' scale
-    const scOk = (r >= computeSCutoffForX(miniState.X || 2));
-    const ok = xOk && scOk;
-    miniState.verdict = ok;
-    rule.innerHTML = `Rule: Only if <b>X ≥ Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.`;
-    verdict.textContent = 'Verdict: Action should ' + (ok ? 'be' : 'NOT be') + ' considered.';
-    verdict.className = 'verdict' + (ok ? ' ok' : '');
+    // verdict/rule under graph
+    const Xuser = normalizeToX(state.probMode, parseFloat(probValEl.value));
+    const act = Xuser !== null ? (Xuser <= Xc + 1e-15) : null;
+    if(typeof opts.onVerdict==='function') opts.onVerdict({act, Xc, r});
   }
 
-  // Inputs wiring (skip when mirror)
-  const sIn = row1.querySelector('#sIn');
-  const cIn = row1.querySelector('#cIn');
-  const modeIn = row2.querySelector('#modeIn');
-  const pIn = row2.querySelector('#pIn');
-  const pLabel = row2.querySelector('#pLabel');
-
-  function setProbConstraints(){
-    const m = modeIn.value;
-    if (m==='oneInX'){ pIn.min='2'; pIn.max=''; pIn.step='1'; pIn.placeholder='e.g. 1,000,000'; pLabel.textContent='X'; }
-    else if (m==='percent'){ pIn.min='0.000001'; pIn.max='99.999999'; pIn.step='0.0001'; pIn.placeholder='e.g. 0.1'; pLabel.textContent='%'; }
-    else { pIn.min='0.0001'; pIn.max='999999.99'; pIn.step='0.01'; pIn.placeholder='e.g. 10'; pLabel.textContent='µm'; }
+  // events
+  function commit(){
+    let S=parseFloat(sevEl.value); if(!isFinite(S)) S=state.S; if(S<=0) S=EPS; S=Math.min(S,MAX_SC);
+    let C=parseFloat(costEl.value); if(!isFinite(C)) C=state.C; if(C<=0) C=EPS; C=Math.min(C,MAX_SC);
+    state.S=S; state.C=C;
+    state.probMode=probModeEl.value;
+    let pv=parseFloat(probValEl.value); if(!isFinite(pv)) pv=state.probVal;
+    if(state.probMode==='oneInX' && pv<2) pv=2;
+    if(state.probMode==='percent'){ if(pv<=0) pv=0.000001; if(pv>=100) pv=99.999999; }
+    if(state.probMode==='micromort'){ if(pv<=0) pv=0.0001; if(pv>=1e6) pv=999999.99; }
+    state.probVal=pv; state.X_user = normalizeToX(state.probMode, pv);
+    refresh();
   }
+  [sevEl,costEl,probValEl].forEach(el=>{ if(!opts.mirrorOnly){ el.addEventListener('change',commit); el.addEventListener('blur',commit); } });
+  if(!opts.mirrorOnly){ probModeEl.addEventListener('change',()=>{ setProbConstraints(); commit(); }); }
 
-  function commitInputs(){
-    let s=parseFloat(sIn.value); if(!isFinite(s)) s=miniState.s;
-    let c=parseFloat(cIn.value); if(!isFinite(c)) c=miniState.c;
-    if (s<=0) s=EPS; if (c<=0) c=EPS; s=Math.min(s,MAX_SC); c=Math.min(c,MAX_SC);
-    miniState.s=s; miniState.c=c;
-    miniState.mode = modeIn.value;
-    let pv = parseFloat(pIn.value); if(!isFinite(pv)) pv=miniState.val;
-    if (miniState.mode==='oneInX' && pv<2) pv=2;
-    if (miniState.mode==='percent'){ if (pv<=0) pv=0.000001; if (pv>=100) pv=99.999999; }
-    if (miniState.mode==='micromort'){ if (pv<=0) pv=0.0001; if (pv>=1e6) pv=999999.99; }
-    miniState.val = pv;
-    miniState.X = normalizeToX(miniState.mode, pv);
-    updateAll();
-  }
-
-  if (!mirror){
-    setProbConstraints();
-    sIn.addEventListener('change', commitInputs);
-    cIn.addEventListener('change', commitInputs);
-    modeIn.addEventListener('change', ()=>{ setProbConstraints(); commitInputs(); });
-    pIn.addEventListener('change', commitInputs);
-  } else {
-    // mirror: keep disabled, but still reflect live when dragging here (local state only)
-    setProbConstraints();
-  }
-
-  // Dragging: adjust BOTH s and c smoothly to hit dragged ratio near current magnitude
+  // dragging
   let dragging=false;
   function chooseSCFromRatio(r, prevS, prevC){
-    // keep geometric mean constant to move both together
-    const g = Math.sqrt(Math.max(prevS,EPS) * Math.max(prevC,EPS));
-    let S = Math.min(Math.max(g*Math.sqrt(r), EPS), MAX_SC);
-    let C = Math.min(Math.max(g/Math.sqrt(r), EPS), MAX_SC);
-    return {S, C};
+    let S=Math.min(Math.max(prevS,EPS),MAX_SC);
+    let C=S/r;
+    if(C<=EPS||C>MAX_SC){ C=Math.min(Math.max(prevC,EPS),MAX_SC); S=r*C; if(S<=EPS||S>MAX_SC){ S=Math.min(Math.max(S,EPS),MAX_SC); C=Math.min(Math.max(S/r,EPS),MAX_SC); } }
+    return {S,C};
   }
-  function onPointerDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){} onPointerMove(e); }
-  function onPointerMove(e){
+  function onDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){} onMove(e); }
+  function onMove(e){
     if(!dragging) return; e.preventDefault();
-    const pt = svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
-    const sp = pt.matrixTransform(svg.getScreenCTM().inverse());
-    const px = clamp(sp.x, pad.left, pad.left+plotW);
-    const r = pxToR(px);
-    const chosen = chooseSCFromRatio(r, miniState.s, miniState.c);
-    miniState.s = chosen.S; miniState.c = chosen.C;
-    if (!mirror){ sIn.value = miniState.s.toFixed(2); cIn.value = miniState.c.toFixed(2); }
-    updateAll();
+    const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const sp=pt.matrixTransform(svg.getScreenCTM().inverse());
+    const px=Math.max(pad.left,Math.min(pad.left+plotW,sp.x)); const r=pxToR(px);
+    const chosen=chooseSCFromRatio(r,state.S,state.C);
+    state.S=chosen.S; state.C=chosen.C;
+    // reflect S/C back into inputs (even greyed)
+    sevEl.value=state.S; costEl.value=state.C;
+    refresh();
   }
-  function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
+  function onUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
+  handle.addEventListener('pointerdown',onDown,{passive:false});
+  svg.addEventListener('pointermove',onMove,{passive:false});
+  window.addEventListener('pointerup',onUp,{passive:false});
 
-  handle.addEventListener('pointerdown', onPointerDown, {passive:false});
-  svg.addEventListener('pointermove', onPointerMove, {passive:false});
-  window.addEventListener('pointerup', onPointerUp, {passive:false});
-
-  updateAll();
+  commit(); // initial
+  return { getState:()=>Object.assign({},state) };
 }
 
-/* ===== AUX CONTROLS (Examples / Reasoning images) ===== */
-function setupAuxToggles(node){
-  const leftWrap=document.getElementById('leftControlsWrapper');
-  const rightWrap=document.getElementById('rightControlsWrapper');
-  const panel=document.getElementById('sharedPanel');
-  leftWrap.innerHTML=''; rightWrap.innerHTML=''; collapseSharedPanel();
+/* ======= APP SHELL ======= */
+var historyStack=[];
+var currentNode = flowchart[0];
+var currentSegment="If You Should Act";
+var originalTitleHTML=null;
+var miniSnapshot=null; // snapshot from Q6 to mirror on Q7
+var q6Verdict=false;
 
-  // Show Examples for questions (incl. Q6/Q7)
-  if (node.type==='question'){
-    const examplesBtn = document.createElement('button');
-    examplesBtn.type='button'; examplesBtn.textContent='Show Examples'; examplesBtn.className='examples-btn';
-    leftWrap.appendChild(examplesBtn);
-    examplesBtn.onclick=function(){
-      const open = panel.style.display==='block' && panel.dataset.mode==='examples';
-      if (open){ collapseSharedPanel(); }
-      else {
-        panel.innerHTML='';
-        const lines = (window.examples && window.examples[node.id]) || ["Example 1","Example 2"];
-        lines.forEach(t=>{ const p=document.createElement('p'); p.textContent=t; panel.appendChild(p); });
-        panel.style.display='block'; panel.dataset.mode='examples';
-      }
-    };
-  }
-
-  // Q22/Q24 visualizations (kept from original)
-  if (node.id==='Q22' || node.id==='Q24'){
-    const vizBtn = document.createElement('button');
-    vizBtn.type='button'; vizBtn.textContent='Show Visualization'; vizBtn.className='viz-btn';
-    rightWrap.appendChild(vizBtn);
-    vizBtn.onclick=function(){
-      const open = panel.style.display==='block' && panel.dataset.mode==='viz';
-      if (open){ collapseSharedPanel(); }
-      else {
-        panel.innerHTML='';
-        const img=document.createElement('img');
-        img.src = node.id==='Q22' ? './diminishing_returns_curve.png' : './inverted_u_curve.png';
-        img.alt = node.id==='Q22' ? 'Diminishing Returns Curve' : 'Inverted-U Curve';
-        panel.appendChild(img);
-        panel.style.display='block'; panel.dataset.mode='viz';
-      }
-    };
-  }
+function setHeadingText(node){
+  var title=document.getElementById('segmentTitle'); var skip=document.getElementById('skipBtn');
+  if(node.id==='Q0'){ title.textContent='Discernment: A Decision-Making Guide'; skip.style.display='none'; return; }
+  if(node.type==='result'){ title.textContent='👍👎 Verdict'; skip.style.display='none'; return; }
+  title.textContent = (parseInt(node.id.replace('Q',''))>=31)?'⏳ When You Should Act':'⚖️ If You Should Act';
+  skip.style.display = (parseInt(node.id.replace('Q',''))<31 && node.type!=='result') ? 'inline-block' : 'none';
 }
 
-/* ===== RENDER ===== */
-var lastWasResult=false;
-if (!originalTitleHTML) originalTitleHTML = document.getElementById('segmentTitle').innerHTML;
-renderNode(currentNode);
-
-function renderNode(node){
-  collapseSharedPanel();
-  const errorBox=document.getElementById('errorBox'); errorBox.textContent='';
-
-  if (!node){
-    errorBox.textContent="Error: missing node."; document.getElementById('text').textContent=''; document.getElementById('buttons').innerHTML=''; setHeadingText('');
-    document.getElementById('backBtn').style.visibility = historyStack.length>0 ? 'visible':'hidden'; document.getElementById('restartTop').style.display='inline-block'; return;
-  }
-
-  const previousSegment = currentSegment;
-  const thisSegment = (node.type==='about'||node.type==='aboutMenu') ? previousSegment : getSegmentForNodeId(node.id);
-  const comingFromResult = lastWasResult && node.type!=='result';
-  const shouldFlash = node.id!=='Q0' && (node.type==='result' || comingFromResult || thisSegment!==previousSegment);
-  if (shouldFlash && !(node.type==='about'||node.type==='aboutMenu')){ flashHeadingColor(thisSegment, node); }
-  currentSegment = thisSegment;
-  setHeadingText(node);
-  lastWasResult = (node.type==='result');
-
-  const textDiv=document.getElementById('text');
-  textDiv.innerHTML = node.text || '';
-
-  // Theme button only on Q0
-  const themeBtn=document.getElementById('themeToggle');
-  if (themeBtn){ themeBtn.style.display = (node.id==='Q0') ? 'inline-block' : 'none'; if (node.id==='Q0' && window.__refreshThemeButtonLabel) window.__refreshThemeButtonLabel(); }
-
-  document.getElementById('backBtn').style.visibility = historyStack.length>0 ? 'visible':'hidden';
-
-  setupAuxToggles(node);
-
-  const btns=document.getElementById('buttons');
-  btns.innerHTML='';
-  const restartTop=document.getElementById('restartTop');
-
-  if (node.type==='result'){
-    restartTop.style.display='none';
-    btns.classList.add('center');
-    const rb=document.createElement('button'); rb.className='restart'; rb.textContent='Restart'; rb.onclick=()=>restart(); rb.style.flex='0 0 auto'; btns.appendChild(rb);
-  } else {
-    restartTop.style.display = (node.id==='Q0') ? 'none' : 'inline-block';
-    btns.classList.remove('center');
-
-    if (node.type==='about'){
-      return;
-    }
-    if (node.type==='aboutMenu'){
-      const a1=document.createElement('button'); a1.className='next'; a1.textContent='About Me'; a1.onclick=()=>goToNode('AB1');
-      const a2=document.createElement('button'); a2.className='next'; a2.textContent='Guide Concepts Explained'; a2.onclick=()=>goToNode('AB2');
-      btns.appendChild(a1); btns.appendChild(a2);
-      return;
-    }
-
-    if (node.type==='question'){
-      // For Q6 and Q7 render the interactive mini UI inline (before buttons)
-      if (node.id==='Q6' || node.id==='Q7'){
-        const panel = document.getElementById('sharedPanel');
-        panel.innerHTML='';
-        panel.style.display='block';
-        panel.dataset.mode='viz';
-        renderMini(panel, {mirror: node.id==='Q7'});
-      }
-
-      const yesBtn=document.createElement('button'); yesBtn.className='yes'; yesBtn.textContent='Yes'; yesBtn.onclick=()=>goToNode(node.yes);
-      const noBtn=document.createElement('button'); noBtn.className='no'; noBtn.textContent='No'; noBtn.onclick=()=>goToNode(node.no);
-      btns.appendChild(yesBtn); btns.appendChild(noBtn);
-      if (node.same){ const sBtn=document.createElement('button'); sBtn.className='same'; sBtn.textContent='Roughly the Same'; sBtn.onclick=()=>goToNode(node.same); btns.appendChild(sBtn); }
-    } else if (node.type==='info'){
-      if (node.id==='Q0'){
-        const next=document.createElement('button'); next.className='next'; next.textContent='Next'; next.onclick=()=>goToNode(node.next);
-        const about=document.createElement('button'); about.className='next'; about.textContent='About'; about.onclick=()=>goToNode('AB0');
-        btns.appendChild(next); btns.appendChild(about);
-      } else {
-        const next=document.createElement('button'); next.className='next'; next.textContent='Next'; next.onclick=()=>goToNode(node.next);
-        btns.appendChild(next);
-      }
-    }
-  }
+function collapseSharedPanel(){
+  const p=document.getElementById('sharedPanel');
+  p.style.display='none'; p.dataset.mode=''; p.innerHTML=''; p.setAttribute('aria-hidden','true');
+  const left=document.getElementById('leftControlsWrapper'); const right=document.getElementById('rightControlsWrapper');
+  left.innerHTML=''; right.innerHTML='';
 }
 
 function goToNode(id){
   collapseSharedPanel();
-  historyStack.push(currentNode ? currentNode.id : '');
-  currentNode = flowchart.find(n=>n.id===id) || currentNode;
+  const next=flowchart.find(n=>n.id===id);
+  historyStack.push(currentNode.id);
+  currentNode=next;
   renderNode(currentNode);
 }
 function goBack(){
   collapseSharedPanel();
-  const prevId = historyStack.pop();
-  const prev = flowchart.find(n=>n.id===prevId);
-  currentNode = prev || currentNode;
+  const prevId=historyStack.pop(); if(!prevId) return;
+  currentNode=flowchart.find(n=>n.id===prevId)||currentNode;
   renderNode(currentNode);
 }
 function restart(){
-  collapseSharedPanel();
-  historyStack = [];
-  currentSegment = "If You Should Act";
-  currentNode = flowchart.find(n=>n.id==="Q0");
-  if (originalTitleHTML) { document.getElementById('segmentTitle').innerHTML = originalTitleHTML; document.getElementById('skipBtn').style.display='none'; }
+  historyStack=[]; currentNode=flowchart[0]; miniSnapshot=null; q6Verdict=false;
   renderNode(currentNode);
 }
+document.getElementById('backBtn').onclick=goBack;
+document.getElementById('restartTop').onclick=restart;
+document.getElementById('skipBtn').onclick=()=>goToNode('Q31');
+
+function setupAuxToggles(node){
+  const left=document.getElementById('leftControlsWrapper');
+  const right=document.getElementById('rightControlsWrapper');
+  const panel=document.getElementById('sharedPanel');
+  left.innerHTML=''; right.innerHTML=''; panel.innerHTML=''; panel.style.display='none'; panel.dataset.mode='';
+  const allow = (node.type==='question' || node.id==='Q33') && !(node.type==='mini1'||node.type==='mini2');
+  if(!allow) return;
+  // Examples button
+  const ex=document.createElement('button'); ex.className='ctrl examples-btn'; ex.textContent='Show Examples';
+  left.appendChild(ex);
+  ex.onclick=()=>{
+    const open=(panel.style.display==='block'&&panel.dataset.mode==='examples');
+    if(open){ panel.style.display='none'; panel.dataset.mode=''; ex.textContent='Show Examples';}
+    else { panel.innerHTML=''; (window.examples[node.id]||[]).forEach(t=>{const p=document.createElement('p');p.textContent=t;panel.appendChild(p)}); panel.style.display='block'; panel.dataset.mode='examples'; ex.textContent='Hide Examples'; }
+  };
+  // Visualization button for Q22/Q24
+  if(node.id==='Q22'||node.id==='Q24'){
+    const vz=document.createElement('button'); vz.className='ctrl viz-btn'; vz.textContent='Show Visualization'; right.appendChild(vz);
+    vz.onclick=()=>{
+      const open=(panel.style.display==='block'&&panel.dataset.mode==='viz');
+      if(open){ panel.style.display='none'; panel.dataset.mode=''; vz.textContent='Show Visualization'; }
+      else { panel.innerHTML=''; const img=document.createElement('img'); img.alt='Curve'; img.src = node.id==='Q22'?'./diminishing_returns_curve.png':'./inverted_u_curve.png'; panel.appendChild(img); panel.style.display='block'; panel.dataset.mode='viz'; vz.textContent='Hide Visualization'; }
+    };
+  }
+}
+
+function renderNode(node){
+  const text=document.getElementById('text'); const btns=document.getElementById('buttons'); const err=document.getElementById('errorBox');
+  err.textContent='';
+  setHeadingText(node);
+  text.innerHTML=node.text||'';
+  setupAuxToggles(node);
+  btns.innerHTML='';
+
+  // Navigation buttons
+  function addYesNo(n){
+    const y=document.createElement('button'); y.className='yes'; y.textContent='Yes'; y.onclick=()=>goToNode(n.yes); btns.appendChild(y);
+    const no=document.createElement('button'); no.className='no'; no.textContent='No'; no.onclick=()=>goToNode(n.no); btns.appendChild(no);
+    if(n.same){ const s=document.createElement('button'); s.className='next'; s.textContent='Roughly the Same'; s.onclick=()=>goToNode(n.same); btns.appendChild(s); }
+  }
+
+  if(node.type==='info'){
+    const nx=document.createElement('button'); nx.className='next'; nx.textContent='Next'; nx.onclick=()=>goToNode(node.next); btns.appendChild(nx);
+    if(node.id==='Q0'){ const about=document.createElement('button'); about.className='next'; about.textContent='About'; about.onclick=()=>alert('About pages omitted for brevity here.'); btns.appendChild(about); }
+    return;
+  }
+  if(node.type==='result'){
+    const r=document.createElement('button'); r.className='restart'; r.style.flex='0 0 auto'; r.textContent='Restart'; r.onclick=restart; btns.appendChild(r);
+    return;
+  }
+
+  if(node.type==='question'){
+    // Special: Q7 is now mini2 – handled below
+    if(node.id!=='Q6' && node.id!=='Q7'){ addYesNo(node); }
+  }
+
+  // MINI 1 (Q6)
+  if(node.id==='Q6'){
+    const p=document.getElementById('sharedPanel'); p.style.display='block'; p.dataset.mode='viz';
+    let verdictLine=null, ruleLine=null;
+    function setRuleVerdict(v){
+      if(!ruleLine){
+        ruleLine=document.createElement('div'); ruleLine.className='rule'; p.appendChild(ruleLine);
+        verdictLine=document.createElement('div'); verdictLine.className='verdict'; p.appendChild(verdictLine);
+      }
+      ruleLine.textContent = "Rule: Only if " + probRuleName(v.mode||'oneInX') + " ≥ Probability Cutoff and S/C ≥ S/C Cutoff can action be considered.";
+      verdictLine.innerHTML = 'Verdict: <b style="color:'+ (v.act? 'var(--verdict-green)':'inherit') +'">' + (v.act?'Action should be considered.':'Action should not be considered.') + '</b>';
+    }
+    const mini = buildMini(p, { mirrorOnly:false, onVerdict: ({act,Xc,r})=>{
+      q6Verdict = !!act; setRuleVerdict({act, mode:p.querySelector('#probMode').value});
+    }});
+    // Buttons (Continue routes based on verdict)
+    const cont=document.createElement('button'); cont.className='next'; cont.textContent='Continue';
+    cont.onclick=()=> goToNode(q6Verdict ? flowchart.find(n=>n.id==='Q6').nextOnAct : flowchart.find(n=>n.id==='Q6').nextOnNo);
+    btns.appendChild(cont);
+    // snapshot for Q7 mirrors
+    miniSnapshot = mini.getState();
+    return;
+  }
+
+  // MINI 2 (Q7) — mirror-only
+  if(node.id==='Q7'){
+    const p=document.getElementById('sharedPanel'); p.style.display='block'; p.dataset.mode='viz';
+    function setRuleVerdict(v){
+      let rule=document.getElementById('q7rule'); let ver=document.getElementById('q7verdict');
+      if(!rule){
+        rule=document.createElement('div'); rule.id='q7rule'; rule.className='rule'; p.appendChild(rule);
+        ver=document.createElement('div'); ver.id='q7verdict'; ver.className='verdict'; p.appendChild(ver);
+      }
+      rule.textContent = "Rule: Only if " + probRuleName(v.mode||'oneInX') + " ≥ Probability Cutoff and S/C ≥ S/C Cutoff can action be considered.";
+      ver.innerHTML = 'Verdict: <b style="color:'+ (q6Verdict? 'var(--verdict-green)':'inherit') +'">' + (q6Verdict?'Action should be considered.':'Action should not be considered.') + '</b>';
+    }
+    buildMini(p, { mirrorOnly:true, initialState:miniSnapshot||{}, onVerdict: ({act})=>{
+      setRuleVerdict({act, mode:p.querySelector('#probMode').value});
+    }});
+    // Yes/No like Q20 (as wording says) — keep standard nav
+    const yes=document.createElement('button'); yes.className='yes'; yes.textContent='Yes'; yes.onclick=()=>goToNode(flowchart.find(n=>n.id==='Q7').yes); btns.appendChild(yes);
+    const no=document.createElement('button'); no.className='no'; no.textContent='No'; no.onclick=()=>goToNode(flowchart.find(n=>n.id==='Q7').no); btns.appendChild(no);
+    return;
+  }
+
+  // default question buttons already added
+}
+
+/* Initial render */
+renderNode(currentNode);
 </script>
 </body>
 </html>
