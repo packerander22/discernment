@@ -9,13 +9,25 @@
   :root {
     --bg:#f7f7f7; --card:#ffffff; --text:#111; --subtle:#333; --border:#ddd; --shadow:0 2px 6px rgba(0,0,0,.1);
     --btn-yes:#4CAF50; --btn-no:#F44336; --btn-next:#2196F3; --btn-muted:#9E9E9E; --btn-text:#fff;
-    --panel:#fafafa; --line:#999;
+    --panel:#fafafa;
+    --axis:#777;
+    --grid: #dcdcdc;      /* light grid */
+    --curve:#1f4cff;
+    --shade-in:#6cbf6c22;
+    --shade-out:#c7c7c733;
+    --handle:#ff3b3b;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg:#0f1115; --card:#171a21; --text:#e9edf1; --subtle:#c7cbd2; --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,.35);
       --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-next:#42A5F5; --btn-muted:#6c6f76; --btn-text:#fff;
-      --panel: color-mix(in oklab, #171a21, #0f1115 8%); --line:#b7b7b7;
+      --panel: color-mix(in oklab, #171a21, #0f1115 8%);
+      --axis:#aab2bf;
+      --grid: color-mix(in oklab, #aab2bf, transparent 70%); /* very soft */
+      --curve:#6aa8ff;
+      --shade-in: color-mix(in oklab, #6cbf6c, transparent 85%);
+      --shade-out: color-mix(in oklab, #c7c7c7, transparent 80%);
+      --handle:#ff6a6a;
     }
   }
 
@@ -45,13 +57,14 @@
 
   /* chart */
   svg{width:100%;height:auto;display:block;touch-action:none}
-  .axis text{font-size:12px;fill:#777}
-  .curve{fill:none;stroke:#1f4cff;stroke-width:2.5}
-  .shade-in{fill:#6cbf6c22}
-  .shade-out{fill:#c7c7c733}
-  .handle{fill:#ff3b3b;stroke:#fff;stroke-width:2;cursor:pointer;touch-action:none}
-  .ptlabel{font-size:15px;font-weight:700;pointer-events:none}
-  .ptlabel-bg{fill:#fff;fill-opacity:.98;stroke:var(--border)}
+  .axis text{font-size:12px;fill:var(--axis)}
+  .grid { stroke: var(--grid); stroke-width:1; }
+  .curve{fill:none;stroke:var(--curve);stroke-width:2.5}
+  .shade-in{fill:var(--shade-in)}
+  .shade-out{fill:var(--shade-out)}
+  .handle{fill:var(--handle);stroke:#fff;stroke-width:2;cursor:pointer;touch-action:none}
+  .ptlabel{font-size:15px;font-weight:700;pointer-events:none; fill: var(--text);}
+  .ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
 </style>
 </head>
 <body>
@@ -108,10 +121,10 @@
 
         <div class="statline">
           <div class="pill"><span id="cutoffLabel">Cutoff (X)</span>: <span id="cutoffOut">1,000,000</span></div>
-          <div class="pill">Cutoff (S/C): <span id="ratioCutOut">1.00</span></div>
+          <div class="pill">S/C: <span id="ratioCutOut">5.00</span></div>
         </div>
         <div class="rule" id="ruleLine">
-          Rule: Only if <span id="probRuleName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ Cutoff (S/C)</b> can action be considered.
+          Rule: Only if <span id="probRuleName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.
         </div>
       </div>
 
@@ -154,7 +167,6 @@
    ========================= */
 const $ = id => document.getElementById(id);
 
-// Accept any positive S/C; forbid zero only via epsilon
 const EPS = 1e-9;
 const MAX_SC = 10;
 
@@ -193,8 +205,22 @@ function probRuleName(mode){
   if (mode==='micromort') return 'µm';
   return 'X';
 }
-function computeSCutoffForX(X){
-  return 1 + 9 * Math.pow((Math.log10(X)/6), 1/ALPHA);
+
+/* NEW: choose S and C together (least-squares) */
+function chooseSCFromRatio(r, S0, C0){
+  // argmin_{S=rC} (S-S0)^2 + (C-C0)^2
+  let C = (r * S0 + C0) / (r*r + 1);
+  let S = r * C;
+
+  // Clamp to [EPS, MAX_SC] while preserving ratio
+  if (S > MAX_SC) { S = MAX_SC; C = S / r; }
+  if (C > MAX_SC) { C = MAX_SC; S = r * C; }
+  if (S < EPS)    { S = EPS;    C = S / r; }
+  if (C < EPS)    { C = EPS;    S = r * C; }
+
+  S = Math.min(Math.max(S, EPS), MAX_SC);
+  C = Math.min(Math.max(C, EPS), MAX_SC);
+  return { S, C };
 }
 
 /* =========================
@@ -203,7 +229,6 @@ function computeSCutoffForX(X){
 const sevEl = $('sev'), costEl = $('cost'), probModeEl = $('probMode'), probValEl = $('probVal');
 const cutoffLabel = $('cutoffLabel'), cutoffOut = $('cutoffOut'), ratioCutOut = $('ratioCutOut'), probRuleNameEl = $('probRuleName');
 
-/* Declare panels & example buttons EARLY so updateStats can see them */
 const exBtn1 = $('exBtn1'), exBtn2 = $('exBtn2');
 const panel1 = $('sharedPanel'), panel2 = $('sharedPanel2');
 
@@ -216,7 +241,7 @@ function setProbInputConstraints(){
   probRuleNameEl.textContent = probRuleName(mode);
 }
 
-/* Read/commit values but allow partial typing */
+/* Read/commit values (let typing be free) */
 function commitInputs() {
   let S = parseFloat(sevEl.value); if (!isFinite(S)) S = state.S;
   let C = parseFloat(costEl.value); if (!isFinite(C)) C = state.C;
@@ -237,11 +262,10 @@ function commitInputs() {
   probValEl.value = pv;
 
   state.S=S; state.C=C; state.probMode=mode; state.probVal=pv; state.X_user = normalizeToX(mode, pv);
-
   updateStatsAndMaybeViz();
 }
 
-/* Update stats + refresh open viz (guarded) */
+/* Update stats + refresh open viz */
 function updateStatsAndMaybeViz(){
   const r = state.S / state.C;
   const Xc = Xcutoff_from_ratio(r);
@@ -254,17 +278,14 @@ function updateStatsAndMaybeViz(){
   cutoffOut.textContent = (mode==='oneInX') ? Math.round(c).toLocaleString()
                      : (mode==='percent' ? ceilPlaces(c,6) : ceilPlaces(c,2));
 
-  const xForSCut = (state.X_user ?? 2);
-  const rCut = computeSCutoffForX(xForSCut);
-  ratioCutOut.textContent = rCut.toFixed(2);
+  /* Show LIVE S/C (you requested this in place of the old S/C cutoff) */
+  ratioCutOut.textContent = (r).toFixed(2);
 
   state.act = (state.X_user != null) ? (state.X_user <= Xc + 1e-15) : null;
 
-  if (typeof panel1 !== 'undefined' &&
-      panel1 && panel1.style &&
-      panel1.style.display === 'block' &&
-      panel1.dataset && panel1.dataset.mode === 'viz' &&
-      typeof window.__updateVizShared === 'function') {
+  if (panel1 && panel1.style && panel1.style.display==='block' &&
+      panel1.dataset && panel1.dataset.mode==='viz' &&
+      typeof window.__updateVizShared==='function') {
     window.__updateVizShared();
   }
 }
@@ -331,57 +352,75 @@ function openVizInto(panel, withMirrors){
   }
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('viewBox','0 0 900 580');
+  /* Extra margins so axis labels don't collide with numbers */
+  svg.setAttribute('viewBox','0 0 940 640');
   svg.style.touchAction='none';
   panel.appendChild(svg);
 
   const axesG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(axesG);
+  const gridG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(gridG);
   const shadeIn = document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','shade-in'); svg.appendChild(shadeIn);
   const shadeOut= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeOut.setAttribute('class','shade-out'); svg.appendChild(shadeOut);
   const curve = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','curve'); svg.appendChild(curve);
-  const hLine = document.createElementNS('http://www.w3.org/2000/svg','line'); hLine.setAttribute('stroke','var(--line)'); hLine.setAttribute('stroke-dasharray','5,5'); svg.appendChild(hLine);
-  const vLine = document.createElementNS('http://www.w3.org/2000/svg','line'); vLine.setAttribute('stroke','var(--line)'); vLine.setAttribute('stroke-dasharray','5,5'); svg.appendChild(vLine);
+
+  /* Removed dotted reference lines */
   const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','handle'); handle.setAttribute('r','11'); svg.appendChild(handle);
   handle.style.touchAction='none';
 
+  /* Label group LAST (above everything) */
   const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(labelG);
   const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
   const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','ptlabel'); labelG.appendChild(labelTx);
 
-  const pad = { left:78, right:24, top:28, bottom:72 };
-  const W=900, H=580, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
+  const pad = { left:96, right:30, top:36, bottom:100 };
+  const W=940, H=640, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   const rMin=1, rMax=10;
 
   function getYRange(mode){
-    if (mode==='percent') return { yMin: 0.0001, yMax: 100, ticks:[100,10,1,0.1,0.01,0.001,0.0001], label: "Cutoff Probability (%) (log scale)" };
-    if (mode==='micromort') return { yMin: 1, yMax: 1e6, ticks:[1e6,1e5,1e4,1e3,100,10,1], label: "Cutoff Probability (µm) (log scale)" };
-    return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label: "Cutoff Probability as '1 in X' (log scale)" };
+    if (mode==='percent') return { yMin: 0.0001, yMax: 100, ticks:[100,10,1,0.1,0.01,0.001,0.0001], label: "Probability (%) at cutoff (log scale)" };
+    if (mode==='micromort') return { yMin: 1, yMax: 1e6, ticks:[1e6,1e5,1e4,1e3,100,10,1], label: "Probability (µm) at cutoff (log scale)" };
+    return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label: "Cutoff '1 in X' (log scale)" };
   }
   const rToPx = (r)=> pad.left + (r-rMin)/(rMax-rMin)*plotW;
   const pxToR = (px)=> (rMin + (px-pad.left)/plotW*(rMax-rMin));
   function yToPx(y,yMin,yMax){ return pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); }
 
   function drawAxes(mode){
-    axesG.innerHTML='';
+    axesG.innerHTML=''; gridG.innerHTML='';
+    /* vertical grid + x tick numbers */
     for (let r=1;r<=10;r++){
       const x=rToPx(r);
-      const l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',x); l.setAttribute('x2',x); l.setAttribute('y1',pad.top); l.setAttribute('y2',pad.top+plotH); l.setAttribute('stroke','#ddd'); axesG.appendChild(l);
+      const gl=document.createElementNS('http://www.w3.org/2000/svg','line');
+      gl.setAttribute('x1',x); gl.setAttribute('x2',x); gl.setAttribute('y1',pad.top); gl.setAttribute('y2',pad.top+plotH); gl.setAttribute('class','grid');
+      gridG.appendChild(gl);
+
       const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
-      tx.setAttribute('x',x); tx.setAttribute('y',H-28); tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','axis');
+      tx.setAttribute('x',x); tx.setAttribute('y',H-64);  /* push numbers up from bottom label */
+      tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','axis');
       tx.textContent=r; axesG.appendChild(tx);
     }
+    /* horizontal grid + y tick labels */
     const {yMin,yMax,ticks,label} = getYRange(mode);
     ticks.forEach(y=>{
+      const py = yToPx(y,yMin,yMax);
+      const gl=document.createElementNS('http://www.w3.org/2000/svg','line');
+      gl.setAttribute('x1',pad.left); gl.setAttribute('x2',pad.left+plotW); gl.setAttribute('y1',py); gl.setAttribute('y2',py); gl.setAttribute('class','grid');
+      gridG.appendChild(gl);
+
       const ty=document.createElementNS('http://www.w3.org/2000/svg','text');
-      ty.setAttribute('x',12); ty.setAttribute('y',yToPx(y,yMin,yMax)+5); ty.setAttribute('class','axis');
+      ty.setAttribute('x',20); ty.setAttribute('y',py+5); ty.setAttribute('class','axis');
       ty.textContent = (mode==='percent' ? (y>=1?y.toString():y.toExponential(1)) : y.toLocaleString());
       axesG.appendChild(ty);
     });
+
     const xlab=document.createElementNS('http://www.w3.org/2000/svg','text');
-    xlab.setAttribute('x', pad.left+plotW/2); xlab.setAttribute('y', H-8); xlab.setAttribute('text-anchor','middle'); xlab.setAttribute('class','axis');
+    xlab.setAttribute('x', pad.left+plotW/2); xlab.setAttribute('y', H-24); /* more gap below numbers */
+    xlab.setAttribute('text-anchor','middle'); xlab.setAttribute('class','axis');
     xlab.textContent="Severity / Cost Ratio (S / C)"; axesG.appendChild(xlab);
+
     const ylab=document.createElementNS('http://www.w3.org/2000/svg','text');
-    ylab.setAttribute('transform',`translate(16 ${pad.top+plotH/2}) rotate(-90)`); ylab.setAttribute('text-anchor','middle'); ylab.setAttribute('class','axis');
+    ylab.setAttribute('transform',`translate(28 ${pad.top+plotH/2}) rotate(-90)`); /* extra left spacing */
+    ylab.setAttribute('text-anchor','middle'); ylab.setAttribute('class','axis');
     ylab.textContent=label; axesG.appendChild(ylab);
   }
 
@@ -398,24 +437,11 @@ function openVizInto(panel, withMirrors){
     }
     const d = pts.map(([x,y],i)=> (i?`L ${x},${y}`:`M ${x},${y}`)).join(' ');
     curve.setAttribute('d', d);
-    shadeIn.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(getYRange(mode).yMin, getYRange(mode).yMin, getYRange(mode).yMax)} L ${rToPx(1)},${yToPx(getYRange(mode).yMin, getYRange(mode).yMin, getYRange(mode).yMax)} Z`);
-    shadeOut.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(getYRange(mode).yMax, getYRange(mode).yMin, getYRange(mode).yMax)} L ${rToPx(1)},${yToPx(getYRange(mode).yMax, getYRange(mode).yMin, getYRange(mode).yMax)} Z`);
-  }
 
-  function chooseSCFromRatio(r, prevS, prevC){
-    let S = Math.max(prevS, EPS); S = Math.min(S, MAX_SC);
-    let C = S / r;
-    if (C <= EPS || C > MAX_SC){
-      C = Math.max(prevC, EPS); C = Math.min(C, MAX_SC);
-      S = r * C;
-      if (S <= EPS || S > MAX_SC){
-        S = Math.min(Math.max(S, EPS), MAX_SC);
-        C = Math.min(Math.max(S / r, EPS), MAX_SC);
-      }
-    }
-    S = Math.min(Math.max(S, EPS), MAX_SC);
-    C = Math.min(Math.max(C, EPS), MAX_SC);
-    return {S, C};
+    /* fill areas */
+    const yMin = getYRange(mode).yMin, yMax = getYRange(mode).yMax;
+    shadeIn.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(yMin, yMin, yMax)} L ${rToPx(1)},${yToPx(yMin, yMin, yMax)} Z`);
+    shadeOut.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(yMax, yMin, yMax)} L ${rToPx(1)},${yToPx(yMax, yMin, yMax)} Z`);
   }
 
   let eMode = state.probMode;
@@ -427,38 +453,31 @@ function openVizInto(panel, withMirrors){
     drawAxes(eMode);
     buildCurve(eMode);
 
-    const Yuser = XtoYUnit(eX, eMode);
-    const hy = yToPx(Yuser, yMin, yMax);
-    hLine.setAttribute('x1', rToPx(1)); hLine.setAttribute('x2', rToPx(10));
-    hLine.setAttribute('y1', hy); hLine.setAttribute('y2', hy);
-
-    const rCut = computeSCutoffForX(eX);
-    const vx = rToPx(clamp(rCut,1,10));
-    vLine.setAttribute('x1', vx); vLine.setAttribute('x2', vx);
-    vLine.setAttribute('y1', yToPx(yMin,yMin,yMax)); vLine.setAttribute('y2', yToPx(yMax,yMin,yMax));
-
     const r = eS / eC;
     const Xc = Xcutoff_from_ratio(r);
     const Yc = XtoYUnit(Xc, eMode);
     const cx = rToPx(clamp(r,1,10)); const cy = yToPx(Yc, yMin, yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
-    const label = `S=${eS} , C=${eC}  ·  S/C=${(r).toFixed(3)}  ·  ${
-      (eMode==='percent' ? 'Cutoff≈'+ceilPlaces(100/Xc,6)+'%' : (eMode==='micromort' ? 'Cutoff≈'+ceilPlaces(1e6/Xc,2)+' µm' : 'Cutoff≈'+Math.round(Xc).toLocaleString()))
+    /* Draggable label text — uses X (no 'Cutoff') */
+    const label = `S=${eS.toFixed(2)} , C=${eC.toFixed(2)}  ·  S/C=${(r).toFixed(3)}  ·  X≈${
+      (eMode==='percent' ? (ceilPlaces(100/Xc,6)+'%') : (eMode==='micromort' ? (ceilPlaces(1e6/Xc,2)+' µm') : Math.round(Xc).toLocaleString()))
     }`;
     labelTx.textContent=label; labelTx.setAttribute('text-anchor','middle');
-    const offsetY=32; let ly = cy - offsetY; const minTop=pad.top + 18; if (ly<minTop) ly=minTop;
+    const offsetY=36; let ly = cy - offsetY; const minTop=pad.top + 22; if (ly<minTop) ly=minTop;
     labelTx.setAttribute('x', cx); labelTx.setAttribute('y', ly);
     const bb = labelTx.getBBox(); const padBox=10;
     labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
+    /* Reflect statline in Slide-1 */
     document.getElementById('cutoffLabel').textContent = cutoffLabelForMode(eMode);
     document.getElementById('cutoffOut').textContent = (eMode==='oneInX') ? Math.round(Xc).toLocaleString() : (eMode==='percent' ? ceilPlaces(100/Xc,6) : ceilPlaces(1e6/Xc,2));
-    document.getElementById('ratioCutOut').textContent = rCut.toFixed(2);
+    document.getElementById('ratioCutOut').textContent = (r).toFixed(2);
     document.getElementById('probRuleName').textContent = probRuleName(eMode);
   }
 
+  /* Dragging (mobile-safe) — adjusts BOTH S and C */
   let dragging=false;
   function onPointerDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){} onPointerMove(e); }
   function onPointerMove(e){
@@ -492,7 +511,6 @@ function openVizInto(panel, withMirrors){
   updateVizCore();
 }
 
-/* single declaration — moved here */
 const vizBtn1 = $('vizBtn1'), vizBtn2 = $('vizBtn2');
 
 vizBtn1.addEventListener('click', ()=>{
