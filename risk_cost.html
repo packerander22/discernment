@@ -164,7 +164,6 @@ const state = { S:5, C:1, probMode:'oneInX', probVal:1000000, X_user:1000000, ac
 const ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
 
 function Xcutoff_from_ratio(r) {
-  // r in (0, +∞) but we plot 1..10; outside range will clamp visually
   const tRaw = (r - 1) / 9;
   const t = Math.max(0, Math.min(1, tRaw));
   const exponent = 6 * Math.pow(t, ALPHA);
@@ -222,7 +221,6 @@ function commitInputs() {
   let S = parseFloat(sevEl.value); if (!isFinite(S)) S = state.S;
   let C = parseFloat(costEl.value); if (!isFinite(C)) C = state.C;
 
-  // Enforce only upper bound here; lower bound = any positive (snap zeros to EPS)
   if (S <= 0) S = EPS; if (C <= 0) C = EPS;
   S = Math.min(S, MAX_SC); C = Math.min(C, MAX_SC);
 
@@ -243,7 +241,7 @@ function commitInputs() {
   updateStatsAndMaybeViz();
 }
 
-/* Update stats + refresh open viz (guarded to avoid init errors) */
+/* Update stats + refresh open viz (guarded) */
 function updateStatsAndMaybeViz(){
   const r = state.S / state.C;
   const Xc = Xcutoff_from_ratio(r);
@@ -262,7 +260,6 @@ function updateStatsAndMaybeViz(){
 
   state.act = (state.X_user != null) ? (state.X_user <= Xc + 1e-15) : null;
 
-  // Hardened guard so init order can’t break buttons
   if (typeof panel1 !== 'undefined' &&
       panel1 && panel1.style &&
       panel1.style.display === 'block' &&
@@ -272,7 +269,7 @@ function updateStatsAndMaybeViz(){
   }
 }
 
-/* Input events — commit on change/blur only (typing stays free) */
+/* Input events */
 sevEl.addEventListener('change', commitInputs);
 sevEl.addEventListener('blur', commitInputs);
 sevEl.addEventListener('input', ()=>{});
@@ -311,13 +308,10 @@ exBtn2.addEventListener('click', ()=>toggleExamples(panel2, exBtn2));
 /* =========================
    Visualization (shared)
    ========================= */
-const vizBtn1 = $('vizBtn1'), vizBtn2 = $('vizBtn2');
-
 function openVizInto(panel, withMirrors){
   panel.innerHTML = '';
   panel.style.display='block'; panel.dataset.mode='viz';
 
-  // Slide-2 shows greyed mirrors; Slide-1 does not
   if (withMirrors){
     const row = document.createElement('div'); row.className='field-row';
     row.innerHTML =
@@ -336,9 +330,8 @@ function openVizInto(panel, withMirrors){
     panel.appendChild(row); panel.appendChild(row2);
   }
 
-  // SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('viewBox','0 0 900 580'); // extra space for labels
+  svg.setAttribute('viewBox','0 0 900 580');
   svg.style.touchAction='none';
   panel.appendChild(svg);
 
@@ -351,12 +344,10 @@ function openVizInto(panel, withMirrors){
   const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','handle'); handle.setAttribute('r','11'); svg.appendChild(handle);
   handle.style.touchAction='none';
 
-  // Label group LAST (above everything)
   const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(labelG);
   const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
   const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','ptlabel'); labelG.appendChild(labelTx);
 
-  // Scales
   const pad = { left:78, right:24, top:28, bottom:72 };
   const W=900, H=580, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   const rMin=1, rMax=10;
@@ -411,28 +402,22 @@ function openVizInto(panel, withMirrors){
     shadeOut.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(getYRange(mode).yMax, getYRange(mode).yMin, getYRange(mode).yMax)} L ${rToPx(1)},${yToPx(getYRange(mode).yMax, getYRange(mode).yMin, getYRange(mode).yMax)} Z`);
   }
 
-  // choose (S,C) > 0, ≤ MAX_SC for a desired ratio r, staying close to current
   function chooseSCFromRatio(r, prevS, prevC){
-    // Try keep S near prevS; compute C = S/r
     let S = Math.max(prevS, EPS); S = Math.min(S, MAX_SC);
     let C = S / r;
     if (C <= EPS || C > MAX_SC){
-      // Try keep C near prevC; compute S = r*C
       C = Math.max(prevC, EPS); C = Math.min(C, MAX_SC);
       S = r * C;
       if (S <= EPS || S > MAX_SC){
-        // fallback: snap S to nearest bound
         S = Math.min(Math.max(S, EPS), MAX_SC);
         C = Math.min(Math.max(S / r, EPS), MAX_SC);
       }
     }
-    // Final safety
     S = Math.min(Math.max(S, EPS), MAX_SC);
     C = Math.min(Math.max(C, EPS), MAX_SC);
     return {S, C};
   }
 
-  // local mirrors
   let eMode = state.probMode;
   let eS = state.S, eC = state.C;
   let eX = state.X_user;
@@ -442,7 +427,6 @@ function openVizInto(panel, withMirrors){
     drawAxes(eMode);
     buildCurve(eMode);
 
-    // lines
     const Yuser = XtoYUnit(eX, eMode);
     const hy = yToPx(Yuser, yMin, yMax);
     hLine.setAttribute('x1', rToPx(1)); hLine.setAttribute('x2', rToPx(10));
@@ -459,7 +443,6 @@ function openVizInto(panel, withMirrors){
     const cx = rToPx(clamp(r,1,10)); const cy = yToPx(Yc, yMin, yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
-    // label (on top)
     const label = `S=${eS} , C=${eC}  ·  S/C=${(r).toFixed(3)}  ·  ${
       (eMode==='percent' ? 'Cutoff≈'+ceilPlaces(100/Xc,6)+'%' : (eMode==='micromort' ? 'Cutoff≈'+ceilPlaces(1e6/Xc,2)+' µm' : 'Cutoff≈'+Math.round(Xc).toLocaleString()))
     }`;
@@ -470,14 +453,12 @@ function openVizInto(panel, withMirrors){
     labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
-    // reflect back to Slide-1 statline/rule live
     document.getElementById('cutoffLabel').textContent = cutoffLabelForMode(eMode);
     document.getElementById('cutoffOut').textContent = (eMode==='oneInX') ? Math.round(Xc).toLocaleString() : (eMode==='percent' ? ceilPlaces(100/Xc,6) : ceilPlaces(1e6/Xc,2));
     document.getElementById('ratioCutOut').textContent = rCut.toFixed(2);
     document.getElementById('probRuleName').textContent = probRuleName(eMode);
   }
 
-  // Dragging (mobile-safe); adjusts BOTH S and C to match dragged ratio
   let dragging=false;
   function onPointerDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){} onPointerMove(e); }
   function onPointerMove(e){
@@ -490,7 +471,6 @@ function openVizInto(panel, withMirrors){
     const chosen = chooseSCFromRatio(r, state.S, state.C);
     eS = chosen.S; eC = chosen.C;
 
-    // push into global state + inputs so everything mirrors
     state.S = eS; state.C = eC;
     $('sev').value = eS;
     $('cost').value = eC;
@@ -503,18 +483,18 @@ function openVizInto(panel, withMirrors){
   svg.addEventListener('pointermove', onPointerMove, {passive:false});
   window.addEventListener('pointerup', onPointerUp, {passive:false});
 
-  // keep in sync with Slide-1 while open
   window.__updateVizShared = function(){
     eMode = state.probMode; eS = state.S; eC = state.C; eX = state.X_user;
     updateVizCore();
   };
 
-  // initial render
   eMode = state.probMode; eS = state.S; eC = state.C; eX = state.X_user;
   updateVizCore();
 }
 
+/* single declaration — moved here */
 const vizBtn1 = $('vizBtn1'), vizBtn2 = $('vizBtn2');
+
 vizBtn1.addEventListener('click', ()=>{
   const open = panel1.style.display==='block' && panel1.dataset.mode==='viz';
   if (open){ panel1.style.display='none'; panel1.dataset.mode=''; vizBtn1.textContent='Show Calculation Visualization'; }
