@@ -502,14 +502,12 @@ function openVizInto(panel){
   updateViz();
 }
 
-const panel1 = $('sharedPanel');
 vizBtn1.addEventListener('click', ()=>{
   const open = panel1.style.display==='block' && panel1.dataset.mode==='viz';
   if (open){ panel1.style.display='none'; panel1.dataset.mode=''; vizBtn1.textContent='Show Calculation Visualization'; }
   else { openVizInto(panel1); vizBtn1.textContent='Hide Calculation Visualization'; }
 });
 
-const panel2 = $('sharedPanel2');
 vizBtn2.addEventListener('click', ()=>{
   const open = panel2.style.display==='block' && panel2.dataset.mode==='viz';
   if (open){ panel2.style.display='none'; panel2.dataset.mode=''; vizBtn2.textContent='Show Calculation Reasoning'; }
