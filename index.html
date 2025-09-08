@@ -6,10 +6,12 @@
 <title>Discernment: A Decision-Making Guide</title>
 
 <link rel="preload" as="image" href="./favicon_256_transparent.png">
+
 <link rel="manifest" href="./site.webmanifest?v=4">
 <meta name="theme-color" content="#ffffff">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
+
 <link rel="icon" type="image/svg+xml" href="./favicon_transparent.svg">
 <link rel="icon" type="image/png" sizes="16x16" href="./favicon_16_transparent.png">
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon_32_transparent.png">
@@ -24,60 +26,97 @@
 
 <style>
   :root { color-scheme: light dark; }
+
+  /* Light defaults */
   :root {
     --bg:#f7f7f7; --card:#ffffff; --text:#111; --subtle:#333; --border:#ddd; --shadow:0 2px 6px rgba(0,0,0,.1);
-    --btn-yes:#4CAF50; --btn-no:#F44336; --btn-next:#2196F3; --btn-muted:#9E9E9E; --btn-text:#fff;
-    --axis:#222; --axis-sub:#555;
-    --shade-in:#2e7d3222; --shade-out:#c7c7c733;
-    --curve:#1f4cff;
-    --verdict-green:#2e7d32;
+    --btn-yes:#4CAF50; --btn-no:#F44336; --btn-same:#1E88E5; --btn-next:#2196F3; --btn-back:#555; --btn-restart:#9C27B0; --btn-muted:#9E9E9E; --btn-text:#fff;
+    --thumb-border:#999; --tick-color:rgba(0,0,0,.35); --track-bg:#e0e0e0;
+    --if-accent:#2e7d32; --when-accent:goldenrod; --result-accent:#9C27B0;
+    --grid:#d9d9d9; --grid-sub:#e9e9e9;
+    --shade-yes: rgba(46,125,50,.12);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg:#0f1115; --card:#171a21; --text:#e9edf1; --subtle:#c7cbd2; --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,.35);
-      --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-next:#42A5F5; --btn-muted:#6c6f76; --btn-text:#fff;
-      --axis:#e9edf1; --axis-sub:#c7cbd2;
-      --shade-in:#5bd36a22; --shade-out:#3a3f4a55;
-      --curve:#6aa2ff;
-      --verdict-green:#5bd36a;
+      --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-same:#42A5F5; --btn-next:#42A5F5; --btn-back:#8e8e93; --btn-restart:#BA68C8; --btn-muted:#6c6f76; --btn-text:#fff;
+      --thumb-border:#b5bcc8; --tick-color:rgba(255,255,255,.38); --track-bg:#2a2f3a;
+      --if-accent:#5bd36a; --when-accent:#f1c24c; --result-accent:#c77dff;
+      --grid:#3a4050; --grid-sub:#2a2f3a;
+      --shade-yes: rgba(91,211,106,.12);
     }
   }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg:#f7f7f7; --card:#ffffff; --text:#111; --subtle:#333; --border:#ddd; --shadow:0 2px 6px rgba(0,0,0,.1);
+    --btn-yes:#4CAF50; --btn-no:#F44336; --btn-same:#1E88E5; --btn-next:#2196F3; --btn-back:#555; --btn-restart:#9C27B0; --btn-muted:#9E9E9E; --btn-text:#fff;
+    --thumb-border:#999; --tick-color:rgba(0,0,0,.35); --track-bg:#e0e0e0;
+    --if-accent:#2e7d32; --when-accent:goldenrod; --result-accent:#9C27B0;
+    --grid:#d9d9d9; --grid-sub:#e9e9e9;
+    --shade-yes: rgba(46,125,50,.12);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg:#0f1115; --card:#171a21; --text:#e9edf1; --subtle:#c7cbd2; --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,.35);
+    --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-same:#42A5F5; --btn-next:#42A5F5; --btn-back:#8e8e93; --btn-restart:#BA68C8; --btn-muted:#6c6f76; --btn-text:#fff;
+    --thumb-border:#b5bcc8; --tick-color:rgba(255,255,255,.38); --track-bg:#2a2f3a;
+    --if-accent:#5bd36a; --when-accent:#f1c24c; --result-accent:#c77dff;
+    --grid:#3a4050; --grid-sub:#2a2f3a;
+    --shade-yes: rgba(91,211,106,.12);
+  }
 
-  body { background:var(--bg); color:var(--text); font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; }
-  .container{max-width:720px;margin:auto;padding:20px;}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);min-height:280px;display:flex;flex-direction:column;}
-  .segment-heading{display:flex;align-items:center;justify-content:space-between;font-size:1.6em;font-weight:700;margin:0;padding:14px;border-bottom:2px solid var(--border);}
-  .segment-title{display:flex;align-items:center;gap:8px}
-  .text{font-size:1.1em;margin:14px 16px 8px 16px;white-space:pre-wrap}
-  .controls-row{display:flex;gap:10px;margin:6px 16px 12px}
+  body { font-family: Arial, sans-serif; background:var(--bg); color:var(--text); margin:0; padding:0; }
+  .container{max-width:650px;margin:auto;padding:20px;}
+  .top-bar{display:flex;justify-content:space-between;margin-bottom:10px;}
+  .card{background:var(--card);padding:20px;border-radius:8px;box-shadow:var(--shadow);min-height:280px;border:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;}
+  .segment-heading{display:flex;align-items:center;justify-content:space-between;font-size:1.8em;font-weight:bold;margin-bottom:15px;padding:8px;border-bottom:2px solid var(--border);gap:12px;transition:color .5s ease;}
+  .segment-title{display:inline-flex;align-items:center;gap:8px}
+  .segment-title img.logo{height:1.2em;width:auto;vertical-align:middle;margin-right:6px;aspect-ratio:1/1}
+  .flash-gold{color:var(--when-accent)!important}.flash-green{color:var(--if-accent)!important}.flash-purple{color:var(--result-accent)!important}
+
+  button{flex:1;padding:10px 12px;font-size:1em;border:none;border-radius:5px;cursor:pointer;color:var(--btn-text)}
+  button.yes{background:var(--btn-yes)}button.no{background:var(--btn-no)}button.same{background:var(--btn-same)}button.next{background:var(--btn-next)}button.back{background:var(--btn-back);flex:0 0 auto}
+  button.restart{background:var(--btn-restart);flex:0 0 auto}
+  button.examples-btn,button.viz-btn,button.reasoning-btn{background:var(--btn-muted)}
+  .segment-heading .skip-btn{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;padding:10px 12px;font-size:1rem;line-height:1;border:none;border-radius:5px;cursor:pointer;background:color-mix(in oklab,var(--card),var(--text) 12%);color:var(--subtle)}
+  .segment-heading .skip-btn:hover{background:color-mix(in oklab,var(--card),var(--text) 20%)}
+
+  .text{font-size:1.3em;margin-bottom:12px;white-space:pre-wrap;}
+  .controls-row{display:flex;gap:10px;margin:6px 0 18px 0}
   .left-controls,.right-controls{flex:1;display:flex;gap:10px}
-  .panel{display:none;border:1px solid var(--border);border-radius:8px;background:color-mix(in oklab, var(--card), var(--bg) 8%);padding:12px;margin:0 16px 14px}
-  .buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;padding:0 16px 16px}
-  button{border:0;border-radius:8px;padding:10px 12px;cursor:pointer;color:var(--btn-text);background:var(--btn-muted)}
-  .yes{background:var(--btn-yes)} .no{background:var(--btn-no)} .next{background:var(--btn-next)}
-  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 16px}
+  .panel{display:none;border:1px solid var(--border);border-radius:6px;padding:10px;background:color-mix(in oklab, var(--card), var(--bg) 8%);margin-bottom:18px}
+  .panel p{margin:6px 0}.panel img{width:100%;height:auto;display:block}
+  .buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start}
+  .buttons.center{justify-content:center}
+  #riskInline{display:none;border:1px solid var(--border);border-radius:6px;padding:12px;background:color-mix(in oklab, var(--card), var(--bg) 8%);margin:8px 0 18px 0}
+  .sev-display{text-align:center;font-size:1.8em;font-weight:bold;margin-bottom:8px}
+  .risk-row{display:flex;align-items:center;gap:10px;margin:0}
+  .error{color:#B00020;font-size:.95em}
+
+  /* Inputs */
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 10px}
   .field{display:flex;flex-direction:column;gap:6px}
   input[type="number"], select{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text)}
-  input[disabled], select[disabled]{opacity:.6;cursor:not-allowed}
-  .rulebox{margin:8px 16px 2px;font-weight:600}
-  .verdict{margin:6px 16px 16px}
-  .verdict.good{color:var(--verdict-green)}
-  .spacer{height:8px}
+  input::placeholder{opacity:.6}
+  input[disabled],select[disabled]{opacity:.65;cursor:not-allowed}
 
   /* Graph */
-  .viz-wrap{margin:8px 16px 12px}
+  .viz-wrap{border:1px solid var(--border);border-radius:8px;background:color-mix(in oklab, var(--card), var(--bg) 4%);padding:12px}
   svg{width:100%;height:auto;display:block;touch-action:none}
-  .axis text{font-size:15px;font-weight:700;fill:var(--axis)}
-  .axis .sub{fill:var(--axis-sub);font-weight:600}
-  .grid line{stroke:var(--axis-sub);stroke-opacity:.25;shape-rendering:crispEdges;stroke-width:1}
-  .curve{fill:none;stroke:var(--curve);stroke-width:2.5}
-  .shade-in{fill:var(--shade-in)}
-  .shade-out{fill:var(--shade-out)}
+  .axis text{font-size:14px;font-weight:600;fill:var(--text)}
+  .axis-desc{font-size:15px;font-weight:700;fill:var(--text)}
+  .grid{stroke:var(--grid);stroke-width:1;opacity:.6}
+  .grid-sub{stroke:var(--grid-sub);stroke-width:1;opacity:.45}
+  .curve{fill:none;stroke:#1f4cff;stroke-width:2.5}
+  .shade-in{fill:var(--shade-yes)}
   .handle{fill:#ff3b3b;stroke:#fff;stroke-width:2;cursor:pointer;touch-action:none}
-  .ptlabel{font-size:16px;font-weight:800;pointer-events:none;fill:var(--text)}
+  .ptlabel{font-size:16px;font-weight:700;pointer-events:none;fill:var(--text)}
   .ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
 
-  .input-hint::placeholder{opacity:.6}
+  .rule{font-weight:700;margin-top:12px}
+  .verdict{margin-top:6px;font-weight:800}
+  .verdict.ok{color:var(--btn-yes)}
+  .spacer{height:12px}
 </style>
 
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
@@ -90,358 +129,347 @@
 </head>
 <body>
 <div class="container">
-  <div class="top-bar" style="display:flex;justify-content:space-between;margin-bottom:10px;">
-    <button class="next" id="backBtn" type="button">Back</button>
-    <button class="next" id="restartTop" type="button">Restart</button>
+  <div class="top-bar">
+    <button class="back" id="backBtn" onclick="goBack()" type="button">Back</button>
+    <button class="back" id="themeToggle" type="button" style="display:none;">Theme</button>
+    <button class="restart" id="restartTop" onclick="restart()" type="button">Restart</button>
   </div>
 
   <div class="card">
     <div id="segmentHeading" class="segment-heading">
       <span id="segmentTitle" class="segment-title">
-        <img src="./favicon_256_transparent.png" alt="" style="height:1.2em;width:auto"> Discernment: A Decision-Making Guide
+        <img src="./favicon_256_transparent.png" alt="Discernment Logo" class="logo" width="256" height="256" loading="eager" fetchpriority="high" decoding="sync">
+        Discernment: A Decision-Making Guide
       </span>
-      <button id="skipBtn" class="next" style="display:none;" type="button">Skip ⏭</button>
+      <button id="skipBtn" class="skip-btn" style="display:none;" title="Skip to When You Should Act" type="button">Skip ⏭</button>
     </div>
 
-    <div id="text" class="text"></div>
-    <div class="controls-row">
-      <div id="leftControlsWrapper" class="left-controls"></div>
-      <div id="rightControlsWrapper" class="right-controls"></div>
-    </div>
-    <div id="sharedPanel" class="panel" aria-hidden="true"></div>
+    <div>
+      <div id="text" class="text"></div>
 
-    <!-- Q6/Q7 dynamic zone -->
-    <div id="q6q7Mount"></div>
+      <div class="controls-row">
+        <div id="leftControlsWrapper" class="left-controls"></div>
+        <div id="rightControlsWrapper" class="right-controls"></div>
+      </div>
+
+      <div id="sharedPanel" class="panel" aria-hidden="true" role="region" aria-live="polite"></div>
+      <div id="riskInline" class="risk-inline" aria-hidden="true"></div>
+      <div id="errorBox" class="error" role="alert" aria-live="assertive"></div>
+    </div>
 
     <div id="buttons" class="buttons"></div>
   </div>
 </div>
 
 <script>
-/* ----------------- Flow ----------------- */
-const flowchart = [
-  { id:"Q0", type:"info", text:"Welcome! This guide helps you determine both IF and WHEN you should act on an issue. Answer simple Yes/No questions (and a slider later).", next:"Q1" },
+/* ======= THEME INIT ======= */
+(function initTheme(){
+  const root = document.documentElement;
+  const themeBtn = document.getElementById('themeToggle');
+  const mqDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+  let metaTheme = document.querySelector('meta[name="theme-color"]:not([media])');
+  if (!metaTheme) { metaTheme = document.createElement('meta'); metaTheme.name = 'theme-color'; document.head.appendChild(metaTheme); }
 
-  /* IF chain */
-  { id:"Q1", type:"question", text:"Are there any other more important things to do or think about right now?", yes:"R1", no:"Q2" },
-  { id:"Q2", type:"question", text:"Is there a current real problem or desired functional QoL improvement?", yes:"Q10", no:"Q3" },
-  { id:"Q3", type:"question", text:"Is there cause for a potential real problem?", yes:"Q5", no:"Q4" },
-  { id:"Q4", type:"question", text:"Is there cause for a POTENTIAL cause for a POTENTIAL real problem?", yes:"Q5", no:"R2" },
-  { id:"Q5", type:"question", text:"Is the potential problem inevitable if left unaddressed?", yes:"Q10", no:"Q6" },
+  function getSetting(){ const s=localStorage.getItem('theme'); return (s==='light'||s==='dark'||s==='system')?s:'system'; }
+  function getEffectiveTheme(setting){ if(setting==='dark')return 'dark'; if(setting==='light')return 'light'; return (mqDark&&mqDark.matches)?'dark':'light'; }
+  function setThemeColor(eff){ metaTheme.setAttribute('content', eff==='dark' ? '#0b0b0d' : '#ffffff'); }
+  function setBtnLabel(){ if(!themeBtn) return; const setting=getSetting(); const eff=getEffectiveTheme(setting); themeBtn.textContent='Theme: '+(setting[0].toUpperCase()+setting.slice(1)); themeBtn.title='Effective: '+(eff==='dark'?'Dark':'Light'); }
+  function apply(setting){ if(setting==='system'){ root.removeAttribute('data-theme'); localStorage.setItem('theme','system'); } else { root.dataset.theme=setting; localStorage.setItem('theme',setting); } setThemeColor(getEffectiveTheme(setting)); setBtnLabel(); }
+  apply(getSetting());
+  if (themeBtn){ themeBtn.onclick=function(){ const s=getSetting(); const next=(s==='system')?'dark':(s==='dark')?'light':'system'; apply(next); }; }
+  if (mqDark && mqDark.addEventListener) mqDark.addEventListener('change', ()=>{ if(getSetting()==='system'){ setBtnLabel(); setThemeColor(getEffectiveTheme('system')); }});
+  window.__refreshThemeButtonLabel=setBtnLabel;
+})();
 
-  /* NEW mini slide 1 -> Q6 */
-  { id:"Q6", type:"question", text:"Mini Slide 1 — Preventative Action Cutoff", yes:"Q10", no:"Q7" },
+/* ======= FLOW ======= */
+var flowchart = [
+  { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and a slider later). Answer everything to the best of your knowledge, and if you don't know something, do what you can to find out (once there aren't any other more important things to do).", "next": "Q1" },
 
-  /* NEW mini slide 2 -> Q7 (visual-only) */
-  { id:"Q7", type:"question", text:"Mini Slide 2 — What would flip the verdict?", yes:"Q10", no:"Q20" },
+  /* ===== IF YOU SHOULD ACT ===== */
+  { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1",  "no": "Q2" },
+  { "id": "Q2",  "type": "question", "text": "Is there a current <i>real problem</i> or desired functional QoL (quality of life) improvement, rather than just a <i>“problem”</i> or preference that doesn’t affect performance or outcomes?", "yes": "Q10",  "no": "Q3" },
+  { "id": "Q3",  "type": "question", "text": "Is there cause for a potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q4" },
+  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "R2" },
 
-  /* Keep the rest identical numbers so chronology has no cosmetic gaps */
-  { id:"Q8", type:"question", text:"(kept to preserve numbering; internal route)", yes:"Q10", no:"Q20" },
-  { id:"Q9", type:"question", text:"(kept to preserve numbering; internal route)", yes:"Q10", no:"Q20" },
+  { "id": "Q5",  "type": "question", "text": "Is the potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
 
-  { id:"Q10", type:"question", text:"Is there a solution (or at least partial solution) even if it’s currently unavailable?", yes:"Q11", no:"R4" },
-  { id:"Q11", type:"question", text:"Can this solution be guaranteed to be fully brought about as a result of your influence?", yes:"Q14", no:"Q12" },
-  { id:"Q12", type:"question", text:"Do everything in your power first. Is there anything further you can do?", yes:"Q14", no:"Q13" },
-  { id:"Q13", type:"question", text:"Is there an alternative solution that solves the problem in a better overall way?", yes:"R5", no:"R2" },
+  /* === Integrated Mini Site replaces old Q6–Q9 path === */
+  { "id": "Q6",  "type": "question", "text": "Mini Slide 1 — Preventative Action Cutoff:\nEnter the severity (S), cost (C), and per-instance probability of the downside if you don’t act now. We’ll show when action becomes justified (conservative rule: on the line = Act).", "yes": "Q10", "no": "Q7" },
+  { "id": "Q7",  "type": "question", "text": "Mini Slide 2 — Visualize with the same inputs (greyed out). Could any inputs reasonably change soon (e.g., higher probability, or severity vs. cost) that would flip the verdict?", "yes": "R3", "no": "Q20" },
 
-  /* WHEN */
-  { id:"Q14", type:"question", text:"Does this involve gaining information valuable in the future?", yes:"Q15", no:"Q16" },
-  { id:"Q15", type:"question", text:"Would the information alone outweigh the downsides to get it?", yes:"Q31", no:"Q16" },
+  /* (kept old Q9 node id to avoid gaps; not used for routing now) */
+  { "id": "Q8",  "type": "question", "text": "Would the overall downsides of NOT addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q10", "no": "Q20", "same": "Q9" },
+  { "id": "Q9",  "type": "question", "text": "Legacy placeholder (not used).", "yes": "Q10",  "no": "Q20" },
 
-  { id:"Q16", type:"question", text:"Would benefits outweigh upfront costs?", yes:"Q17", no:"Q20" },
-  { id:"Q17", type:"question", text:"Would benefits outweigh resulting downsides?", yes:"Q18", no:"Q20" },
-  { id:"Q18", type:"question", text:"Would overall benefits outweigh total costs + downsides?", yes:"Q22", no:"Q20", same:"Q19" },
-  { id:"Q19", type:"question", text:"All things considered, would you rather address it?", yes:"Q22", no:"Q20" },
-  { id:"Q20", type:"question", text:"Is there a time further down the road the previous answer could be yes?", yes:"R3", no:"Q21" },
-  { id:"Q21", type:"question", text:"Is there an alternative solution that’s worth it or better overall?", yes:"R5", no:"R2" },
+  /* continue original chain */
+  { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q11",  "no": "R4" },
+  { "id": "Q11", "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
+  { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q14", "no": "Q13" },
+  { "id": "Q13", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s within your control or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
 
-  { id:"Q22", type:"question", text:"Does addressing this involve diminishing returns?", yes:"Q23", no:"Q24" },
-  { id:"Q23", type:"info",     text:"Find the point of diminishing returns and stop there.", next:"Q24" },
-  { id:"Q24", type:"question", text:"Does it involve an inverted‑U curve with a sweet spot?", yes:"Q25", no:"Q26" },
-  { id:"Q25", type:"info",     text:"Wait until no higher priorities, then, if worth it, find the sweet spot.", next:"Q31" },
+  { "id": "Q14", "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q15", "no": "Q16" },
+  { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q16" },
 
-  { id:"Q26", type:"question", text:"Would a functional difference be noticed in practice?", yes:"Q27", no:"R2" },
-  { id:"Q27", type:"question", text:"Would solving it help in the long term?", yes:"Q31", no:"Q28" },
-  { id:"Q28", type:"question", text:"Would it help in the short term?", yes:"Q29", no:"R2" },
-  { id:"Q29", type:"question", text:"Is it logically worth addressing every time (or at least this time)?", yes:"Q31", no:"Q30" },
-  { id:"Q30", type:"question", text:"Is there an alternative solution (long term or better overall)?", yes:"R5", no:"R2" },
+  { "id": "Q16", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it (for just this instance)?", "yes": "Q17", "no": "Q20" },
+  { "id": "Q17", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it (for just this instance)?", "yes": "Q18", "no": "Q20" },
+  { "id": "Q18", "type": "question", "text": "Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q22", "no": "Q20", "same": "Q19" },
 
-  { id:"Q31", type:"question", text:"Does this address a potential future problem?", yes:"Q32", no:"Q35" },
-  { id:"Q32", type:"question", text:"Does it involve preventative maintenance?", yes:"Q33", no:"Q35" },
-  { id:"Q33", type:"info",     text:"Set the estimated catastrophic severity if you waited too long to act. (1–10)", next:"Q34" },
-  { id:"Q34", type:"question", text:"Would there be guaranteed telltale signs with a big enough window to act?", yes:"Q46", no:"Q47" },
+  { "id": "Q19", "type": "question", "text": "All things considered, would you <i>rather</i> address it than not?", "yes": "Q22", "no": "Q20" },
+  { "id": "Q20", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "Q21" },
+  { "id": "Q21", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s worth it or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
 
-  { id:"Q35", type:"question", text:"Is this the most effective solution you know of?", yes:"Q39", no:"Q36" },
-  { id:"Q36", type:"question", text:"Have you considered all better solutions you know of?", yes:"Q39", no:"R5" },
+  { "id": "Q22", "type": "question", "text": "Does addressing this issue involve a <i>diminishing returns</i> curve for effort applied?", "yes": "Q23", "no": "Q24" },
+  { "id": "Q23", "type": "info",     "text": "Find the <i>point of diminishing returns</i> and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL <i>without the addictive pull</i> and possibly even in a <i>better overall way</i>. Treat this approach as a \"better\", more effective overall solution, and <i>ALWAYS</i> use this approach over the original if it's available; if not, you may use the original approach if needed—but <i>only</i> with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q24" },
+  { "id": "Q24", "type": "question", "text": "Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an <i>objective sweet spot</i> where clear information is available to you?", "yes": "Q25", "no": "Q26" },
+  { "id": "Q25", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q31" },
 
-  { id:"Q37", type:"question", text:"(kept for full parity)", yes:"Q33", no:"Q38" },
-  { id:"Q38", type:"question", text:"(kept for full parity)", yes:"Q33", no:"R5" },
-  { id:"Q39", type:"question", text:"Is this solution currently available?", yes:"Q40", no:"Q41" },
-  { id:"Q40", type:"question", text:"Is there a better time down the road to maximize value?", yes:"Q41", no:"R7" },
-  { id:"Q41", type:"question", text:"If you waited, would overall benefits outweigh downsides of waiting?", yes:"Q44", no:"Q43", same:"Q42" },
-  { id:"Q42", type:"question", text:"All things considered, would you rather use this solution?", yes:"Q44", no:"Q43" },
-  { id:"Q43", type:"question", text:"Is there a next best solution you know of?", yes:"R5", no:"R4" },
-  { id:"Q44", type:"question", text:"Is there a better time further down the road to maximize value?", yes:"R8", no:"R6" },
-  { id:"Q45", type:"question", text:"(kept for parity)", yes:"R8", no:"R6" },
-  { id:"Q46", type:"question", text:"Normally act when telltale signs indicate failure approaching and chance nears your threshold.", yes:"R8", no:"R9" },
-  { id:"Q47", type:"question", text:"Normally act when the estimated chance of failure nears your threshold.", yes:"R8", no:"R9" },
+  { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed (assuming any potential future problems would occur)?", "yes": "Q27", "no": "R2" },
+  { "id": "Q27", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q31", "no": "Q28" },
+  { "id": "Q28", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q29", "no": "R2" },
+  { "id": "Q29", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time this situation arises</i>? (Or at least this time knowing it’s <i>temporary</i>?)", "yes": "Q31", "no": "Q30" },
+  { "id": "Q30", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL), in the long term or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
 
-  { id:"R1", type:"result", text:"Worry about this once more important things are addressed." },
-  { id:"R2", type:"result", text:"Don’t worry about it :)" },
-  { id:"R3", type:"result", text:"If that time comes, re‑evaluate. Until then, consider other worthwhile solutions." },
-  { id:"R4", type:"result", text:"Wait until there aren’t higher priorities, then find a solution if it’s worth it." },
-  { id:"R5", type:"result", text:"Consider other solutions from best to worst and run them through the chart." },
-  { id:"R6", type:"result", text:"Wait until available, then act when there aren’t higher priorities." },
-  { id:"R7", type:"result", text:"Address it sooner than later, once there aren’t higher priorities." },
-  { id:"R8", type:"result", text:"Wait for that better time, then act once there aren’t higher priorities." },
-  { id:"R9", type:"result", text:"Act as soon as the criteria from the previous slide are met (when there aren’t higher priorities)." }
+  /* ===== WHEN YOU SHOULD ACT ===== */
+  { "id": "Q31", "type": "question", "text": "Does this address a potential <i>future</i> problem?", "yes": "Q32", "no": "Q35" },
+  { "id": "Q32", "type": "question", "text": "Does addressing this issue involve <i>preventative maintenance</i>?", "yes": "Q37", "no": "Q35" },
+
+  { "id": "Q33", "type": "info",     "text": "Set the estimated catastrophic severity if you waited too long to act. (1-10)", "next": "Q34" },
+  { "id": "Q34", "type": "question", "text": "Would there be <i>guaranteed clear telltale signs</i> of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "Q46", "no": "Q47" },
+
+  { "id": "Q35", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria), assuming you could do it whenever you wanted?", "yes": "Q39", "no": "Q36" },
+  { "id": "Q36", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q39", "no": "R5" },
+
+  { "id": "Q37", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria)?", "yes": "Q33", "no": "Q38" },
+  { "id": "Q38", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q33", "no": "R5" },
+
+  { "id": "Q39", "type": "question", "text": "Is this solution <i>currently</i> available?", "yes": "Q40", "no": "Q41" },
+  { "id": "Q40", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q41", "no": "R7" },
+
+  { "id": "Q41", "type": "question", "text": "Assuming you waited until it was available, would the expected <i>overall benefits</i> of using this solution outweigh the expected <i>overall downsides</i> of having to wait?", "yes": "Q44", "no": "Q43", "same": "Q42" },
+  { "id": "Q42", "type": "question", "text": "All things considered, would you <i>rather</i> use this solution?", "yes": "Q44", "no": "Q43" },
+
+  { "id": "Q43", "type": "question", "text": "Is there a <i>next best</i> solution you know of?", "yes": "R5",  "no": "R4" },
+  { "id": "Q44", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
+  { "id": "Q45", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
+
+  { "id": "Q46", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
+  { "id": "Q47", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
+
+  { "id": "R1",  "type": "result", "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
+  { "id": "R2",  "type": "result", "text": "<i>Don’t worry about it:)</i>" },
+  { "id": "R3",  "type": "result", "text": "If that time ever does come, re-evaluate the issue. Until then, (once there aren't any other more important things to do), consider any other solutions that could work and be worth it, or perhaps even be <i>better overall<i/>." },
+  { "id": "R4",  "type": "result", "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },
+  { "id": "R5",  "type": "result", "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },
+  { "id": "R6",  "type": "result", "text": "Wait until this solution is available, then solve it once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any other solutions that could also work and be worth it." },
+  { "id": "R7",  "type": "result", "text": "Address it <i>sooner than later</i>, once there aren’t any other more important things to do." },
+  { "id": "R8",  "type": "result", "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Until then, (once there aren't any other more important things to do, and if  you'd like), consider any other solutions that could either also work and be worth it, or—in the case of preventative maintenance—mitigate consequences if failure did occur." },
+  { "id": "R9",  "type": "result", "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) are met, once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any solutions that would mitigate consequences if failure did occur." },
+
+  { "id": "AB0", "type": "aboutMenu", "heading": "About", "text": "Choose a section to learn more about the guide and its background." },
+  { "id": "AB1", "type": "about", "heading": "About Me", "text": "Hi! My name is Packer, I’m the creator of this guide. ..." },
+  { "id": "AB2", "type": "about", "heading": "Guide Concepts Explained", "text": "<p>...full content omitted only here for brevity in About...</p>" }
 ];
 
-let historyStack = [];
-let currentNode = flowchart[0];
-
-/* ----------------- Q6/Q7 State ----------------- */
-const state = {
-  S: 5, C: 1, mode: 'oneInX', probVal: 1000000, // primary (Q6) values
-  // Derived:
-  get X_user() {
-    if (this.mode==='oneInX') return this.probVal>1? this.probVal : null;
-    if (this.mode==='percent') return (this.probVal>0 && this.probVal<100)? 100/this.probVal : null;
-    if (this.mode==='micromort') return (this.probVal>0 && this.probVal<1e6)? 1e6/this.probVal : null;
-    return null;
-  }
+/* ===== EXAMPLES ===== */
+window.examples = {
+  "Q1":  ["Finish homework due tonight before reorganizing the closet.", "Call the dentist first if you’re in pain instead of tweaking your workout plan."],
+  "Q2":  ["Laptop battery dies quickly during class; you need reliable runtime.", "Your shoe tread is worn and you slip when running on wet pavement."],
+  "Q3":  ["Small coolant drip under the car might lead to overheating later.", "Recurring mild chest tightness during runs that’s trending worse."],
+  "Q4":  ["A faint clicking in a hard drive on boot once this month.", "Occasional wobble in a chair leg that’s starting to loosen."],
+  "Q5":  ["Unsealed wood deck will inevitably weather and crack without treatment.", "Frayed charging cable will eventually fail if kept in use."],
+  "Q6":  ["Skipping a tetanus booster could mean a serious infection later vs. quick clinic visit now.", "Ignoring a leaky faucet risks mold and higher bills vs. a simple repair."],
+  "Q7":  ["Upgrading firmware may mean brief downtime, but stops data corruption.", "Aligning car wheels takes time, but avoids uneven tire wear after."],
+  "Q8":  ["Replacing a dangerously cracked phone screen beats cost + setup + short learning curve.", "Booking a medical evaluation now outweighs copay + scheduling hassle."],
+  "Q9":  ["Unpatched server is more likely than not to get compromised over months.", "Bald tire is more likely than not to blow out on a highway trip."],
+  "Q10": ["There’s a software update that fixes the crash you’re seeing.", "A waterproof spray exists to protect your suede shoes."],
+  "Q11": ["You can directly set the thermostat schedule yourself.", "You can swap the noisy fan on your PC today."],
+  "Q12": ["You can follow up with support once more before waiting.", "You can gather better measurements before concluding it’s out of your hands."],
+  "Q13": ["Use a lint roller daily instead of buying a new couch cover.", "Switch to a simpler training plan that still builds endurance."],
+  "Q14": ["Running a small pilot teaches you if the workflow scales.", "Testing two camera angles tells you what boosts watch time."],
+  "Q15": ["Doing a small A/B test is worth it just for the learning.", "Exploring a new note system is useful knowledge even if you keep the old one."],
+  "Q16": ["Replacing air filter improves HVAC and is cheap/quick.", "Organizing your tool drawer speeds every repair you do."],
+  "Q17": ["Changing to ergonomic keyboard helps wrists despite brief adjustment.", "Moving files to a sane folder system beats the re-indexing hassle."],
+  "Q18": ["Buying earplugs for sleep beats cost + carrying them + brief adaptation.", "Installing a password manager beats subscription + setup time."],
+  "Q19": ["You’d rather meal-prep Sundays than eat randomly all week.", "You’d rather patch the jacket now than buy a new one later."],
+  "Q20": ["Wait to buy winter tires until temperatures reliably drop.", "Postpone the camera upgrade until your next paid shoot."],
+  "Q21": ["Borrow a neighbor’s specialty tool instead of buying one.", "Use public transit route that’s nearly as fast and much cheaper."],
+  "Q22": ["Editing a video: each extra pass improves less and less.", "Polishing a resume: beyond a few rounds, gains are tiny."],
+  "Q24": ["Strength training: too light or too heavy both underperform; there’s a sweet spot.", "Caffeine: too little or too much is worse than a moderate dose."],
+  "Q26": ["Switching to noise-isolating tips yields clearly clearer audio in a blind test.", "Adding under-desk lighting makes reading small labels noticeably easier."],
+  "Q27": ["Sealing the driveway prevents cracks for years.", "Setting up automatic cloud backups prevents permanent data loss."],
+  "Q28": ["Ice ankle now to reduce swelling even if full recovery takes longer.", "Use a temporary phone battery case for this weekend event."],
+  "Q29": ["Wiping counters after each meal is always worth it.", "Running antivirus when a new USB is used is always worth it."],
+  "Q30": ["Use pre-cut veggies service instead of spending hours chopping.", "Switch to a simpler CMS that meets needs with fewer headaches."],
+  "Q31": ["Replace the washing machine hose before it bursts.", "Get a dental night guard to prevent grinding damage."],
+  "Q32": ["Oil changes at the recommended interval.", "Descaling the espresso machine on schedule."],
+  "Q33": ["If a brake failure would be catastrophic, set a higher severity.", "For data loss on your main work laptop, pick higher severity."],
+  "Q34": ["Brake pad sensor squeal gives plenty of warning before rotor damage.", "Battery health app alerts you before the phone shuts off randomly."],
+  "Q35": ["This sanding method gives the best finish among what you know.", "This study technique retains more than your alternatives."],
+  "Q36": ["You compared spaced-repetition vs. rereading.", "You evaluated vinegar soak vs. descaling solution."],
+  "Q37": ["Of all fixes, replacing the gasket stops the leak best.", "Of all methods, this interval plan builds speed most reliably."],
+  "Q38": ["You checked if a pro service does it better for less net cost.", "You considered switching brands with better reliability."],
+  "Q39": ["The repair kit is in stock today.", "Your mentor is free for a coaching session now."],
+  "Q40": ["Booking during off-season lowers cost and stress.", "Doing it after your finals yields better focus."],
+  "Q41": ["Waiting 2 weeks for the sale saves enough to justify the delay.", "Holding off until the skilled friend can help beats rushing today."],
+  "Q42": ["You’d rather take the evening class even if self-study is possible now.", "You’d rather buy once-cry-once than patch a stopgap twice."],
+  "Q43": ["Use the library’s 3D printer while you wait for parts.", "Try a nearby clinic that can see you tomorrow morning."],
+  "Q44": ["Do yard work in spring for best results instead of winter now.", "Schedule the upgrade after the current project ships."],
+  "Q45": ["Push the long trip until after the car service appointment.", "Delay filming until the new lights arrive next week."],
+  "Q46": ["Replace the bike chain when stretch indicator hits the mark and creaks start.", "Service the A/C when airflow drops and pressure readings trend bad."],
+  "Q47": ["Replace smoke alarm batteries when failure probability approaches your set threshold.", "Swap the UPS battery when charge-holding dips near your limit."]
 };
-// Separate ephemeral viz state for Q7 (does NOT mutate primary until user goes back)
-const viz2 = { S:null, C:null, mode:null, X:null };
 
-/* ----------------- Core math ----------------- */
-const EPS = 1e-9;
-const MAX_SC = 10;
+/* ===== STATE ===== */
+var historyStack = [];
+var currentNode = flowchart.find(n => n.id === "Q0");
+var currentSegment = "If You Should Act";
+var originalTitleHTML = null;
+var currentThresholdPct = 90;
+
+/* ===== UTIL ===== */
+function getSegmentForNodeId(id){ if(!id||id.charAt(0)!=='Q') return currentSegment; var m=/^Q(\\d+)$/.exec(id); if(!m) return currentSegment; var num=parseInt(m[1],10); return num>=31?"When You Should Act":"If You Should Act"; }
+function flashHeadingColor(seg, node){
+  if(currentNode && currentNode.id==='Q0') return;
+  var hd=document.getElementById('segmentHeading');
+  if(node && node.type==='result'){ hd.classList.add('flash-purple'); setTimeout(()=>hd.classList.remove('flash-purple'),1500); return; }
+  var cls=(seg==="If You Should Act")?'flash-green':'flash-gold';
+  hd.classList.add(cls); setTimeout(()=>hd.classList.remove(cls),1500);
+}
+function setHeadingText(node){
+  var title=document.getElementById('segmentTitle'); var skip=document.getElementById('skipBtn');
+  if(!node){ title.textContent=''; skip.style.display='none'; return; }
+  if((node.type==='about'||node.type==='aboutMenu')&&node.heading){ title.textContent=node.heading; skip.style.display='none'; return; }
+  if(node.id==='Q0'){ if(originalTitleHTML) title.innerHTML=originalTitleHTML; skip.style.display='none'; return; }
+  if(node.type==='result'){ title.textContent='👍👎 Verdict'; skip.style.display='none'; return; }
+  var segText=(currentSegment==="If You Should Act")?"⚖️ If You Should Act":"⏳ When You Should Act";
+  title.textContent=segText;
+  skip.style.display=(currentSegment==="If You Should Act" && node.type!=='result')?'inline-block':'none';
+}
+function collapseSharedPanel(){
+  var panel=document.getElementById('sharedPanel');
+  if(panel){ panel.style.display='none'; panel.setAttribute('aria-hidden','true'); panel.dataset.mode=''; panel.innerHTML=''; }
+  var lw=document.getElementById('leftControlsWrapper'); var rw=document.getElementById('rightControlsWrapper');
+  if(lw){ lw.innerHTML=''; } if(rw){ rw.innerHTML=''; }
+}
+document.getElementById('skipBtn').addEventListener('click', function(){ goToNode('Q31'); });
+
+/* ===== MINI ENGINE (Q6/Q7) ===== */
+const EPS = 1e-9, MAX_SC = 10;
 const ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
+
+const miniState = {
+  s: 5, c: 1, mode: 'oneInX', val: 1000000, X: 1000000,
+  verdict: false
+};
 function clamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
 function ceilPlaces(x,p=2){ const f=10**p; return Math.ceil(x*f)/f; }
+function Xcutoff_from_ratio(r){ const tRaw=(r-1)/9; const t=Math.max(0,Math.min(1,tRaw)); const exponent=6*Math.pow(t,ALPHA); return Math.pow(10,exponent); }
+function computeSCutoffForX(X){ return 1 + 9 * Math.pow((Math.log10(X)/6), 1/ALPHA); }
+function normalizeToX(mode,val){ if(mode==='oneInX'){ if(!(val>1))return null; return val; } if(mode==='percent'){ if(!(val>0 && val<100))return null; return 100/val; } if(mode==='micromort'){ if(!(val>0 && val<1e6))return null; return 1e6/val; } return null; }
+function cutoffLabel(mode){ return mode==='percent'?'%':(mode==='micromort'?'µm':'X'); }
+function XtoYUnit(X,mode){ return (mode==='percent')?(100/X):(mode==='micromort')?(1e6/X):X; }
 
-function Xcutoff_from_ratio(r) {
-  const tRaw = (r - 1) / 9;
-  const t = Math.max(0, Math.min(1, tRaw));
-  const exponent = 6 * Math.pow(t, ALPHA);
-  return Math.pow(10, exponent);
-}
-function computeSCutoffForX(X){
-  return 1 + 9 * Math.pow((Math.log10(X)/6), 1/ALPHA);
-}
-function cutoffInUnit(Xc, mode){
-  if (mode==='percent') return 100/Xc;
-  if (mode==='micromort') return 1e6/Xc;
-  return Xc;
-}
-function probRuleName(mode){
-  if (mode==='percent') return '%';
-  if (mode==='micromort') return 'µm';
-  return 'X';
-}
-
-/* ----------------- Render helpers ----------------- */
-const $ = (id)=>document.getElementById(id);
-
-function renderNode(node){
-  currentNode = node;
-  $('text').textContent = node.text || '';
-
-  $('leftControlsWrapper').innerHTML='';
-  $('rightControlsWrapper').innerHTML='';
-  $('sharedPanel').style.display='none';
-  $('sharedPanel').dataset.mode='';
-  $('sharedPanel').innerHTML='';
-
-  $('buttons').innerHTML='';
-
-  // Back + Restart
-  $('backBtn').onclick = ()=>{
-    const prevId = historyStack.pop();
-    const prev = flowchart.find(n=>n.id===prevId);
-    if (prev) renderNode(prev);
-  };
-  $('restartTop').onclick = ()=>{ historyStack=[]; renderNode(flowchart[0]); };
-
-  if (node.type==='result'){
-    const btn = document.createElement('button');
-    btn.textContent = 'Restart'; btn.className='next';
-    btn.onclick = ()=>{ historyStack=[]; renderNode(flowchart[0]); };
-    $('buttons').appendChild(btn);
-    $('q6q7Mount').innerHTML='';
-    return;
-  }
-
-  // --- Special rendering for Q6 / Q7 ---
-  if (node.id==='Q6' || node.id==='Q7'){
-    renderMini(node.id);
-  } else {
-    $('q6q7Mount').innerHTML='';
-    // normal question/info buttons
-    if (node.type==='question'){
-      const y = document.createElement('button'); y.className='yes'; y.textContent='Yes';
-      const n = document.createElement('button'); n.className='no';  n.textContent='No';
-      y.onclick = ()=>{ historyStack.push(node.id); renderNode(flowchart.find(n2=>n2.id===node.yes)); };
-      n.onclick = ()=>{ historyStack.push(node.id); renderNode(flowchart.find(n2=>n2.id===node.no)); };
-      $('buttons').appendChild(y); $('buttons').appendChild(n);
-      if (node.same){
-        const s = document.createElement('button'); s.className='next'; s.textContent='Roughly the Same';
-        s.onclick = ()=>{ historyStack.push(node.id); renderNode(flowchart.find(n2=>n2.id===node.same)); };
-        $('buttons').appendChild(s);
-      }
-    } else if (node.type==='info'){
-      const nx = document.createElement('button'); nx.className='next'; nx.textContent='Next';
-      nx.onclick = ()=>{ historyStack.push(node.id); renderNode(flowchart.find(n2=>n2.id===node.next)); };
-      $('buttons').appendChild(nx);
-      const about = document.createElement('button'); about.className='next'; about.textContent='About';
-      about.onclick = ()=>{ alert('About is omitted here to focus on integration.'); };
-      if (node.id==='Q0') $('buttons').appendChild(about);
-    }
-  }
-}
-
-/* ----------------- Mini (Q6/Q7) ----------------- */
-function renderMini(which){
-  const mount = $('q6q7Mount');
-  mount.innerHTML='';
+function renderMini(container, opts){
+  const {mirror=false} = opts||{};
+  container.innerHTML = '';
 
   // Inputs
-  const fields = document.createElement('div'); fields.className='field-row';
-  const f1 = document.createElement('div'); f1.className='field';
-  const f2 = document.createElement('div'); f2.className='field';
-  const f3 = document.createElement('div'); f3.className='field';
+  const row1 = document.createElement('div'); row1.className='field-row';
+  row1.innerHTML = `
+    <div class="field">
+      <label for="sIn">${mirror?'Severity (S)':'Severity (S) — up to 10'}</label>
+      <input id="sIn" type="number" ${mirror?'disabled':''} max="10" step="0.01" value="${miniState.s}" placeholder="e.g. 6.5" inputmode="decimal">
+    </div>
+    <div class="field">
+      <label for="cIn">${mirror?'Cost (C)':'Cost (C) — up to 10'}</label>
+      <input id="cIn" type="number" ${mirror?'disabled':''} max="10" step="0.01" value="${miniState.c}" placeholder="e.g. 2.0" inputmode="decimal">
+    </div>`;
+  container.appendChild(row1);
 
-  const sev = document.createElement('input');
-  sev.type='number'; sev.max='10'; sev.step='0.01'; sev.className='input-hint';
-  sev.placeholder='e.g. 5'; // requested e.g.
-  const cost = document.createElement('input');
-  cost.type='number'; cost.max='10'; cost.step='0.01'; cost.className='input-hint';
-  cost.placeholder='e.g. 1'; // requested e.g.
+  const row2 = document.createElement('div'); row2.className='field-row';
+  row2.innerHTML = `
+    <div class="field">
+      <label for="modeIn">Probability input mode</label>
+      <select id="modeIn" ${mirror?'disabled':''}>
+        <option value="oneInX"${miniState.mode==='oneInX'?' selected':''}>1 in X</option>
+        <option value="percent"${miniState.mode==='percent'?' selected':''}>Percentage (%)</option>
+        <option value="micromort"${miniState.mode==='micromort'?' selected':''}>Micromorts</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="pIn">Enter <span id="pLabel">${miniState.mode==='oneInX'?'X':'%'} </span></label>
+      <input id="pIn" type="number" ${mirror?'disabled':''} value="${miniState.val}" placeholder="${miniState.mode==='oneInX'?'e.g. 1,000,000': (miniState.mode==='percent'?'e.g. 0.1':'e.g. 10') }" inputmode="decimal">
+    </div>`;
+  container.appendChild(row2);
 
-  const pmode = document.createElement('select');
-  pmode.innerHTML = '<option value="oneInX">1 in X</option><option value="percent">Percentage (%)</option><option value="micromort">Micromorts</option>';
-  const pval = document.createElement('input');
-  pval.type='number'; pval.className='input-hint';
-  pval.placeholder='e.g. 1,000,000'; // requested e.g.
-
-  const lbl1 = document.createElement('label'); lbl1.textContent='Severity (S) — up to 10';
-  const lbl2 = document.createElement('label'); lbl2.textContent='Cost (C) — up to 10';
-  const lbl3a = document.createElement('label'); lbl3a.textContent='Probability input mode';
-  const lbl3b = document.createElement('label'); lbl3b.id='probHint';
-
-  f1.appendChild(lbl1); f1.appendChild(sev);
-  f2.appendChild(lbl2); f2.appendChild(cost);
-  const inner = document.createElement('div'); inner.className='field-row';
-  const f3a=document.createElement('div'); f3a.className='field'; f3a.appendChild(lbl3a); f3a.appendChild(pmode);
-  const f3b=document.createElement('div'); f3b.className='field'; f3b.appendChild(lbl3b); f3b.appendChild(pval);
-  mount.appendChild(fields);
-  fields.appendChild(f1); fields.appendChild(f2);
-  mount.appendChild(inner); inner.appendChild(f3a); inner.appendChild(f3b);
-
-  // Grey rules for Q7
-  const disabled = (which==='Q7');
-  sev.disabled = disabled; cost.disabled = disabled; pmode.disabled = disabled; pval.disabled = disabled;
-
-  // Seed values
-  if (which==='Q6'){
-    sev.value = String(state.S); cost.value=String(state.C);
-    pmode.value = state.mode;
-    pval.value = (state.mode==='oneInX')? state.probVal : (state.mode==='percent'? state.probVal : state.probVal);
-  } else {
-    // Q7 mirrors but does not own truth
-    if (viz2.S==null){ viz2.S=state.S; viz2.C=state.C; viz2.mode=state.mode; viz2.X=state.X_user??2; }
-    sev.value = String(viz2.S); cost.value=String(viz2.C); pmode.value = viz2.mode;
-    if (viz2.mode==='oneInX'){ pval.value = Math.round(viz2.X); }
-    else if (viz2.mode==='percent'){ pval.value = 100/viz2.X; }
-    else { pval.value = 1e6/viz2.X; }
-  }
-
-  function refreshProbConstraints(mode){
-    if (mode==='oneInX'){ lbl3b.textContent='Enter X (for “1 in X”)'; pval.min='2'; pval.max=''; pval.step='1'; pval.placeholder='e.g. 1,000,000'; }
-    else if (mode==='percent'){ lbl3b.textContent='Enter percentage (%)'; pval.min='0.0000001'; pval.max='99.9999999'; pval.step='0.0001'; pval.placeholder='e.g. 0.02'; }
-    else { lbl3b.textContent='Enter micromorts (µm)'; pval.min='0.0001'; pval.max='999999.99'; pval.step='0.01'; pval.placeholder='e.g. 5'; }
-  }
-  refreshProbConstraints(pmode.value);
-
-  // Graph zone
-  const vizWrap = document.createElement('div'); vizWrap.className='viz-wrap'; mount.appendChild(vizWrap);
+  // Graph
+  const viz = document.createElement('div'); viz.className='viz-wrap'; container.appendChild(viz);
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('viewBox','0 0 950 620'); svg.style.touchAction='none';
-  vizWrap.appendChild(svg);
+  svg.setAttribute('viewBox','0 0 940 600'); svg.style.touchAction='none'; viz.appendChild(svg);
 
-  const gGrid = document.createElementNS('http://www.w3.org/2000/svg','g'); gGrid.setAttribute('class','grid'); svg.appendChild(gGrid);
-  const gAxes = document.createElementNS('http://www.w3.org/2000/svg','g'); gAxes.setAttribute('class','axis'); svg.appendChild(gAxes);
+  const axesG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(axesG);
+  const gridG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(gridG);
   const shadeIn = document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','shade-in'); svg.appendChild(shadeIn);
-  const shadeOut= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeOut.setAttribute('class','shade-out'); svg.appendChild(shadeOut);
   const curve = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','curve'); svg.appendChild(curve);
-  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','handle'); handle.setAttribute('r','11'); svg.appendChild(handle);
+  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','handle'); handle.setAttribute('r','12'); svg.appendChild(handle);
+
   const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(labelG);
   const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
   const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','ptlabel'); labelG.appendChild(labelTx);
 
-  const pad = { left:110, right:26, top:36, bottom:98 }; // more outer space
-  const W=950, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
-  const rMin=1, rMax=10;
-  const rToPx = (r)=> pad.left + (r-rMin)/(rMax-rMin)*plotW;
-  const pxToR = (px)=> (rMin + (px-pad.left)/plotW*(rMax-rMin));
-  function yToPx(y,yMin,yMax){ return pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); }
-  function XtoYUnit(X,mode){ return (mode==='percent') ? (100/X) : (mode==='micromort' ? (1e6/X) : X); }
+  // Rule + Verdict
+  const rule = document.createElement('div'); rule.className='rule'; container.appendChild(rule);
+  const verdict = document.createElement('div'); verdict.className='verdict'; container.appendChild(verdict);
+  const spacer = document.createElement('div'); spacer.className='spacer'; container.appendChild(spacer);
 
-  function getYRange(mode){
-    if (mode==='percent') return { yMin: 0.0001, yMax: 100, ticks:[100,10,1,0.1,0.01,0.001,0.0001], ylab:"Cutoff Probability (%) (log scale)" };
-    if (mode==='micromort') return { yMin: 1, yMax: 1e6, ticks:[1e6,1e5,1e4,1e3,100,10,1], ylab:"Cutoff Probability (µm) (log scale)" };
-    return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], ylab:"Cutoff Probability as '1 in X' (log scale)" };
+  // Layout
+  const pad = { left:110, right:20, top:36, bottom:90 }; // extra space for outer labels
+  const W=940, H=600, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
+  const rMin=1, rMax=10;
+  const rToPx = r => pad.left + (r-rMin)/(rMax-rMin)*plotW;
+  const pxToR = px => rMin + (px-pad.left)/plotW*(rMax-rMin);
+
+  function yRange(mode){
+    if (mode==='percent') return {yMin:0.0001,yMax:100,ticks:[100,10,1,0.1,0.01,0.001,0.0001],label:"Probability (%)"};
+    if (mode==='micromort') return {yMin:1,yMax:1e6,ticks:[1e6,1e5,1e4,1e3,100,10,1],label:"Probability (µm)"};
+    return {yMin:1,yMax:1e6,ticks:[1,10,100,1e3,1e4,1e5,1e6],label:"Probability as '1 in X'"};
   }
+  function yToPx(y,yMin,yMax){ return pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); }
 
   function drawAxes(mode){
-    gAxes.innerHTML=''; gGrid.innerHTML='';
-    const { yMin, yMax, ticks, ylab } = getYRange(mode);
-
-    // vertical grid + x ticks
+    axesG.innerHTML=''; gridG.innerHTML='';
+    // vertical grid + labels
     for (let r=1;r<=10;r++){
       const x=rToPx(r);
-      // grid
-      const vl = document.createElementNS('http://www.w3.org/2000/svg','line');
-      vl.setAttribute('x1',x); vl.setAttribute('x2',x);
-      vl.setAttribute('y1',pad.top); vl.setAttribute('y2',pad.top+plotH);
-      gGrid.appendChild(vl);
-      // labels
+      const g=document.createElementNS('http://www.w3.org/2000/svg','line');
+      g.setAttribute('x1',x); g.setAttribute('x2',x); g.setAttribute('y1',pad.top); g.setAttribute('y2',pad.top+plotH);
+      g.setAttribute('class','grid'); gridG.appendChild(g);
       const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
-      tx.setAttribute('x',x); tx.setAttribute('y',H-pad.bottom+36); // pushed down
-      tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','sub');
-      tx.textContent=r; gAxes.appendChild(tx);
+      tx.setAttribute('x',x); tx.setAttribute('y',H-46); tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','axis');
+      tx.textContent=r; axesG.appendChild(tx);
     }
-    // horizontal grid + y tick labels
-    ticks.forEach(y=>{
-      const py = yToPx(y,yMin,yMax);
-      const hl = document.createElementNS('http://www.w3.org/2000/svg','line');
-      hl.setAttribute('x1',pad.left); hl.setAttribute('x2',pad.left+plotW);
-      hl.setAttribute('y1',py); hl.setAttribute('y2',py);
-      gGrid.appendChild(hl);
-
+    const yr = yRange(mode);
+    yr.ticks.forEach((yval,i)=>{
+      const y=yToPx(yval,yr.yMin,yr.yMax);
+      const gh=document.createElementNS('http://www.w3.org/2000/svg','line');
+      gh.setAttribute('x1',pad.left); gh.setAttribute('x2',pad.left+plotW); gh.setAttribute('y1',y); gh.setAttribute('y2',y);
+      gh.setAttribute('class', i%2===0 ? 'grid' : 'grid-sub'); gridG.appendChild(gh);
       const ty=document.createElementNS('http://www.w3.org/2000/svg','text');
-      ty.setAttribute('x',pad.left-14); ty.setAttribute('y',py+5);
-      ty.setAttribute('text-anchor','end'); ty.setAttribute('class','sub');
-      ty.textContent = (mode==='percent' ? (y>=1?y.toString():y.toExponential(1)) : y.toLocaleString());
-      gAxes.appendChild(ty);
+      ty.setAttribute('x',28); ty.setAttribute('y',y+5); ty.setAttribute('class','axis');
+      ty.textContent = (mode==='percent' ? (yval>=1?yval.toString():yval.toExponential(1)) : yval.toLocaleString());
+      axesG.appendChild(ty);
     });
-    // axis titles (farther outside, larger)
+    // axis descriptions (pushed farther out)
     const xlab=document.createElementNS('http://www.w3.org/2000/svg','text');
-    xlab.setAttribute('x', pad.left+plotW/2); xlab.setAttribute('y', H-36);
-    xlab.setAttribute('text-anchor','middle'); xlab.textContent = "Severity / Cost Ratio (S / C)";
-    gAxes.appendChild(xlab);
-    const ylabTx=document.createElementNS('http://www.w3.org/2000/svg','text');
-    ylabTx.setAttribute('transform',`translate(${28}, ${pad.top+plotH/2}) rotate(-90)`);
-    ylabTx.setAttribute('text-anchor','middle'); ylabTx.textContent = ylab;
-    gAxes.appendChild(ylabTx);
-
-    // bump font size/weight
-    [xlab, ylabTx].forEach(t=>{ t.setAttribute('style','font-size:18px;font-weight:800'); t.setAttribute('class','axis'); });
+    xlab.setAttribute('x', pad.left+plotW/2); xlab.setAttribute('y', H-16); xlab.setAttribute('text-anchor','middle'); xlab.setAttribute('class','axis-desc');
+    xlab.textContent="Severity / Cost Ratio (S / C)"; axesG.appendChild(xlab);
+    const ylab=document.createElementNS('http://www.w3.org/2000/svg','text');
+    ylab.setAttribute('transform',`translate(20 ${pad.top+plotH/2}) rotate(-90)`); ylab.setAttribute('text-anchor','middle'); ylab.setAttribute('class','axis-desc');
+    ylab.textContent=yr.label; axesG.appendChild(ylab);
   }
 
   function buildCurve(mode){
-    const {yMin,yMax} = getYRange(mode);
+    const {yMin,yMax}=yRange(mode);
     const N=600, pts=[];
     for(let i=0;i<=N;i++){
       const r = 1 + 9*(i/N);
@@ -451,147 +479,260 @@ function renderMini(which){
     }
     const d = pts.map(([x,y],i)=> (i?`L ${x},${y}`:`M ${x},${y}`)).join(' ');
     curve.setAttribute('d', d);
-    const pb = `L ${rToPx(10)},${yToPx(yMin,yMin,yMax)} L ${rToPx(1)},${yToPx(yMin,yMin,yMax)} Z`;
-    const pt = `L ${rToPx(10)},${yToPx(yMax,yMin,yMax)} L ${rToPx(1)},${yToPx(yMax,yMin,yMax)} Z`;
-    shadeIn.setAttribute('d', d + ' ' + pb);
-    shadeOut.setAttribute('d', d + ' ' + pt);
+    const bottom = yToPx(yMin,yMin,yMax);
+    shadeIn.setAttribute('d', d + ` L ${rToPx(10)},${bottom} L ${rToPx(1)},${bottom} Z`);
   }
 
-  // initial locals
-  let eMode = (which==='Q6' ? state.mode : viz2.mode);
-  let eS    = (which==='Q6' ? state.S    : viz2.S);
-  let eC    = (which==='Q6' ? state.C    : viz2.C);
-  let eX    = (which==='Q6' ? (state.X_user ?? 2) : viz2.X);
+  function updateAll(){
+    const mode = miniState.mode;
+    drawAxes(mode); buildCurve(mode);
 
-  function updateFromInputs(){
-    let S = parseFloat(sev.value); if (!isFinite(S)) S = eS;
-    let C = parseFloat(cost.value); if (!isFinite(C)) C = eC;
-    if (S<=0) S=EPS; if (C<=0) C=EPS;
-    S=Math.min(S, MAX_SC); C=Math.min(C, MAX_SC);
-    eS=S; eC=C;
-
-    eMode = pmode.value;
-    let pv = parseFloat(pval.value);
-    if (!isFinite(pv)) pv = (eMode==='oneInX'? 1000000 : (eMode==='percent'? 0.01 : 1));
-    if (eMode==='oneInX' && pv<2) pv=2;
-    if (eMode==='percent'){ if (pv<=0) pv=0.0000001; if (pv>=100) pv=99.9999999; }
-    if (eMode==='micromort'){ if (pv<=0) pv=0.0001; if (pv>=1e6) pv=999999.99; }
-    if (eMode==='oneInX') eX = pv;
-    else if (eMode==='percent') eX = 100/pv;
-    else eX = 1e6/pv;
-
-    drawAll();
-    if (which==='Q6'){
-      // commit to primary
-      state.S=eS; state.C=eC; state.mode=eMode;
-      state.probVal = (eMode==='oneInX')? pv : (eMode==='percent'? pv : pv);
-    }
-  }
-
-  function verdictAct(){
-    const r = eS/eC;
+    const r = miniState.s / miniState.c;
     const Xc = Xcutoff_from_ratio(r);
-    const act = eX <= Xc + 1e-15;
-    return act;
-  }
-
-  function drawAll(){
-    refreshProbConstraints(eMode);
-    drawAxes(eMode);
-    buildCurve(eMode);
-
-    const {yMin,yMax} = getYRange(eMode);
-    const r = eS/eC;
-    const Xc = Xcutoff_from_ratio(r);
-    const Yc = XtoYUnit(Xc, eMode);
-    const cx = rToPx(clamp(r,1,10)); const cy = yToPx(Yc, yMin, yMax);
+    const yr = yRange(mode);
+    const cx = rToPx(clamp(r,1,10));
+    const cy = yToPx(XtoYUnit(Xc, mode), yr.yMin, yr.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
-    const label = `S=${ceilPlaces(eS,2)} · C=${ceilPlaces(eC,2)} · S/C=${ceilPlaces(r,3)} · X=${(eMode==='oneInX'? Math.round(Xc).toLocaleString() : eMode==='percent'? ceilPlaces(100/Xc,6)+'%' : ceilPlaces(1e6/Xc,2)+' µm')}`;
+    // label (larger, with 'X' instead of 'cutoff')
+    const label = `S=${miniState.s.toFixed(2)}  ·  C=${miniState.c.toFixed(2)}  ·  S/C=${(r).toFixed(3)}  ·  X≈${
+      (mode==='oneInX' ? Math.round(Xc).toLocaleString() : (mode==='percent' ? ceilPlaces(100/Xc,6) : ceilPlaces(1e6/Xc,2))
+    } ${cutoffLabel(mode)}`;
     labelTx.textContent=label; labelTx.setAttribute('text-anchor','middle');
-    const offsetY=34; let ly = cy - offsetY; const minTop=pad.top + 18; if (ly<minTop) ly=minTop;
+    let ly = cy - 34; const minTop=pad.top + 20; if (ly<minTop) ly=minTop;
     labelTx.setAttribute('x', cx); labelTx.setAttribute('y', ly);
     const bb = labelTx.getBBox(); const padBox=10;
     labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
-    // rule + verdict
-    const ruleEl = $('ruleLine_' + which);
-    const verdictEl = $('verdict_' + which);
-    const prn = probRuleName(eMode);
-    ruleEl.innerHTML = `Rule: Only if <b>${prn}</b> ≥ <b>Probability Cutoff</b> and <b>S/C</b> ≥ <b>S/C Cutoff</b> can action be considered.`;
-    const act = verdictAct();
-    verdictEl.textContent = 'Verdict: ' + (act ? 'Action should be considered.' : 'Action should NOT be considered.');
-    verdictEl.classList.toggle('good', act);
+    // Rule + verdict (pills removed; below graph)
+    const xOk = (miniState.X != null) ? (miniState.X <= Xc + 1e-15) : false; // X >= Probability Cutoff ↔ X_user ≤ Xc when using '1 in X' scale
+    const scOk = (r >= computeSCutoffForX(miniState.X || 2));
+    const ok = xOk && scOk;
+    miniState.verdict = ok;
+    rule.innerHTML = `Rule: Only if <b>X ≥ Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.`;
+    verdict.textContent = 'Verdict: Action should ' + (ok ? 'be' : 'NOT be') + ' considered.';
+    verdict.className = 'verdict' + (ok ? ' ok' : '');
   }
 
-  // Drag
+  // Inputs wiring (skip when mirror)
+  const sIn = row1.querySelector('#sIn');
+  const cIn = row1.querySelector('#cIn');
+  const modeIn = row2.querySelector('#modeIn');
+  const pIn = row2.querySelector('#pIn');
+  const pLabel = row2.querySelector('#pLabel');
+
+  function setProbConstraints(){
+    const m = modeIn.value;
+    if (m==='oneInX'){ pIn.min='2'; pIn.max=''; pIn.step='1'; pIn.placeholder='e.g. 1,000,000'; pLabel.textContent='X'; }
+    else if (m==='percent'){ pIn.min='0.000001'; pIn.max='99.999999'; pIn.step='0.0001'; pIn.placeholder='e.g. 0.1'; pLabel.textContent='%'; }
+    else { pIn.min='0.0001'; pIn.max='999999.99'; pIn.step='0.01'; pIn.placeholder='e.g. 10'; pLabel.textContent='µm'; }
+  }
+
+  function commitInputs(){
+    let s=parseFloat(sIn.value); if(!isFinite(s)) s=miniState.s;
+    let c=parseFloat(cIn.value); if(!isFinite(c)) c=miniState.c;
+    if (s<=0) s=EPS; if (c<=0) c=EPS; s=Math.min(s,MAX_SC); c=Math.min(c,MAX_SC);
+    miniState.s=s; miniState.c=c;
+    miniState.mode = modeIn.value;
+    let pv = parseFloat(pIn.value); if(!isFinite(pv)) pv=miniState.val;
+    if (miniState.mode==='oneInX' && pv<2) pv=2;
+    if (miniState.mode==='percent'){ if (pv<=0) pv=0.000001; if (pv>=100) pv=99.999999; }
+    if (miniState.mode==='micromort'){ if (pv<=0) pv=0.0001; if (pv>=1e6) pv=999999.99; }
+    miniState.val = pv;
+    miniState.X = normalizeToX(miniState.mode, pv);
+    updateAll();
+  }
+
+  if (!mirror){
+    setProbConstraints();
+    sIn.addEventListener('change', commitInputs);
+    cIn.addEventListener('change', commitInputs);
+    modeIn.addEventListener('change', ()=>{ setProbConstraints(); commitInputs(); });
+    pIn.addEventListener('change', commitInputs);
+  } else {
+    // mirror: keep disabled, but still reflect live when dragging here (local state only)
+    setProbConstraints();
+  }
+
+  // Dragging: adjust BOTH s and c smoothly to hit dragged ratio near current magnitude
   let dragging=false;
   function chooseSCFromRatio(r, prevS, prevC){
-    // keep both changing: we'll nudge S slightly and solve C
-    let S = clamp(prevS + (r- (prevS/prevC))*0.4, EPS, MAX_SC);
-    let C = clamp(S / r, EPS, MAX_SC);
-    // if C clipped, recompute S from C
-    if (C===EPS || C===MAX_SC){ C = clamp(prevC, EPS, MAX_SC); S = clamp(r*C, EPS, MAX_SC); }
-    return {S,C};
+    // keep geometric mean constant to move both together
+    const g = Math.sqrt(Math.max(prevS,EPS) * Math.max(prevC,EPS));
+    let S = Math.min(Math.max(g*Math.sqrt(r), EPS), MAX_SC);
+    let C = Math.min(Math.max(g/Math.sqrt(r), EPS), MAX_SC);
+    return {S, C};
   }
-  function onPointerDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){ } onPointerMove(e); }
+  function onPointerDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){} onPointerMove(e); }
   function onPointerMove(e){
     if(!dragging) return; e.preventDefault();
     const pt = svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
     const sp = pt.matrixTransform(svg.getScreenCTM().inverse());
     const px = clamp(sp.x, pad.left, pad.left+plotW);
     const r = pxToR(px);
-    const chosen = chooseSCFromRatio(r, eS, eC);
-    eS = chosen.S; eC=chosen.C;
-    if (which==='Q6'){ state.S=eS; state.C=eC; }
-    else { viz2.S=eS; viz2.C=eC; }
-    sev.value = ceilPlaces(eS,2); cost.value=ceilPlaces(eC,2);
-    drawAll();
+    const chosen = chooseSCFromRatio(r, miniState.s, miniState.c);
+    miniState.s = chosen.S; miniState.c = chosen.C;
+    if (!mirror){ sIn.value = miniState.s.toFixed(2); cIn.value = miniState.c.toFixed(2); }
+    updateAll();
   }
-  function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){ } }
+  function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
+
   handle.addEventListener('pointerdown', onPointerDown, {passive:false});
   svg.addEventListener('pointermove', onPointerMove, {passive:false});
   window.addEventListener('pointerup', onPointerUp, {passive:false});
 
-  // Rule + verdict zone
-  const rule = document.createElement('div'); rule.className='rulebox'; rule.id='ruleLine_'+which;
-  const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='verdict_'+which;
-  const spacer = document.createElement('div'); spacer.className='spacer';
-  mount.appendChild(rule); mount.appendChild(verdict); mount.appendChild(spacer);
+  updateAll();
+}
 
-  // Wire events (Q6 editable, Q7 disabled already)
-  pmode.addEventListener('change', ()=>{ if (which==='Q6') state.mode = pmode.value; refreshProbConstraints(pmode.value); updateFromInputs(); });
-  [sev, cost, pval].forEach(el=>{
-    el.addEventListener('change', updateFromInputs);
-    el.addEventListener('blur', updateFromInputs);
-  });
+/* ===== AUX CONTROLS (Examples / Reasoning images) ===== */
+function setupAuxToggles(node){
+  const leftWrap=document.getElementById('leftControlsWrapper');
+  const rightWrap=document.getElementById('rightControlsWrapper');
+  const panel=document.getElementById('sharedPanel');
+  leftWrap.innerHTML=''; rightWrap.innerHTML=''; collapseSharedPanel();
 
-  // Initial draw
-  updateFromInputs();
-
-  // Bottom nav for Q6/Q7
-  $('buttons').innerHTML='';
-  if (which==='Q6'){
-    const cont = document.createElement('button'); cont.className='next'; cont.textContent='Continue';
-    cont.onclick = ()=>{
-      // route by verdict
-      const act = (function(){ const r=state.S/state.C; const Xc=Xcutoff_from_ratio(r); return (state.X_user??Infinity) <= Xc + 1e-15; })();
-      historyStack.push('Q6');
-      if (act){ renderNode(flowchart.find(n=>n.id==='Q10')); } else { renderNode(flowchart.find(n=>n.id==='Q7')); }
+  // Show Examples for questions (incl. Q6/Q7)
+  if (node.type==='question'){
+    const examplesBtn = document.createElement('button');
+    examplesBtn.type='button'; examplesBtn.textContent='Show Examples'; examplesBtn.className='examples-btn';
+    leftWrap.appendChild(examplesBtn);
+    examplesBtn.onclick=function(){
+      const open = panel.style.display==='block' && panel.dataset.mode==='examples';
+      if (open){ collapseSharedPanel(); }
+      else {
+        panel.innerHTML='';
+        const lines = (window.examples && window.examples[node.id]) || ["Example 1","Example 2"];
+        lines.forEach(t=>{ const p=document.createElement('p'); p.textContent=t; panel.appendChild(p); });
+        panel.style.display='block'; panel.dataset.mode='examples';
+      }
     };
-    $('buttons').appendChild(cont);
-  } else {
-    const yes = document.createElement('button'); yes.className='yes'; yes.textContent='Yes';
-    yes.onclick = ()=>{ historyStack.push('Q7'); renderNode(flowchart.find(n=>n.id==='Q10')); };
-    const no = document.createElement('button'); no.className='no'; no.textContent='No';
-    no.onclick = ()=>{ historyStack.push('Q7'); renderNode(flowchart.find(n=>n.id==='Q20')); };
-    $('buttons').appendChild(yes); $('buttons').appendChild(no);
+  }
+
+  // Q22/Q24 visualizations (kept from original)
+  if (node.id==='Q22' || node.id==='Q24'){
+    const vizBtn = document.createElement('button');
+    vizBtn.type='button'; vizBtn.textContent='Show Visualization'; vizBtn.className='viz-btn';
+    rightWrap.appendChild(vizBtn);
+    vizBtn.onclick=function(){
+      const open = panel.style.display==='block' && panel.dataset.mode==='viz';
+      if (open){ collapseSharedPanel(); }
+      else {
+        panel.innerHTML='';
+        const img=document.createElement('img');
+        img.src = node.id==='Q22' ? './diminishing_returns_curve.png' : './inverted_u_curve.png';
+        img.alt = node.id==='Q22' ? 'Diminishing Returns Curve' : 'Inverted-U Curve';
+        panel.appendChild(img);
+        panel.style.display='block'; panel.dataset.mode='viz';
+      }
+    };
   }
 }
 
-/* ----------------- Kickoff ----------------- */
+/* ===== RENDER ===== */
+var lastWasResult=false;
+if (!originalTitleHTML) originalTitleHTML = document.getElementById('segmentTitle').innerHTML;
 renderNode(currentNode);
+
+function renderNode(node){
+  collapseSharedPanel();
+  const errorBox=document.getElementById('errorBox'); errorBox.textContent='';
+
+  if (!node){
+    errorBox.textContent="Error: missing node."; document.getElementById('text').textContent=''; document.getElementById('buttons').innerHTML=''; setHeadingText('');
+    document.getElementById('backBtn').style.visibility = historyStack.length>0 ? 'visible':'hidden'; document.getElementById('restartTop').style.display='inline-block'; return;
+  }
+
+  const previousSegment = currentSegment;
+  const thisSegment = (node.type==='about'||node.type==='aboutMenu') ? previousSegment : getSegmentForNodeId(node.id);
+  const comingFromResult = lastWasResult && node.type!=='result';
+  const shouldFlash = node.id!=='Q0' && (node.type==='result' || comingFromResult || thisSegment!==previousSegment);
+  if (shouldFlash && !(node.type==='about'||node.type==='aboutMenu')){ flashHeadingColor(thisSegment, node); }
+  currentSegment = thisSegment;
+  setHeadingText(node);
+  lastWasResult = (node.type==='result');
+
+  const textDiv=document.getElementById('text');
+  textDiv.innerHTML = node.text || '';
+
+  // Theme button only on Q0
+  const themeBtn=document.getElementById('themeToggle');
+  if (themeBtn){ themeBtn.style.display = (node.id==='Q0') ? 'inline-block' : 'none'; if (node.id==='Q0' && window.__refreshThemeButtonLabel) window.__refreshThemeButtonLabel(); }
+
+  document.getElementById('backBtn').style.visibility = historyStack.length>0 ? 'visible':'hidden';
+
+  setupAuxToggles(node);
+
+  const btns=document.getElementById('buttons');
+  btns.innerHTML='';
+  const restartTop=document.getElementById('restartTop');
+
+  if (node.type==='result'){
+    restartTop.style.display='none';
+    btns.classList.add('center');
+    const rb=document.createElement('button'); rb.className='restart'; rb.textContent='Restart'; rb.onclick=()=>restart(); rb.style.flex='0 0 auto'; btns.appendChild(rb);
+  } else {
+    restartTop.style.display = (node.id==='Q0') ? 'none' : 'inline-block';
+    btns.classList.remove('center');
+
+    if (node.type==='about'){
+      return;
+    }
+    if (node.type==='aboutMenu'){
+      const a1=document.createElement('button'); a1.className='next'; a1.textContent='About Me'; a1.onclick=()=>goToNode('AB1');
+      const a2=document.createElement('button'); a2.className='next'; a2.textContent='Guide Concepts Explained'; a2.onclick=()=>goToNode('AB2');
+      btns.appendChild(a1); btns.appendChild(a2);
+      return;
+    }
+
+    if (node.type==='question'){
+      // For Q6 and Q7 render the interactive mini UI inline (before buttons)
+      if (node.id==='Q6' || node.id==='Q7'){
+        const panel = document.getElementById('sharedPanel');
+        panel.innerHTML='';
+        panel.style.display='block';
+        panel.dataset.mode='viz';
+        renderMini(panel, {mirror: node.id==='Q7'});
+      }
+
+      const yesBtn=document.createElement('button'); yesBtn.className='yes'; yesBtn.textContent='Yes'; yesBtn.onclick=()=>goToNode(node.yes);
+      const noBtn=document.createElement('button'); noBtn.className='no'; noBtn.textContent='No'; noBtn.onclick=()=>goToNode(node.no);
+      btns.appendChild(yesBtn); btns.appendChild(noBtn);
+      if (node.same){ const sBtn=document.createElement('button'); sBtn.className='same'; sBtn.textContent='Roughly the Same'; sBtn.onclick=()=>goToNode(node.same); btns.appendChild(sBtn); }
+    } else if (node.type==='info'){
+      if (node.id==='Q0'){
+        const next=document.createElement('button'); next.className='next'; next.textContent='Next'; next.onclick=()=>goToNode(node.next);
+        const about=document.createElement('button'); about.className='next'; about.textContent='About'; about.onclick=()=>goToNode('AB0');
+        btns.appendChild(next); btns.appendChild(about);
+      } else {
+        const next=document.createElement('button'); next.className='next'; next.textContent='Next'; next.onclick=()=>goToNode(node.next);
+        btns.appendChild(next);
+      }
+    }
+  }
+}
+
+function goToNode(id){
+  collapseSharedPanel();
+  historyStack.push(currentNode ? currentNode.id : '');
+  currentNode = flowchart.find(n=>n.id===id) || currentNode;
+  renderNode(currentNode);
+}
+function goBack(){
+  collapseSharedPanel();
+  const prevId = historyStack.pop();
+  const prev = flowchart.find(n=>n.id===prevId);
+  currentNode = prev || currentNode;
+  renderNode(currentNode);
+}
+function restart(){
+  collapseSharedPanel();
+  historyStack = [];
+  currentSegment = "If You Should Act";
+  currentNode = flowchart.find(n=>n.id==="Q0");
+  if (originalTitleHTML) { document.getElementById('segmentTitle').innerHTML = originalTitleHTML; document.getElementById('skipBtn').style.display='none'; }
+  renderNode(currentNode);
+}
 </script>
 </body>
 </html>
