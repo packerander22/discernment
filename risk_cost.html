@@ -29,7 +29,7 @@
   .controls-row{display:flex;gap:10px;margin:6px 0 14px}
   .left-controls,.right-controls{flex:1;display:flex;gap:10px}
   .panel{display:none;border:1px solid var(--border);border-radius:6px;background:var(--panel);padding:12px;margin-bottom:14px;overscroll-behavior:contain}
-  .panel svg{overflow:visible} /* let labels overflow edges */
+  .panel svg{overflow:visible}
   .buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;padding:0 16px 16px}
   button{border:0;border-radius:6px;padding:10px 12px;cursor:pointer;color:var(--btn-text);background:var(--btn-muted)}
   .next{background:var(--btn-next)} .examples-btn{background:var(--btn-muted)} .viz-btn{background:var(--btn-muted)}
@@ -72,11 +72,11 @@
         <div class="field-row">
           <div class="field">
             <label for="sev">Severity (S) — up to 10</label>
-            <input id="sev" type="number" min="1" max="10" step="0.01" value="5" inputmode="decimal"/>
+            <input id="sev" type="number" max="10" step="0.01" value="5" inputmode="decimal" />
           </div>
           <div class="field">
             <label for="cost">Cost (C) — up to 10</label>
-            <input id="cost" type="number" min="1" max="10" step="0.01" value="1" inputmode="decimal"/>
+            <input id="cost" type="number" max="10" step="0.01" value="1" inputmode="decimal" />
           </div>
         </div>
 
@@ -133,7 +133,7 @@
 
       <!-- SLIDE 3 (Act path) -->
       <div id="mini3" class="slide" style="display:none;">
-        <div class="text">✅ <b>Verdict: Act.</b> (Placeholder for the future section — “Mini Slide 3”.)</div>
+        <div class="text">✅ <b>Verdict: Act.</b> (Placeholder for “Mini Slide 3”.)</div>
       </div>
     </div>
 
@@ -154,13 +154,19 @@
    ========================= */
 const $ = id => document.getElementById(id);
 
+// Accept any positive S/C; forbid zero only via epsilon
+const EPS = 1e-9;
+const MAX_SC = 10;
+
 const state = { S:5, C:1, probMode:'oneInX', probVal:1000000, X_user:1000000, act:null };
 
-// alpha from earlier calibration
+// alpha (≈0.486...) from the earlier calibration
 const ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
 
 function Xcutoff_from_ratio(r) {
-  const t = Math.max(0, Math.min(1, (r - 1) / 9));
+  // r in (0, +∞) but we plot 1..10; outside range will clamp visually
+  const tRaw = (r - 1) / 9;
+  const t = Math.max(0, Math.min(1, tRaw));
   const exponent = 6 * Math.pow(t, ALPHA);
   return Math.pow(10, exponent);
 }
@@ -196,7 +202,7 @@ function computeSCutoffForX(X){
    Inputs (stable typing UX)
    ========================= */
 const sevEl = $('sev'), costEl = $('cost'), probModeEl = $('probMode'), probValEl = $('probVal');
-const cutoffLabel = $('cutoffLabel'), cutoffOut = $('cutoffOut'), ratioCutOut = $('ratioCutOut'), ruleLine = $('ruleLine'), probRuleNameEl = $('probRuleName');
+const cutoffLabel = $('cutoffLabel'), cutoffOut = $('cutoffOut'), ratioCutOut = $('ratioCutOut'), probRuleNameEl = $('probRuleName');
 
 function setProbInputConstraints(){
   const mode = probModeEl.value;
@@ -207,24 +213,25 @@ function setProbInputConstraints(){
   probRuleNameEl.textContent = probRuleName(mode);
 }
 
-/* Read/commit values but allow partial typing (don’t clamp mid-entry) */
+/* Read/commit values but allow partial typing */
 function commitInputs() {
-  // parse or keep previous if empty/invalid
   let S = parseFloat(sevEl.value); if (!isFinite(S)) S = state.S;
   let C = parseFloat(costEl.value); if (!isFinite(C)) C = state.C;
-  S = clamp(S,1,10); C = clamp(C,1,10);
+
+  // Enforce only upper bound here; lower bound = any positive (snap zeros to EPS)
+  if (S <= 0) S = EPS; if (C <= 0) C = EPS;
+  S = Math.min(S, MAX_SC); C = Math.min(C, MAX_SC);
 
   const mode = probModeEl.value;
   let pv = parseFloat(probValEl.value);
   if (!isFinite(pv)) pv = state.probVal;
 
-  // enforce ranges on commit (blur/change), not while typing
   if (mode==='oneInX' && pv < 2) pv = 2;
   if (mode==='percent'){ if (pv<=0) pv=0.000001; if (pv>=100) pv=99.999999; }
   if (mode==='micromort'){ if (pv<=0) pv=0.0001; if (pv>=1e6) pv=999999.99; }
 
-  sevEl.value = S.toFixed(2);
-  costEl.value = C.toFixed(2);
+  sevEl.value = (+S).toString();
+  costEl.value = (+C).toString();
   probValEl.value = pv;
 
   state.S=S; state.C=C; state.probMode=mode; state.probVal=pv; state.X_user = normalizeToX(mode, pv);
@@ -232,7 +239,7 @@ function commitInputs() {
   updateStatsAndMaybeViz();
 }
 
-/* Update stats + refresh open viz */
+/* Update stats + refresh open viz (guarded to avoid init errors) */
 function updateStatsAndMaybeViz(){
   const r = state.S / state.C;
   const Xc = Xcutoff_from_ratio(r);
@@ -242,22 +249,26 @@ function updateStatsAndMaybeViz(){
   probRuleNameEl.textContent = probRuleName(mode);
 
   const c = cutoffInUnit(Xc, mode);
-  cutoffOut.textContent = (mode==='oneInX') ? Math.round(c).toLocaleString() : (mode==='percent' ? ceilPlaces(c,6) : ceilPlaces(c,2));
-  const rCut = computeSCutoffForX(state.X_user || 2);
+  cutoffOut.textContent = (mode==='oneInX') ? Math.round(c).toLocaleString()
+                     : (mode==='percent' ? ceilPlaces(c,6) : ceilPlaces(c,2));
+
+  const xForSCut = (state.X_user ?? 2);
+  const rCut = computeSCutoffForX(xForSCut);
   ratioCutOut.textContent = rCut.toFixed(2);
 
-  // verdict (conservative)
-  state.act = (state.X_user !== null) ? (state.X_user <= Xc + 1e-15) : null;
+  state.act = (state.X_user != null) ? (state.X_user <= Xc + 1e-15) : null;
 
-  if (panel1.style.display==='block' && panel1.dataset.mode==='viz' && typeof window.__updateVizShared==='function'){
+  if (panel1 && panel1.style && panel1.style.display==='block' &&
+      panel1.dataset && panel1.dataset.mode==='viz' &&
+      typeof window.__updateVizShared==='function') {
     window.__updateVizShared();
   }
 }
 
-/* Input events — allow free typing; commit on change/blur */
+/* Input events — commit on change/blur only (typing stays free) */
 sevEl.addEventListener('change', commitInputs);
 sevEl.addEventListener('blur', commitInputs);
-sevEl.addEventListener('input', ()=>{}); // no clamping while typing
+sevEl.addEventListener('input', ()=>{});
 
 costEl.addEventListener('change', commitInputs);
 costEl.addEventListener('blur', commitInputs);
@@ -302,12 +313,12 @@ function openVizInto(panel, withMirrors){
   panel.innerHTML = '';
   panel.style.display='block'; panel.dataset.mode='viz';
 
-  // Optional greyed-out mirrors (Slide-2 only)
+  // Slide-2 shows greyed mirrors; Slide-1 does not
   if (withMirrors){
     const row = document.createElement('div'); row.className='field-row';
     row.innerHTML =
-      `<div class="field"><label>Severity (S) — up to 10</label><input id="editS" type="number" value="${state.S.toFixed(2)}" disabled/></div>
-       <div class="field"><label>Cost (C) — up to 10</label><input id="editC" type="number" value="${state.C.toFixed(2)}" disabled/></div>`;
+      `<div class="field"><label>Severity (S)</label><input id="editS" type="number" value="${state.S}" disabled/></div>
+       <div class="field"><label>Cost (C)</label><input id="editC" type="number" value="${state.C}" disabled/></div>`;
     const row2 = document.createElement('div'); row2.className='field-row';
     const label = (state.probMode==='oneInX'?'Enter X (for “1 in X”)': state.probMode==='percent'?'Enter percentage (%)':'Enter micromorts (µm)');
     row2.innerHTML =
@@ -323,7 +334,7 @@ function openVizInto(panel, withMirrors){
 
   // SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('viewBox','0 0 900 580'); // extra room for axis labels
+  svg.setAttribute('viewBox','0 0 900 580'); // extra space for labels
   svg.style.touchAction='none';
   panel.appendChild(svg);
 
@@ -336,13 +347,13 @@ function openVizInto(panel, withMirrors){
   const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','handle'); handle.setAttribute('r','11'); svg.appendChild(handle);
   handle.style.touchAction='none';
 
-  // Label group LAST so it’s above everything
+  // Label group LAST (above everything)
   const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(labelG);
   const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
   const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','ptlabel'); labelG.appendChild(labelTx);
 
   // Scales
-  const pad = { left:78, right:24, top:28, bottom:72 }; // more space around axes labels
+  const pad = { left:78, right:24, top:28, bottom:72 };
   const W=900, H=580, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   const rMin=1, rMax=10;
 
@@ -352,7 +363,7 @@ function openVizInto(panel, withMirrors){
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label: "Cutoff Probability as '1 in X' (log scale)" };
   }
   const rToPx = (r)=> pad.left + (r-rMin)/(rMax-rMin)*plotW;
-  const pxToR = (px)=> clamp(rMin + (px-pad.left)/plotW*(rMax-rMin), rMin, rMax);
+  const pxToR = (px)=> (rMin + (px-pad.left)/plotW*(rMax-rMin));
   function yToPx(y,yMin,yMax){ return pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); }
 
   function drawAxes(mode){
@@ -361,7 +372,7 @@ function openVizInto(panel, withMirrors){
       const x=rToPx(r);
       const l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',x); l.setAttribute('x2',x); l.setAttribute('y1',pad.top); l.setAttribute('y2',pad.top+plotH); l.setAttribute('stroke','#ddd'); axesG.appendChild(l);
       const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
-      tx.setAttribute('x',x); tx.setAttribute('y',H-28); tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','axis'); // extra space
+      tx.setAttribute('x',x); tx.setAttribute('y',H-28); tx.setAttribute('text-anchor','middle'); tx.setAttribute('class','axis');
       tx.textContent=r; axesG.appendChild(tx);
     }
     const {yMin,yMax,ticks,label} = getYRange(mode);
@@ -396,22 +407,25 @@ function openVizInto(panel, withMirrors){
     shadeOut.setAttribute('d', d + ` L ${rToPx(10)},${yToPx(getYRange(mode).yMax, getYRange(mode).yMin, getYRange(mode).yMax)} L ${rToPx(1)},${yToPx(getYRange(mode).yMax, getYRange(mode).yMin, getYRange(mode).yMax)} Z`);
   }
 
-  // choose (S,C) within [1,10] for a desired ratio r, staying close to current state
+  // choose (S,C) > 0, ≤ MAX_SC for a desired ratio r, staying close to current
   function chooseSCFromRatio(r, prevS, prevC){
-    // try keep S near prevS; compute C = S/r
-    let S = clamp(prevS,1,10);
+    // Try keep S near prevS; compute C = S/r
+    let S = Math.max(prevS, EPS); S = Math.min(S, MAX_SC);
     let C = S / r;
-    if (C<1 || C>10){
-      // try keep C near prevC; compute S = r*C
-      C = clamp(prevC,1,10);
+    if (C <= EPS || C > MAX_SC){
+      // Try keep C near prevC; compute S = r*C
+      C = Math.max(prevC, EPS); C = Math.min(C, MAX_SC);
       S = r * C;
-      if (S<1 || S>10){
-        // fall back: snap S to nearest bound, recompute C
-        S = (r*10>10) ? 10 : Math.max(1, Math.min(10, S));
-        C = clamp(S / r, 1, 10);
+      if (S <= EPS || S > MAX_SC){
+        // fallback: snap S to nearest bound
+        S = Math.min(Math.max(S, EPS), MAX_SC);
+        C = Math.min(Math.max(S / r, EPS), MAX_SC);
       }
     }
-    return {S:clamp(S,1,10), C:clamp(C,1,10)};
+    // Final safety
+    S = Math.min(Math.max(S, EPS), MAX_SC);
+    C = Math.min(Math.max(C, EPS), MAX_SC);
+    return {S, C};
   }
 
   // local mirrors
@@ -438,11 +452,11 @@ function openVizInto(panel, withMirrors){
     const r = eS / eC;
     const Xc = Xcutoff_from_ratio(r);
     const Yc = XtoYUnit(Xc, eMode);
-    const cx = rToPx(r), cy = yToPx(Yc, yMin, yMax);
+    const cx = rToPx(clamp(r,1,10)); const cy = yToPx(Yc, yMin, yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
     // label (on top)
-    const label = `S=${eS.toFixed(2)}, C=${eC.toFixed(2)}  ·  S/C=${r.toFixed(3)}  ·  ${
+    const label = `S=${eS} , C=${eC}  ·  S/C=${(r).toFixed(3)}  ·  ${
       (eMode==='percent' ? 'Cutoff≈'+ceilPlaces(100/Xc,6)+'%' : (eMode==='micromort' ? 'Cutoff≈'+ceilPlaces(1e6/Xc,2)+' µm' : 'Cutoff≈'+Math.round(Xc).toLocaleString()))
     }`;
     labelTx.textContent=label; labelTx.setAttribute('text-anchor','middle');
@@ -474,8 +488,8 @@ function openVizInto(panel, withMirrors){
 
     // push into global state + inputs so everything mirrors
     state.S = eS; state.C = eC;
-    $('sev').value = eS.toFixed(2);
-    $('cost').value = eC.toFixed(2);
+    $('sev').value = eS;
+    $('cost').value = eC;
 
     updateVizCore(); updateStatsAndMaybeViz();
   }
@@ -485,7 +499,7 @@ function openVizInto(panel, withMirrors){
   svg.addEventListener('pointermove', onPointerMove, {passive:false});
   window.addEventListener('pointerup', onPointerUp, {passive:false});
 
-  // keep in sync with Slide-1 while open (mode/prob changes)
+  // keep in sync with Slide-1 while open
   window.__updateVizShared = function(){
     eMode = state.probMode; eS = state.S; eC = state.C; eX = state.X_user;
     updateVizCore();
@@ -496,6 +510,9 @@ function openVizInto(panel, withMirrors){
   updateVizCore();
 }
 
+const panel1 = $('sharedPanel'), panel2 = $('sharedPanel2'); // declare ONCE
+
+const vizBtn1 = $('vizBtn1'), vizBtn2 = $('vizBtn2');
 vizBtn1.addEventListener('click', ()=>{
   const open = panel1.style.display==='block' && panel1.dataset.mode==='viz';
   if (open){ panel1.style.display='none'; panel1.dataset.mode=''; vizBtn1.textContent='Show Calculation Visualization'; }
