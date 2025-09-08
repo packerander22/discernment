@@ -824,8 +824,13 @@ function renderMiniQ6(intoEl, node){
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
     
     // In renderMiniQ6 and renderMiniQ7
-    var Y_LABEL_X = 8; // tweak to taste
-    yLab.setAttribute('transform', 'translate(' + Y_LABEL_X + ' ' + (pad.top+plotH/2) + ') rotate(-90)');
+    const Y_LABEL_OFFSET = 52; // how far LEFT of the y-tick numbers you want it
+    yLab.setAttribute(
+      'transform',
+      'translate(' + (pad.left - Y_LABEL_OFFSET) + ' ' + (pad.top + plotH/2) + ') rotate(-90)'
+    );
+    yLab.setAttribute('text-anchor', 'middle');
+    yLab.setAttribute('dominant-baseline', 'middle');
     yLab.textContent = yr.label;
     // measure label and position so there’s ~8px padding from the left edge
     (function placeYLabel(){
@@ -1082,8 +1087,13 @@ function renderMiniQ7(intoEl, node){
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
     // In renderMiniQ6 and renderMiniQ7
-    var Y_LABEL_X = 8; // tweak to taste
-    yLab.setAttribute('transform', 'translate(' + Y_LABEL_X + ' ' + (pad.top+plotH/2) + ') rotate(-90)');
+    const Y_LABEL_OFFSET = 52; // how far LEFT of the y-tick numbers you want it
+    yLab.setAttribute(
+      'transform',
+      'translate(' + (pad.left - Y_LABEL_OFFSET) + ' ' + (pad.top + plotH/2) + ') rotate(-90)'
+    );
+    yLab.setAttribute('text-anchor', 'middle');
+    yLab.setAttribute('dominant-baseline', 'middle');
     yLab.textContent = yRange(local.mode).label;
     // measure label and position so there’s ~8px padding from the left edge
     (function placeYLabel(){
