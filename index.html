@@ -790,21 +790,25 @@ function renderMiniQ6(intoEl, node){
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
 
-  function drawAxes(mode){
+  function drawAxes(local.mode){
     axesG.innerHTML='';
+  
+    // vertical grid + x ticks
     for (var r=1;r<=10;r++){
       var x=rToPx(r);
       var vl = document.createElementNS('http://www.w3.org/2000/svg','line');
-      vl.setAttribute('x1',x); vl.setAttribute('x2',x);
-      vl.setAttribute('y1',pad.top); vl.setAttribute('y2',pad.top+plotH);
+      vl.setAttribute('x1',pad.left); vl.setAttribute('x2',pad.left+plotW);
+      vl.setAttribute('y1',pad.top);  vl.setAttribute('y2',pad.top);
+      vl.setAttribute('transform','translate(0 0)'); // keep line rules applied
       axesG.appendChild(vl);
-
+  
       var t=document.createElementNS('http://www.w3.org/2000/svg','text');
       t.setAttribute('x',x); t.setAttribute('y',H-36);
       t.setAttribute('text-anchor','middle');
       t.textContent = r;
       axesG.appendChild(t);
     }
+  
     var yr = yRange(mode);
     yr.ticks.forEach(function(yv){
       var y = yToPx(yv, yr.yMin, yr.yMax);
@@ -812,51 +816,40 @@ function renderMiniQ6(intoEl, node){
       hl.setAttribute('x1',pad.left); hl.setAttribute('x2',pad.left+plotW);
       hl.setAttribute('y1',y); hl.setAttribute('y2',y);
       axesG.appendChild(hl);
-
+  
       var yt=document.createElementNS('http://www.w3.org/2000/svg','text');
-      yt.setAttribute('x', 18); yt.setAttribute('y', y+5);
-      yt.textContent = (miniMaster.mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
+      yt.setAttribute('x', pad.left - 12);
+      yt.setAttribute('y', y+5);
+      yt.setAttribute('text-anchor','end');
+      yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
       axesG.appendChild(yt);
     });
-
-    // --- X label (unchanged) ---
-    xLab.setAttribute('x', pad.left + plotW / 2);
-    xLab.setAttribute('y', H - 10);
+  
+    // X label
+    xLab.setAttribute('x', pad.left+plotW/2);
+    xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
-    
-    // --- Y label (new) ---
-    const Y_LABEL_OFFSET = 90;                 // baseline left “gutter” from plot
-    const desiredLeftPadding = 8;              // how far from the SVG's left edge
-    
-    yLab.textContent = yRange(mode).label;     // or yRange(local.mode).label in Q7
-    yLab.setAttribute('text-anchor', 'middle');
-    yLab.setAttribute('dominant-baseline', 'middle');
-    
-    const cy = pad.top + plotH / 2;            // vertical center of plot
-    const cx0 = pad.left - Y_LABEL_OFFSET;     // provisional x before measuring
-    
-    // 1) Place provisionally so we can measure the rotated bbox
+  
+    // Y label — measure, then nudge so it never clips left
+    const Y_LABEL_OFFSET = 90;        // distance from the plot to label center (pre-nudge)
+    const desiredLeftPadding = 8;     // min distance from SVG left edge
+  
+    yLab.textContent = yr.label;
+    yLab.setAttribute('text-anchor','middle');
+    yLab.setAttribute('dominant-baseline','middle');
+  
+    const cy = pad.top + plotH/2;
+    const cx0 = pad.left - Y_LABEL_OFFSET;
+  
+    // provisional so we can measure
     yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
-    
-    // 2) Measure and nudge so the label's *leftmost* point is desiredLeftPadding
+  
     const bb = yLab.getBBox();
-    // After a -90° rotation, the label's leftmost x ≈ cx - (bb.height / 2)
-    const currentLeft = cx0 - (bb.height / 2);
+    const currentLeft = cx0 - (bb.height/2);    // leftmost after -90° rotation
     const dx = Math.max(0, desiredLeftPadding - currentLeft);
-    
-    // 3) Re-apply with the computed nudge
+  
+    // final position
     yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
-    // measure label and position so there’s ~8px padding from the left edge
-    (function placeYLabel(){
-      // set a provisional position so we can measure
-      yLab.setAttribute('transform','translate(0 ' + (pad.top+plotH/2) + ') rotate(-90)');
-      var bb = yLab.getBBox();
-      var desiredLeftPadding = 8;
-      // after rotation, the label’s leftmost x will be at -bb.height/2 if centered;
-      // easiest: move its center so the left edge sits at desiredLeftPadding.
-      var neededX = desiredLeftPadding + bb.width / 2;
-      yLab.setAttribute('transform','translate(' + neededX + ' ' + (pad.top+plotH/2) + ') rotate(-90)');
-    })();
   }
 
   function buildCurve(mode){
@@ -1079,63 +1072,64 @@ function renderMiniQ7(intoEl, node){
   }
   function drawAxes(mode){
     axesG.innerHTML='';
+  
+    // vertical grid + x ticks
     for (var r=1;r<=10;r++){
       var x=rToPx(r);
       var vl = document.createElementNS('http://www.w3.org/2000/svg','line');
-      vl.setAttribute('x1',x); vl.setAttribute('x2',x); vl.setAttribute('y1',pad.top); vl.setAttribute('y2',pad.top+plotH);
+      vl.setAttribute('x1',pad.left); vl.setAttribute('x2',pad.left+plotW);
+      vl.setAttribute('y1',pad.top);  vl.setAttribute('y2',pad.top);
+      vl.setAttribute('transform','translate(0 0)'); // keep line rules applied
       axesG.appendChild(vl);
+  
       var t=document.createElementNS('http://www.w3.org/2000/svg','text');
-      t.setAttribute('x',x); t.setAttribute('y',H-36); t.setAttribute('text-anchor','middle'); t.textContent=r; axesG.appendChild(t);
+      t.setAttribute('x',x); t.setAttribute('y',H-36);
+      t.setAttribute('text-anchor','middle');
+      t.textContent = r;
+      axesG.appendChild(t);
     }
-    var yr=yRange(local.mode);
+  
+    var yr = yRange(mode);
     yr.ticks.forEach(function(yv){
-      var y=yToPx(yv, yr.yMin, yr.yMax);
+      var y = yToPx(yv, yr.yMin, yr.yMax);
       var hl = document.createElementNS('http://www.w3.org/2000/svg','line');
-      hl.setAttribute('x1',pad.left); hl.setAttribute('x2',pad.left+plotW); hl.setAttribute('y1',y); hl.setAttribute('y2',y);
+      hl.setAttribute('x1',pad.left); hl.setAttribute('x2',pad.left+plotW);
+      hl.setAttribute('y1',y); hl.setAttribute('y2',y);
       axesG.appendChild(hl);
+  
       var yt=document.createElementNS('http://www.w3.org/2000/svg','text');
-      yt.setAttribute('x', 18); yt.setAttribute('y', y+5);
-      yt.textContent = (local.mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
+      yt.setAttribute('x', pad.left - 12);
+      yt.setAttribute('y', y+5);
+      yt.setAttribute('text-anchor','end');
+      yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
       axesG.appendChild(yt);
     });
-    // --- X label (unchanged) ---
-    xLab.setAttribute('x', pad.left + plotW / 2);
-    xLab.setAttribute('y', H - 10);
+  
+    // X label
+    xLab.setAttribute('x', pad.left+plotW/2);
+    xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
-    
-    // --- Y label (new) ---
-    const Y_LABEL_OFFSET = 90;                 // baseline left “gutter” from plot
-    const desiredLeftPadding = 8;              // how far from the SVG's left edge
-    
-    yLab.textContent = yRange(mode).label;     // or yRange(local.mode).label in Q7
-    yLab.setAttribute('text-anchor', 'middle');
-    yLab.setAttribute('dominant-baseline', 'middle');
-    
-    const cy = pad.top + plotH / 2;            // vertical center of plot
-    const cx0 = pad.left - Y_LABEL_OFFSET;     // provisional x before measuring
-    
-    // 1) Place provisionally so we can measure the rotated bbox
+  
+    // Y label — measure, then nudge so it never clips left
+    const Y_LABEL_OFFSET = 90;        // distance from the plot to label center (pre-nudge)
+    const desiredLeftPadding = 8;     // min distance from SVG left edge
+  
+    yLab.textContent = yr.label;
+    yLab.setAttribute('text-anchor','middle');
+    yLab.setAttribute('dominant-baseline','middle');
+  
+    const cy = pad.top + plotH/2;
+    const cx0 = pad.left - Y_LABEL_OFFSET;
+  
+    // provisional so we can measure
     yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
-    
-    // 2) Measure and nudge so the label's *leftmost* point is desiredLeftPadding
+  
     const bb = yLab.getBBox();
-    // After a -90° rotation, the label's leftmost x ≈ cx - (bb.height / 2)
-    const currentLeft = cx0 - (bb.height / 2);
+    const currentLeft = cx0 - (bb.height/2);    // leftmost after -90° rotation
     const dx = Math.max(0, desiredLeftPadding - currentLeft);
-    
-    // 3) Re-apply with the computed nudge
+  
+    // final position
     yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
-    // measure label and position so there’s ~8px padding from the left edge
-    (function placeYLabel(){
-      // set a provisional position so we can measure
-      yLab.setAttribute('transform','translate(0 ' + (pad.top+plotH/2) + ') rotate(-90)');
-      var bb = yLab.getBBox();
-      var desiredLeftPadding = 8;
-      // after rotation, the label’s leftmost x will be at -bb.height/2 if centered;
-      // easiest: move its center so the left edge sits at desiredLeftPadding.
-      var neededX = desiredLeftPadding + bb.width / 2;
-      yLab.setAttribute('transform','translate(' + neededX + ' ' + (pad.top+plotH/2) + ') rotate(-90)');
-    })();
   }
   function buildCurve(){
     var yr=yRange(local.mode), N=800, d='';
