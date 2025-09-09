@@ -777,7 +777,7 @@ function renderMiniQ6(intoEl, node){
   var yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
   // geometry
-  var pad = { left:96, right:30, top:34, bottom:96 };
+  var pad = { left:120, right:30, top:34, bottom:96 };
   var W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   var rMin=1, rMax=10;
   function rToPx(r){ return pad.left + (r-rMin)/(rMax-rMin)*plotW; }
@@ -824,7 +824,7 @@ function renderMiniQ6(intoEl, node){
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
     
     // In renderMiniQ6 and renderMiniQ7
-    const Y_LABEL_OFFSET = 120; // how far LEFT of the y-tick numbers you want it
+    const Y_LABEL_OFFSET = 52; // how far LEFT of the y-tick numbers you want it
     yLab.setAttribute(
       'transform',
       'translate(' + (pad.left - Y_LABEL_OFFSET) + ' ' + (pad.top + plotH/2) + ') rotate(-90)'
@@ -1052,7 +1052,7 @@ function renderMiniQ7(intoEl, node){
   var xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
   var yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
-  var pad = { left:96, right:30, top:34, bottom:96 };
+  var pad = { left:120, right:30, top:34, bottom:96 };
   var W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   var rMin=1, rMax=10;
   function rToPx(r){ return pad.left + (r-rMin)/(rMax-rMin)*plotW; }
@@ -1087,7 +1087,7 @@ function renderMiniQ7(intoEl, node){
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
     // In renderMiniQ6 and renderMiniQ7
-    const Y_LABEL_OFFSET = 120; // how far LEFT of the y-tick numbers you want it
+    const Y_LABEL_OFFSET = 52; // how far LEFT of the y-tick numbers you want it
     yLab.setAttribute(
       'transform',
       'translate(' + (pad.left - Y_LABEL_OFFSET) + ' ' + (pad.top + plotH/2) + ') rotate(-90)'
