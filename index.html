@@ -824,7 +824,7 @@ function renderMiniQ6(intoEl, node){
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
     
     // In renderMiniQ6 and renderMiniQ7
-    const Y_LABEL_OFFSET = 12; // how far LEFT of the y-tick numbers you want it
+    const Y_LABEL_OFFSET = 120; // how far LEFT of the y-tick numbers you want it
     yLab.setAttribute(
       'transform',
       'translate(' + (pad.left - Y_LABEL_OFFSET) + ' ' + (pad.top + plotH/2) + ') rotate(-90)'
@@ -1087,7 +1087,7 @@ function renderMiniQ7(intoEl, node){
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
     // In renderMiniQ6 and renderMiniQ7
-    const Y_LABEL_OFFSET = 12; // how far LEFT of the y-tick numbers you want it
+    const Y_LABEL_OFFSET = 120; // how far LEFT of the y-tick numbers you want it
     yLab.setAttribute(
       'transform',
       'translate(' + (pad.left - Y_LABEL_OFFSET) + ' ' + (pad.top + plotH/2) + ') rotate(-90)'
