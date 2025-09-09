@@ -1478,6 +1478,7 @@ function goToNode(id) {
   var adjustedId = beforeEnterNode(id);
   var next = flowchart.find(n => n.id === adjustedId);
   noteOrigin(currentNode);
+  var next = flowchart.find(n => n.id === adjustedId);
   historyStack.push(currentNode ? currentNode.id : '');
   currentNode = next; renderNode(currentNode);
 }
@@ -1789,70 +1790,65 @@ var CONCEPT_ANCHOR_BY_QID = {
   Q47: 'concept-severity-threshold'
 };
 
-// Optional: ensure headings in AB2 have IDs (your AB2 already sets them, this is a safety net)
 function assignConceptAnchors() {
   var textDiv = document.getElementById('text');
   if (!textDiv) return;
-  // If any known concept id is already present, assume AB2 is well-formed
-  if (textDiv.querySelector('#concept-diminishing-returns') ||
-      textDiv.querySelector('#concept-inverted-u') ||
-      textDiv.querySelector('#concept-severity-threshold') ||
-      textDiv.querySelector('#concept-prob-sev-cost')) {
-    return;
-  }
+
   function setIdByHeadingContains(phrase, id) {
     var hs = textDiv.querySelectorAll('h2, h3');
     for (var i=0;i<hs.length;i++){
       var h = hs[i];
-      if ((h.textContent||'').toLowerCase().includes(phrase.toLowerCase())) { h.id = id; return true; }
+      if ((h.textContent||'').toLowerCase().includes(phrase.toLowerCase())) {
+        h.id = id; return true;
+      }
     }
     return false;
   }
-  setIdByHeadingContains('IF You Should Act', 'concepts-top');
-  setIdByHeadingContains('Probability vs. Severity vs. Cost', 'concept-prob-sev-cost');
-  setIdByHeadingContains('Diminishing Returns', 'concept-diminishing-returns');
-  setIdByHeadingContains('Inverted-U', 'concept-inverted-u');
-  setIdByHeadingContains('Severity and Threshold', 'concept-severity-threshold');
+
+  // only (re)assign if missing
+  if (!textDiv.querySelector('#concepts-top')) {
+    setIdByHeadingContains('IF You Should Act', 'concepts-top');
+    setIdByHeadingContains('Diminishing Returns', 'concept-diminishing-returns');
+    setIdByHeadingContains('Inverted-U', 'concept-inverted-u');
+    setIdByHeadingContains('Severity and Threshold', 'concept-severity-threshold');
+    setIdByHeadingContains('Probability vs. Severity vs. Cost', 'concept-prob-sev-cost');
+  }
 }
 
-// Remember where the user came from (last Q.. slide)
+// Remember where the user came from (a Q# slide)
 let __lastQuestionId = null;
-
-// Stash: where to scroll inside AB2 and (optionally) which Q to return to
-window.__pendingConceptScroll = null;
-
-// Call this before navigation finalizes (inside goToNode)
 function noteOrigin(node) {
-  if (!node) return;
-  if (node.id && /^Q\d+$/.test(node.id)) __lastQuestionId = node.id;
+  if (node && node.id && /^Q\d+$/.test(node.id)) __lastQuestionId = node.id;
 }
 
-// Create/refresh a back link immediately below the heading with this id
+// Create/refresh a back link immediately below a given heading
 function ensureSectionBackLink(conceptId, backQId) {
   const heading = document.getElementById(conceptId);
   if (!heading) return;
 
-  // Remove an existing adjacent back-link (only the one right after this heading)
-  const next = heading.nextElementSibling;
-  if (next && next.classList && next.classList.contains('section-back-link')) next.remove();
+  const nxt = heading.nextElementSibling;
+  if (nxt && nxt.classList && nxt.classList.contains('section-back-link')) nxt.remove();
 
   const a = document.createElement('a');
-  a.href = 'javascript:void(0)';
+  a.href = '#';
   a.className = 'section-back-link';
-  a.textContent = 'Back to the question';
-  a.onclick = () => {
-    const targetQ = backQId || __lastQuestionId;
-    if (targetQ) goToNode(targetQ);
+  a.style.cssText = 'display:inline-block;margin:8px 0 12px 0;';
+  a.textContent = '← Back to the question';
+  a.onclick = function(ev){
+    ev.preventDefault();
+    const id = backQId || __lastQuestionId;
+    if (id) goToNode(id);
   };
 
   heading.insertAdjacentElement('afterend', a);
 }
 
-// Single, canonical jump: set intent, then navigate to AB2
+// Single, authoritative jump function (no duplicates)
 function jumpToConcept(conceptId, backQId) {
-  window.__pendingConceptScroll = { conceptId: conceptId, backQId: backQId || __lastQuestionId };
+  window.__pendingConceptScroll = { conceptId: conceptId, backQId: backQId || __lastQuestionId || null };
   goToNode('AB2');
 }
+
   
 /* Render node */
 if (!originalTitleHTML) {
@@ -1969,18 +1965,38 @@ function renderNode(node) {
       }
     }
   }
+  
   // After content & buttons are rendered, if we just navigated to AB2 for a jump:
   if (currentNode && currentNode.id === 'AB2') {
     assignConceptAnchors();
-    if (window.__pendingConceptScroll) {
-      const { conceptId, backQId } = window.__pendingConceptScroll;
-      const targetEl = document.getElementById(conceptId);
-      if (targetEl) {
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // 👇 place the back-link right under the heading we scrolled to
-        ensureSectionBackLink(conceptId, backQId);
-      }
-      window.__pendingConceptScroll = null;
+    const pending = window.__pendingConceptScroll;
+    if (pending && pending.conceptId) {
+      const targetId = pending.conceptId;
+      const backQId  = pending.backQId;
+  
+      // Try repeatedly because images/fonts can shift layout after initial paint
+      let tries = 0;
+      const maxTries = 7;
+  
+      const scrollAndInject = () => {
+        const el = document.getElementById(targetId);
+        if (!el) return false;
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        ensureSectionBackLink(targetId, backQId);
+        return true;
+      };
+  
+      const tryScroll = () => {
+        if (scrollAndInject() || tries >= maxTries) {
+          window.__pendingConceptScroll = null;
+          return;
+        }
+        tries++;
+        requestAnimationFrame(tryScroll);
+      };
+  
+      // kick off attempts (RAF handles reflow nicely)
+      requestAnimationFrame(tryScroll);
     }
   }
 }
