@@ -819,19 +819,33 @@ function renderMiniQ6(intoEl, node){
       axesG.appendChild(yt);
     });
 
-    xLab.setAttribute('x', pad.left+plotW/2);
-    xLab.setAttribute('y', H-10);
+    // --- X label (unchanged) ---
+    xLab.setAttribute('x', pad.left + plotW / 2);
+    xLab.setAttribute('y', H - 10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
     
-    // In renderMiniQ6 and renderMiniQ7
-    const Y_LABEL_OFFSET = 90; // how far LEFT of the y-tick numbers you want it
-    yLab.setAttribute(
-      'transform',
-      'translate(' + (pad.left - Y_LABEL_OFFSET) + ' ' + (pad.top + plotH/2) + ') rotate(-90)'
-    );
+    // --- Y label (new) ---
+    const Y_LABEL_OFFSET = 90;                 // baseline left “gutter” from plot
+    const desiredLeftPadding = 8;              // how far from the SVG's left edge
+    
+    yLab.textContent = yRange(mode).label;     // or yRange(local.mode).label in Q7
     yLab.setAttribute('text-anchor', 'middle');
     yLab.setAttribute('dominant-baseline', 'middle');
-    yLab.textContent = yr.label;
+    
+    const cy = pad.top + plotH / 2;            // vertical center of plot
+    const cx0 = pad.left - Y_LABEL_OFFSET;     // provisional x before measuring
+    
+    // 1) Place provisionally so we can measure the rotated bbox
+    yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
+    
+    // 2) Measure and nudge so the label's *leftmost* point is desiredLeftPadding
+    const bb = yLab.getBBox();
+    // After a -90° rotation, the label's leftmost x ≈ cx - (bb.height / 2)
+    const currentLeft = cx0 - (bb.height / 2);
+    const dx = Math.max(0, desiredLeftPadding - currentLeft);
+    
+    // 3) Re-apply with the computed nudge
+    yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
     // measure label and position so there’s ~8px padding from the left edge
     (function placeYLabel(){
       // set a provisional position so we can measure
@@ -1084,17 +1098,33 @@ function renderMiniQ7(intoEl, node){
       yt.textContent = (local.mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
       axesG.appendChild(yt);
     });
-    xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
+    // --- X label (unchanged) ---
+    xLab.setAttribute('x', pad.left + plotW / 2);
+    xLab.setAttribute('y', H - 10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
-    // In renderMiniQ6 and renderMiniQ7
-    const Y_LABEL_OFFSET = 90; // how far LEFT of the y-tick numbers you want it
-    yLab.setAttribute(
-      'transform',
-      'translate(' + (pad.left - Y_LABEL_OFFSET) + ' ' + (pad.top + plotH/2) + ') rotate(-90)'
-    );
+    
+    // --- Y label (new) ---
+    const Y_LABEL_OFFSET = 90;                 // baseline left “gutter” from plot
+    const desiredLeftPadding = 8;              // how far from the SVG's left edge
+    
+    yLab.textContent = yRange(mode).label;     // or yRange(local.mode).label in Q7
     yLab.setAttribute('text-anchor', 'middle');
     yLab.setAttribute('dominant-baseline', 'middle');
-    yLab.textContent = yRange(local.mode).label;
+    
+    const cy = pad.top + plotH / 2;            // vertical center of plot
+    const cx0 = pad.left - Y_LABEL_OFFSET;     // provisional x before measuring
+    
+    // 1) Place provisionally so we can measure the rotated bbox
+    yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
+    
+    // 2) Measure and nudge so the label's *leftmost* point is desiredLeftPadding
+    const bb = yLab.getBBox();
+    // After a -90° rotation, the label's leftmost x ≈ cx - (bb.height / 2)
+    const currentLeft = cx0 - (bb.height / 2);
+    const dx = Math.max(0, desiredLeftPadding - currentLeft);
+    
+    // 3) Re-apply with the computed nudge
+    yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
     // measure label and position so there’s ~8px padding from the left edge
     (function placeYLabel(){
       // set a provisional position so we can measure
