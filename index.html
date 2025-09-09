@@ -713,6 +713,26 @@ window.hapticBump = window.hapticBump || function () {
   try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
 };
 
+// Cosmetic: shorten long decimals for the floating label (does not change actual values)
+function trimDeci(val, places = 3) {
+  const n = Number(val);
+  if (!isFinite(n)) return String(val);
+  // keep small integers untouched; otherwise trim without trailing zeros
+  const s = n.toFixed(places);
+  return s.indexOf('.') === -1 ? s : s.replace(/\.?0+$/, '');
+}
+
+// Given a ratio r and the current mode, return the curve's **pixel Y** at that r
+function curveYPxAtRatio(r, mode, pad, plotH, yToPx) {
+  const Xc = miniXcutoff_from_ratio(r);
+  const yr = (function yRange(m){
+    if (m==='percent')   return { yMin: 0.0001, yMax: 100 };
+    if (m==='micromort') return { yMin: 1,      yMax: 1e6  };
+    return { yMin: 1,     yMax: 1e6  }; // 1 in X
+  })(mode);
+  const Yc = miniXtoUnit(Xc, mode);
+  return yToPx(Yc, yr.yMin, yr.yMax);
+}
 /* ===========================================================
    Q6 — interactive (live inputs)
 =========================================================== */
@@ -831,87 +851,99 @@ function renderMiniQ6(intoEl, node){
     return yToPx(Yc, yr.yMin, yr.yMax);
   }
 
-  // build axes
+  // --- Q6: axes ---
   function drawAxes(mode){
-    axesG.innerHTML='';
-
-    // vertical grid + x ticks (numbers closer than before)
-    const X_TICK_GAP  = 14;  // distance from plot bottom to tick numbers
-    const X_LABEL_GAP = 26;  // extra gap from tick numbers to the axis label
-
-    for (let r=1;r<=10;r++){
+    axesG.innerHTML = '';
+  
+    // vertical grid + x ticks
+    for (let r = 1; r <= 10; r++){
       const x = rToPx(r);
-      // grid line
-      const vline = document.createElementNS('http://www.w3.org/2000/svg','line');
-      vline.setAttribute('x1',x); vline.setAttribute('x2',x);
-      vline.setAttribute('y1',pad.top);  vline.setAttribute('y2',pad.top+plotH);
-      axesG.appendChild(vline);
-
-      // tick number
+      const v = document.createElementNS('http://www.w3.org/2000/svg','line');
+      v.setAttribute('x1', x);
+      v.setAttribute('x2', x);
+      v.setAttribute('y1', pad.top);
+      v.setAttribute('y2', pad.top + plotH);
+      axesG.appendChild(v);
+  
       const t = document.createElementNS('http://www.w3.org/2000/svg','text');
       t.setAttribute('x', x);
-      t.setAttribute('y', pad.top + plotH + X_TICK_GAP);
-      t.setAttribute('dominant-baseline','hanging');
-      t.setAttribute('text-anchor','middle');
+      // move the x-axis numbers CLOSER to the plot; tweak “+ 16” to taste
+      t.setAttribute('y', pad.top + plotH + 16);
+      t.setAttribute('dominant-baseline', 'hanging');
+      t.setAttribute('text-anchor', 'middle');
       t.textContent = r;
       axesG.appendChild(t);
     }
-
-    // horizontal grid + y ticks
+  
     const yr = yRange(mode);
-    yr.ticks.forEach(function(yv){
-      const y = yToPx(yv, yr.yMin, yr.yMax);
-
-      const hline = document.createElementNS('http://www.w3.org/2000/svg','line');
-      hline.setAttribute('x1',pad.left); hline.setAttribute('x2',pad.left+plotW);
-      hline.setAttribute('y1',y);        hline.setAttribute('y2',y);
-      axesG.appendChild(hline);
-
+    yr.ticks.forEach((yv) => {
+      const y  = yToPx(yv, yr.yMin, yr.yMax);
+      const hl = document.createElementNS('http://www.w3.org/2000/svg','line');
+      hl.setAttribute('x1', pad.left);
+      hl.setAttribute('x2', pad.left + plotW);
+      hl.setAttribute('y1', y);
+      hl.setAttribute('y2', y);
+      axesG.appendChild(hl);
+  
       const yt = document.createElementNS('http://www.w3.org/2000/svg','text');
       yt.setAttribute('x', pad.left - 12);
-      yt.setAttribute('y', y);
-      yt.setAttribute('dominant-baseline','central');
-      yt.setAttribute('text-anchor','end');
-      yt.textContent = (mode==='percent'
-        ? (yv>=1 ? String(yv) : yv.toExponential(1))
+      yt.setAttribute('y', y + 5);
+      yt.setAttribute('text-anchor', 'end');
+      yt.textContent = (mode === 'percent'
+        ? (yv >= 1 ? String(yv) : yv.toExponential(1))
         : yv.toLocaleString());
       axesG.appendChild(yt);
     });
-
-    // X label
-    xLab.setAttribute('x', pad.left + plotW/2);
-    xLab.setAttribute('y', pad.top + plotH + X_TICK_GAP + X_LABEL_GAP);
+  
+    // x label (a hair farther from the plot; tweak gap if you like)
+    const X_LABEL_GAP = 28;
+    xLab.setAttribute('x', pad.left + plotW / 2);
+    xLab.setAttribute('y', pad.top + plotH + X_LABEL_GAP);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
-
-    // Y label — measure, then nudge so it never clips left
-    const desiredLeftPadding = 8;         // px from SVG left edge
+  
+    // y label – measure, then nudge so it never clips left
+    const Y_LABEL_OFFSET = 90;     // distance from plot to label center
+    const desiredLeftPadding = 8;  // minimum gap to SVG’s left edge
+  
     yLab.textContent = yr.label;
-    yLab.setAttribute('text-anchor','middle');
-    yLab.setAttribute('dominant-baseline','middle');
-    const cy = pad.top + plotH/2;
-    const cx0 = pad.left - 90;            // base offset from plot
+    yLab.setAttribute('text-anchor', 'middle');
+    yLab.setAttribute('dominant-baseline', 'middle');
+  
+    const cy  = pad.top + plotH / 2;
+    const cx0 = pad.left - Y_LABEL_OFFSET;
+  
+    // provisional transform so we can measure the rotated box
     yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
-    const bb = yLab.getBBox();
-    const currentLeft = cx0 - (bb.height/2); // after -90°, height projects left
-    const dx = Math.max(0, desiredLeftPadding - currentLeft);
+  
+    const bb          = yLab.getBBox();
+    const currentLeft = cx0 - (bb.height / 2); // leftmost after -90°
+    const dx          = Math.max(0, desiredLeftPadding - currentLeft);
+  
+    // final position
     yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
   }
-
-  // curve and shade
+  
+  // --- Q6: curve ---
   function buildCurve(mode){
     const yr = yRange(mode);
-    const bottom = yToPx(yr.yMin, yr.yMin, yr.yMax);
-    const N = 800; let d = '';
-    for (let i=0;i<=N;i++){
-      const r = 1 + 9*(i/N);
+    const N  = 800;
+    let d    = '';
+    for (let i = 0; i <= N; i++){
+      const r = 1 + 9 * (i / N);
       const X = miniXcutoff_from_ratio(r);
       const Y = miniXtoUnit(X, mode);
-      const x = rToPx(r), y = yToPx(Y, yr.yMin, yr.yMax);
+      const x = rToPx(r);
+      const y = yToPx(Y, yr.yMin, yr.yMax);
       d += (i ? 'L ' : 'M ') + x + ',' + y + ' ';
     }
     curve.setAttribute('d', d);
+  
+    const bottom = yToPx(yr.yMin, yr.yMin, yr.yMax);
     shadeIn.setAttribute('d', d + ' L ' + rToPx(10) + ',' + bottom + ' L ' + rToPx(1) + ',' + bottom + ' Z');
   }
+  
+  // --- Q6: label text (just replace how C is shown)
+  const displayC = (c) => Number(c).toFixed(3);
 
   // value sanitize
   function snapInputs(){
@@ -963,10 +995,13 @@ function renderMiniQ6(intoEl, node){
 
     // floating label (C trimmed to a few decimals but value kept internally)
     const cPretty = Number(miniMaster.C).toFixed(3).replace(/\.?0+$/,'');
-    const label = 'S=' + miniMaster.S + ' · C=' + cPretty + ' · S/C=' + (r).toFixed(3) + ' · ' +
-      (mode==='percent'   ? ('X≈' + miniCeilPlaces(100/Xc,6) + '%')
-       : mode==='micromort' ? ('X≈' + miniCeilPlaces(1e6/Xc,2) + ' µm')
-       : ('X≈' + Math.round(Xc).toLocaleString()));
+    const label =
+    'S=' + miniMaster.S +
+    ' · C=' + displayC(miniMaster.C) +
+    ' · S/C=' + (r).toFixed(3) + ' · ' +
+    (mode==='percent' ? ('X≈' + miniCeilPlaces(100/Xc,6) + '%')
+     : (mode==='micromort' ? ('X≈' + miniCeilPlaces(1e6/Xc,2) + ' µm')
+     : ('X≈' + Math.round(Xc).toLocaleString())));
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
 
@@ -1156,73 +1191,91 @@ function renderMiniQ7(intoEl, node){
     return yToPx(Yc, yr.yMin, yr.yMax);
   }
 
+  // --- Q7: axes ---
   function drawAxes(mode){
-    axesG.innerHTML='';
-    const X_TICK_GAP  = 14;
-    const X_LABEL_GAP = 26;
-
-    for (let r=1;r<=10;r++){
-      const x=rToPx(r);
-      const v=document.createElementNS('http://www.w3.org/2000/svg','line');
-      v.setAttribute('x1',x); v.setAttribute('x2',x); v.setAttribute('y1',pad.top); v.setAttribute('y2',pad.top+plotH);
+    axesG.innerHTML = '';
+  
+    for (let r = 1; r <= 10; r++){
+      const x = rToPx(r);
+      const v = document.createElementNS('http://www.w3.org/2000/svg','line');
+      v.setAttribute('x1', x);
+      v.setAttribute('x2', x);
+      v.setAttribute('y1', pad.top);
+      v.setAttribute('y2', pad.top + plotH);
       axesG.appendChild(v);
-
-      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-      t.setAttribute('x',x);
-      t.setAttribute('y', pad.top + plotH + X_TICK_GAP);
-      t.setAttribute('dominant-baseline','hanging');
-      t.setAttribute('text-anchor','middle');
-      t.textContent=r; axesG.appendChild(t);
+  
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', x);
+      t.setAttribute('y', pad.top + plotH + 16); // same tighter gap as Q6
+      t.setAttribute('dominant-baseline', 'hanging');
+      t.setAttribute('text-anchor', 'middle');
+      t.textContent = r;
+      axesG.appendChild(t);
     }
-
-    const yr=yRange(mode);
-    yr.ticks.forEach(function(yv){
-      const y=yToPx(yv, yr.yMin, yr.yMax);
-      const h=document.createElementNS('http://www.w3.org/2000/svg','line');
-      h.setAttribute('x1',pad.left); h.setAttribute('x2',pad.left+plotW); h.setAttribute('y1',y); h.setAttribute('y2',y);
-      axesG.appendChild(h);
-
-      const yt=document.createElementNS('http://www.w3.org/2000/svg','text');
+  
+    const yr = yRange(mode);
+    yr.ticks.forEach((yv) => {
+      const y  = yToPx(yv, yr.yMin, yr.yMax);
+      const hl = document.createElementNS('http://www.w3.org/2000/svg','line');
+      hl.setAttribute('x1', pad.left);
+      hl.setAttribute('x2', pad.left + plotW);
+      hl.setAttribute('y1', y);
+      hl.setAttribute('y2', y);
+      axesG.appendChild(hl);
+  
+      const yt = document.createElementNS('http://www.w3.org/2000/svg','text');
       yt.setAttribute('x', pad.left - 12);
-      yt.setAttribute('y', y);
-      yt.setAttribute('dominant-baseline','central');
-      yt.setAttribute('text-anchor','end');
-      yt.textContent = (mode==='percent'
-        ? (yv>=1 ? String(yv) : yv.toExponential(1))
+      yt.setAttribute('y', y + 5);
+      yt.setAttribute('text-anchor', 'end');
+      yt.textContent = (mode === 'percent'
+        ? (yv >= 1 ? String(yv) : yv.toExponential(1))
         : yv.toLocaleString());
       axesG.appendChild(yt);
     });
-
-    xLab.setAttribute('x', pad.left + plotW/2);
-    xLab.setAttribute('y', pad.top + plotH + X_TICK_GAP + X_LABEL_GAP);
+  
+    const X_LABEL_GAP = 28;
+    xLab.setAttribute('x', pad.left + plotW / 2);
+    xLab.setAttribute('y', pad.top + plotH + X_LABEL_GAP);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
-
+  
+    const Y_LABEL_OFFSET    = 90;
     const desiredLeftPadding = 8;
-    yLab.textContent = yr.label;
-    yLab.setAttribute('text-anchor','middle');
+  
+    yLab.textContent = yRange(mode).label;
+    yLab.setAttribute('text-anchor', 'middle');
     yLab.setAttribute('dominant-baseline','middle');
-    const cy = pad.top + plotH/2;
-    const cx0 = pad.left - 90;
+  
+    const cy  = pad.top + plotH / 2;
+    const cx0 = pad.left - Y_LABEL_OFFSET;
+  
     yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
-    const bb = yLab.getBBox();
-    const currentLeft = cx0 - (bb.height/2);
-    const dx = Math.max(0, desiredLeftPadding - currentLeft);
+    const bb          = yLab.getBBox();
+    const currentLeft = cx0 - (bb.height / 2);
+    const dx          = Math.max(0, desiredLeftPadding - currentLeft);
     yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
   }
-
-  function buildCurve(){
-    const yr=yRange(local.mode), N=800; let d='';
-    for (let i=0;i<=N;i++){
-      const r = 1 + 9*(i/N);
+  
+  // --- Q7: curve ---
+  function buildCurve(mode){
+    const yr = yRange(mode);
+    const N  = 800;
+    let d    = '';
+    for (let i = 0; i <= N; i++){
+      const r = 1 + 9 * (i / N);
       const X = miniXcutoff_from_ratio(r);
-      const Y = miniXtoUnit(X, local.mode);
-      const x = rToPx(r), y = yToPx(Y, yr.yMin, yr.yMax);
-      d += (i? 'L ':'M ') + x + ',' + y + ' ';
+      const Y = miniXtoUnit(X, mode);
+      const x = rToPx(r);
+      const y = yToPx(Y, yr.yMin, yr.yMax);
+      d += (i ? 'L ' : 'M ') + x + ',' + y + ' ';
     }
     curve.setAttribute('d', d);
+  
     const bottom = yToPx(yr.yMin, yr.yMin, yr.yMax);
     shadeIn.setAttribute('d', d + ' L ' + rToPx(10) + ',' + bottom + ' L ' + rToPx(1) + ',' + bottom + ' Z');
   }
+  
+  // --- Q7: label number formatting (reuse)
+  const displayC = (c) => Number(c).toFixed(3);
 
   function draw(){
     drawAxes(local.mode);
@@ -1243,10 +1296,13 @@ function renderMiniQ7(intoEl, node){
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
     const cPretty = Number(local.C).toFixed(3).replace(/\.?0+$/,'');
-    const label = 'S=' + local.S + ' · C=' + cPretty + ' · S/C=' + (r).toFixed(3) + ' · ' +
-      (local.mode==='percent'   ? ('X≈' + miniCeilPlaces(100/Xc,6) + '%')
-       : local.mode==='micromort' ? ('X≈' + miniCeilPlaces(1e6/Xc,2) + ' µm')
-       : ('X≈' + Math.round(Xc).toLocaleString()));
+    const label =
+    'S=' + local.S +
+    ' · C=' + displayC(local.C) +
+    ' · S/C=' + (r).toFixed(3) + ' · ' +
+    (local.mode==='percent' ? ('X≈' + miniCeilPlaces(100/Xc,6) + '%')
+     : (local.mode==='micromort' ? ('X≈' + miniCeilPlaces(1e6/Xc,2) + ' µm')
+     : ('X≈' + Math.round(Xc).toLocaleString())));
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
     let ly = cy - 34; const minTop = pad.top + 20; if (ly<minTop) ly=minTop;
