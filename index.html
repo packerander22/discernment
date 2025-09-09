@@ -350,6 +350,7 @@
   /* ==== MINI GRAPH styles (additive) ==== */
   .mini-lead { margin-bottom: 10px; }
   .mini-wrap { display:block; border:1px solid var(--border); border-radius:8px; background: color-mix(in oklab, var(--card), var(--bg) 6%); padding:12px; margin:10px 0 16px; overflow: visible; }
+  .mini-wrap > a{font-size:.95rem;text-decoration:underline;color:var(--curve-color);margin-top:8px;display:inline-block}
   .mini-fields { display: grid; grid-template-columns: 1fr; gap: 12px; }
   @media (min-width: 560px){ .mini-fields { grid-template-columns: 1fr 1fr; } }
   .mini-field { display:flex; flex-direction:column; gap:6px; }
@@ -736,9 +737,11 @@ function curveYPxAtRatio(r, mode, pad, plotH, yToPx) {
   const Yc = miniXtoUnit(Xc, mode);
   return yToPx(Yc, yr.yMin, yr.yMax);
 }
+
 /* ===========================================================
-   Q6 — interactive (live inputs)
+                         Q6 render)
 =========================================================== */
+  
 function renderMiniQ6(intoEl, node){
   intoEl.innerHTML = '';
 
@@ -776,6 +779,7 @@ function renderMiniQ6(intoEl, node){
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg');
   svg.setAttribute('viewBox','0 0 940 620');
+  svg.style.overflow = 'visible';
   wrap.appendChild(svg);
 
   // Rule + verdict
@@ -787,6 +791,7 @@ function renderMiniQ6(intoEl, node){
 
   intoEl.appendChild(wrap);
 
+  // Deep-dive link
   var xlink = document.createElement('a');
   xlink.href = 'javascript:void(0)';
   xlink.textContent = 'See full explanation and formulas';
@@ -794,7 +799,7 @@ function renderMiniQ6(intoEl, node){
   xlink.style.marginTop = '8px';
   xlink.onclick = function(){ jumpToConcept('concept-prob-sev-cost'); };
   wrap.appendChild(xlink);
-  
+
   // Inputs
   const elS  = wrap.querySelector('#miniS');
   const elC  = wrap.querySelector('#miniC');
@@ -857,8 +862,8 @@ function renderMiniQ6(intoEl, node){
 
       const t=document.createElementNS('http://www.w3.org/2000/svg','text');
       t.setAttribute('x',x);
-      t.setAttribute('y', pad.top + plotH + 16);       // ← tighter to the axis
-      t.setAttribute('dominant-baseline', 'hanging');  // prevents extra offset
+      t.setAttribute('y', pad.top + plotH + 16);
+      t.setAttribute('dominant-baseline', 'hanging');
       t.setAttribute('text-anchor','middle');
       t.textContent = r;
       axesG.appendChild(t);
@@ -888,23 +893,20 @@ function renderMiniQ6(intoEl, node){
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
 
     // Y label — measure, then nudge so it never clips left
-    const Y_LABEL_OFFSET = 90;        // distance from plot to label center (pre-nudge)
-    const desiredLeftPadding = 8;     // min distance from SVG left edge
+    const Y_LABEL_OFFSET = 90;
+    const desiredLeftPadding = 8;
 
-    yLab.textContent = yr.label;
+    yLab.textContent = yRange(mode).label;
     yLab.setAttribute('text-anchor','middle');
     yLab.setAttribute('dominant-baseline','middle');
 
     const cy = pad.top + plotH/2;
     const cx0 = pad.left - Y_LABEL_OFFSET;
 
-    // provisional to measure
     yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
     const bb = yLab.getBBox();
-    const currentLeft = cx0 - (bb.height/2);    // leftmost after -90° rotation
+    const currentLeft = cx0 - (bb.height/2);
     const dx = Math.max(0, desiredLeftPadding - currentLeft);
-
-    // final position
     yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
   }
 
@@ -920,7 +922,7 @@ function renderMiniQ6(intoEl, node){
     }
     curve.setAttribute('d', d);
 
-    const bottom=yToPx(yr.yMin, yr.yMin, yr.yMax);
+    const bottom=yToPx(yRange(mode).yMin, yRange(mode).yMin, yRange(mode).yMax);
     shadeIn.setAttribute('d', d + ' L ' + rToPx(10) + ',' + bottom + ' L ' + rToPx(1) + ',' + bottom + ' Z');
   }
 
@@ -956,20 +958,25 @@ function renderMiniQ6(intoEl, node){
     drawAxes(mode);
     buildCurve(mode);
 
-    const r = miniMaster.S/miniMaster.C;
+    const r  = miniMaster.S/miniMaster.C;
     const Xc = miniXcutoff_from_ratio(r);
     const yr = yRange(mode);
-    const Yc = miniXtoUnit(Xc, mode);
-    const cx = rToPx(miniClamp(r,1,10));
-    const cy = yToPx(Yc, yr.yMin, yr.yMax);
 
-    // draggable handle (always shows user's point; inside/outside green area is obvious)
+    // plot the USER'S probability point (not the cutoff)
+    const Yuser = (miniMaster.X_user != null)
+      ? miniXtoUnit(miniMaster.X_user, mode)
+      : miniXtoUnit(Xc, mode);
+    const cx = rToPx(miniClamp(r,1,10));
+    const cy = yToPx(Yuser, yr.yMin, yr.yMax);
+
     handle.setAttribute('cx', cx);
     handle.setAttribute('cy', cy);
 
-    // floating label (trim C so it doesn't get huge)
+    // floating label (keep your trimDeci helper)
     const label = 'S=' + trimDeci(miniMaster.S) + ' , C=' + trimDeci(miniMaster.C) + ' · S/C=' + trimDeci(r) + ' · ' +
-      (mode==='percent' ? ('X≈' + trimDeci(100/Xc,6) + '%') : (mode==='micromort' ? ('X≈' + trimDeci(1e6/Xc,2) + ' µm') : ('X≈' + Math.round(Xc).toLocaleString())));
+      (mode==='percent' ? ('P≈' + trimDeci(100 / (miniMaster.X_user || Xc), 6) + '%')
+                        : (mode==='micromort' ? ('P≈' + trimDeci(1e6 / (miniMaster.X_user || Xc), 2) + ' µm')
+                                              : ('1 in ≈ ' + Math.round(miniMaster.X_user || Xc).toLocaleString())));
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
 
@@ -981,6 +988,7 @@ function renderMiniQ6(intoEl, node){
     labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
+    // verdict: user X versus cutoff X
     const act = (miniMaster.X_user != null) ? (miniMaster.X_user <= Xc + 1e-15) : false;
     verdict.textContent = act ? 'Verdict: Action should be considered.' : 'Verdict: Action should NOT be considered.';
     verdict.classList.toggle('ok', act);
@@ -1002,28 +1010,48 @@ function renderMiniQ6(intoEl, node){
   function onPointerMove(e){
     if(!dragging) return; e.preventDefault();
     const sp = svgPoint(e);
+
+    // X (ratio) from horizontal position
     const px = miniClamp(sp.x, pad.left, pad.left+plotW);
     const r  = pxToR(px);
 
-    // snap check vs curve Y at this r
-    const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
-    const yCurve  = curveYPxAtRatio(r, miniMaster.mode, pad, plotH, yToPx);
-    const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
+    // Snap check vs curve Y at this r
+    const mode = miniMaster.mode;
+    const yr = yRange(mode);
+
+    let yPix = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
+    const Xc = miniXcutoff_from_ratio(r);
+    const Yc = miniXtoUnit(Xc, mode);
+    const yCurve = yToPx(Yc, yr.yMin, yr.yMax);
+    const willSnap = Math.abs(yPix - yCurve) <= SNAP_PX;
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
 
-    // keep S/C bounds while moving (we vary C to follow r = S/C)
+    // Convert cursor Y to probability unit; snap to curve if close
+    let frac  = 1 - (yPix - pad.top) / plotH;
+    let logY  = Math.log10(yr.yMin) + frac * (Math.log10(yr.yMax) - Math.log10(yr.yMin));
+    let Y     = Math.pow(10, logY);
+    if (willSnap){ Y = Yc; yPix = yCurve; }
+
+    // Update user's probability value in all modes
+    const X_user = unitToX(Y, mode);
+    let valOut = (mode==='oneInX') ? X_user
+              : (mode==='percent') ? (100 / X_user)
+              : (1e6 / X_user);
+    // Clamp to input ranges so the field stays legal
+    if (mode==='oneInX') { if (valOut < 2) valOut = 2; }
+    else if (mode==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
+    else { if (valOut<=0) valOut=0.0001; if (valOut>=1e6) valOut=999999.99; }
+
+    // Keep S/C bounds while dragging (vary C to match r = S/C)
     let S = miniClamp(Math.max(parseFloat(elS.value)||miniMaster.S, MINI_EPS), MINI_EPS, MINI_MAX);
-    let C = S / r;
-    if (C <= MINI_EPS || C > MINI_MAX){
-      C = miniClamp(Math.max(parseFloat(elC.value)||miniMaster.C, MINI_EPS), MINI_EPS, MINI_MAX);
-      S = r * C;
-      if (S <= MINI_EPS || S > MINI_MAX){
-        S = miniClamp(S, MINI_EPS, MINI_MAX);
-        C = miniClamp(S / r, MINI_EPS, MINI_MAX);
-      }
-    }
-    elS.value = String(S); elC.value = String(C);
+    let C = miniClamp(S / r, MINI_EPS, MINI_MAX);
+
+    // Write back to state + inputs
+    miniMaster.S = S; miniMaster.C = C;
+    miniMaster.X_user = X_user; miniMaster.val = valOut;
+    elS.value = String(S); elC.value = String(C); elV.value = String(valOut);
+
     draw();
   }
   function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
@@ -1034,6 +1062,12 @@ function renderMiniQ6(intoEl, node){
   svg.addEventListener('touchstart', onPointerDown, {passive:false});
   svg.addEventListener('touchmove', onPointerMove, {passive:false});
   svg.addEventListener('touchend', onPointerUp, {passive:false});
+
+  // Input changes
+  elS.addEventListener('change', draw);
+  elC.addEventListener('change', draw);
+  elM.addEventListener('change', ()=>{ updateProbLabelForMode(elM.value); draw(); });
+  elV.addEventListener('change', draw);
 
   draw();
 
@@ -1087,7 +1121,8 @@ function renderMiniQ7(intoEl, node){
   wrap.appendChild(fields); wrap.appendChild(pRow);
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.classList.add('mini-svg'); svg.setAttribute('viewBox','0 0 940 620'); wrap.appendChild(svg);
+  svg.classList.add('mini-svg'); svg.setAttribute('viewBox','0 0 940 620'); svg.style.overflow='visible';
+  wrap.appendChild(svg);
 
   const rule = document.createElement('div'); rule.className='rule';
   rule.innerHTML = 'Rule: Only if <span id="miniProbName2">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.';
@@ -1125,9 +1160,11 @@ function renderMiniQ7(intoEl, node){
   const shadeIn = document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
   const curve   = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
   const handle  = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','mini-handle'); handle.setAttribute('r','12'); svg.appendChild(handle);
+
   const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); labelG.style.pointerEvents='none'; svg.appendChild(labelG);
   const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','mini-ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
   const labelTx = document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','mini-ptlabel'); labelG.appendChild(labelTx);
+
   const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
   const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
@@ -1156,7 +1193,7 @@ function renderMiniQ7(intoEl, node){
       axesG.appendChild(v);
       const t=document.createElementNS('http://www.w3.org/2000/svg','text');
       t.setAttribute('x',x);
-      t.setAttribute('y', pad.top + plotH + 16);       // ← tighter to the axis
+      t.setAttribute('y', pad.top + plotH + 16);
       t.setAttribute('dominant-baseline', 'hanging');
       t.setAttribute('text-anchor','middle');
       t.textContent=r; axesG.appendChild(t);
@@ -1214,16 +1251,21 @@ function renderMiniQ7(intoEl, node){
     const r = local.S/local.C;
     const Xc = miniXcutoff_from_ratio(r);
     const yr = yRange(local.mode);
-    const Yc = miniXtoUnit(Xc, local.mode);
+
+    const Yuser = (local.X_user != null)
+      ? miniXtoUnit(local.X_user, local.mode)
+      : miniXtoUnit(Xc, local.mode);
+
     const cx = rToPx(miniClamp(r,1,10));
-    const cy = yToPx(Yc, yr.yMin, yr.yMax);
+    const cy = yToPx(Yuser, yr.yMin, yr.yMax);
 
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
     const label = 'S=' + trimDeci(local.S) + ' , C=' + trimDeci(local.C) + ' · S/C=' + trimDeci(r) + ' · ' +
-      (local.mode==='percent' ? ('X≈' + trimDeci(100/Xc,6) + '%') : (local.mode==='micromort' ? ('X≈' + trimDeci(1e6/Xc,2) + ' µm') : ('X≈' + Math.round(Xc).toLocaleString())));
-    labelTx.textContent = label;
-    labelTx.setAttribute('text-anchor','middle');
+      (local.mode==='percent' ? ('P≈' + trimDeci(100 / (local.X_user || Xc), 6) + '%')
+                              : (local.mode==='micromort' ? ('P≈' + trimDeci(1e6 / (local.X_user || Xc), 2) + ' µm')
+                                                          : ('1 in ≈ ' + Math.round(local.X_user || Xc).toLocaleString())));
+    labelTx.textContent = label; labelTx.setAttribute('text-anchor','middle');
     let ly = cy - 34; const minTop=pad.top+20; if (ly<minTop) ly=minTop;
     labelTx.setAttribute('x', cx); labelTx.setAttribute('y', ly);
     const bb = labelTx.getBBox(); const padBox=10;
@@ -1252,27 +1294,44 @@ function renderMiniQ7(intoEl, node){
   function onPointerMove(e){
     if(!dragging) return; e.preventDefault();
     const sp = svgPoint(e);
+
+    // Horizontal -> r
     const px = miniClamp(sp.x, pad.left, pad.left+plotW);
     const r  = pxToR(px);
 
-    const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
-    const yCurve  = curveYPxAtRatio(r, local.mode, pad, plotH, yToPx);
-    const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
+    // Snap check vs curve Y at this r
+    const mode = local.mode;
+    const yr = yRange(mode);
+
+    let yPix = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
+    const Xc = miniXcutoff_from_ratio(r);
+    const Yc = miniXtoUnit(Xc, mode);
+    const yCurve = yToPx(Yc, yr.yMin, yr.yMax);
+    const willSnap = Math.abs(yPix - yCurve) <= SNAP_PX;
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
 
-    // vary C to follow r = S/C, keep within bounds
+    // Convert cursor Y to probability unit; snap to curve if close
+    let frac  = 1 - (yPix - pad.top) / plotH;
+    let logY  = Math.log10(yr.yMin) + frac * (Math.log10(yr.yMax) - Math.log10(yr.yMin));
+    let Y     = Math.pow(10, logY);
+    if (willSnap){ Y = Yc; yPix = yCurve; }
+
+    // Update user's probability value in all modes
+    const X_user = unitToX(Y, mode);
+    let valOut = (mode==='oneInX') ? X_user
+              : (mode==='percent') ? (100 / X_user)
+              : (1e6 / X_user);
+    if (mode==='oneInX') { if (valOut < 2) valOut = 2; }
+    else if (mode==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
+    else { if (valOut<=0) valOut=0.0001; if (valOut>=1e6) valOut=999999.99; }
+
+    // Keep S/C bounds while dragging (vary C to match r)
     let S = miniClamp(local.S, MINI_EPS, MINI_MAX);
-    let C = S / r;
-    if (C <= MINI_EPS || C > MINI_MAX){
-      C = miniClamp(local.C, MINI_EPS, MINI_MAX);
-      S = r * C;
-      if (S <= MINI_EPS || S > MINI_MAX){
-        S = miniClamp(S, MINI_EPS, MINI_MAX);
-        C = miniClamp(S / r, MINI_EPS, MINI_MAX);
-      }
-    }
-    local.S = S; local.C = C;
+    let C = miniClamp(S / r, MINI_EPS, MINI_MAX);
+
+    local.S = S; local.C = C; local.X_user = X_user; local.val = valOut;
+
     draw();
   }
   function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
