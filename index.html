@@ -29,7 +29,14 @@
 <!-- iOS homescreen -->
 <link rel="apple-touch-icon" sizes="180x180" href="./favicon_180_transparent.png">
 
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script>
+  // MathJax v3 config: allow \( … \) inline TeX
+  window.MathJax = {
+    tex: {inlineMath: [['\\(','\\)']]},
+    options: {skipHtmlTags: ['script','noscript','style','textarea','pre','code']}
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
 <style>
   :root {
@@ -2051,6 +2058,47 @@ window.addEventListener('unhandledrejection', e => {
   box.textContent = 'Promise Rejection: ' + (e.reason && (e.reason.message || e.reason)) ;
 });
   
+function bootGuide() {
+  // make sure DOM is present
+  const text = document.getElementById('text');
+  if (!text) {
+    console.warn('DOM not ready for boot; retrying…');
+    return setTimeout(bootGuide, 30);
+  }
+
+  // flowchart must exist
+  if (!Array.isArray(window.flowchart) || !flowchart.length) {
+    console.warn('flowchart not ready; retrying…');
+    return setTimeout(bootGuide, 30);
+  }
+
+  // cache title safely
+  const titleEl = document.getElementById('segmentTitle');
+  if (titleEl && !window.originalTitleHTML) {
+    window.originalTitleHTML = titleEl.innerHTML || '';
+  }
+
+  // set starting node & render
+  window.currentNode = flowchart.find(n => n.id === 'Q0') || flowchart[0];
+  renderNode(window.currentNode);
+}
+
+// Run after DOM, or immediately if it’s already ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootGuide);
+} else {
+  bootGuide();
+}
+  
+function safeTypeset(rootEl) {
+  try {
+    if (window.MathJax && MathJax.typesetPromise && rootEl) {
+      return MathJax.typesetPromise([rootEl]).catch(()=>{});
+    }
+  } catch (_) {}
+  return Promise.resolve();
+}
+  
 /* Render node */
 if (!originalTitleHTML) {
   originalTitleHTML = document.getElementById('segmentTitle').innerHTML;
@@ -2133,6 +2181,12 @@ function renderNode(node) {
   // 🔹 Inject content, but wrap AB2 so we have an element to target
   if (node && node.id === 'AB2') {
     textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
+    
+    const ab2El = document.getElementById('AB2');
+    assignConceptAnchors();
+  
+    // typeset equations safely (no crash if MathJax not ready yet)
+    safeTypeset(ab2El);
     
     // After: textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
     const ab2Root = document.getElementById('AB2');
