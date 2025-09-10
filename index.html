@@ -2103,7 +2103,6 @@ function safeTypeset(rootEl) {
 if (!originalTitleHTML) {
   originalTitleHTML = document.getElementById('segmentTitle').innerHTML;
 }
-renderNode(currentNode);
 
 function renderNode(node) {
   closeAllPanels();
@@ -2181,75 +2180,56 @@ function renderNode(node) {
   // 🔹 Inject content, but wrap AB2 so we have an element to target
   if (node && node.id === 'AB2') {
     textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
-    
+  
     const ab2El = document.getElementById('AB2');
     assignConceptAnchors();
   
-    // typeset equations safely (no crash if MathJax not ready yet)
-    safeTypeset(ab2El);
-    
-    // After: textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
-    const ab2Root = document.getElementById('AB2');
-    
-    // Only try MathJax if it exists and is ready
+    // Typeset equations safely without breaking rendering
     try {
       if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
-        // Clear any old typeset (ok if not defined)
         if (typeof MathJax.typesetClear === 'function') MathJax.typesetClear();
-        await MathJax.typesetPromise([ab2Root]);
+        MathJax.typesetPromise([ab2El]).catch(() => {});
       }
     } catch (err) {
-      // swallow – never let AB2 rendering crash the slide
       console.warn('MathJax typeset skipped:', err);
     }
-  
-    // Make sure headings have the right IDs before we try to scroll
-    assignConceptAnchors();
   
     // Decide what to scroll to:
     let targetId = null;
     let backQId  = null;
   
-    // Priority A: pending request from jumpToConcept(...)
     if (window.__pendingConceptScroll && window.__pendingConceptScroll.conceptId) {
       targetId = window.__pendingConceptScroll.conceptId;
       backQId  = window.__pendingConceptScroll.backQId || __lastQuestionId || 'Q0';
       window.__pendingConceptScroll = null;
     } else {
-      // Priority B: an existing URL hash
       const hash = (location.hash || '').trim();
       if (hash.length > 1) {
         targetId = hash.slice(1);
         backQId  = __lastQuestionId || 'Q0';
       }
     }
-    
-    // after you compute targetId/backQId
+  
     if (targetId) {
-      window.__backTargetForAB2 = backQId;   // cache once
+      window.__backTargetForAB2 = backQId;
       scrollToConcept(targetId, backQId);
     }
-    
-    // Scroll + inject back link if we have a target
-    if (targetId) scrollToConcept(targetId, backQId);
   
-    // In-page anchor clicks inside AB2 (e.g., <a href="#concept-...">)
-    const ab2El = document.getElementById('AB2');
-    if (ab2El) {
-      ab2El.addEventListener('click', function (e) {
-        const a = e.target.closest('a[href^="#"]');
-        if (!a) return;
-        const id = a.getAttribute('href').slice(1);
-        if (!id) return;
-        e.preventDefault();
-        history.replaceState(null, '', `#${id}`); // keep URL updated for reload/share
-        scrollToConcept(id, window.__backTargetForAB2 || 'Q0'); // use cached back target
-      }, { passive: true });
-    }
+    // In-page anchor clicks inside AB2
+    ab2El.addEventListener('click', function (e) {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute('href').slice(1);
+      if (!id) return;
+      e.preventDefault();
+      history.replaceState(null, '', `#${id}`);
+      scrollToConcept(id, window.__backTargetForAB2 || 'Q0');
+    }, { passive: true });
   
     // Aux toggles etc. still need to run
     setupAuxToggles(node);
     showOrHideRiskInline(node);
+  
     // Buttons for 'about' stops here
     return;
   }
