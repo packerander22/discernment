@@ -906,8 +906,7 @@ function ensureConceptBackButton(targetId, backQId) {
 
   btn.addEventListener('click', (ev) => {
     ev.preventDefault();
-    const id = backQId || window.__lastQuestionId || 'Q0';
-    if (typeof goToNode === 'function') goToNode(id);
+    if (typeof goBack === 'function') goBack();
   });
 
   // place *below* the heading
