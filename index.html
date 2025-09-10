@@ -784,60 +784,56 @@ function curveYPxAtRatio(r, mode, pad, plotH, yToPx) {
   return yToPx(Yc, yr.yMin, yr.yMax);
 }
 
-// ---- Global: inject a back button just below a heading (idempotent)
+// --- GLOBAL: smooth scroll + back injection (single source of truth) ---
+function scrollToConcept(targetId, backQId) {
+  // prevent overlapping runs
+  if (window.__pendingConceptScroll === true) return;
+  window.__pendingConceptScroll = true;
+
+  const START = performance.now();
+  const MAX_MS = 3000;
+  const INTERVAL = 120;
+
+  function scrollAndInject() {
+    const el = document.getElementById(targetId);
+    if (!el) return false;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    ensureSectionBackLink(targetId, backQId);
+    return true;
+  }
+
+  if (scrollAndInject()) { window.__pendingConceptScroll = null; return; }
+
+  (function tick() {
+    if (scrollAndInject()) { window.__pendingConceptScroll = null; return; }
+    if (performance.now() - START >= MAX_MS) { window.__pendingConceptScroll = null; return; }
+    setTimeout(tick, INTERVAL);
+  })();
+}
+
 function ensureSectionBackLink(targetId, backQId) {
   const el = document.getElementById(targetId);
   if (!el) return;
 
-  // Only one back link per section
-  const existing = el.nextElementSibling;
-  if (existing && existing.classList && existing.classList.contains('section-back-link')) return;
+  if (el.dataset.backInjected === '1') return;
 
-  const a = document.createElement('a');
-  a.href = '#';
-  a.className = 'section-back-link';
-  a.style.cssText = 'display:inline-block;margin:8px 0 12px 0;';
-  a.textContent = '← Back to the question';
-  a.addEventListener('click', function (ev) {
-    ev.preventDefault();
-    const id = backQId || (typeof __lastQuestionId !== 'undefined' ? __lastQuestionId : null);
-    if (id && typeof goToNode === 'function') goToNode(id);
-    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  const backBtn = document.createElement('button');
+  backBtn.type = 'button';
+  backBtn.className = 'back';
+  backBtn.textContent = 'Back';
+  backBtn.addEventListener('click', () => {
+    const id = backQId || window.__lastQuestionId || 'Q0';
+    if (typeof goToNode === 'function') goToNode(id);
   });
 
-  el.insertAdjacentElement('afterend', a);
+  el.parentNode.insertBefore(backBtn, el);
+  el.dataset.backInjected = '1';
 }
 
-// ---- Global: robust scroll (retry for a short window while layout/images settle)
-function scrollToConcept(targetId, backQId) {
-  if (!targetId) return;
-
-  // prevent overlapping runs
-  if (window.__scrollingConcept) return;
-  window.__scrollingConcept = true;
-
-  const START = performance.now();
-  const MAX_MS = 3000;   // retry budget
-  const INTERVAL = 120;  // try every 120ms
-
-  function tryOnce() {
-    const el = document.getElementById(targetId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      ensureSectionBackLink(targetId, backQId);
-      window.__scrollingConcept = null;
-      return true;
-    }
-    return false;
-  }
-
-  if (tryOnce()) return;
-
-  (function tick() {
-    if (tryOnce()) return;
-    if (performance.now() - START >= MAX_MS) { window.__scrollingConcept = null; return; }
-    setTimeout(tick, INTERVAL);
-  })();
+// Optional convenience: enqueue a jump & route to AB2
+function jumpToConcept(conceptId, backQId) {
+  window.__pendingConceptScroll = { conceptId, backQId: backQId || window.__lastQuestionId || 'Q0' };
+  goToNode('AB2');
 }
 
 /* ===========================================================
