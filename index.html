@@ -235,9 +235,20 @@
   /* anchors/sections that deep-link should respect sticky headers etc. */
   [id] { scroll-margin-top: 16px; } /* or the height of any sticky header */
 
-  /* put near your other styles */
-  #AB2 .back { margin: 8px 0 10px; }
-  
+  button.concept-back {
+    background-color: #9C27B0;  /* same as Restart */
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 12px 0;
+    transition: background-color .2s ease-in-out, transform .06s ease-in-out;
+  }
+  button.concept-back:hover { background-color: #7B1FA2; }
+  button.concept-back:active { transform: translateY(1px); }
+    
   /* Ensure anchored headings scroll clear of any sticky header */
   .about-wrapper [id] { 
     scroll-margin-top: 72px; /* adjust to your sticky header height */
@@ -782,6 +793,12 @@ function unitToX(Y, mode){
   return Y;                                           // 1 in X scale -> X = Y
 }
 
+function flashConceptHeading(el) {
+  if (!el) return;
+  el.classList.add('flash-purple');
+  setTimeout(() => el.classList.remove('flash-purple'), 1400);
+}
+
 function formatCShort(c){
   // show a compact C in the tooltip while preserving full-precision in state
   if (!isFinite(c)) return String(c);
@@ -821,7 +838,6 @@ function curveYPxAtRatio(r, mode, pad, plotH, yToPx) {
 
 // --- GLOBAL: smooth scroll + back injection (single source of truth) ---
 function scrollToConcept(targetId, backQId) {
-  // dedicated busy flag so it doesn't collide with the queue object
   if (window.__isScrollingConcept) return;
   window.__isScrollingConcept = true;
 
@@ -834,6 +850,7 @@ function scrollToConcept(targetId, backQId) {
     if (!el) return false;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     ensureConceptBackButton(targetId, backQId);
+    flashConceptHeading(el);            // <-- add this line
     return true;
   }
 
@@ -1735,7 +1752,7 @@ function updateSliderFill(slider, sev) {
   slider.style.setProperty('--pct', pct + '%');
 
   // nonlinear progression: low severities push color shift faster
-  const t = Math.pow((sev - 1) / 9, 0.7); // exponent <1 makes early shift steeper
+  const t = Math.pow((sev - 1) / 9, 0.5); // exponent <1 makes early shift steeper
   const hue = 240 - t * 240; // blue → red
   const color = `hsl(${hue}, 90%, 50%)`;
   slider.style.setProperty('--fill', color);
