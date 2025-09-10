@@ -128,6 +128,19 @@
     user-select: none;
     touch-action: pan-x;
   }
+  
+  /* defaults (only needed once) */
+  .heat-slider{
+    --fill: #3b82f6;            /* start: blue */
+    --track-bg: #e5e7eb;        /* unfilled track */
+    --track-height: 8px;
+    --thumb-size: 22px;
+    --thumb-shadow: 0 1px 2px rgba(0,0,0,.2);
+    --tick-length: 8px;
+    --tick-thickness: 2px;
+    --tick-color: #cbd5e1;
+  }
+  
   .heat-slider {
     -webkit-appearance: none;
     appearance: none;
@@ -855,9 +868,9 @@ function ensureConceptBackButton(targetId, backQId) {
   heading.dataset.backInjected = '1';
 }
 
-// Optional convenience: enqueue a jump & route to AB2
 function jumpToConcept(conceptId, backQId) {
-  window.__pendingConceptScroll = { conceptId, backQId: backQId || window.__lastQuestionId || 'Q0' };
+  window.__pendingConceptScroll = { conceptId, backQId: backQId || __lastQuestionId || 'Q0' };
+  window.__ab2TempVisit = true; // 🔹 mark this visit as temporary
   goToNode('AB2');
 }
 
@@ -1610,8 +1623,16 @@ function goToNode(id) {
 function goBack() {
   closeAllPanels();
   var prevId = historyStack.pop();
+
+  // 🔹 If AB2 was a temporary concept visit, skip it
+  if (prevId === 'AB2' && window.__ab2TempVisit) {
+    window.__ab2TempVisit = false; // clear flag
+    prevId = historyStack.pop();   // jump one more back
+  }
+
   var prev = flowchart.find(n => n.id === prevId);
-  currentNode = prev || currentNode; renderNode(currentNode);
+  currentNode = prev || currentNode;
+  renderNode(currentNode);
 }
 function restart() {
   closeAllPanels();
@@ -1710,8 +1731,14 @@ function createTickRow(where, wrap) {
 }
 
 function updateSliderFill(slider, sev) {
-  var pct = ((sev - slider.min) / (slider.max - slider.min)) * 100;
+  const pct = ((sev - 1) / 9) * 100;
   slider.style.setProperty('--pct', pct + '%');
+
+  // nonlinear progression: low severities push color shift faster
+  const t = Math.pow((sev - 1) / 9, 0.7); // exponent <1 makes early shift steeper
+  const hue = 240 - t * 240; // blue → red
+  const color = `hsl(${hue}, 90%, 50%)`;
+  slider.style.setProperty('--fill', color);
 }
 
 /* ---------- Controls under the text ---------- */
