@@ -82,6 +82,11 @@
   button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; }
   .ctrl-btn { flex:1; }
   button.active { outline:2px solid #000; }
+  
+  button.next:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
   .segment-heading .skip-btn {
     display:inline-flex; align-items:center; justify-content:center;
@@ -193,8 +198,6 @@
   .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-thumb { width: var(--thumb-size); height: var(--thumb-size); border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow); }
 
-  .section-back-link{display:inline-block;margin:6px 0 10px;color:var(--btn-next);font-weight:700;text-decoration:none;cursor:pointer}
-  .section-back-link:hover{text-decoration:underline}
 
   /* Math-style text for inline formulas */
   .math {
@@ -235,19 +238,39 @@
   /* anchors/sections that deep-link should respect sticky headers etc. */
   [id] { scroll-margin-top: 16px; } /* or the height of any sticky header */
 
-  button.concept-back {
-    background-color: #9C27B0;  /* same as Restart */
-    color: #fff;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-weight: 600;
-    cursor: pointer;
-    margin: 12px 0;
-    transition: background-color .2s ease-in-out, transform .06s ease-in-out;
+  /* Smooth, rubbery header pulse (matches If/When/Verdict flashes) */
+  @keyframes ab2HeaderPulse {
+    0%   { background: transparent; box-shadow: none; }
+    22%  { background: rgba(156,39,176,0.16);
+           box-shadow: 0 0 0 6px rgba(156,39,176,0.12) inset; }
+    55%  { background: rgba(156,39,176,0.26);
+           box-shadow: 0 0 0 10px rgba(156,39,176,0.16) inset; }
+    100% { background: transparent; box-shadow: none; }
   }
-  button.concept-back:hover { background-color: #7B1FA2; }
-  button.concept-back:active { transform: translateY(1px); }
+  
+  .ab2-heading-flash {
+    animation: ab2HeaderPulse 900ms cubic-bezier(.22,.61,.36,1) 1 both;
+    border-radius: 8px;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .ab2-heading-flash { animation: none; }
+  }
+  
+  /* Make the injected back button the same purple as Restart (#9C27B0) */
+  .about-wrapper .concept-back {
+    display: inline-block;
+    margin: 8px 0 12px 0;
+    padding: 8px 14px;
+    font: inherit;
+    border: none;
+    border-radius: 6px;
+    background: #9C27B0;
+    color: #fff;
+    cursor: pointer;
+  }
+  .about-wrapper .concept-back:hover { filter: brightness(1.06); }
+  .about-wrapper .concept-back:active { filter: brightness(0.96); }
     
   /* Ensure anchored headings scroll clear of any sticky header */
   .about-wrapper [id] { 
@@ -793,10 +816,16 @@ function unitToX(Y, mode){
   return Y;                                           // 1 in X scale -> X = Y
 }
 
-function flashConceptHeading(el) {
-  if (!el) return;
-  el.classList.add('flash-purple');
-  setTimeout(() => el.classList.remove('flash-purple'), 1400);
+function flashAb2Heading(id){
+  const h = document.getElementById(id);
+  if (!h) return;
+  h.classList.remove('ab2-heading-flash'); // restart if already applied
+  void h.offsetWidth;                      // reflow to retrigger animation
+  h.classList.add('ab2-heading-flash');
+  const off = () => { h.classList.remove('ab2-heading-flash'); h.removeEventListener('animationend', off); };
+  h.addEventListener('animationend', off);
+  // safety removal in case animationend is missed
+  setTimeout(off, 1500);
 }
 
 function formatCShort(c){
@@ -850,13 +879,12 @@ function scrollToConcept(targetId, backQId) {
     if (!el) return false;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     ensureConceptBackButton(targetId, backQId);
-    flashConceptHeading(el);            // <-- add this line
+    flashAb2Heading(targetId); // 👈 smooth purple pulse here
     return true;
   }
 
   if (scrollAndInject()) { window.__isScrollingConcept = false; return; }
-
-  (function tick() {
+  (function tick(){
     if (scrollAndInject()) { window.__isScrollingConcept = false; return; }
     if (performance.now() - START >= MAX_MS) { window.__isScrollingConcept = false; return; }
     setTimeout(tick, INTERVAL);
@@ -897,6 +925,7 @@ function jumpToConcept(conceptId, backQId) {
 function renderMiniQ6(intoEl, node){
   // first-visit flag (keeps user values if they come back later)
   if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
+  let cont;
 
   intoEl.innerHTML = '';
 
@@ -1125,6 +1154,11 @@ function renderMiniQ6(intoEl, node){
       verdict.classList.remove('ok','no');
       handle.setAttribute('visibility','hidden');
       labelG.setAttribute('visibility','hidden');
+      if (window.miniPristine) {
+        if (cont) cont.disabled = true;
+      } else {
+        if (cont) cont.disabled = false;
+      }
       return;
     } else {
       handle.removeAttribute('visibility');
@@ -1240,7 +1274,7 @@ function renderMiniQ6(intoEl, node){
   // Bottom buttons
   const btns = document.getElementById('buttons');
   btns.innerHTML = '';
-  const cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue';
+  const cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
   cont.onclick = function(){
     miniActGate = !!renderMiniQ6._act;
     goToNode(miniActGate ? 'Q10' : 'Q7');
