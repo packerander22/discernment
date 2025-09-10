@@ -29,6 +29,8 @@
 <!-- iOS homescreen -->
 <link rel="apple-touch-icon" sizes="180x180" href="./favicon_180_transparent.png">
 
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
 <style>
   :root {
     --btn-pad-y:10px; --btn-pad-x:12px;
@@ -216,6 +218,12 @@
   :root[data-theme="light"] .math {
     color: var(--text);
   }
+
+  /* anchors/sections that deep-link should respect sticky headers etc. */
+  [id] { scroll-margin-top: 16px; } /* or the height of any sticky header */
+
+  /* put near your other styles */
+  #AB2 .back { margin: 8px 0 10px; }
 
   /* ================================
      THEME TOKENS + OVERRIDES
@@ -619,8 +627,7 @@ var flowchart = [
   /* ===== ABOUT MENU + PAGES ===== */
   { "id": "AB0", "type": "aboutMenu", "heading": "About", "text": "Choose a section to learn more about the guide and its background." },
   { "id": "AB1", "type": "about", "heading": "About Me", "text": "Hi! My name is Packer, I’m the creator of this guide. I've had OCD for as long as I can remember, and one of the most difficult things for me is knowing whether or not I should worry about or address something, which led me to create this guide over the course of a year and a half—molded from many, <i>many</i> mistakes in my actions. I've learned it's not about being content with imperfection, or striving to make everything perfect, but rather about <i>discerning</i> what to do (or not do), and when to do it. This guide aims to help others make decision—regardless of if they suffer from OCD, anxiety, or not—as the logic it uses can be applied to all areas of life.\n\nTo contact or support me, I'm reachable at:\npackerander22@gmail.com" },
-  { "id": "AB2", "type": "about", "heading": "Guide Concepts Explained", "text": "<p>This guide is built to prevent wasted effort, “analysis paralysis,” and unhealthy worry, by walking through the two essential questions of decision-making: <b>Should I act?</b> (IF) and <b>When should I act?</b> (WHEN). Along the way, it uses concepts from psychology, economics, and systems thinking. Below is a deep dive into each principle, ordered as they appear in the guide.</p><h2 id='concepts-top'>IF You Should Act</h2><h3 id='concept-real-vs-cosmetic'>1. Real Problems vs. Cosmetic Problems</h3><p>Not every “problem” is a <i>real</i> problem.</p><ul><li><b>Real problems</b> affect functionality, outcomes, or safety.</li><li><b>Cosmetic or preference problems</b> only affect comfort, appearance, or personal taste.</li></ul><p><b>How it works:</b> By sorting issues into these two categories, you focus only on what actually changes results. Cosmetic issues can be ignored without consequence.</p><h3 id='concept-potential-vs-inevitable'>2. Potential vs. Inevitable Problems</h3><p>A potential problem may or may not happen. An inevitable problem <i>will</i> happen if ignored.</p><ul><li>Example: a frayed charging cable is <i>inevitably</i> going to fail.</li><li>Example: a squeaky door hinge <i>might</i> get worse, but may never actually break.</li></ul><p><b>How it works:</b> If a problem is inevitable, fixing it early prevents larger costs later. Potential problems require more analysis, especially when severity is high.</p><h3 id='concept-costs-benefits'>3. Costs vs. Benefits</h3><p>Every action carries a trade-off:</p><ul><li><b>Upfront costs/efforts:</b> time, money, or energy you spend right now.</li><li><b>Resulting downsides:</b> risks or hassles created by the fix itself.</li><li><b>Combined total:</b> both categories together, compared against what happens if you do nothing.</li></ul><p><b>Simple Rule:</b> Act if <span class='math'>D<sub>nothing</sub> &gt; (C<sub>upfront</sub> + D<sub>action</sub>)</span></p><p><b>Full Formula:</b> <span class='math'>Act if D<sub>nothing</sub> &gt; C<sub>upfront</sub> + D<sub>action</sub></span></p><p><b>Worked Example:</b> If ignoring a car repair will eventually cost $500, while fixing now costs $100 and creates $50 in hassles, then <span class='math'>500 &gt; (100+50) → 500 &gt; 150 → Act now</span>.</p><h3 id='concept-prob-sev-cost'>4. Probability vs. Severity vs. Cost</h3><p>Applies to <i>non-inevitable potential future problems</i>. Even if failure is unlikely, severity matters; and even if severe, cost of prevention matters.</p><ul><li><b>Low P + Low S:</b> usually safe to ignore.</li><li><b>Low P + High S:</b> worth preventing (example: helmet).</li><li><b>High P + Low S:</b> acceptable if prevention costs more than the nuisance.</li><li><b>High P + High S:</b> always act.</li></ul><p><b>Simple Rule:</b> <span class='math'>Act if (P × S) &gt; C</span></p><p><b>Full Cutoff Formula:</b> <span class='math'>X<sub>cutoff</sub> = 10<sup>6·((S/C − 1)/9)<sup>α</sup></sup></span></p><p><b>Calibration:</b> <span class='math'>α = ln(0.5) / ln((√10 − 1)/9) ≈ 0.48606</span></p><p><i>Checks:</i> <span class='math'>S/C = 1 ⇒ X=1</span> (only act if certain). <span class='math'>S/C = 10 ⇒ X=10<sup>6</sup></span> (one-in-a-million). <span class='math'>S/C = √10 ⇒ X≈10<sup>3</sup></span> (one-in-a-thousand).</p><p><b>Worked Example:</b> Suppose a 10% chance (<span class='math'>P=0.1</span>) of severity 8 (<span class='math'>S=8</span>) with cost 5 (<span class='math'>C=5</span>). Expected downside = <span class='math'>0.1×8=0.8</span>; since <span class='math'>0.8 &gt; 0.5</span> threshold, action is justified.</p><figure style='margin:8px 0;'><img src='./prob_sev_cost_chart.png' alt='Probability × Severity × Cost Decision Boundary' style='max-width:100%;height:auto;'/><figcaption>Green shaded region = action justified; blue curve = cutoff boundary.</figcaption></figure><h3 id='concept-alternatives'>5. Alternative Solutions</h3><p>The first idea isn’t always best. Consider simpler fixes, substitutes, or better long-term approaches.</p><p><b>How it works:</b> Surveying alternatives reduces downside and can add unexpected upsides.</p><h3 id='concept-info-value'>6. Information Value</h3><p>Sometimes action is worth it for the <i>learning</i> alone.</p><p><b>How it works:</b> Small experiments reduce uncertainty and improve future choices.</p><h3 id='concept-diminishing-returns'>7. Diminishing Returns</h3><p>Beyond a point, extra effort yields smaller improvements.</p><p><b>Rule of thumb:</b> Stop when marginal benefit &lt; marginal cost.</p><figure style='margin:8px 0;'><img src='./diminishing_returns_curve.png' alt='Diminishing Returns Curve' style='max-width:100%;height:auto;'/></figure><h3 id='concept-inverted-u'>8. Inverted-U Curve (Sweet Spot)</h3><p>Too little or too much effort hurts results; there’s an objective optimum.</p><p><b>Why invest:</b> You’re not chasing perfection; you’re closing in on a measurable optimum, so extra effort to find it is justified.</p><figure style='margin:8px 0;'><img src='./inverted_u_curve.png' alt='Inverted-U Curve' style='max-width:100%;height:auto;'/></figure><h3 id='concept-functional-diff'>9. Functional Difference (Blind Test)</h3><p>Only differences you can actually detect (and that matter for purpose) count.</p><p><b>How it works:</b> If a change isn’t noticeable in use, it shouldn’t drive the decision.</p><h3 id='concept-long-vs-short'>10. Long-Term vs. Short-Term Benefits</h3><p>Short-term relief vs. root-cause fixes.</p><p><b>How it works:</b> Temporary fixes are fine for temporary issues; root-cause fixes justify more cost because they stop repeats.</p><h3 id='concept-always-vs-sometimes'>11. Always vs. Sometimes Worth It</h3><p>Some actions are habit-worthy (always worth it); others depend on context.</p><p><b>How it works:</b> Make the universal ones automatic; evaluate the conditional ones each time.</p><h3 id='concept-preventative'>12. Preventative Maintenance</h3><p>Prevent small issues from becoming large failures.</p><p><b>How it works:</b> Small predictable costs now avert large unpredictable costs later.</p><h2 id='when-top'>WHEN You Should Act</h2><h3 id='concept-severity-threshold'>13. Severity and Thresholds</h3><p>Severity is worst-case impact; threshold is your acceptable limit.</p><p><b>Simple Rule:</b> <span class='math'>Act if (S ÷ T) ≥ 1</span></p><p><b>Worked Example:</b> If severity = 7.5 and your threshold = 5.0, then <span class='math'>7.5 ÷ 5.0 = 1.5 ≥ 1 → Act now</span>.</p><figure style='margin:8px 0;'><img src='./linear_threshold_chart.png' alt='Linear Severity to Action Threshold' style='max-width:100%;height:auto;'/></figure><h3 id='concept-telltale-signs'>14. Telltale Signs</h3><p>Warnings before failure (e.g., brake squeal, storage warnings) give safe buffer time.</p><p><b>How it works:</b> Use the buffer to plan; ignoring signs risks urgent, expensive fixes.</p><h3 id='concept-timing'>15. Timing and Availability</h3><p>When you act changes value.</p><p><b>How it works:</b> Wait for better conditions or act now to prevent escalation—whichever maximizes benefit vs. cost.</p><h3 id='concept-better-later'>16. Better Alternatives Down the Road</h3><p>Sometimes waiting yields a clearly superior option.</p><p><b>How it works:</b> Avoid near-term obsolescence by delaying when a better option is imminent.</p><h2 id='concepts-summary'>Putting It All Together</h2><h3 id='concept-decision-logic'>17. The Decision Logic</h3><p>The guide’s structure reflects real-world logic:</p><ol><li>Is this a real or inevitable problem?</li><li>Do benefits outweigh costs?</li><li>How do probability, severity, and cost balance out?</li><li>Are alternatives better?</li><li>Is the solution functional and noticeable?</li><li>Where’s the sweet spot for effort?</li><li>Is it a long-term or short-term fix?</li><li>Is it universally worth it, or conditional?</li><li>Should you prevent it early?</li><li>How severe is it compared to your threshold?</li><li>Are there warning signs?</li><li>Is the timing right, or should you wait for a better alternative?</li></ol><p><b>How it works:</b> Layering these concepts prevents wasted energy, avoids unhealthy overthinking, and leads to decisions that are rational, balanced, and sustainable.</p>" }
-  ];
+  { "id":"AB2","type":"about","heading":"Guide Concepts Explained","text":"<p>This guide is built to prevent wasted effort, “analysis paralysis,” and unhealthy worry, by walking through the two essential questions of decision-making: <b>Should I act?</b> (IF) and <b>When should I act?</b> (WHEN). Along the way, it uses concepts from psychology, economics, and systems thinking. Below is a deep dive into each principle, ordered as they appear in the guide.</p><h2 id='concepts-top'>IF You Should Act</h2><h3 id='concept-real-vs-cosmetic'>1. Real Problems vs. Cosmetic Problems</h3><p>Not every “problem” is a <i>real</i> problem.</p><ul><li><b>Real problems</b> affect functionality, outcomes, or safety.</li><li><b>Cosmetic or preference problems</b> only affect comfort, appearance, or personal taste.</li></ul><p><b>How it works:</b> By sorting issues into these two categories, you focus only on what actually changes results. Cosmetic issues can be ignored without consequence.</p><h3 id='concept-potential-vs-inevitable'>2. Potential vs. Inevitable Problems</h3><p>A potential problem may or may not happen. An inevitable problem <i>will</i> happen if ignored.</p><ul><li>Example: a frayed charging cable is <i>inevitably</i> going to fail.</li><li>Example: a squeaky door hinge <i>might</i> get worse, but may never actually break.</li></ul><p><b>How it works:</b> If a problem is inevitable, fixing it early prevents larger costs later. Potential problems require more analysis, especially when severity is high.</p><h3 id='concept-costs-benefits'>3. Costs vs. Benefits</h3><p>Every action carries a trade-off:</p><ul><li><b>Upfront costs/efforts:</b> time, money, or energy you spend right now.</li><li><b>Resulting downsides:</b> risks or hassles created by the fix itself.</li><li><b>Combined total:</b> both categories together, compared against what happens if you do nothing.</li></ul><p><b>Simple Rule:</b> Act if D<sub>nothing</sub> > (C<sub>upfront</sub> + D<sub>action</sub>)</p><p><b>Full Formula:</b> Act if <i>D<sub>nothing</sub> > C<sub>upfront</sub> + D<sub>action</sub></i></p><p><b>Worked Example:</b> If ignoring a car repair will eventually cost $500, while fixing now costs $100 and creates $50 in hassles, then 500 > (100+50) → 500 > 150 → Act now.</p><h3 id='concept-prob-sev-cost'>4. Probability vs. Severity vs. Cost</h3><p>Applies to <i>non-inevitable potential future problems</i>. Even if failure is unlikely, severity matters; and even if severe, cost of prevention matters.</p><ul><li><b>Low P + Low S:</b> usually safe to ignore.</li><li><b>Low P + High S:</b> worth preventing (example: helmet).</li><li><b>High P + Low S:</b> acceptable if prevention costs more than the nuisance.</li><li><b>High P + High S:</b> always act.</li></ul><p><b>Simple Rule:</b> Act if \( P \times S > C \).</p><p><b>Full Cutoff Formula:</b> \( X_{\text{cutoff}} = 10^{\;6 \cdot \left(\frac{S/C - 1}{9}\right)^{\alpha}} \).</p><p><b>Calibration:</b> \( \alpha = \frac{\ln(0.5)}{\ln\!\left(\tfrac{\sqrt{10}-1}{9}\right)} \approx 0.48606 \).</p><p><i>Checks:</i> \(S/C=1 \Rightarrow X=1\) (only act if certain). \(S/C=10 \Rightarrow X=10^{6}\) (one-in-a-million). \(S/C=\sqrt{10} \Rightarrow X\approx10^{3}\) (one-in-a-thousand).</p><p><b>Worked Example:</b> Suppose a 10% chance (\(P=0.1\)) of severity 8 (\(S=8\)) with cost 5 (\(C=5\)). Expected downside \(=0.1\times 8=0.8\); since \(0.8 > 0.5\) threshold, action is justified.</p><figure style='margin:8px 0;'><img src='./prob_sev_cost_chart.png' alt='Probability × Severity × Cost Decision Boundary (X-axis S/C from 1–10; Y-axis 1 in X up to 1,000,000; green region = act)' style='max-width:100%;height:auto;'/></figure><h3 id='concept-alternatives'>5. Alternative Solutions</h3><p>The first idea isn’t always best. Consider simpler fixes, substitutes, or better long-term approaches.</p><p><b>How it works:</b> Surveying alternatives reduces downside and can add unexpected upsides.</p><h3 id='concept-info-value'>6. Information Value</h3><p>Sometimes action is worth it for the <i>learning</i> alone.</p><p><b>How it works:</b> Small experiments reduce uncertainty and improve future choices.</p><h3 id='concept-diminishing-returns'>7. Diminishing Returns</h3><p>Beyond a point, extra effort yields smaller improvements.</p><p><b>Rule of thumb:</b> Stop when marginal benefit < marginal cost.</p><figure style='margin:8px 0;'><img src='./diminishing_returns_curve.png' alt='Diminishing Returns Curve' style='max-width:100%;height:auto;'/></figure><h3 id='concept-inverted-u'>8. Inverted-U Curve (Sweet Spot)</h3><p>Too little or too much effort hurts results; there’s an objective optimum.</p><p><b>Why invest:</b> You’re not chasing perfection; you’re closing in on a measurable optimum, so extra effort to find it is justified.</p><figure style='margin:8px 0;'><img src='./inverted_u_curve.png' alt='Inverted-U Curve' style='max-width:100%;height:auto;'/></figure><h3 id='concept-functional-diff'>9. Functional Difference (Blind Test)</h3><p>Only differences you can actually detect (and that matter for purpose) count.</p><p><b>How it works:</b> If a change isn’t noticeable in use, it shouldn’t drive the decision.</p><h3 id='concept-long-vs-short'>10. Long-Term vs. Short-Term Benefits</h3><p>Short-term relief vs. root-cause fixes.</p><p><b>How it works:</b> Temporary fixes are fine for temporary issues; root-cause fixes justify more cost because they stop repeats.</p><h3 id='concept-always-vs-sometimes'>11. Always vs. Sometimes Worth It</h3><p>Some actions are habit-worthy (always worth it); others depend on context.</p><p><b>How it works:</b> Make the universal ones automatic; evaluate the conditional ones each time.</p><h3 id='concept-preventative'>12. Preventative Maintenance</h3><p>Prevent small issues from becoming large failures.</p><p><b>How it works:</b> Small predictable costs now avert large unpredictable costs later.</p><h2 id='when-top'>WHEN You Should Act</h2><h3 id='concept-severity-threshold'>13. Severity and Thresholds</h3><p>Severity is worst-case impact; threshold is your acceptable limit.</p><p><b>Simple Rule:</b> Act if \( \frac{S}{T} \ge 1 \).</p><p><b>Worked Example:</b> If severity \(=7.5\) and your threshold \(=5.0\), then \(7.5/5.0=1.5\ge 1\) → Act now.</p><figure style='margin:8px 0;'><img src='./linear_threshold_chart.png' alt='Linear Severity to Action Threshold' style='max-width:100%;height:auto;'/></figure><h3 id='concept-telltale-signs'>14. Telltale Signs</h3><p>Warnings before failure (e.g., brake squeal, storage warnings) give safe buffer time.</p><p><b>How it works:</b> Use the buffer to plan; ignoring signs risks urgent, expensive fixes.</p><h3 id='concept-timing'>15. Timing and Availability</h3><p>When you act changes value.</p><p><b>How it works:</b> Wait for better conditions or act now to prevent escalation—whichever maximizes benefit vs. cost.</p><h3 id='concept-better-later'>16. Better Alternatives Down the Road</h3><p>Sometimes waiting yields a clearly superior option.</p><p><b>How it works:</b> Avoid near-term obsolescence by delaying when a better option is imminent.</p><h2 id='concepts-summary'>Putting It All Together</h2><h3 id='concept-decision-logic'>17. The Decision Logic</h3><p>The guide’s structure reflects real-world logic:</p><ol><li>Is this a real or inevitable problem?</li><li>Do benefits outweigh costs?</li><li>How do probability, severity, and cost balance out?</li><li>Are alternatives better?</li><li>Is the solution functional and noticeable?</li><li>Where’s the sweet spot for effort?</li><li>Is it a long-term or short-term fix?</li><li>Is it universally worth it, or conditional?</li><li>Should you prevent it early?</li><li>How severe is it compared to your threshold?</li><li>Are there warning signs?</li><li>Is the timing right, or should you wait for a better alternative?</li></ol><p><b>How it works:</b> Layering these concepts prevents wasted energy, avoids unhealthy overthinking, and leads to decisions that are rational, balanced, and sustainable.</p>" }  ];
 /* ===== EXAMPLES (two per question; no info or results) ===== */
 window.examples = {
   "Q1":  ["Finish homework due tonight before reorganizing the closet.", "Call the dentist first if you’re in pain instead of tweaking your workout plan."],
@@ -833,13 +840,18 @@ function renderMiniQ6(intoEl, node){
   intoEl.appendChild(wrap);
 
   // Inline link to concepts page
-  const xlink = document.createElement('a');
-  xlink.href = 'javascript:void(0)';
-  xlink.textContent = 'See full explanation and formulas';
-  xlink.style.display = 'inline-block';
-  xlink.style.marginTop = '8px';
-  xlink.onclick = function(){ jumpToConcept('concept-prob-sev-cost'); };
-  wrap.appendChild(xlink);
+  var link = document.createElement('a');
+  link.href = '#concept-prob-sev-cost';
+  link.textContent = 'See Probability Concept';
+  link.style.display = 'inline-block';
+  link.style.marginTop = '8px';
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    history.replaceState(null, '', '#concept-prob-sev-cost');
+    scrollToConcept('concept-prob-sev-cost', 'Q31'); 
+  });
+  panel.appendChild(link);
+
 
   // Inputs
   const elS  = wrap.querySelector('#miniS');
@@ -1682,16 +1694,24 @@ function setupAuxToggles(node) {
         renderViz(panel, src, alt);
 
         var link = document.createElement('a');
-        link.href = 'javascript:void(0)';
+        link.href = (node.id === 'Q22') 
+          ? '#concept-diminishing-returns' 
+          : '#concept-inverted-u';
         link.textContent = 'See full explanation and formulas';
         link.style.display = 'inline-block';
         link.style.marginTop = '8px';
-        link.onclick = function(){ 
-          jumpToConcept(node.id === 'Q22' ? 'concept-diminishing-returns' : 'concept-inverted-u'); 
-        };
+        
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const target = (node.id === 'Q22') 
+            ? 'concept-diminishing-returns' 
+            : 'concept-inverted-u';
+          history.replaceState(null, '', '#' + target);
+          scrollToConcept(target, 'Q31'); // adjust backQId if needed
+        });
+        
         panel.appendChild(link);
 
-        
         openSharedPanel(panel, 'viz');
         vizBtn.setAttribute('aria-expanded','true');
         vizBtn.classList.add('active');
@@ -1720,12 +1740,17 @@ function setupAuxToggles(node) {
         panel.appendChild(img);
         
         var link = document.createElement('a');
-        link.href = 'javascript:void(0)';
+        link.href = '#concept-severity-threshold';
         link.textContent = 'See full explanation';
         link.style.display = 'inline-block';
         link.style.marginTop = '8px';
-        link.onclick = function(){ jumpToConcept('concept-severity-threshold'); };
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          history.replaceState(null, '', '#concept-severity-threshold');
+          scrollToConcept('concept-severity-threshold', 'Q31'); 
+        });
         panel.appendChild(link);
+
         
         openSharedPanel(panel, 'reason');
         reasonBtn.setAttribute('aria-expanded','true');
@@ -1823,7 +1848,9 @@ var CONCEPT_ANCHOR_BY_QID = {
   Q22: 'concept-diminishing-returns',
   Q24: 'concept-inverted-u',
   Q46: 'concept-severity-threshold',
-  Q47: 'concept-severity-threshold'
+  Q47: 'concept-severity-threshold',
+  Q6: 'concept-prob-sev-cost',
+  Q7: 'concept-prob-sev-cost'
 };
 
 function assignConceptAnchors() {
@@ -1960,8 +1987,45 @@ function renderNode(node) {
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
     html = (node.id === 'Q46') ? transformQ46(html) : transformQ47(html);
   }
-  textDiv.innerHTML = html;
+  // Default content
+  let html = node.text || '';
+  if (node && (node.id === 'Q46' || node.id === 'Q47')) {
+    html = (node.id === 'Q46') ? transformQ46(html) : transformQ47(html);
+  }
+  
+  // 🔹 Inject content, but wrap AB2 so we have an element to target
+  if (node && node.id === 'AB2') {
+    textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
+  } else {
+    textDiv.innerHTML = html;
+  }
 
+  // 🔹 AB2 deep-link support: on-entry scroll to #hash, and in-page anchor clicks
+  if (node && node.id === 'AB2') {
+    // --- Case A: hash already present in URL when entering AB2 ---
+    const hash = (location.hash || '').trim();
+    if (hash && hash.length > 1) {
+      const targetId = hash.slice(1); // strip '#'
+      const backQId = 'Q31';          // TODO: set to whichever "back" question you prefer
+      scrollToConcept(targetId, backQId);
+    }
+  
+    // --- Case B: clicks on anchors inside AB2 ---
+    const ab2El = document.getElementById('AB2');
+    if (ab2El) {
+      ab2El.addEventListener('click', function (e) {
+        const a = e.target.closest('a[href^="#"]');
+        if (!a) return;
+        const id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        e.preventDefault();
+        history.replaceState(null, '', `#${id}`); // keep URL bar in sync
+        scrollToConcept(id, 'Q31');               // same back target as above
+      }, { passive: true });
+    }
+  }
+
+  
   setupAuxToggles(node);
   showOrHideRiskInline(node);
 
@@ -2002,38 +2066,68 @@ function renderNode(node) {
     }
   }
   
-  // After content & buttons are rendered, if we just navigated to AB2 for a jump:
-  if (currentNode && currentNode.id === 'AB2') {
-    assignConceptAnchors();
-    const pending = window.__pendingConceptScroll;
-    if (pending && pending.conceptId) {
-      const targetId = pending.conceptId;
-      const backQId  = pending.backQId;
+  // Smoothly scroll to a concept section after layout settles, then inject a back link.
+  function scrollToConcept(targetId, backQId) {
+    // prevent multiple concurrent runs
+    if (window.__pendingConceptScroll) return;
+    window.__pendingConceptScroll = true;
   
-      // Try repeatedly because images/fonts can shift layout after initial paint
-      let tries = 0;
-      const maxTries = 7;
+    const START = performance.now();
+    const MAX_MS = 3000;   // total retry budget (~3s)
+    const INTERVAL = 120;  // try every 120ms
   
-      const scrollAndInject = () => {
-        const el = document.getElementById(targetId);
-        if (!el) return false;
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        ensureSectionBackLink(targetId, backQId);
-        return true;
-      };
-  
-      const tryScroll = () => {
-        if (scrollAndInject() || tries >= maxTries) {
-          window.__pendingConceptScroll = null;
-          return;
-        }
-        tries++;
-        requestAnimationFrame(tryScroll);
-      };
-  
-      // kick off attempts (RAF handles reflow nicely)
-      requestAnimationFrame(tryScroll);
+    function scrollAndInject() {
+      const el = document.getElementById(targetId);
+      if (!el) return false;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      ensureSectionBackLink(targetId, backQId);
+      return true;
     }
+  
+    // try once immediately in case it's already there
+    if (scrollAndInject()) {
+      window.__pendingConceptScroll = null;
+      return;
+    }
+  
+    (function tick() {
+      if (scrollAndInject()) {
+        window.__pendingConceptScroll = null;
+        return;
+      }
+      if (performance.now() - START >= MAX_MS) {
+        window.__pendingConceptScroll = null;
+        return; // give up gracefully
+      }
+      setTimeout(tick, INTERVAL);
+    })();
+  }
+  
+  // Inject a small back button at the target section (id-based; idempotent)
+  function ensureSectionBackLink(targetId, backQId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+  
+    // Already added?
+    if (el.dataset.backInjected === '1') return;
+  
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'back'; // uses your existing .back button styles
+    backBtn.textContent = 'Back';
+  
+    backBtn.addEventListener('click', () => {
+      // Route back into the flow if provided; otherwise just scroll to top
+      if (typeof goToNode === 'function' && backQId) {
+        goToNode(backQId);
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  
+    // Place the button just before the heading/content node
+    el.parentNode.insertBefore(backBtn, el);
+    el.dataset.backInjected = '1';
   }
 }
 
