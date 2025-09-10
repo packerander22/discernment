@@ -41,6 +41,8 @@
 <style>
   :root {
     --btn-pad-y:10px; --btn-pad-x:12px;
+    :root { --flash-dur: 1200ms; }  /* slow it down; try 1200–1500ms */
+
 
     /* slider custom props */
     --track-height: 8px;
@@ -67,7 +69,7 @@
   .segment-heading {
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
-    border-bottom:2px solid #ddd; gap:12px; transition: color .5s ease;
+    border-bottom:2px solid #ddd; gap:12px; transition: color var(--flash-dur) cubic-bezier(.22,.61,.36,1);
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo {
@@ -82,7 +84,7 @@
   .about-wrapper h1,
   .about-wrapper h2,
   .about-wrapper h3 {
-    transition: color .5s ease; /* match .segment-heading */
+    transition: color var(--flash-dur) cubic-bezier(.22,.61,.36,1);
   }
 
   /* Buttons */
@@ -1630,38 +1632,55 @@ function flashHeadingColor(targetSegment, node) {
   if (!el) return;
   if (currentNode && currentNode.id === 'Q0') return;
 
-  // Decide class
+  // pick class
   let cls;
   if (node && node.type === 'result') cls = 'flash-purple';
   else if (targetSegment === 'If You Should Act') cls = 'flash-green';
   else cls = 'flash-gold';
 
-  // Clear any prior flash classes
+  // clear prior
   el.classList.remove('flash-purple', 'flash-green', 'flash-gold');
 
-  // Hard reset so both CSS *transitions* and *animations* will retrigger
+  // hard reset (so retrigger always works) — keep, but don't let its side-effects end us early
   el.style.animation = 'none';
   el.style.transition = 'none';
-  // Force reflow
+  // force reflow
   // eslint-disable-next-line no-unused-expressions
   el.offsetHeight;
   el.style.animation = '';
   el.style.transition = '';
 
-  // Add on next frame → guarantees a new paint tick
+  // compute how long to keep the class: read --flash-dur or fallback to 1200ms
+  const root = getComputedStyle(document.documentElement);
+  const durStr = root.getPropertyValue('--flash-dur').trim() || '1200ms';
+  const durMs = durStr.endsWith('ms')
+    ? parseFloat(durStr)
+    : parseFloat(durStr) * 1000;
+
+  // add next frame
   requestAnimationFrame(() => {
     el.classList.add(cls);
 
-    const off = () => {
-      el.classList.remove(cls);
-      el.removeEventListener('animationend', off);
-      el.removeEventListener('transitionend', off);
+    // only remove when the COLOR transition finishes (ignore others)
+    const onTransitionEnd = (e) => {
+      if (e.target === el && e.propertyName === 'color') {
+        cleanup();
+      }
     };
-    // Support both keyframes and color transitions
-    el.addEventListener('animationend', off, { once: true });
-    el.addEventListener('transitionend', off, { once: true });
-    // Safety fallback
-    setTimeout(off, 2000);
+    const onAnimationEnd = (e) => {
+      if (e.target === el) cleanup();
+    };
+    const cleanup = () => {
+      el.classList.remove(cls);
+      el.removeEventListener('transitionend', onTransitionEnd);
+      el.removeEventListener('animationend', onAnimationEnd);
+    };
+
+    el.addEventListener('transitionend', onTransitionEnd);
+    el.addEventListener('animationend', onAnimationEnd);
+
+    // safety: remove even if no event fires (e.g., older browsers)
+    setTimeout(cleanup, durMs + 150);
   });
 }
 
