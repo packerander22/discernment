@@ -1632,55 +1632,38 @@ function flashHeadingColor(targetSegment, node) {
   if (!el) return;
   if (currentNode && currentNode.id === 'Q0') return;
 
-  // pick class
   let cls;
   if (node && node.type === 'result') cls = 'flash-purple';
   else if (targetSegment === 'If You Should Act') cls = 'flash-green';
   else cls = 'flash-gold';
 
-  // clear prior
+  // Remove all flash classes so we can re-add on a new frame
   el.classList.remove('flash-purple', 'flash-green', 'flash-gold');
 
-  // hard reset (so retrigger always works) — keep, but don't let its side-effects end us early
-  el.style.animation = 'none';
-  el.style.transition = 'none';
-  // force reflow
-  // eslint-disable-next-line no-unused-expressions
-  el.offsetHeight;
-  el.style.animation = '';
-  el.style.transition = '';
-
-  // compute how long to keep the class: read --flash-dur or fallback to 1200ms
-  const root = getComputedStyle(document.documentElement);
-  const durStr = root.getPropertyValue('--flash-dur').trim() || '1200ms';
-  const durMs = durStr.endsWith('ms')
-    ? parseFloat(durStr)
-    : parseFloat(durStr) * 1000;
-
-  // add next frame
+  // Next frame: add the class so the browser treats it as a fresh change
   requestAnimationFrame(() => {
     el.classList.add(cls);
 
-    // only remove when the COLOR transition finishes (ignore others)
-    const onTransitionEnd = (e) => {
-      if (e.target === el && e.propertyName === 'color') {
-        cleanup();
-      }
-    };
-    const onAnimationEnd = (e) => {
-      if (e.target === el) cleanup();
-    };
-    const cleanup = () => {
+    const off = () => {
       el.classList.remove(cls);
-      el.removeEventListener('transitionend', onTransitionEnd);
-      el.removeEventListener('animationend', onAnimationEnd);
+      el.removeEventListener('transitionend', onEnd);
+      el.removeEventListener('animationend', onEnd);
+    };
+    const onEnd = (e) => {
+      // Only react to relevant properties; 'color' is the usual one
+      if (e && e.target !== el) return;
+      if (e && e.type === 'transitionend' && e.propertyName !== 'color') return;
+      off();
     };
 
-    el.addEventListener('transitionend', onTransitionEnd);
-    el.addEventListener('animationend', onAnimationEnd);
+    el.addEventListener('transitionend', onEnd);
+    el.addEventListener('animationend', onEnd);
 
-    // safety: remove even if no event fires (e.g., older browsers)
-    setTimeout(cleanup, durMs + 150);
+    // Safety: remove class in case no event fires
+    const root = getComputedStyle(document.documentElement);
+    const dur = (root.getPropertyValue('--flash-dur').trim() || '1200ms');
+    const ms = dur.endsWith('ms') ? parseFloat(dur) : parseFloat(dur) * 1000;
+    setTimeout(off, ms + 150);
   });
 }
 
