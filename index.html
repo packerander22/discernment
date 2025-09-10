@@ -1989,11 +1989,7 @@ function renderNode(node) {
     renderMiniQ7(textDiv, node);
     return;
   }
-  // Default content
-  var html = node.text || '';
-  if (node && (node.id === 'Q46' || node.id === 'Q47')) {
-    html = (node.id === 'Q46') ? transformQ46(html) : transformQ47(html);
-  }
+
   // Default content
   let html = node.text || '';
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
