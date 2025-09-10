@@ -786,9 +786,9 @@ function curveYPxAtRatio(r, mode, pad, plotH, yToPx) {
 
 // --- GLOBAL: smooth scroll + back injection (single source of truth) ---
 function scrollToConcept(targetId, backQId) {
-  // prevent overlapping runs
-  if (window.__pendingConceptScroll === true) return;
-  window.__pendingConceptScroll = true;
+  // dedicated busy flag so it doesn't collide with the queue object
+  if (window.__isScrollingConcept) return;
+  window.__isScrollingConcept = true;
 
   const START = performance.now();
   const MAX_MS = 3000;
@@ -802,11 +802,11 @@ function scrollToConcept(targetId, backQId) {
     return true;
   }
 
-  if (scrollAndInject()) { window.__pendingConceptScroll = null; return; }
+  if (scrollAndInject()) { window.__isScrollingConcept = false; return; }
 
   (function tick() {
-    if (scrollAndInject()) { window.__pendingConceptScroll = null; return; }
-    if (performance.now() - START >= MAX_MS) { window.__pendingConceptScroll = null; return; }
+    if (scrollAndInject()) { window.__isScrollingConcept = false; return; }
+    if (performance.now() - START >= MAX_MS) { window.__isScrollingConcept = false; return; }
     setTimeout(tick, INTERVAL);
   })();
 }
@@ -1926,28 +1926,6 @@ function assignConceptAnchors() {
 let __lastQuestionId = null;
 function noteOrigin(node) {
   if (node && node.id && /^Q\d+$/.test(node.id)) __lastQuestionId = node.id;
-}
-
-// Create/refresh a back link immediately below a given heading
-function ensureSectionBackLink(conceptId, backQId) {
-  const heading = document.getElementById(conceptId);
-  if (!heading) return;
-
-  const nxt = heading.nextElementSibling;
-  if (nxt && nxt.classList && nxt.classList.contains('section-back-link')) nxt.remove();
-
-  const a = document.createElement('a');
-  a.href = '#';
-  a.className = 'section-back-link';
-  a.style.cssText = 'display:inline-block;margin:8px 0 12px 0;';
-  a.textContent = '← Back to the question';
-  a.onclick = function(ev){
-    ev.preventDefault();
-    const id = backQId || __lastQuestionId;
-    if (id) goToNode(id);
-  };
-
-  heading.insertAdjacentElement('afterend', a);
 }
   
 /* Render node */
