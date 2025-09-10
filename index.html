@@ -1531,7 +1531,6 @@ function makeButton(label, cls, action) {
 function goToNode(id) {
   closeAllPanels();
   var adjustedId = beforeEnterNode(id);
-  var next = flowchart.find(n => n.id === adjustedId);
   noteOrigin(currentNode);
   var next = flowchart.find(n => n.id === adjustedId);
   historyStack.push(currentNode ? currentNode.id : '');
