@@ -2029,6 +2029,9 @@ function renderNode(node) {
     html = (node.id === 'Q46') ? transformQ46(html) : transformQ47(html);
   }
   
+  /* ✅ ADD THIS: inject default slide content for all non-special slides */
+  document.getElementById('text').innerHTML = html;
+  
   // 🔹 Inject content, but wrap AB2 so we have an element to target
   if (node && node.id === 'AB2') {
     textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
