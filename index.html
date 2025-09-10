@@ -547,6 +547,18 @@
 </div>
 
 <script>
+
+window.addEventListener('error', e => {
+  const box = document.getElementById('errorBox') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'errorBox'}));
+  box.style.cssText = 'white-space:pre-wrap;padding:12px;margin:8px;border:1px solid #a00;background:#2b0000;color:#fff';
+  box.textContent = 'JS Error: ' + (e.message || e.error || e);
+});
+window.addEventListener('unhandledrejection', e => {
+  const box = document.getElementById('errorBox') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'errorBox'}));
+  box.style.cssText = 'white-space:pre-wrap;padding:12px;margin:8px;border:1px solid #a00;background:#2b0000;color:#fff';
+  box.textContent = 'Promise Rejection: ' + (e.reason && (e.reason.message || e.reason)) ;
+});
+
 /* ======= THEME INIT + TOGGLE ======= */
 (function initTheme(){
   const root = document.documentElement;
