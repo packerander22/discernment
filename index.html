@@ -268,7 +268,7 @@
   .about-wrapper .concept-back {
     display: inline-block;
     margin: 8px 0 12px 0;
-    padding: 8px 14px;
+    padding: 8px 12px;
     font: inherit;
     border: none;
     border-radius: 6px;
@@ -284,18 +284,6 @@
     scroll-margin-top: 72px; /* adjust to your sticky header height */
   }
   
-  /* The blue back button injected under AB2 headings */
-  .about-wrapper .concept-back{
-    display: inline-block;
-    margin: 8px 0 12px 0;
-    padding: 8px 12px;
-    border: 0;
-    border-radius: 8px;
-    background: #1f4cff;      /* blue */
-    color: #fff;
-    font-weight: 700;
-    cursor: pointer;
-  }
   .about-wrapper .concept-back:focus {
     outline: 2px solid rgba(31, 76, 255, .4);
     outline-offset: 2px;
@@ -1795,7 +1783,7 @@ function updateSliderFill(slider, sev) {
   slider.style.setProperty('--pct', pct + '%');
 
   // nonlinear progression: low severities push color shift faster
-  const t = Math.pow((sev - 1) / 9, 0.5); // exponent <1 makes early shift steeper
+  const t = Math.pow((sev - 1) / 9, 0.3); // exponent <1 makes early shift steeper
   const hue = 240 - t * 240; // blue → red
   const color = `hsl(${hue}, 90%, 50%)`;
   slider.style.setProperty('--fill', color);
