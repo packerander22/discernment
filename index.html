@@ -69,7 +69,7 @@
   .segment-heading {
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
-    border-bottom:2px solid #ddd; gap:12px; transition: color var(--flash-dur) cubic-bezier(.95, 0, .05, 1);
+    border-bottom:2px solid #ddd; gap:12px; transition: color var(--flash-dur) cubic-bezier(.4,0,.6,1);
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo {
@@ -84,7 +84,7 @@
   .about-wrapper h1,
   .about-wrapper h2,
   .about-wrapper h3 {
-    transition: color var(--flash-dur) cubic-bezier(.95, 0, .05, 1);
+    transition: color var(--flash-dur) cubic-bezier(.4,0,.6,1);
   }
 
   /* Buttons */
@@ -849,7 +849,7 @@ function flashAb2Heading(id) {
   if (!h) return;
 
   // Reuse the same purple flash as verdict header
-  flashWithPlateau(h, 'flash-purple', { inMs: 180, holdMs: 900, outMs: 420 });
+  flashWithPlateau(el, cls, { inMs: 300, holdMs: 900, outMs: 300 });
 }
 
 function formatCShort(c){
@@ -1658,7 +1658,7 @@ function flashHeadingColor(targetSegment, node) {
   else                                        cls = 'flash-gold';
 
   // 1500ms total by default: 180 in + 900 hold + 420 out
-  flashWithPlateau(el, cls, { inMs: 180, holdMs: 900, outMs: 420 });
+  flashWithPlateau(el, cls, { inMs: 300, holdMs: 900, outMs: 300 });
 }
 
 function getSectionKey(n){
