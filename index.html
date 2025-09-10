@@ -69,7 +69,7 @@
   .segment-heading {
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
-    border-bottom:2px solid #ddd; gap:12px; transition: color var(--flash-dur) cubic-bezier(.8, 0, .2, 1);
+    border-bottom:2px solid #ddd; gap:12px; transition: color var(--flash-dur) cubic-bezier(.95, 0, .05, 1);
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo {
@@ -84,7 +84,7 @@
   .about-wrapper h1,
   .about-wrapper h2,
   .about-wrapper h3 {
-    transition: color var(--flash-dur) cubic-bezier(.8, 0, .2, 1);
+    transition: color var(--flash-dur) cubic-bezier(.95, 0, .05, 1);
   }
 
   /* Buttons */
@@ -802,33 +802,54 @@ function unitToX(Y, mode){
   return Y;                                           // 1 in X scale -> X = Y
 }
 
+// Helper: fast fade-in → HOLD → fast fade-out (total time = --flash-dur)
+function flashWithPlateau(el, cls, opts) {
+  if (!el) return;
+
+  // Read global duration (fallback 1500ms), then derive phase timings if not passed
+  const root = getComputedStyle(document.documentElement);
+  const durStr = (root.getPropertyValue('--flash-dur').trim() || '1500ms');
+  const totalMs = durStr.endsWith('ms') ? parseFloat(durStr) : parseFloat(durStr) * 1000;
+
+  const inMs   = opts?.inMs  ?? 180;   // fast in
+  const outMs  = opts?.outMs ?? 420;   // fast out
+  const holdMs = opts?.holdMs ?? Math.max(0, totalMs - inMs - outMs); // fill the rest
+
+  // Clear any prior flash classes
+  el.classList.remove('flash-purple','flash-green','flash-gold');
+
+  // PHASE 1: fast fade-in
+  el.style.setProperty('--flash-dur', inMs + 'ms');
+  requestAnimationFrame(() => {
+    el.classList.add(cls);
+
+    // After fade-in completes, HOLD solid (no transition running)
+    setTimeout(() => {
+      el.style.setProperty('--flash-dur', '0ms'); // instant changes while holding
+
+      // PHASE 3: fast fade-out back to base
+      setTimeout(() => {
+        el.style.setProperty('--flash-dur', outMs + 'ms');
+        requestAnimationFrame(() => {
+          el.classList.remove(cls);
+
+          // Cleanup: restore element to using the stylesheet’s --flash-dur
+          setTimeout(() => {
+            el.style.removeProperty('--flash-dur');
+          }, outMs + 50);
+        });
+      }, holdMs);
+
+    }, inMs + 20); // tiny buffer to ensure the first transition has finished
+  });
+}
+  
 function flashAb2Heading(id) {
   const h = document.getElementById(id);
   if (!h) return;
 
-  // Clear any prior purple flash
-  h.classList.remove('flash-purple');
-
-  // Hard reset animation so retrigger always works
-  h.style.animation = 'none';
-  // Force reflow
-  // eslint-disable-next-line no-unused-expressions
-  h.offsetHeight;
-  h.style.animation = '';
-
-  // Add the flash class on the next frame
-  requestAnimationFrame(() => {
-    h.classList.add('flash-purple');
-
-    const off = () => {
-      h.classList.remove('flash-purple');
-      h.removeEventListener('animationend', off);
-    };
-    h.addEventListener('animationend', off, { once: true });
-
-    // Safety fallback in case animationend is missed
-    setTimeout(off, 2000);
-  });
+  // Reuse the same purple flash as verdict header
+  flashWithPlateau(h, 'flash-purple', { inMs: 180, holdMs: 900, outMs: 420 });
 }
 
 function formatCShort(c){
@@ -1632,38 +1653,12 @@ function flashHeadingColor(targetSegment, node) {
   if (currentNode && currentNode.id === 'Q0') return;
 
   let cls;
-  if (node && node.type === 'result') cls = 'flash-purple';
+  if (node && node.type === 'result')        cls = 'flash-purple';
   else if (targetSegment === 'If You Should Act') cls = 'flash-green';
-  else cls = 'flash-gold';
+  else                                        cls = 'flash-gold';
 
-  // Remove all flash classes so we can re-add on a new frame
-  el.classList.remove('flash-purple', 'flash-green', 'flash-gold');
-
-  // Next frame: add the class so the browser treats it as a fresh change
-  requestAnimationFrame(() => {
-    el.classList.add(cls);
-
-    const off = () => {
-      el.classList.remove(cls);
-      el.removeEventListener('transitionend', onEnd);
-      el.removeEventListener('animationend', onEnd);
-    };
-    const onEnd = (e) => {
-      // Only react to relevant properties; 'color' is the usual one
-      if (e && e.target !== el) return;
-      if (e && e.type === 'transitionend' && e.propertyName !== 'color') return;
-      off();
-    };
-
-    el.addEventListener('transitionend', onEnd);
-    el.addEventListener('animationend', onEnd);
-
-    // Safety: remove class in case no event fires
-    const root = getComputedStyle(document.documentElement);
-    const dur = (root.getPropertyValue('--flash-dur').trim() || '1200ms');
-    const ms = dur.endsWith('ms') ? parseFloat(dur) : parseFloat(dur) * 1000;
-    setTimeout(off, ms + 150);
-  });
+  // 1500ms total by default: 180 in + 900 hold + 420 out
+  flashWithPlateau(el, cls, { inMs: 180, holdMs: 900, outMs: 420 });
 }
 
 function getSectionKey(n){
