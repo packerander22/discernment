@@ -579,10 +579,10 @@ var flowchart = [
   { "id": "Q5",  "type": "question", "text": "Is the potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
 
   /* ==== NEW Q6: mini interactive slide ==== */
-  { "id": "Q6", "type": "mini", "text": "Use the interactive tool below to weigh <b>Severity</b>, <b>Cost</b>, and <b>Probability</b>. Fill the boxes (up to 10 for S/C, probability as % or 1 in X, or micromorts). Drag the dot to see the cutoff curve. \n\nRule: Only if X ≥ Probability Cutoff and S/C ≥ S/C Cutoff can action be considered.\n\nVerdict: Action should NOT be considered.", "yes": "Q10", "no": "Q7" },
+  { "id": "Q6", "type": "mini", "text": "Use the interactive tool below to weigh <b>Severity</b>, <b>Cost</b>, and <b>Probability</b>. Fill the boxes (up to 10 for S/C, probability as % or 1 in X, or micromorts). Drag the dot to see the cutoff curve.", "yes": "Q10", "no": "Q7" },
 
   /* ==== NEW Q7: visualization-only slide ==== */
-  { "id": "Q7", "type": "miniViz", "text": "Visualization (read-only): These values mirror what you entered on the previous step, but are greyed out. You can drag the point to see how Severity/Cost interacts with Probability. This slide does not change the actual decision unless you go back and edit Q6.\n\nRule: Only if X ≥ Probability Cutoff and S/C ≥ S/C Cutoff can action be considered.\n\nVerdict: Action should NOT be considered.", "yes": "Q10", "no": "Q20" },
+  { "id": "Q7", "type": "miniViz", "text": "Visualization (read-only): These values mirror what you entered on the previous step, but are greyed out. You can drag the point to see how Severity/Cost interacts with Probability. This slide does not change the actual decision unless you go back and edit the last slide.", "yes": "Q10", "no": "Q20" },
   { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q11",  "no": "R4" },
   { "id": "Q11", "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
   { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q14", "no": "Q13" },
@@ -1266,16 +1266,20 @@ function renderMiniQ7(intoEl, node){
 
   intoEl.appendChild(wrap);
 
+  // 🔗 Inline link on Q7 — force visible + jump with back context
   const link = document.createElement('a');
-  link.href = 'javascript:void(0)';
+  link.href = '#concept-prob-sev-cost';                // real hash (not javascript:)
   link.textContent = 'See full explanation and formulas';
-  link.style.display = 'inline-block';
-  link.style.marginTop = '8px';
-  xlink2.onclick = function(){
-  const target = 'concept-prob-sev-cost';
-    history.replaceState(null, '', `#${target}`);
-    jumpToConcept(target, /* back */ node.id);
-  }
+  link.className = 'concept-link';
+  link.style.cssText =
+    'display:inline-block;margin-top:12px;text-decoration:underline;' +
+    'color:var(--accent,#3b82f6);cursor:pointer;';
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    history.replaceState(null, '', '#concept-prob-sev-cost');   // keep URL in sync
+    jumpToConcept('concept-prob-sev-cost', __lastQuestionId || node.id);
+  })
+  wrap.appendChild(link);
   
   const elS = wrap.querySelector('#miniS2');
   const elC = wrap.querySelector('#miniC2');
