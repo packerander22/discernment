@@ -41,7 +41,7 @@
 <style>
   :root {
     --btn-pad-y:10px; --btn-pad-x:12px;
-    :root { --flash-dur: 1200ms; }  /* slow it down; try 1200–1500ms */
+    --flash-dur: 1200ms;           /* <- top-level; now it exists */
 
 
     /* slider custom props */
@@ -262,7 +262,6 @@
     font: inherit;
     border: none;
     border-radius: 6px;
-    background: var(--accent-purple);
     color: #fff;
     cursor: pointer;
   }
