@@ -224,6 +224,28 @@
 
   /* put near your other styles */
   #AB2 .back { margin: 8px 0 10px; }
+  
+  /* Ensure anchored headings scroll clear of any sticky header */
+  .about-wrapper [id] { 
+    scroll-margin-top: 72px; /* adjust to your sticky header height */
+  }
+  
+  /* The blue back button injected under AB2 headings */
+  .about-wrapper .concept-back{
+    display: inline-block;
+    margin: 8px 0 12px 0;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: #1f4cff;      /* blue */
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .about-wrapper .concept-back:focus {
+    outline: 2px solid rgba(31, 76, 255, .4);
+    outline-offset: 2px;
+  }
 
   /* ================================
      THEME TOKENS + OVERRIDES
@@ -798,7 +820,7 @@ function scrollToConcept(targetId, backQId) {
     const el = document.getElementById(targetId);
     if (!el) return false;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    ensureSectionBackLink(targetId, backQId);
+    ensureConceptBackButton(targetId, backQId);
     return true;
   }
 
@@ -811,23 +833,26 @@ function scrollToConcept(targetId, backQId) {
   })();
 }
 
-function ensureSectionBackLink(targetId, backQId) {
-  const el = document.getElementById(targetId);
-  if (!el) return;
+// Back button injected directly *below* the heading, blue-styled
+function ensureConceptBackButton(targetId, backQId) {
+  const heading = document.getElementById(targetId);
+  if (!heading) return;
+  if (heading.dataset.backInjected === '1') return;
 
-  if (el.dataset.backInjected === '1') return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'concept-back';
+  btn.textContent = '← Back';
 
-  const backBtn = document.createElement('button');
-  backBtn.type = 'button';
-  backBtn.className = 'back';
-  backBtn.textContent = 'Back';
-  backBtn.addEventListener('click', () => {
+  btn.addEventListener('click', (ev) => {
+    ev.preventDefault();
     const id = backQId || window.__lastQuestionId || 'Q0';
     if (typeof goToNode === 'function') goToNode(id);
   });
 
-  el.parentNode.insertBefore(backBtn, el);
-  el.dataset.backInjected = '1';
+  // place *below* the heading
+  heading.insertAdjacentElement('afterend', btn);
+  heading.dataset.backInjected = '1';
 }
 
 // Optional convenience: enqueue a jump & route to AB2
