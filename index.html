@@ -245,25 +245,6 @@
   /* anchors/sections that deep-link should respect sticky headers etc. */
   [id] { scroll-margin-top: 16px; } /* or the height of any sticky header */
 
-  /* Smooth, rubbery header pulse (matches If/When/Verdict flashes) */
-  @keyframes ab2HeaderPulse {
-    0%   { background: transparent; box-shadow: none; }
-    22%  { background: rgba(156,39,176,0.16);
-           box-shadow: 0 0 0 6px rgba(156,39,176,0.12) inset; }
-    55%  { background: rgba(156,39,176,0.26);
-           box-shadow: 0 0 0 10px rgba(156,39,176,0.16) inset; }
-    100% { background: transparent; box-shadow: none; }
-  }
-  
-  .ab2-heading-flash {
-    animation: ab2HeaderPulse 900ms cubic-bezier(.22,.61,.36,1) 1 both;
-    border-radius: 8px;
-  }
-  
-  @media (prefers-reduced-motion: reduce) {
-    .ab2-heading-flash { animation: none; }
-  }
-  
   /* Make the injected back button the same purple as Restart (#9C27B0) */
   .about-wrapper .concept-back {
     display: inline-block;
@@ -813,16 +794,33 @@ function unitToX(Y, mode){
   return Y;                                           // 1 in X scale -> X = Y
 }
 
-function flashAb2Heading(id){
+function flashAb2Heading(id) {
   const h = document.getElementById(id);
   if (!h) return;
-  h.classList.remove('ab2-heading-flash'); // restart if already applied
-  void h.offsetWidth;                      // reflow to retrigger animation
-  h.classList.add('ab2-heading-flash');
-  const off = () => { h.classList.remove('ab2-heading-flash'); h.removeEventListener('animationend', off); };
-  h.addEventListener('animationend', off);
-  // safety removal in case animationend is missed
-  setTimeout(off, 1500);
+
+  // Clear any prior purple flash
+  h.classList.remove('flash-purple');
+
+  // Hard reset animation so retrigger always works
+  h.style.animation = 'none';
+  // Force reflow
+  // eslint-disable-next-line no-unused-expressions
+  h.offsetHeight;
+  h.style.animation = '';
+
+  // Add the flash class on the next frame
+  requestAnimationFrame(() => {
+    h.classList.add('flash-purple');
+
+    const off = () => {
+      h.classList.remove('flash-purple');
+      h.removeEventListener('animationend', off);
+    };
+    h.addEventListener('animationend', off, { once: true });
+
+    // Safety fallback in case animationend is missed
+    setTimeout(off, 2000);
+  });
 }
 
 function formatCShort(c){
@@ -1621,16 +1619,43 @@ function setHeadingText(node) {
 
 /* Flash heading */
 function flashHeadingColor(targetSegment, node) {
+  const el = document.getElementById('segmentHeading');
+  if (!el) return;
   if (currentNode && currentNode.id === 'Q0') return;
-  var headingDiv = document.getElementById('segmentHeading');
+
+  // Decide class
+  let cls;
   if (node && node.type === 'result') {
-    headingDiv.classList.add('flash-purple');
-    setTimeout(function(){ headingDiv.classList.remove('flash-purple'); }, 1500);
-    return;
+    cls = 'flash-purple';
+  } else if (targetSegment === 'If You Should Act') {
+    cls = 'flash-green';
+  } else {
+    cls = 'flash-gold';
   }
-  var cls = (targetSegment === "If You Should Act") ? 'flash-green' : 'flash-gold';
-  headingDiv.classList.add(cls);
-  setTimeout(function(){ headingDiv.classList.remove(cls); }, 1500);
+
+  // Clear any prior flash classes
+  el.classList.remove('flash-purple', 'flash-green', 'flash-gold');
+
+  // Hard reset animation so re-adding reliably retriggers
+  el.style.animation = 'none';
+  // Force reflow
+  // eslint-disable-next-line no-unused-expressions
+  el.offsetHeight;
+  el.style.animation = '';
+
+  // Add the new class on next frame
+  requestAnimationFrame(() => {
+    el.classList.add(cls);
+
+    const off = () => {
+      el.classList.remove(cls);
+      el.removeEventListener('animationend', off);
+    };
+    el.addEventListener('animationend', off, { once: true });
+
+    // Safety fallback in case animationend is missed (rare)
+    setTimeout(off, 2000);
+  });
 }
 
 /* Reset panels */
@@ -1783,7 +1808,7 @@ function updateSliderFill(slider, sev) {
   slider.style.setProperty('--pct', pct + '%');
 
   // nonlinear progression: low severities push color shift faster
-  const t = Math.pow((sev - 1) / 9, 0.3); // exponent <1 makes early shift steeper
+  const t = Math.pow((sev - 1) / 9, 0.2); // exponent <1 makes early shift steeper
   const hue = 240 - t * 240; // blue → red
   const color = `hsl(${hue}, 90%, 50%)`;
   slider.style.setProperty('--fill', color);
