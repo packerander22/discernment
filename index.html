@@ -784,6 +784,62 @@ function curveYPxAtRatio(r, mode, pad, plotH, yToPx) {
   return yToPx(Yc, yr.yMin, yr.yMax);
 }
 
+// ---- Global: inject a back button just below a heading (idempotent)
+function ensureSectionBackLink(targetId, backQId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+
+  // Only one back link per section
+  const existing = el.nextElementSibling;
+  if (existing && existing.classList && existing.classList.contains('section-back-link')) return;
+
+  const a = document.createElement('a');
+  a.href = '#';
+  a.className = 'section-back-link';
+  a.style.cssText = 'display:inline-block;margin:8px 0 12px 0;';
+  a.textContent = '← Back to the question';
+  a.addEventListener('click', function (ev) {
+    ev.preventDefault();
+    const id = backQId || (typeof __lastQuestionId !== 'undefined' ? __lastQuestionId : null);
+    if (id && typeof goToNode === 'function') goToNode(id);
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  el.insertAdjacentElement('afterend', a);
+}
+
+// ---- Global: robust scroll (retry for a short window while layout/images settle)
+function scrollToConcept(targetId, backQId) {
+  if (!targetId) return;
+
+  // prevent overlapping runs
+  if (window.__scrollingConcept) return;
+  window.__scrollingConcept = true;
+
+  const START = performance.now();
+  const MAX_MS = 3000;   // retry budget
+  const INTERVAL = 120;  // try every 120ms
+
+  function tryOnce() {
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      ensureSectionBackLink(targetId, backQId);
+      window.__scrollingConcept = null;
+      return true;
+    }
+    return false;
+  }
+
+  if (tryOnce()) return;
+
+  (function tick() {
+    if (tryOnce()) return;
+    if (performance.now() - START >= MAX_MS) { window.__scrollingConcept = null; return; }
+    setTimeout(tick, INTERVAL);
+  })();
+}
+
 /* ===========================================================
    Q6 — interactive: inputs + 2D drag + snap + correct shading
 =========================================================== */
@@ -1697,11 +1753,10 @@ function setupAuxToggles(node) {
         
         link.addEventListener('click', function(e) {
           e.preventDefault();
-          const target = (node.id === 'Q22') 
-            ? 'concept-diminishing-returns' 
+          const target = (node.id === 'Q22')
+            ? 'concept-diminishing-returns'
             : 'concept-inverted-u';
-          history.replaceState(null, '', '#' + target);
-          scrollToConcept(target, 'Q31'); // adjust backQId if needed
+          jumpToConcept(target, __lastQuestionId || node.id);
         });
         
         panel.appendChild(link);
@@ -1740,8 +1795,7 @@ function setupAuxToggles(node) {
         link.style.marginTop = '8px';
         link.addEventListener('click', function(e) {
           e.preventDefault();
-          history.replaceState(null, '', '#concept-severity-threshold');
-          scrollToConcept('concept-severity-threshold', 'Q31'); 
+          jumpToConcept('concept-severity-threshold', __lastQuestionId || node.id);
         });
         panel.appendChild(link);
 
@@ -1986,21 +2040,32 @@ function renderNode(node) {
   // 🔹 Inject content, but wrap AB2 so we have an element to target
   if (node && node.id === 'AB2') {
     textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
-  } else {
-    textDiv.innerHTML = html;
-  }
-
-  // 🔹 AB2 deep-link support: on-entry scroll to #hash, and in-page anchor clicks
-  if (node && node.id === 'AB2') {
-    // --- Case A: hash already present in URL when entering AB2 ---
-    const hash = (location.hash || '').trim();
-    if (hash && hash.length > 1) {
-      const targetId = hash.slice(1); // strip '#'
-      const backQId = __lastQuestionId || 'Q0';          // TODO: set to whichever "back" question you prefer
-      scrollToConcept(targetId, backQId);
+  
+    // Make sure headings have the right IDs before we try to scroll
+    assignConceptAnchors();
+  
+    // Decide what to scroll to:
+    let targetId = null;
+    let backQId  = null;
+  
+    // Priority A: pending request from jumpToConcept(...)
+    if (window.__pendingConceptScroll && window.__pendingConceptScroll.conceptId) {
+      targetId = window.__pendingConceptScroll.conceptId;
+      backQId  = window.__pendingConceptScroll.backQId || __lastQuestionId || 'Q0';
+      window.__pendingConceptScroll = null;
+    } else {
+      // Priority B: an existing URL hash
+      const hash = (location.hash || '').trim();
+      if (hash.length > 1) {
+        targetId = hash.slice(1);
+        backQId  = __lastQuestionId || 'Q0';
+      }
     }
   
-    // --- Case B: clicks on anchors inside AB2 ---
+    // Scroll + inject back link if we have a target
+    if (targetId) scrollToConcept(targetId, backQId);
+  
+    // In-page anchor clicks inside AB2 (e.g., <a href="#concept-...">)
     const ab2El = document.getElementById('AB2');
     if (ab2El) {
       ab2El.addEventListener('click', function (e) {
@@ -2009,13 +2074,18 @@ function renderNode(node) {
         const id = a.getAttribute('href').slice(1);
         if (!id) return;
         e.preventDefault();
-        history.replaceState(null, '', `#${id}`); // keep URL bar in sync
-        scrollToConcept(id, 'Q31');               // same back target as above
+        history.replaceState(null, '', `#${id}`); // keep URL updated for reload/share
+        scrollToConcept(id, __lastQuestionId || 'Q0');
       }, { passive: true });
     }
+  
+    // Aux toggles etc. still need to run
+    setupAuxToggles(node);
+    showOrHideRiskInline(node);
+    // Buttons for 'about' stops here
+    return;
   }
 
-  
   setupAuxToggles(node);
   showOrHideRiskInline(node);
 
@@ -2054,70 +2124,6 @@ function renderNode(node) {
         btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
       }
     }
-  }
-  
-  // Smoothly scroll to a concept section after layout settles, then inject a back link.
-  function scrollToConcept(targetId, backQId) {
-    // prevent multiple concurrent runs
-    if (window.__pendingConceptScroll) return;
-    window.__pendingConceptScroll = true;
-  
-    const START = performance.now();
-    const MAX_MS = 3000;   // total retry budget (~3s)
-    const INTERVAL = 120;  // try every 120ms
-  
-    function scrollAndInject() {
-      const el = document.getElementById(targetId);
-      if (!el) return false;
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      ensureSectionBackLink(targetId, backQId);
-      return true;
-    }
-  
-    // try once immediately in case it's already there
-    if (scrollAndInject()) {
-      window.__pendingConceptScroll = null;
-      return;
-    }
-  
-    (function tick() {
-      if (scrollAndInject()) {
-        window.__pendingConceptScroll = null;
-        return;
-      }
-      if (performance.now() - START >= MAX_MS) {
-        window.__pendingConceptScroll = null;
-        return; // give up gracefully
-      }
-      setTimeout(tick, INTERVAL);
-    })();
-  }
-  
-  // Inject a small back button at the target section (id-based; idempotent)
-  function ensureSectionBackLink(targetId, backQId) {
-    const el = document.getElementById(targetId);
-    if (!el) return;
-  
-    // Already added?
-    if (el.dataset.backInjected === '1') return;
-  
-    const backBtn = document.createElement('button');
-    backBtn.type = 'button';
-    backBtn.className = 'back'; // uses your existing .back button styles
-    backBtn.textContent = 'Back';
-  
-    backBtn.addEventListener('click', () => {
-      // Route back into the flow if provided; otherwise just scroll to top
-      if (typeof goToNode === 'function' && backQId) {
-        goToNode(backQId);
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    });
-  
-    // Place the button just before the heading/content node
-    el.parentNode.insertBefore(backBtn, el);
-    el.dataset.backInjected = '1';
   }
 }
 
