@@ -921,12 +921,11 @@ function renderMiniQ6(intoEl, node){
   link.style.display = 'inline-block';
   link.style.marginTop = '8px';
   link.addEventListener('click', function(e){
-    e.preventDefault();
-    // keep URL hash in sync for reload/share
-    history.replaceState(null, '', '#concept-prob-sev-cost');
-    // go to About page and scroll to the section, remembering where we came from
-    jumpToConcept('concept-prob-sev-cost', (typeof __lastQuestionId !== 'undefined' && __lastQuestionId) ? __lastQuestionId : 'Q6');
-  });
+  e.preventDefault();
+  const target = 'concept-prob-sev-cost';
+    history.replaceState(null, '', `#${target}`);
+    jumpToConcept(target, /* back */ node.id);   // was __lastQuestionId or 'Q6'
+  })
   wrap.appendChild(link);
 
   intoEl.appendChild(wrap);
@@ -1267,13 +1266,16 @@ function renderMiniQ7(intoEl, node){
 
   intoEl.appendChild(wrap);
 
-  const xlink2 = document.createElement('a');
-  xlink2.href = 'javascript:void(0)';
-  xlink2.textContent = 'See full explanation and formulas';
-  xlink2.style.display = 'inline-block';
-  xlink2.style.marginTop = '8px';
-  xlink2.onclick = function(){ jumpToConcept('concept-prob-sev-cost'); };
-  wrap.appendChild(xlink2);
+  const link = document.createElement('a');
+  link.href = 'javascript:void(0)';
+  link.textContent = 'See full explanation and formulas';
+  link.style.display = 'inline-block';
+  link.style.marginTop = '8px';
+  xlink2.onclick = function(){
+  const target = 'concept-prob-sev-cost';
+    history.replaceState(null, '', `#${target}`);
+    jumpToConcept(target, /* back */ node.id);
+  }
   
   const elS = wrap.querySelector('#miniS2');
   const elC = wrap.querySelector('#miniC2');
@@ -1772,13 +1774,14 @@ function setupAuxToggles(node) {
         link.style.display = 'inline-block';
         link.style.marginTop = '8px';
         
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', function (e) {
           e.preventDefault();
           const target = (node.id === 'Q22')
             ? 'concept-diminishing-returns'
             : 'concept-inverted-u';
-          jumpToConcept(target, __lastQuestionId || node.id);
-        });
+          history.replaceState(null, '', `#${target}`);
+          jumpToConcept(target, /* back */ node.id);
+        })
         
         panel.appendChild(link);
 
@@ -1816,8 +1819,10 @@ function setupAuxToggles(node) {
         link.style.marginTop = '8px';
         link.addEventListener('click', function(e) {
           e.preventDefault();
-          jumpToConcept('concept-severity-threshold', __lastQuestionId || node.id);
-        });
+          const target = 'concept-severity-threshold';
+          history.replaceState(null, '', `#${target}`);
+          jumpToConcept(target, /* back */ node.id);
+        })
         panel.appendChild(link);
 
         
@@ -2056,7 +2061,13 @@ function renderNode(node) {
         backQId  = __lastQuestionId || 'Q0';
       }
     }
-  
+    
+    // after you compute targetId/backQId
+    if (targetId) {
+      window.__backTargetForAB2 = backQId;   // cache once
+      scrollToConcept(targetId, backQId);
+    }
+    
     // Scroll + inject back link if we have a target
     if (targetId) scrollToConcept(targetId, backQId);
   
@@ -2070,7 +2081,7 @@ function renderNode(node) {
         if (!id) return;
         e.preventDefault();
         history.replaceState(null, '', `#${id}`); // keep URL updated for reload/share
-        scrollToConcept(id, __lastQuestionId || 'Q0');
+        scrollToConcept(id, window.__backTargetForAB2 || 'Q0'); // use cached back target
       }, { passive: true });
     }
   
