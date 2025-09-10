@@ -1949,13 +1949,6 @@ function ensureSectionBackLink(conceptId, backQId) {
 
   heading.insertAdjacentElement('afterend', a);
 }
-
-// Single, authoritative jump function (no duplicates)
-function jumpToConcept(conceptId, backQId) {
-  window.__pendingConceptScroll = { conceptId: conceptId, backQId: backQId || __lastQuestionId || null };
-  goToNode('AB2');
-}
-
   
 /* Render node */
 if (!originalTitleHTML) {
