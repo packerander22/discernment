@@ -74,9 +74,9 @@
     height:1.2em; width:auto; vertical-align:middle; margin-right:6px;
     aspect-ratio: 1 / 1;
   }
-  .flash-gold { color: goldenrod !important; }
-  .flash-green { color: #2e7d32 !important; } /* original green */
-  .flash-purple { color: #9C27B0 !important; }
+  .flash-green  { color: var(--flash-green); }
+  .flash-gold   { color: var(--flash-gold); }
+  .flash-purple { color: var(--flash-purple); }
 
   /* Give AB2 headings the same fade behavior as the verdict header */
   .about-wrapper h1,
@@ -260,7 +260,7 @@
     font: inherit;
     border: none;
     border-radius: 6px;
-    background: #9C27B0;
+    background: var(--accent-purple);
     color: #fff;
     cursor: pointer;
   }
@@ -901,7 +901,9 @@ function ensureConceptBackButton(targetId, backQId) {
 
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'concept-back';
+  // Add both classes: keeps the semantic 'concept-back' marker,
+  // but also inherits the Restart button styling.
+  btn.className = 'concept-back restart';
   btn.textContent = '← Back';
 
   btn.addEventListener('click', (ev) => {
@@ -909,7 +911,6 @@ function ensureConceptBackButton(targetId, backQId) {
     if (typeof goBack === 'function') goBack();
   });
 
-  // place *below* the heading
   heading.insertAdjacentElement('afterend', btn);
   heading.dataset.backInjected = '1';
 }
@@ -1631,37 +1632,60 @@ function flashHeadingColor(targetSegment, node) {
 
   // Decide class
   let cls;
-  if (node && node.type === 'result') {
-    cls = 'flash-purple';
-  } else if (targetSegment === 'If You Should Act') {
-    cls = 'flash-green';
-  } else {
-    cls = 'flash-gold';
-  }
+  if (node && node.type === 'result') cls = 'flash-purple';
+  else if (targetSegment === 'If You Should Act') cls = 'flash-green';
+  else cls = 'flash-gold';
 
   // Clear any prior flash classes
   el.classList.remove('flash-purple', 'flash-green', 'flash-gold');
 
-  // Hard reset animation so re-adding reliably retriggers
+  // Hard reset so both CSS *transitions* and *animations* will retrigger
   el.style.animation = 'none';
+  el.style.transition = 'none';
   // Force reflow
   // eslint-disable-next-line no-unused-expressions
   el.offsetHeight;
   el.style.animation = '';
+  el.style.transition = '';
 
-  // Add the new class on next frame
+  // Add on next frame → guarantees a new paint tick
   requestAnimationFrame(() => {
     el.classList.add(cls);
 
     const off = () => {
       el.classList.remove(cls);
       el.removeEventListener('animationend', off);
+      el.removeEventListener('transitionend', off);
     };
+    // Support both keyframes and color transitions
     el.addEventListener('animationend', off, { once: true });
-
-    // Safety fallback in case animationend is missed (rare)
+    el.addEventListener('transitionend', off, { once: true });
+    // Safety fallback
     setTimeout(off, 2000);
   });
+}
+
+function getSectionKey(n){
+  if (!n) return null;
+  if (n.type === 'about')  return 'about';
+  if (n.type === 'result') return 'result';
+  const s = (n.segmentLabel || n.segment || '').toLowerCase();
+  if (s.includes('if'))   return 'if';
+  if (s.includes('when')) return 'when';
+  return 'other';
+}
+
+function maybeFlashOnEnter(node, fromId){
+  if (!node || node.id !== 'Q1') return;
+
+  const fromNode    = flowchart.find(n => n.id === fromId);
+  const fromSection = getSectionKey(fromNode);
+
+  // Flash Q1 only if arriving from Q0 OR from a non-IF section
+  if (fromId === 'Q0' || (fromSection && fromSection !== 'if')) {
+    // This label is what your header uses for the IF segment
+    flashHeadingColor('If You Should Act', node);
+  }
 }
 
 /* Reset panels */
@@ -1695,12 +1719,15 @@ function goToNode(id) {
   closeAllPanels();
   var adjustedId = beforeEnterNode(id);
   noteOrigin(currentNode);
+  var fromId = currentNode ? currentNode.id : '';
   var next = flowchart.find(n => n.id === adjustedId);
   historyStack.push(currentNode ? currentNode.id : '');
   currentNode = next; renderNode(currentNode);
+  maybeFlashOnEnter(currentNode, fromId);
 }
 function goBack() {
   closeAllPanels();
+  var fromId = currentNode ? currentNode.id : '';
   var prevId = historyStack.pop();
 
   // 🔹 If AB2 was a temporary concept visit, skip it
@@ -1712,6 +1739,7 @@ function goBack() {
   var prev = flowchart.find(n => n.id === prevId);
   currentNode = prev || currentNode;
   renderNode(currentNode);
+  maybeFlashOnEnter(currentNode, fromId);
 }
 function restart() {
   closeAllPanels();
