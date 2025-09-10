@@ -1283,7 +1283,7 @@ function renderMiniQ6(intoEl, node){
   // Bottom buttons
   const btns = document.getElementById('buttons');
   btns.innerHTML = '';
-  const cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
+  cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
   cont.onclick = function(){
     miniActGate = !!renderMiniQ6._act;
     goToNode(miniActGate ? 'Q10' : 'Q7');
