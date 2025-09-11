@@ -1000,9 +1000,9 @@ function renderMiniQ6(intoEl, node){
 
   // IMPORTANT: use type="text" so we can allow interim states while typing
   const sBox = document.createElement('div'); sBox.className='mini-field';
-  sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" name="sev" type="text" inputmode="decimal" placeholder="e.g. 5">';
+  sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
   const cBox = document.createElement('div'); cBox.className='mini-field';
-  cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" name="cost" type="text" inputmode="decimal" placeholder="e.g. 1">';
+  cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
   fields.appendChild(sBox); fields.appendChild(cBox);
 
   const pRow = document.createElement('div'); pRow.className='mini-fields';
@@ -1014,7 +1014,7 @@ function renderMiniQ6(intoEl, node){
       <option value="micromort">Micromorts</option>\
     </select>';
   const vBox = document.createElement('div'); vBox.className='mini-field';
-  vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" name="prob" type="text" inputmode="decimal" placeholder="e.g. 1,000,000">';
+  vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000,000">';
   pRow.appendChild(mBox); pRow.appendChild(vBox);
 
   wrap.appendChild(fields); wrap.appendChild(pRow);
@@ -2322,19 +2322,16 @@ function renderNode(node) {
   // ==== Q33: remember .heat-slider ====
   if (node && node.id === 'Q33') {
     const q33Root = document.getElementById('text');
+    const slider = q33Root.querySelector('.heat-slider');
   
-    // Restore generic Q33 fields (if you use the helpers)
+    // Restore generic Q33 fields (if you want)
     const saved = loadNodeState('Q33');
     if (saved) applyFormValues(q33Root, saved);
-  
-    // Grab your slider (this is your control)
-    const slider = q33Root.querySelector('.heat-slider');
   
     // Restore dedicated threshold if present
     const stored = getUserThreshold();
     if (slider && stored != null) {
       slider.value = String(stored);
-      // kick any UI that depends on it (color fill, labels, etc.)
       slider.dispatchEvent(new Event('input',{bubbles:true}));
       slider.dispatchEvent(new Event('change',{bubbles:true}));
     }
@@ -2351,7 +2348,18 @@ function renderNode(node) {
     if (slider) setUserThreshold(slider.value);
   }
 
+  // ==== Q46 / Q47: restore threshold from Q33 ====
+  if (node && (node.id === 'Q46' || node.id === 'Q47')) {
+    const root = document.getElementById('text');
+    const stored = getUserThreshold();
   
+    // If you want to show the value somewhere in Q46/Q47
+    if (stored != null) {
+      const out = root.querySelector('.threshold-display');
+      if (out) out.textContent = stored;  // or set value on input if you have one
+    }
+  }
+
   // 🔹 Inject content, but wrap AB2 so we have an element to target
   if (node && node.id === 'AB2') {
     textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
