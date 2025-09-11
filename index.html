@@ -607,16 +607,16 @@ var flowchart = [
   /* ===== IF YOU SHOULD ACT ===== */
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1",  "no": "Q2" },
   { "id": "Q2",  "type": "question", "text": "Is there a current <i>real problem</i> or desired functional QoL (quality of life) improvement, rather than just a <i>“problem”</i> or preference that doesn’t affect performance or outcomes?", "yes": "Q10",  "no": "Q3" },
-  { "id": "Q3",  "type": "question", "text": "Is there cause for a potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q4" },
-  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "R2" },
+  { "id": "Q3",  "type": "question", "text": "Is there cause for a future potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q4" },
+  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a future POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "R2" },
 
-  { "id": "Q5",  "type": "question", "text": "Is the potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
+  { "id": "Q5",  "type": "question", "text": "Is the future potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
 
   /* ==== NEW Q6: mini interactive slide ==== */
-  { "id": "Q6", "type": "mini", "text": "Use the interactive tool below to weigh <b>Severity</b>, <b>Cost</b>, and <b>Probability</b>. Fill the boxes (up to 10 for S/C, probability as % or 1 in X, or micromorts). Drag the dot to see the cutoff curve.", "yes": "Q10", "no": "Q7" },
+  { "id": "Q6", "type": "mini", "text": "Use the interactive tool below to weigh the estimated <b>Severity</b>, <b>Cost</b>, and <b>Probability</b> of this future potential problem. Enter them into the boxes, and choose the probability measurement unit that applies.", "yes": "Q10", "no": "Q7" },
 
   /* ==== NEW Q7: visualization-only slide ==== */
-  { "id": "Q7", "type": "miniViz", "text": "Visualization (read-only): These values mirror what you entered on the previous step, but are greyed out. You can drag the point to see how Severity/Cost interacts with Probability. This slide does not change the actual decision unless you go back and edit the last slide.", "yes": "Q10", "no": "Q20" },
+  { "id": "Q7", "type": "miniViz", "text": "Is there a time further down the road that the circumstances in the <i>previous question</i> could change and flip the verdict?\nNote: This slide does not change your original input unless you go back and edit the last slide.", "yes": "R3", "no": "Q21" },
   { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q11",  "no": "R4" },
   { "id": "Q11", "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
   { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q14", "no": "Q13" },
