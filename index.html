@@ -2319,18 +2319,36 @@ function renderNode(node) {
   /* ✅ ADD THIS: inject default slide content for all non-special slides */
   document.getElementById('text').innerHTML = html;
 
-  // Q33 persistence (use the node's rendered container)
+  // ==== Q33: remember .heat-slider ====
   if (node && node.id === 'Q33') {
     const q33Root = document.getElementById('text');
   
-    // Restore previously saved values (if any)
+    // Restore generic Q33 fields (if you use the helpers)
     const saved = loadNodeState('Q33');
     if (saved) applyFormValues(q33Root, saved);
   
-    // Save on any edit
-    const persist = () => saveNodeState('Q33', collectFormValues(q33Root));
-    q33Root.addEventListener('input',  persist);
-    q33Root.addEventListener('change', persist);
+    // Grab your slider (this is your control)
+    const slider = q33Root.querySelector('.heat-slider');
+  
+    // Restore dedicated threshold if present
+    const stored = getUserThreshold();
+    if (slider && stored != null) {
+      slider.value = String(stored);
+      // kick any UI that depends on it (color fill, labels, etc.)
+      slider.dispatchEvent(new Event('input',{bubbles:true}));
+      slider.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+  
+    // Persist on edit
+    const persistQ33 = () => {
+      saveNodeState('Q33', collectFormValues(q33Root));
+      if (slider) setUserThreshold(slider.value);
+    };
+    q33Root.addEventListener('input',  persistQ33);
+    q33Root.addEventListener('change', persistQ33);
+  
+    // Ensure it’s saved at least once on entry
+    if (slider) setUserThreshold(slider.value);
   }
 
   
