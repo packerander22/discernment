@@ -2240,6 +2240,22 @@ function safeTypeset(rootEl) {
   } catch (_) {}
   return Promise.resolve();
 }
+
+  /* === threshold helpers used by Q33 / Q46 / Q47 === */
+function setUserThreshold(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return;
+  sessionStorage.setItem('userThreshold', String(n));
+  // optional mirror for code that reads a global:
+  window.currentThresholdPct = n;
+}
+
+function getUserThreshold() {
+  const s = sessionStorage.getItem('userThreshold');
+  if (s == null) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
   
 /* Render node */
 if (!originalTitleHTML) {
