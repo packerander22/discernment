@@ -2186,11 +2186,12 @@ function showOrHideRiskInline(node) {
   container.appendChild(ticks);
 
   function applyFromSeverity(sev) {
-    var thr = 100 - sev * 10;
-    currentThresholdPct = thr;
-    sevDisplay.textContent = String(sev);
-    updateSliderFill(slider, sev);
-
+    var s = Math.max(1, Math.min(10, Number(sev) || 1)); // clamp 1..10
+    var thr = 100 - s * 10;
+    window.currentThresholdPct = thr; // <-- make the global write explicit
+    sevDisplay.textContent = String(s);
+    updateSliderFill(slider, s);
+    
     if (currentNode && (currentNode.id === 'Q46' || currentNode.id === 'Q47')) {
       var textDiv = document.getElementById('text');
       var html = currentNode.text || '';
