@@ -2310,8 +2310,6 @@ function setUserThreshold(v){
   const n = Number(v);
   if (!Number.isFinite(n)) return;
   sessionStorage.setItem('userThreshold', String(n));
-  // some of your transforms read this global:
-  window.currentThresholdPct = n;
 }
 function getUserThreshold(){
   const s = sessionStorage.getItem('userThreshold');
