@@ -852,7 +852,7 @@ function flashAb2Heading(id) {
   if (!h) return;
 
   // Reuse the same purple flash as verdict header
-  flashWithPlateau(el, cls, { inMs: 300, holdMs: 900, outMs: 300 });
+  flashWithPlateau(h, 'flash-purple', { inMs: 300, holdMs: 900, outMs: 300 });
 }
 
 function formatCShort(c){
@@ -1298,28 +1298,20 @@ function renderMiniQ6(intoEl, node){
 
   draw();
   
-  /* ===== Q6 wiring (number-input version) ===== */
-  const form      = intoEl.querySelector('.mini-q6') || intoEl;
+  // ===== Q6 wiring (number-input version) =====
+  const form      = intoEl; // Q6 renders directly into 'intoEl'
+  const unitsSel  = form.querySelector('#miniMode');   // <-- was [name="q6Units"]
+  const sevBox    = form.querySelector('#miniS');      // <-- was input[name="sev"]
+  const probBox   = form.querySelector('#miniVal');
+  const costBox   = form.querySelector('#miniC');
   
-  // Adjust these selectors if your names differ
-  const unitsSel  = form.querySelector('[name="q6Units"]');      // units select
-  const sevBox    = form.querySelector('input[name="sev"]');     // severity number input (0..10)
-  const sevMirror = form.querySelector('.sev-value');            // optional text mirror
-  const probBox   = form.querySelector('input[name="prob"]');
-  const costBox   = form.querySelector('input[name="cost"]');
-  
-  // --- utilities ---
+  // tiny helper so other listeners can react if needed
   function notifySeverity(val){
-    try {
-      if (typeof renderMiniQ6._onSevChange === 'function') {
-        renderMiniQ6._onSevChange(val);
-      }
-    } catch(_) {}
+    try { if (typeof renderMiniQ6._onSevChange === 'function') renderMiniQ6._onSevChange(val); } catch(_){}
   }
   function setSeverity(val, opts={silent:false}) {
     const v = Math.max(0, Math.min(10, Number(val)));
     if (sevBox && sevBox.value !== String(v)) sevBox.value = String(v);
-    if (sevMirror) sevMirror.textContent = String(v);
     if (!opts.silent) notifySeverity(v);
   }
   function lockSeverity(val=10){
@@ -1331,11 +1323,10 @@ function renderMiniQ6(intoEl, node){
     if (sevBox){ sevBox.disabled = false; sevBox.classList.remove('is-disabled'); }
   }
   
-  // Apply micromorts rule now + on change
   function applyUnitsRule(){
     const mode = unitsSel ? unitsSel.value : '';
-    if (mode === 'micromorts') lockSeverity(10);
-    else                       unlockSeverity();
+    if (mode === 'micromort') lockSeverity(10);
+    else                      unlockSeverity();
   }
   if (unitsSel){
     unitsSel.removeEventListener('change', applyUnitsRule);
@@ -1343,45 +1334,25 @@ function renderMiniQ6(intoEl, node){
     applyUnitsRule(); // run once on init
   }
   
-  // --- number input UX: permissive while typing; sanitize on blur ---
+  // permissive typing so backspace works; sanitize on blur
   function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
     if (!inp) return;
-  
-    // allow typing free-form (so backspace works); filter only obvious junk
     inp.addEventListener('input', () => {
-      // keep digits, one leading '-', and one '.'
-      const v = inp.value;
-      const cleaned = v.replace(/(?!^)-/g,'')              // only allow leading '-'
-                       .replace(/[^0-9.\-]/g,'')           // strip non-numeric tokens
-                       .replace(/(\..*)\./g, '$1');        // only one dot
-      if (cleaned !== v) inp.value = cleaned;
+      const s = inp.value;
+      const cleaned = s.replace(/[^0-9.\-]/g,'').replace(/(.*\..*)\./,'$1').replace(/(.*-).*-/,'$1');
+      if (cleaned !== s) inp.value = cleaned;
     });
-  
-    function normalize(){
-      const raw = (inp.value || '').trim();
-      // mid-edit empties are allowed; leave blank
-      if (raw === '' || raw === '-' || raw === '.' || raw === '-.') { inp.value = ''; return; }
-      let n = Number(raw);
-      if (!Number.isFinite(n)) { inp.value = ''; return; }
-      n = Math.min(max, Math.max(min, n));
-      const out = (decimals == null) ? String(n) : String(Number(n.toFixed(decimals)));
-      inp.value = out;
-  
-      // mirror severity if this is the sevBox
-      if (inp === sevBox) setSeverity(out, {silent:true});
-    }
-  
-    inp.addEventListener('blur', normalize);
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    inp.addEventListener('blur', () => {
+      let v = parseFloat(inp.value);
+      if (!isFinite(v)) { inp.value = ''; return; }
+      v = Math.max(min, Math.min(max, v));
+      if (decimals != null) v = Number(v.toFixed(decimals));
+      inp.value = String(v);
     });
   }
-  
-  // Wire your Q6 fields (tune ranges/decimals to your spec)
-  wireNumericInput(probBox, { min: 0,    max: 100,   decimals: 2 });  // probability (%)
-  wireNumericInput(costBox, { min: 0,    max: 1e9,   decimals: 2 });  // cost
-  wireNumericInput(sevBox,  { min: 0,    max: 10,    decimals: 1 });  // severity 0..10
-  /* ===== end Q6 wiring ===== */
+  wireNumericInput(sevBox, { min:0,  max:10, decimals:2 });
+  wireNumericInput(costBox,{ min:0,  max:10, decimals:2 });
+  wireNumericInput(probBox,{ min:0.000001, max:999999.99, decimals:6 });
 
   // Bottom buttons
   const btns = document.getElementById('buttons');
