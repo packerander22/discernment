@@ -769,6 +769,18 @@ var miniMaster = {
   X_user: 1000000         // normalized to 1 in X
 };
 
+// Clear Q33 threshold if this page load is a browser refresh
+(function () {
+  const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]);
+  const isReload = nav ? (nav.type === 'reload') 
+                       : (performance && performance.navigation && performance.navigation.type === 1);
+  if (isReload) {
+    sessionStorage.removeItem('userThreshold');
+    // optional: also clear any cached mirror
+    delete window.currentThresholdPct;
+  }
+})();
+  
 // Blank-on-first-visit flag for Q6 (keeps user values if they come back)
 if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
   
@@ -1891,6 +1903,8 @@ function restart() {
   window.__pendingConceptScroll = null;
   window.__backTargetForAB2 = null;
   window.__ab2TempVisit = false;
+  sessionStorage.removeItem('userThreshold');
+  delete window.currentThresholdPct;
   if (originalTitleHTML) {
     document.getElementById('segmentTitle').innerHTML = originalTitleHTML;
     document.getElementById('skipBtn').style.display = 'none';
