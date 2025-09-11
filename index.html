@@ -1219,18 +1219,25 @@ function renderMiniQ6(intoEl, node){
     drawAxes(mode);
     buildCurve(mode);
 
-    if (window.miniPristine){
-      verdict.textContent = 'Enter values to see if preventative action should be considered.';
-      verdict.classList.remove('ok','no');
-      handle.setAttribute('visibility','hidden');
-      labelG.setAttribute('visibility','hidden');
-      if (cont) cont.disabled = true;
-      return;
-    } else {
-      handle.removeAttribute('visibility');
-      labelG.removeAttribute('visibility');
+    // --- FIX: if we have values, don't treat as pristine ---
+    if (window.miniPristine) {
+      const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
+      if (!hasAny) {
+        verdict.textContent = 'Enter values to see if action should be considered.';
+        verdict.classList.remove('ok','no');
+        handle.setAttribute('visibility','hidden');
+        labelG.setAttribute('visibility','hidden');
+        if (cont) cont.disabled = true;
+        return;
+      }
+      // We DO have values → flip pristine off so we compute verdict & enable button
+      window.miniPristine = false;
     }
-
+    // --- end fix ---
+  
+    handle.removeAttribute('visibility');
+    labelG.removeAttribute('visibility');
+  
     snapInputs();
 
     const r  = miniMaster.S/miniMaster.C;
@@ -1392,6 +1399,16 @@ function renderMiniQ6(intoEl, node){
   const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
   q6Root.addEventListener('input',  persistQ6);
   q6Root.addEventListener('change', persistQ6);
+
+  // If fields already have values (e.g., returning from AB2), compute once
+  requestAnimationFrame(() => {
+    const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
+    if (hasAny) {
+      window.miniPristine = false; // don't bail early in draw()
+      snapInputs();                // clamp/normalize into miniMaster
+      draw();                      // compute verdict + enable Continue
+    }
+  });
 
   // initial paint
   draw();
