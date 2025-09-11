@@ -1348,136 +1348,79 @@ function renderMiniQ6(intoEl, node){
 
   draw();
   
-  // ===== Q6 wiring (number-input version) =====
-  const form      = intoEl; // Q6 renders directly into 'intoEl'
-  const unitsSel  = form.querySelector('#miniMode');   // <-- was [name="q6Units"]
-  const sevBox    = form.querySelector('#miniS');      // <-- was input[name="sev"]
-  const probBox   = form.querySelector('#miniVal');
-  const costBox   = form.querySelector('#miniC');
+  // ===== Q6 wiring (FINAL — persistence + micromorts lock + friendly inputs) =====
+  const q6Root   = intoEl;                       // Q6 renders into 'intoEl'
+  const unitsSel = q6Root.querySelector('#miniMode');
+  const sevBox   = q6Root.querySelector('#miniS');
+  const probBox  = q6Root.querySelector('#miniVal');
+  const costBox  = q6Root.querySelector('#miniC');
   
-  // tiny helper so other listeners can react if needed
-  function notifySeverity(val){
-    try { if (typeof renderMiniQ6._onSevChange === 'function') renderMiniQ6._onSevChange(val); } catch(_){}
-  }
-  function setSeverity(val, opts={silent:false}) {
-    const v = Math.max(0, Math.min(10, Number(val)));
-    if (sevBox && sevBox.value !== String(v)) sevBox.value = String(v);
-    if (!opts.silent) notifySeverity(v);
-  }
-  function lockSeverity(val=10){
-    setSeverity(val, {silent:true});
-    if (sevBox){ sevBox.disabled = true; sevBox.classList.add('is-disabled'); }
-    notifySeverity(val);
-  }
-  function unlockSeverity(){
-    if (sevBox){ sevBox.disabled = false; sevBox.classList.remove('is-disabled'); }
-  }
-  
-  function applyUnitsRule(){
-    const mode = unitsSel ? unitsSel.value : '';
-    if (mode === 'micromort') lockSeverity(10);
-    else                      unlockSeverity();
-  }
-  if (unitsSel){
-    unitsSel.removeEventListener('change', applyUnitsRule);
-    unitsSel.addEventListener('change', applyUnitsRule);
-    applyUnitsRule(); // run once on init
-  }
-  
-  // permissive typing so backspace works; sanitize on blur
-  function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
-    if (!inp) return;
-    inp.addEventListener('input', () => {
-      const s = inp.value;
-      const cleaned = s.replace(/[^0-9.\-]/g,'').replace(/(.*\..*)\./,'$1').replace(/(.*-).*-/,'$1');
-      if (cleaned !== s) inp.value = cleaned;
-    });
-    inp.addEventListener('blur', () => {
-      let v = parseFloat(inp.value);
-      if (!isFinite(v)) { inp.value = ''; return; }
-      v = Math.max(min, Math.min(max, v));
-      if (decimals != null) v = Number(v.toFixed(decimals));
-      inp.value = String(v);
-    });
-  }
-  wireNumericInput(sevBox, { min:0,  max:10, decimals:2 });
-  wireNumericInput(costBox,{ min:0,  max:10, decimals:2 });
-  wireNumericInput(probBox,{ min:0.000001, max:999999.99, decimals:6 });
-
-  // ---------- Q6 persist + micromorts lock ----------
-  const q6 = intoEl; // Q6 renders directly into 'intoEl'
-  const unitsSel = q6.querySelector('#miniMode');
-  const sevBox   = q6.querySelector('#miniS');
-  
-  // restore previously saved values (if any)
+  /* ---------- restore saved values ---------- */
   const savedQ6 = loadNodeState('Q6');
-  if (savedQ6) applyFormValues(q6, savedQ6);
+  if (savedQ6) applyFormValues(q6Root, savedQ6);
   
-  // your micromorts rule (force S=10 and grey out)
-  function lockSeverity(val=10){
-    if (sevBox){
-      sevBox.value = String(val);
-      sevBox.disabled = true;
-      sevBox.classList.add('is-disabled');
-      sevBox.dispatchEvent(new Event('input', {bubbles:true}));
-      sevBox.dispatchEvent(new Event('change', {bubbles:true}));
-    }
+  /* ---------- micromorts: force severity=10 + grey out ---------- */
+  function lockSeverity(val = 10){
+    if (!sevBox) return;
+    sevBox.value = String(val);
+    sevBox.disabled = true;
+    sevBox.classList.add('is-disabled');
+    // notify any mirrors/derived UI
+    sevBox.dispatchEvent(new Event('input',  { bubbles:true }));
+    sevBox.dispatchEvent(new Event('change', { bubbles:true }));
   }
   function unlockSeverity(){
-    if (sevBox){
-      sevBox.disabled = false;
-      sevBox.classList.remove('is-disabled');
-    }
+    if (!sevBox) return;
+    sevBox.disabled = false;
+    sevBox.classList.remove('is-disabled');
   }
   function applyUnitsRule(){
-    const mode = unitsSel ? unitsSel.value : '';
+    const mode = unitsSel?.value;
     if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10);
-    else unlockSeverity();
+    else                                               unlockSeverity();
   }
-  // run once now, and on change
+  // run once now and on change
   applyUnitsRule();
-  if (unitsSel){
-    unitsSel.addEventListener('change', () => {
-      applyUnitsRule();
-      // save after changes
-      saveNodeState('Q6', collectFormValues(q6));
-    });
-  }
+  if (unitsSel) unitsSel.addEventListener('change', applyUnitsRule);
   
-  // number-input UX: don’t fight backspace; sanitize on blur
+  /* ---------- number inputs: allow backspace, sanitize on blur ---------- */
   function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
     if (!inp) return;
+  
+    // Let the user type freely; only strip obvious junk
     inp.addEventListener('input', () => {
       const s = inp.value;
-      const cleaned = s.replace(/[^0-9.\-]/g,'')
-                       .replace(/(.*\..*)\./,'$1')
-                       .replace(/(.*-).*-/,'$1');
+      const cleaned = s
+        .replace(/[^0-9.\-]/g, '')   // digits . -
+        .replace(/(.*\..*)\./, '$1') // one dot
+        .replace(/(.*-).*-/ , '$1'); // one minus
       if (cleaned !== s) inp.value = cleaned;
-      // live-save whenever user types
-      saveNodeState('Q6', collectFormValues(q6));
+      // do NOT clamp/format here — avoids fighting backspace
     });
-    inp.addEventListener('blur', () => {
-      let v = parseFloat(inp.value);
-      if (!isFinite(v)) { inp.value = ''; saveNodeState('Q6', collectFormValues(q6)); return; }
-      v = Math.max(min, Math.min(max, v));
-      if (decimals != null) v = Number(v.toFixed(decimals));
-      inp.value = String(v);
-      saveNodeState('Q6', collectFormValues(q6));
-    });
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
-    });
+  
+    // On blur (or Enter), clamp & format
+    function normalize(){
+      const raw = (inp.value || '').trim();
+      if (raw === '' || raw === '-' || raw === '.' || raw === '-.') { inp.value = ''; return; }
+      let n = Number(raw);
+      if (!Number.isFinite(n)) { inp.value = ''; return; }
+      n = Math.min(max, Math.max(min, n));
+      inp.value = (decimals == null) ? String(n) : String(Number(n.toFixed(decimals)));
+    }
+    inp.addEventListener('blur', normalize);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
   }
   
-  // wire Q6 fields + save on any change
-  wireNumericInput(q6.querySelector('#miniS'),   { min:0, max:10, decimals:2 });
-  wireNumericInput(q6.querySelector('#miniVal'), { min:0.000001, max:999999.99, decimals:6 });
-  wireNumericInput(q6.querySelector('#miniC'),   { min:0, max:1e9, decimals:2 });
+  // Wire your fields (tune ranges/decimals as needed)
+  wireNumericInput(sevBox,  { min:0, max:10, decimals:2 });
+  wireNumericInput(probBox, { min:0, max:100, decimals:6 });
+  wireNumericInput(costBox, { min:0, max:1e12, decimals:2 });
   
-  // also save when anything else changes
-  q6.addEventListener('change', () => saveNodeState('Q6', collectFormValues(q6)));
-  q6.addEventListener('input',  () => saveNodeState('Q6', collectFormValues(q6)));
-
+  /* ---------- persist on edit ---------- */
+  const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
+  q6Root.addEventListener('input',  persistQ6);
+  q6Root.addEventListener('change', persistQ6);
+  // ===== END Q6 wiring =====
 
   // Bottom buttons
   const btns = document.getElementById('buttons');
