@@ -1813,6 +1813,17 @@ function makeButton(label, cls, action) {
   return btn;
 }
 function goToNode(id) {
+  // --- NEW: if we’re on Q33 and leaving, save the slider immediately ---
+  if (currentNode && currentNode.id === 'Q33') {
+    const rootQ33 = document.getElementById('text');
+    if (rootQ33) {
+      const slider = rootQ33.querySelector('.heat-slider');
+      if (slider) setUserThreshold(slider.value);
+      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
+        saveNodeState('Q33', collectFormValues(rootQ33));
+      }
+    }
+  }
   closeAllPanels();
   var adjustedId = beforeEnterNode(id);
   noteOrigin(currentNode);
@@ -2342,39 +2353,40 @@ function renderNode(node) {
   /* ✅ ADD THIS: inject default slide content for all non-special slides */
   document.getElementById('text').innerHTML = html;
 
-  // ==== Q33: remember .heat-slider ====
-  // After: document.getElementById('text').innerHTML = html;
 
-// ==== Q33: restore + persist the .heat-slider ====
-if (node && node.id === 'Q33') {
-  const q33Root = document.getElementById('text');
-  const slider  = q33Root.querySelector('.heat-slider');
-
-  // (optional) restore any other named inputs for Q33
-  const saved = loadNodeState('Q33');
-  if (saved) applyFormValues(q33Root, saved);
-
-  // Restore the slider to the last value the user set
-  const stored = getUserThreshold();
-  if (slider && stored != null) {
-    slider.value = String(stored);
-
-    // fire events so your fill/label/logic update immediately
-    slider.dispatchEvent(new Event('input',  { bubbles:true }));
-    slider.dispatchEvent(new Event('change', { bubbles:true }));
-  }
-
-  // Persist on any edit (keeps both generic and dedicated stores in sync)
-  const persistQ33 = () => {
-    saveNodeState('Q33', collectFormValues(q33Root));
+  // ==== Q33: restore + persist the .heat-slider ====
+  if (node && node.id === 'Q33') {
+    const q33Root = document.getElementById('text');
+    const slider  = q33Root.querySelector('.heat-slider');
+  
+    // Restore any named fields you use generally
+    const saved = (typeof loadNodeState === 'function') ? loadNodeState('Q33') : null;
+    if (saved && typeof applyFormValues === 'function') applyFormValues(q33Root, saved);
+  
+    // IMPORTANT: run restore on next frame so nothing else overwrites it
+    requestAnimationFrame(() => {
+      const stored = getUserThreshold();
+      if (slider && stored != null) {
+        slider.value = String(stored);
+        // Kick your fill/label/logic so UI matches value immediately
+        slider.dispatchEvent(new Event('input',  { bubbles:true }));
+        slider.dispatchEvent(new Event('change', { bubbles:true }));
+      }
+    });
+  
+    // Persist on any edit (keeps both stores in sync)
+    const persistQ33 = () => {
+      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
+        saveNodeState('Q33', collectFormValues(q33Root));
+      }
+      if (slider) setUserThreshold(slider.value);
+    };
+    q33Root.addEventListener('input',  persistQ33);
+    q33Root.addEventListener('change', persistQ33);
+  
+    // Also set once on entry (covers first-visit / default write)
     if (slider) setUserThreshold(slider.value);
-  };
-  q33Root.addEventListener('input',  persistQ33);
-  q33Root.addEventListener('change', persistQ33);
-
-  // Ensure it’s saved at least once on entry (covers first visit)
-  if (slider) setUserThreshold(slider.value);
-}
+  }
 
   // ==== Q46 / Q47: restore threshold from Q33 ====
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
