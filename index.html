@@ -1830,17 +1830,18 @@ function makeButton(label, cls, action) {
   return btn;
 }
 function goToNode(id) {
-  // --- NEW: if we’re on Q33 and leaving, save the slider immediately ---
-  if (currentNode && currentNode.id === 'Q33') {
-    const rootQ33 = document.getElementById('text');
-    if (rootQ33) {
-      const slider = rootQ33.querySelector('.heat-slider');
+  // Save Q33/Q6 state when navigating away
+  if (currentNode && (currentNode.id === 'Q33' || currentNode.id === 'Q6')) {
+    const root = document.getElementById('text');
+    if (root) {
+      const slider = root.querySelector('.heat-slider');
       if (slider) setUserThreshold(slider.value);
       if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
-        saveNodeState('Q33', collectFormValues(rootQ33));
+        saveNodeState(currentNode.id, collectFormValues(root));
       }
     }
   }
+
   closeAllPanels();
   var adjustedId = beforeEnterNode(id);
   noteOrigin(currentNode);
@@ -1851,6 +1852,17 @@ function goToNode(id) {
   maybeFlashOnEnter(currentNode, fromId);
 }
 function goBack() {
+  // Save Q33/Q6 state when navigating away
+  if (currentNode && (currentNode.id === 'Q33' || currentNode.id === 'Q6')) {
+    const root = document.getElementById('text');
+    if (root) {
+      const slider = root.querySelector('.heat-slider');
+      if (slider) setUserThreshold(slider.value);
+      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
+        saveNodeState(currentNode.id, collectFormValues(root));
+      }
+    }
+  }
   closeAllPanels();
   var fromId = currentNode ? currentNode.id : '';
   var prevId = historyStack.pop();
@@ -2276,20 +2288,32 @@ function safeTypeset(rootEl) {
   return Promise.resolve();
 }
 
-  /* === threshold helpers used by Q33 / Q46 / Q47 === */
-function setUserThreshold(v) {
+// Q33 threshold persistence
+function setUserThreshold(v){
   const n = Number(v);
   if (!Number.isFinite(n)) return;
   sessionStorage.setItem('userThreshold', String(n));
-  // optional mirror for code that reads a global:
+  // some of your transforms read this global:
   window.currentThresholdPct = n;
 }
-
-function getUserThreshold() {
+function getUserThreshold(){
   const s = sessionStorage.getItem('userThreshold');
   if (s == null) return null;
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
+}
+
+// Ensure heat-slider's fill matches its value (in case no input handler ran yet)
+function syncHeatSliderFill(sl){
+  if (!sl) return;
+  const min = sl.min !== '' ? Number(sl.min) : 0;
+  const max = sl.max !== '' ? Number(sl.max) : 100;
+  const val = Number(sl.value);
+  const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+  try { sl.style.setProperty('--fill', pct + '%'); } catch(_) {}
+  // also kick any of your existing listeners that style/label it
+  sl.dispatchEvent(new Event('input',  { bubbles:true }));
+  sl.dispatchEvent(new Event('change', { bubbles:true }));
 }
   
 /* Render node */
@@ -2376,22 +2400,20 @@ function renderNode(node) {
     const q33Root = document.getElementById('text');
     const slider  = q33Root.querySelector('.heat-slider');
   
-    // Restore any named fields you use generally
+    // Restore any other named fields you persist
     const saved = (typeof loadNodeState === 'function') ? loadNodeState('Q33') : null;
     if (saved && typeof applyFormValues === 'function') applyFormValues(q33Root, saved);
   
-    // IMPORTANT: run restore on next frame so nothing else overwrites it
-    requestAnimationFrame(() => {
+    // Defer restore two frames so we "win" over any late init that sets a default
+    requestAnimationFrame(() => requestAnimationFrame(() => {
       const stored = getUserThreshold();
       if (slider && stored != null) {
         slider.value = String(stored);
-        // Kick your fill/label/logic so UI matches value immediately
-        slider.dispatchEvent(new Event('input',  { bubbles:true }));
-        slider.dispatchEvent(new Event('change', { bubbles:true }));
+        syncHeatSliderFill(slider);     // sets --fill and fires input/change
       }
-    });
+    }));
   
-    // Persist on any edit (keeps both stores in sync)
+    // Keep both stores in sync on any edit
     const persistQ33 = () => {
       if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
         saveNodeState('Q33', collectFormValues(q33Root));
@@ -2401,7 +2423,7 @@ function renderNode(node) {
     q33Root.addEventListener('input',  persistQ33);
     q33Root.addEventListener('change', persistQ33);
   
-    // Also set once on entry (covers first-visit / default write)
+    // Also write once on entry so downstream screens see a value
     if (slider) setUserThreshold(slider.value);
   }
 
