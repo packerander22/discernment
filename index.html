@@ -2395,37 +2395,55 @@ function renderNode(node) {
   document.getElementById('text').innerHTML = html;
 
 
-  // ==== Q33: restore + persist the .heat-slider ====
-  if (node && node.id === 'Q33') {
-    const q33Root = document.getElementById('text');
-    const slider  = q33Root.querySelector('.heat-slider');
-  
-    // Restore any other named fields you persist
-    const saved = (typeof loadNodeState === 'function') ? loadNodeState('Q33') : null;
-    if (saved && typeof applyFormValues === 'function') applyFormValues(q33Root, saved);
-  
-    // Defer restore two frames so we "win" over any late init that sets a default
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const stored = getUserThreshold();
-      if (slider && stored != null) {
-        slider.value = String(stored);
-        syncHeatSliderFill(slider);     // sets --fill and fires input/change
-      }
-    }));
-  
-    // Keep both stores in sync on any edit
-    const persistQ33 = () => {
-      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
-        saveNodeState('Q33', collectFormValues(q33Root));
-      }
-      if (slider) setUserThreshold(slider.value);
-    };
-    q33Root.addEventListener('input',  persistQ33);
-    q33Root.addEventListener('change', persistQ33);
-  
-    // Also write once on entry so downstream screens see a value
-    if (slider) setUserThreshold(slider.value);
+  // ==== Q33: restore + wire the .heat-slider (single source of truth) ====
+if (node && node.id === 'Q33') {
+  const q33Root = document.getElementById('text');
+  const slider  = q33Root.querySelector('input.heat-slider[type="range"], .heat-slider');
+
+  // (optional) restore other named fields
+  if (typeof loadNodeState === 'function' && typeof applyFormValues === 'function') {
+    const saved = loadNodeState('Q33');
+    if (saved) applyFormValues(q33Root, saved);
   }
+
+  // --- Wire once (avoid duplicate listeners on re-entry) ---
+  if (slider && !slider.dataset.wired) {
+    slider.dataset.wired = '1';
+
+    // Keep persistence & fill in sync on edit
+    const onAnyChange = () => {
+      syncHeatSliderFill(slider);
+      setUserThreshold(slider.value);
+    };
+    slider.addEventListener('input',  onAnyChange);
+    slider.addEventListener('change', onAnyChange);
+  }
+
+  // --- Robust restore: win any timing race and repaint fill ---
+  const doRestore = () => {
+    const stored = getUserThreshold();
+    if (slider && stored != null) {
+      const s = String(stored);
+      // set both property and attribute (some styles/readers use @value)
+      slider.value = s;
+      slider.setAttribute('value', s);
+      syncHeatSliderFill(slider);
+      // nudge any listeners that color labels, etc.
+      slider.dispatchEvent(new Event('input',  { bubbles:true }));
+      slider.dispatchEvent(new Event('change', { bubbles:true }));
+    } else if (slider) {
+      // First visit: initialize storage & fill from current default
+      setUserThreshold(slider.value);
+      syncHeatSliderFill(slider);
+    }
+  };
+
+  // Run after DOM paint & after any late initializers that might overwrite defaults
+  requestAnimationFrame(() => requestAnimationFrame(doRestore));
+
+  // Safety: if something still re-writes later, enforce one more time
+  setTimeout(doRestore, 0);
+}
 
   // ==== Q46 / Q47: restore threshold from Q33 ====
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
