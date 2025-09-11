@@ -972,9 +972,13 @@ function ensureConceptBackButton(targetId, backQId) {
   heading.dataset.backInjected = '1';
 }
 
-function jumpToConcept(conceptId, backQId) {
-  window.__pendingConceptScroll = { conceptId, backQId: backQId || __lastQuestionId || 'Q0' };
-  window.__ab2TempVisit = true; // 🔹 mark this visit as temporary
+// Call this when clicking "See concept…" links from Q6/Q33/etc.
+function jumpToConcept(conceptId, backQId){
+  // one-shot intent for the very next AB2 render only
+  window.__pendingConceptScroll = { conceptId, backQId: backQId || currentNode?.id || 'Q0' };
+  // mark as a temp visit so Back skips AB2 once
+  window.__ab2TempVisit = true;
+  // go to AB2
   goToNode('AB2');
 }
 
@@ -1844,6 +1848,9 @@ function restart() {
   lastWasResult = false;
   miniActGate = false;
   window.miniPristine = true;
+  window.__pendingConceptScroll = null;
+  window.__backTargetForAB2 = null;
+  window.__ab2TempVisit = false;
   if (originalTitleHTML) {
     document.getElementById('segmentTitle').innerHTML = originalTitleHTML;
     document.getElementById('skipBtn').style.display = 'none';
@@ -2336,33 +2343,38 @@ function renderNode(node) {
   document.getElementById('text').innerHTML = html;
 
   // ==== Q33: remember .heat-slider ====
-  if (node && node.id === 'Q33') {
-    const q33Root = document.getElementById('text');
-    const slider = q33Root.querySelector('.heat-slider');
-  
-    // Restore generic Q33 fields (if you want)
-    const saved = loadNodeState('Q33');
-    if (saved) applyFormValues(q33Root, saved);
-  
-    // Restore dedicated threshold if present
-    const stored = getUserThreshold();
-    if (slider && stored != null) {
-      slider.value = String(stored);
-      slider.dispatchEvent(new Event('input',{bubbles:true}));
-      slider.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-  
-    // Persist on edit
-    const persistQ33 = () => {
-      saveNodeState('Q33', collectFormValues(q33Root));
-      if (slider) setUserThreshold(slider.value);
-    };
-    q33Root.addEventListener('input',  persistQ33);
-    q33Root.addEventListener('change', persistQ33);
-  
-    // Ensure it’s saved at least once on entry
-    if (slider) setUserThreshold(slider.value);
+  // After: document.getElementById('text').innerHTML = html;
+
+// ==== Q33: restore + persist the .heat-slider ====
+if (node && node.id === 'Q33') {
+  const q33Root = document.getElementById('text');
+  const slider  = q33Root.querySelector('.heat-slider');
+
+  // (optional) restore any other named inputs for Q33
+  const saved = loadNodeState('Q33');
+  if (saved) applyFormValues(q33Root, saved);
+
+  // Restore the slider to the last value the user set
+  const stored = getUserThreshold();
+  if (slider && stored != null) {
+    slider.value = String(stored);
+
+    // fire events so your fill/label/logic update immediately
+    slider.dispatchEvent(new Event('input',  { bubbles:true }));
+    slider.dispatchEvent(new Event('change', { bubbles:true }));
   }
+
+  // Persist on any edit (keeps both generic and dedicated stores in sync)
+  const persistQ33 = () => {
+    saveNodeState('Q33', collectFormValues(q33Root));
+    if (slider) setUserThreshold(slider.value);
+  };
+  q33Root.addEventListener('input',  persistQ33);
+  q33Root.addEventListener('change', persistQ33);
+
+  // Ensure it’s saved at least once on entry (covers first visit)
+  if (slider) setUserThreshold(slider.value);
+}
 
   // ==== Q46 / Q47: restore threshold from Q33 ====
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
@@ -2378,58 +2390,65 @@ function renderNode(node) {
 
   // 🔹 Inject content, but wrap AB2 so we have an element to target
   if (node && node.id === 'AB2') {
+    const textDiv = document.getElementById('text');
     textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
   
     const ab2El = document.getElementById('AB2');
     assignConceptAnchors();
   
-    // Typeset equations safely without breaking rendering
+    // (safe MathJax typeset as you already have)
     try {
       if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
         if (typeof MathJax.typesetClear === 'function') MathJax.typesetClear();
         MathJax.typesetPromise([ab2El]).catch(() => {});
       }
-    } catch (err) {
-      console.warn('MathJax typeset skipped:', err);
-    }
+    } catch (err) { /* no-op */ }
   
-    // Decide what to scroll to:
-    let targetId = null;
-    let backQId  = null;
-  
-    if (window.__pendingConceptScroll && window.__pendingConceptScroll.conceptId) {
-      targetId = window.__pendingConceptScroll.conceptId;
-      backQId  = window.__pendingConceptScroll.backQId || __lastQuestionId || 'Q0';
+    // === NEW: do special behavior ONLY when we have a pending concept scroll ===
+    const intent = window.__pendingConceptScroll;   // {conceptId, backQId} | undefined
+    if (intent && intent.conceptId) {
+      const backQId = intent.backQId || 'Q0';
+      // clear one-shot intent immediately so later AB2 loads are normal
       window.__pendingConceptScroll = null;
-    } else {
-      const hash = (location.hash || '').trim();
-      if (hash.length > 1) {
-        targetId = hash.slice(1);
-        backQId  = __lastQuestionId || 'Q0';
-      }
-    }
-  
-    if (targetId) {
       window.__backTargetForAB2 = backQId;
-      scrollToConcept(targetId, backQId);
+  
+      // 1) optional: flash AB2 heading only for concept intent
+      try { flashAb2Heading('ab2Heading'); } catch(_) {}
+  
+      // 2) scroll to concept
+      scrollToConcept(intent.conceptId, backQId);
+  
+      // 3) handle in-page #anchor clicks only in this intent mode
+      ab2El.addEventListener('click', function (e) {
+        const a = e.target.closest('a[href^="#"]');
+        if (!a) return;
+        const id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        e.preventDefault();
+        history.replaceState(null, '', `#${id}`);
+        scrollToConcept(id, window.__backTargetForAB2 || 'Q0');
+      }, { passive: true });
+  
+      // 4) inject a purple back button (inline, no helper needed)
+      if (!ab2El.querySelector('.ab2-back-btn')) {
+        const btn = document.createElement('button');
+        btn.className = 'next ab2-back-btn'; // "next" gives it the purple style
+        btn.type = 'button';
+        btn.textContent = 'Back';
+        btn.addEventListener('click', () => goToNode(backQId));
+        ab2El.prepend(btn);
+      }
+  
+    } else {
+      // NORMAL AB2: no flash, no forced scroll, no injected back button
+      window.__backTargetForAB2 = null;
+      // optional: clear any stale hash from earlier sessions
+      // history.replaceState(null, '', location.pathname);
     }
   
-    // In-page anchor clicks inside AB2
-    ab2El.addEventListener('click', function (e) {
-      const a = e.target.closest('a[href^="#"]');
-      if (!a) return;
-      const id = a.getAttribute('href').slice(1);
-      if (!id) return;
-      e.preventDefault();
-      history.replaceState(null, '', `#${id}`);
-      scrollToConcept(id, window.__backTargetForAB2 || 'Q0');
-    }, { passive: true });
-  
-    // Aux toggles etc. still need to run
+    // Aux toggles etc.
     setupAuxToggles(node);
     showOrHideRiskInline(node);
-  
-    // Buttons for 'about' stops here
     return;
   }
 
