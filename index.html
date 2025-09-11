@@ -863,6 +863,44 @@ function formatCShort(c){
   return Number(c.toPrecision(4)) + '';
 }
 
+// ---- tiny persist helpers ----
+function saveNodeState(key, obj){
+  try { sessionStorage.setItem('node:'+key, JSON.stringify(obj)); } catch(_) {}
+}
+function loadNodeState(key){
+  try {
+    const raw = sessionStorage.getItem('node:'+key);
+    return raw ? JSON.parse(raw) : null;
+  } catch(_) { return null; }
+}
+// Collect values from inputs/selects/textareas inside a container
+function collectFormValues(root){
+  const out = {};
+  if (!root) return out;
+  root.querySelectorAll('input[name], select[name], textarea[name]').forEach(el => {
+    if (el.type === 'checkbox') out[el.name] = !!el.checked;
+    else if (el.type === 'radio') { if (el.checked) out[el.name] = el.value; }
+    else out[el.name] = el.value;
+  });
+  return out;
+}
+// Apply values back into a container (and fire change/input so mirrors update)
+function applyFormValues(root, vals){
+  if (!root || !vals) return;
+  Object.keys(vals).forEach(name => {
+    const els = root.querySelectorAll(`[name="${CSS.escape(name)}"]`);
+    els.forEach(el => {
+      const v = vals[name];
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if (el.type === 'radio') el.checked = (el.value === v);
+      else el.value = v;
+      // notify listeners
+      el.dispatchEvent(new Event('input', { bubbles:true }));
+      el.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+  });
+}
+  
 /* ============== MINI RENDERERS FOR Q6 & Q7 ============== */
 /* -----------------------------------------------------------
    Shared tiny haptic helper (safe no-op on iOS Safari)
@@ -985,6 +1023,18 @@ function renderMiniQ6(intoEl, node){
   pRow.appendChild(mBox); pRow.appendChild(vBox);
 
   wrap.appendChild(fields); wrap.appendChild(pRow);
+
+  const q6Root = intoEl;  // this is the DOM container for Q6
+
+  // Restore previously saved values (if any)
+  const savedQ6 = loadNodeState('Q6');
+  if (savedQ6) applyFormValues(q6Root, savedQ6);
+  
+  // Save on any edit
+  const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
+  q6Root.addEventListener('input',  persistQ6);
+  q6Root.addEventListener('change', persistQ6);
+  
 
   // SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -1353,6 +1403,81 @@ function renderMiniQ6(intoEl, node){
   wireNumericInput(sevBox, { min:0,  max:10, decimals:2 });
   wireNumericInput(costBox,{ min:0,  max:10, decimals:2 });
   wireNumericInput(probBox,{ min:0.000001, max:999999.99, decimals:6 });
+
+  // ---------- Q6 persist + micromorts lock ----------
+  const q6 = intoEl; // Q6 renders directly into 'intoEl'
+  const unitsSel = q6.querySelector('#miniMode');
+  const sevBox   = q6.querySelector('#miniS');
+  
+  // restore previously saved values (if any)
+  const savedQ6 = loadNodeState('Q6');
+  if (savedQ6) applyFormValues(q6, savedQ6);
+  
+  // your micromorts rule (force S=10 and grey out)
+  function lockSeverity(val=10){
+    if (sevBox){
+      sevBox.value = String(val);
+      sevBox.disabled = true;
+      sevBox.classList.add('is-disabled');
+      sevBox.dispatchEvent(new Event('input', {bubbles:true}));
+      sevBox.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+  }
+  function unlockSeverity(){
+    if (sevBox){
+      sevBox.disabled = false;
+      sevBox.classList.remove('is-disabled');
+    }
+  }
+  function applyUnitsRule(){
+    const mode = unitsSel ? unitsSel.value : '';
+    if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10);
+    else unlockSeverity();
+  }
+  // run once now, and on change
+  applyUnitsRule();
+  if (unitsSel){
+    unitsSel.addEventListener('change', () => {
+      applyUnitsRule();
+      // save after changes
+      saveNodeState('Q6', collectFormValues(q6));
+    });
+  }
+  
+  // number-input UX: don’t fight backspace; sanitize on blur
+  function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
+    if (!inp) return;
+    inp.addEventListener('input', () => {
+      const s = inp.value;
+      const cleaned = s.replace(/[^0-9.\-]/g,'')
+                       .replace(/(.*\..*)\./,'$1')
+                       .replace(/(.*-).*-/,'$1');
+      if (cleaned !== s) inp.value = cleaned;
+      // live-save whenever user types
+      saveNodeState('Q6', collectFormValues(q6));
+    });
+    inp.addEventListener('blur', () => {
+      let v = parseFloat(inp.value);
+      if (!isFinite(v)) { inp.value = ''; saveNodeState('Q6', collectFormValues(q6)); return; }
+      v = Math.max(min, Math.min(max, v));
+      if (decimals != null) v = Number(v.toFixed(decimals));
+      inp.value = String(v);
+      saveNodeState('Q6', collectFormValues(q6));
+    });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    });
+  }
+  
+  // wire Q6 fields + save on any change
+  wireNumericInput(q6.querySelector('#miniS'),   { min:0, max:10, decimals:2 });
+  wireNumericInput(q6.querySelector('#miniVal'), { min:0.000001, max:999999.99, decimals:6 });
+  wireNumericInput(q6.querySelector('#miniC'),   { min:0, max:1e9, decimals:2 });
+  
+  // also save when anything else changes
+  q6.addEventListener('change', () => saveNodeState('Q6', collectFormValues(q6)));
+  q6.addEventListener('input',  () => saveNodeState('Q6', collectFormValues(q6)));
+
 
   // Bottom buttons
   const btns = document.getElementById('buttons');
@@ -2272,6 +2397,21 @@ function renderNode(node) {
     return;
   }
 
+  // After rendering node content...
+  if (currentNode && currentNode.id === 'Q33') {
+    const q33Root = /* the container element you just rendered into */ intoEl; // or your actual var
+  
+    // Restore previously saved values (if any)
+    const saved = loadNodeState('Q33');
+    if (saved) applyFormValues(q33Root, saved);
+  
+    // Save on any edit
+    const persist = () => saveNodeState('Q33', collectFormValues(q33Root));
+    q33Root.addEventListener('input',  persist);
+    q33Root.addEventListener('change', persist);
+  }
+
+  
   // Default content
   let html = node.text || '';
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
