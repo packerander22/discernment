@@ -2156,8 +2156,9 @@ function showOrHideRiskInline(node) {
   slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
   slider.className = 'heat-slider';
   slider.setAttribute('list','riskTicks');
-  slider.value = '1';
-
+  var stored = getUserThreshold();
+  slider.value = (stored != null ? String(stored) : '1');
+  
   createTickRow('top', wrap);
   wrap.appendChild(slider);
   createTickRow('bottom', wrap);
@@ -2184,12 +2185,12 @@ function showOrHideRiskInline(node) {
     }
   }
 
-  applyFromSeverity(1);
+  applyFromSeverity(parseInt(slider.value, 10));
 
   slider.oninput = function() {
     var sev = parseInt(slider.value, 10);
     applyFromSeverity(sev);
-    setUserThreshold(sev);        // <-- ADD THIS LINE
+    setUserThreshold(slider.value);   // <— persist immediately
     if (typeof hapticBump === 'function') hapticBump();
   };
 }
