@@ -1032,7 +1032,7 @@ function renderMiniQ6(intoEl, node){
   const rule = document.createElement('div'); rule.className='rule';
   rule.innerHTML = 'Rule: Only if <span id="miniProbName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.';
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
-  verdict.textContent = 'Enter values to see if action should be considered.';
+  verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(rule); wrap.appendChild(verdict);
 
   // 🔗 Inline “See Probability Concept” link (kept)
@@ -1216,7 +1216,7 @@ function renderMiniQ6(intoEl, node){
     buildCurve(mode);
 
     if (window.miniPristine){
-      verdict.textContent = 'Enter values to see if action should be considered.';
+      verdict.textContent = 'Enter values to see if preventative action should be considered.';
       verdict.classList.remove('ok','no');
       handle.setAttribute('visibility','hidden');
       labelG.setAttribute('visibility','hidden');
@@ -1252,7 +1252,7 @@ function renderMiniQ6(intoEl, node){
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
     const act = (miniMaster.X_user != null) ? (miniMaster.X_user <= Xc + 1e-15) : false;
-    verdict.textContent = act ? 'Verdict: Action should be considered.' : 'Verdict: Action should NOT be considered.';
+    verdict.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
     verdict.classList.toggle('ok', act);
     verdict.classList.toggle('no', !act);
 
@@ -1612,7 +1612,7 @@ function renderMiniQ7(intoEl, node){
 
     const act = (local.X_user != null) ? (local.X_user <= Xc + 1e-15) : false;
     const vEl = document.getElementById('miniVerdict2');
-    vEl.textContent = act ? 'Verdict: Action should be considered.' : 'Verdict: Action should NOT be considered.';
+    vEl.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
     vEl.classList.toggle('ok', act); vEl.classList.toggle('no', !act);
 
     elS.value = String(local.S); elC.value = String(local.C); elM.value = local.mode; elV.value = String(local.val);
