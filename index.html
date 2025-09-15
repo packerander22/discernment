@@ -1,431 +1,2221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Decision Helper</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Discernment: A Decision-Making Guide</title>
+
+<!-- 🔹 Preload the first-screen logo to avoid pop-in -->
+<link rel="preload" as="image" href="./favicon_256_transparent.png">
+
+<link rel="manifest" href="./site.webmanifest?v=4">
+<meta name="theme-color" content="#ffffff">
+<!-- 🔹 Address bar / browser UI color that follows system theme -->
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
+
+<!-- Icons -->
+<link rel="icon" type="image/svg+xml" href="./favicon_transparent.svg">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon_16_transparent.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon_32_transparent.png">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon_48_transparent.png">
+<link rel="icon" type="image/png" sizes="64x64" href="./favicon_64_transparent.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./favicon_192_transparent.png">
+<link rel="icon" type="image/png" sizes="256x256" href="./favicon_256_transparent.png">
+<link rel="icon" type="image/png" sizes="384x384" href="./favicon_384_transparent.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./favicon_512_transparent.png">
+<link rel="shortcut icon" href="./favicon_transparent.ico">
+
+<!-- iOS homescreen -->
+<link rel="apple-touch-icon" sizes="180x180" href="./favicon_180_transparent.png">
+
+<script>
+  // MathJax v3 config: allow \( … \) inline TeX
+  window.MathJax = {
+    tex: {inlineMath: [['\\(','\\)']]},
+    options: {skipHtmlTags: ['script','noscript','style','textarea','pre','code']}
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <style>
-  :root{--bg:#0f172a;--panel:#111827;--ink:#e5e7eb;--muted:#9ca3af;--accent:#60a5fa;--ok:#22c55e;--no:#ef4444;--line:#374151;}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;}
-  .container{max-width:1000px;margin:28px auto;padding:0 16px;}
-  .tabbar{display:flex;gap:10px;margin-bottom:16px}
-  .tab{padding:8px 12px;border-radius:10px;border:1px solid #2b3443;background:#1f2937;cursor:pointer}
-  .tab.active{background:#2563eb;border-color:#2563eb}
-  .card{background:var(--panel);border-radius:12px;padding:16px;border:1px solid #1f2937;box-shadow:0 2px 16px rgba(0,0,0,.25);}
-  h2{margin:0 0 10px 0}
-  .mini-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-  .mini-field{display:flex;flex-direction:column;gap:6px}
-  label{font-size:.95rem}
-  .muted{opacity:.55}
-  .hidden{display:none}
-  .hint{color:var(--muted);font-size:.9rem}
-  input[type="number"], select{background:#0b1220;border:1px solid #1f2937;color:var(--ink);padding:10px;border-radius:10px;outline:none}
-  input[type="checkbox"]{transform:translateY(1px)}
-  .center{display:flex;justify-content:center}
-  .ctrl-btn{cursor:pointer;background:#1f2937;border:1px solid #2b3443;color:var(--ink);padding:8px 12px;border-radius:10px}
-  .btn.next{background:#2563eb;border-color:#2563eb}
-  .btn.back{background:#374151;border-color:#374151}
-  .btn.small{padding:6px 10px;font-size:.9rem}
-  .foot{margin-top:12px;display:flex;gap:10px;justify-content:flex-end}
-  svg{width:100%;height:420px;background:#0b1220;border-radius:10px;border:1px solid #1f2937}
-  .verdict{margin-top:8px;font-weight:600}
-  .verdict.ok{color:var(--ok)} .verdict.no{color:var(--no)}
-  @media (max-width:640px){.mini-fields{grid-template-columns:1fr}}
+  :root {
+    --btn-pad-y:10px; --btn-pad-x:12px;
+    --flash-dur: 1500ms;           /* <- top-level; now it exists */
+
+
+    /* slider custom props */
+    --track-height: 8px;
+    --thumb-size: 28px;
+    --thumb-shadow: 0 1px 3px rgba(0,0,0,.25);
+    --track-bg: #e0e0e0;
+    --fill: #2d6cdf;
+    --pct: 0%;
+    --tick-color: rgba(0,0,0,.35);
+    --tick-thickness: 2px;
+    --tick-length: 6px;
+  }
+
+  body { font-family: Arial, sans-serif; background:#f7f7f7; margin:0; padding:0; }
+  .container { max-width: 650px; margin:auto; padding:20px; }
+  .top-bar { display:flex; justify-content:space-between; margin-bottom:10px; }
+  .card {
+    background:#fff; padding:20px; border-radius:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1); min-height:280px;
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+
+  /* Header */
+  .segment-heading {
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
+    border-bottom:2px solid #ddd; gap:12px; transition: color var(--flash-dur) cubic-bezier(.4,0,.6,1);
+  }
+  .segment-title { display:inline-flex; align-items:center; gap:8px; }
+  .segment-title img.logo {
+    height:1.2em; width:auto; vertical-align:middle; margin-right:6px;
+    aspect-ratio: 1 / 1;
+  }
+  .flash-green  { color: var(--flash-green); }
+  .flash-gold   { color: var(--flash-gold); }
+  .flash-purple { color: var(--flash-purple); }
+
+  /* Give AB2 headings the same fade behavior as the verdict header */
+  .about-wrapper h1,
+  .about-wrapper h2,
+  .about-wrapper h3 {
+    transition: color var(--flash-dur) cubic-bezier(.4,0,.6,1);
+  }
+
+  /* Buttons */
+  button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
+  button.yes { background:#4CAF50; color:#fff; }
+  button.no { background:#F44336; color:#fff; }
+  button.same { background:#1E88E5; color:#fff; }
+  button.next { background:#2196F3; color:#fff; }
+  button.back { background:#555; color:#fff; flex:0 0 auto; }
+  button.restart { background:#9C27B0; color:#fff; flex:0 0 auto; }
+  button.examples-btn, button.viz-btn, button.reasoning-btn { background:#9E9E9E; color:#fff; }
+  .ctrl-btn { flex:1; }
+  button.active { outline:2px solid #000; }
+  
+  button.next:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .segment-heading .skip-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    flex:0 0 auto; padding:var(--btn-pad-y) var(--btn-pad-x);
+    font-size:1rem; line-height:1; border:none; border-radius:5px; cursor:pointer;
+    background:#e9e9e9; color:#333;
+  }
+  .segment-heading .skip-btn:hover { background:#dedede; }
+
+  .text { font-size:1.3em; margin-bottom:12px; white-space:pre-wrap; }
+
+  .controls-row { display:flex; gap:10px; margin:6px 0 18px 0; }
+  .left-controls, .right-controls { flex:1; display:flex; gap:10px; }
+
+  .panel {
+    display:none; border:1px solid #eee; border-radius:6px; padding:10px; background:#fafafa;
+    margin-bottom:18px;
+  }
+  .panel p { margin:6px 0; }
+  .panel img { width:100%; height:auto; display:block; }
+
+  .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
+  .buttons.center { justify-content:center; }
+
+  /* Slider container */
+  .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
+  .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
+  .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
+  .risk-row input[type="range"] { width:100%; }
+  .risk-ticks { display:block; width:100%; }
+
+  .error { color:#B00020; font-size:0.95em; }
+
+  /* === Slider visual customization === */
+  .slider-wrap {
+    position: relative;
+    width: 100%;
+    height: calc(var(--thumb-size) + var(--tick-length) * 2 + 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-x;
+  }
+  
+  /* defaults (only needed once) */
+  .heat-slider{
+    --fill: #3b82f6;            /* start: blue */
+    --track-bg: #e5e7eb;        /* unfilled track */
+    --track-height: 8px;
+    --thumb-size: 22px;
+    --thumb-shadow: 0 1px 2px rgba(0,0,0,.2);
+    --tick-length: 8px;
+    --tick-thickness: 2px;
+    --tick-color: #cbd5e1;
+  }
+  
+  .heat-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: var(--thumb-size);
+    background: transparent;
+    position: relative;
+    z-index: 1;
+  }
+  .heat-slider::-webkit-slider-runnable-track {
+    height: var(--track-height);
+    border-radius: calc(var(--track-height) / 2);
+    background:
+      linear-gradient(to right,
+        var(--fill) 0%,
+        var(--fill) var(--pct),
+        var(--track-bg) var(--pct),
+        var(--track-bg) 100%);
+  }
+  .heat-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #999;
+    box-shadow: var(--thumb-shadow);
+    margin-top: calc((var(--thumb-size) - var(--track-height)) / -2);
+    cursor: pointer;
+  }
+
+  .tick-row {
+    position: absolute;
+    left: calc(var(--thumb-size) / 2);
+    right: calc(var(--thumb-size) / 2);
+    height: var(--tick-length);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .tick-row.top { top: 50%; transform: translateY(calc(-50% - var(--track-height)/2 - 2px)); }
+  .tick-row.bottom { top: 50%; transform: translateY(calc(-50% + var(--track-height)/2 + 2px)); }
+  .tick { position: absolute; width: var(--tick-thickness); height: 100%; background: var(--tick-color); transform: translateX(-50%); }
+
+  .heat-slider::-moz-range-track { height: var(--track-height); border-radius: calc(var(--track-height) / 2); background: var(--track-bg); }
+  .heat-slider::-moz-range-progress { height: var(--track-height); border-radius: calc(var(--track-height) / 2); background: var(--fill); }
+  .heat-slider::-moz-range-thumb { width: var(--thumb-size); height: var(--thumb-size); border-radius: 50%; background: #fff; border: 2px solid #999; box-shadow: var(--thumb-shadow); cursor: pointer; }
+  .heat-slider::-ms-track { height: var(--track-height); border-color: transparent; color: transparent; background: transparent; }
+  .heat-slider::-ms-fill-lower { background: var(--fill); border-radius: calc(var(--track-height)/2); }
+  .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
+  .heat-slider::-ms-thumb { width: var(--thumb-size); height: var(--thumb-size); border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow); }
+
+
+  /* Math-style text for inline formulas */
+  .math {
+    font-family: "Times New Roman", "STIX Two Math", "Cambria Math", serif;
+    font-style: italic;
+    font-size: 1.05em;
+    letter-spacing: 0.5px;
+    white-space: nowrap;   /* keep formulas together */
+    color: var(--text);    /* default = light theme text */
+  }
+  
+  .math sub,
+  .math sup {
+    font-size: 0.75em;
+    font-style: normal;    /* keep subscripts/superscripts upright */
+    vertical-align: baseline;
+    position: relative;
+  }
+  
+  .math sub { bottom: -0.2em; }
+  .math sup { top: -0.4em; }
+  
+  /* Dark mode override */
+  @media (prefers-color-scheme: dark) {
+    .math {
+      color: var(--label-text);  /* lighter tone in dark theme */
+    }
+  }
+  
+  /* Manual toggle support */
+  :root[data-theme="dark"] .math {
+    color: var(--label-text);
+  }
+  :root[data-theme="light"] .math {
+    color: var(--text);
+  }
+
+  /* anchors/sections that deep-link should respect sticky headers etc. */
+  [id] { scroll-margin-top: 16px; } /* or the height of any sticky header */
+
+  /* Make the injected back button the same purple as Restart (#9C27B0) */
+  .about-wrapper .concept-back {
+    display: inline-block;
+    margin: 8px 0 12px 0;
+    padding: 8px 12px;
+    font: inherit;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+  }
+  .about-wrapper .concept-back:hover { filter: brightness(1.06); }
+  .about-wrapper .concept-back:active { filter: brightness(0.96); }
+  
+  .about-wrapper .concept-back:focus {
+    outline: 2px solid rgba(31, 76, 255, .4);
+    outline-offset: 2px;
+  }
+  
+  /* grey out a locked control (micromorts) */
+  .is-disabled { opacity: .55; pointer-events: none; }
+
+  /* ================================
+     THEME TOKENS + OVERRIDES
+     ================================ */
+  :root { color-scheme: light dark; }
+
+  /* Light defaults */
+  :root {
+    --bg: #f7f7f7;
+    --card: #ffffff;
+    --text: #111111;
+    --subtle-text: #333333;
+    --border: #dddddd;
+    --shadow: 0 2px 6px rgba(0,0,0,0.10);
+
+    --btn-yes: #4CAF50;
+    --btn-no: #F44336;
+    --btn-same: #1E88E5;
+    --btn-next: #2196F3;
+    --btn-back: #555555;
+    --btn-restart: #9C27B0;
+    --btn-muted: #9E9E9E;
+    --btn-text: #ffffff;
+
+    --thumb-border: #999999;
+    --tick-color: rgba(0,0,0,.35);
+    --track-bg: #e0e0e0;
+
+    --if-accent: #2e7d32;        /* ✅ used for Verdict green + graph shading */
+    --when-accent: goldenrod;
+    --result-accent: #9C27B0;
+
+    /* Graph theme tokens */
+    --axis-color: #555;
+    --axis-color-dim: #777;
+    --grid-color: rgba(0,0,0,.12);
+    --curve-color: #1f4cff;
+    --handle-fill: #ff3b3b;
+    --handle-stroke: #ffffff;
+    --shade-in: color-mix(in oklab, var(--if-accent), #ffffff 84%);
+    --shade-out: rgba(0,0,0,.06);
+    --label-bg: #ffffff;
+    --label-text: #111111;
+  }
+
+  /* Dark overrides follow system */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115;
+      --card: #171a21;
+      --text: #e9edf1;
+      --subtle-text: #c7cbd2;
+      --border: #2a2f3a;
+      --shadow: 0 2px 6px rgba(0,0,0,0.35);
+
+      --btn-yes: #4CAF50;
+      --btn-no: #EF5350;
+      --btn-same: #42A5F5;
+      --btn-next: #42A5F5;
+      --btn-back: #8e8e93;
+      --btn-restart: #BA68C8;
+      --btn-muted: #6c6f76;
+      --btn-text: #ffffff;
+
+      --thumb-border: #b5bcc8;
+      --tick-color: rgba(255,255,255,.38);
+      --track-bg: #2a2f3a;
+
+      --if-accent: #5bd36a;   /* ✅ same green family for dark */
+      --when-accent: #f1c24c;
+      --result-accent: #c77dff;
+
+      /* Graph in dark */
+      --axis-color: #e9edf1;         /* ✅ tick/label white-ish */
+      --axis-color-dim: #c7cbd2;
+      --grid-color: rgba(255,255,255,.18);
+      --curve-color: #8fb3ff;
+      --handle-fill: #ff6b6b;
+      --handle-stroke: #171a21;
+      --shade-in: color-mix(in oklab, var(--if-accent), #000 70%); /* subtle green */
+      --shade-out: rgba(255,255,255,.05);
+      --label-bg: #0f1115;
+      --label-text: #e9edf1;
+    }
+  }
+
+  /* Manual override via data-theme (appears only if user toggles) */
+  :root[data-theme="light"] {
+    color-scheme: light;
+    /* (re-apply the same LIGHT tokens as above) */
+    --bg: #f7f7f7; --card:#ffffff; --text:#111111; --subtle-text:#333333; --border:#dddddd; --shadow:0 2px 6px rgba(0,0,0,0.10);
+    --btn-yes:#4CAF50; --btn-no:#F44336; --btn-same:#1E88E5; --btn-next:#2196F3; --btn-back:#555; --btn-restart:#9C27B0; --btn-muted:#9E9E9E; --btn-text:#fff;
+    --thumb-border:#999; --tick-color:rgba(0,0,0,.35); --track-bg:#e0e0e0;
+    --if-accent:#2e7d32; --when-accent:goldenrod; --result-accent:#9C27B0;
+    --axis-color:#555; --axis-color-dim:#777; --grid-color:rgba(0,0,0,.12);
+    --curve-color:#1f4cff; --handle-fill:#ff3b3b; --handle-stroke:#fff;
+    --shade-in: color-mix(in oklab, var(--if-accent), #ffffff 84%);
+    --shade-out: rgba(0,0,0,.06);
+    --label-bg:#fff; --label-text:#111;
+  }
+  :root[data-theme="dark"]  {
+    color-scheme: dark;
+    --bg:#0f1115; --card:#171a21; --text:#e9edf1; --subtle-text:#c7cbd2;
+    --border:#2a2f3a; --shadow:0 2px 6px rgba(0,0,0,0.35);
+    --btn-yes:#4CAF50; --btn-no:#EF5350; --btn-same:#42A5F5; --btn-next:#42A5F5;
+    --btn-back:#8e8e93; --btn-restart:#BA68C8; --btn-muted:#6c6f76; --btn-text:#fff;
+    --thumb-border:#b5bcc8; --tick-color:rgba(255,255,255,.38); --track-bg:#2a2f3a;
+    --if-accent:#5bd36a; --when-accent:#f1c24c; --result-accent:#c77dff;
+
+    --axis-color:#e9edf1; --axis-color-dim:#c7cbd2; --grid-color:rgba(255,255,255,.18);
+    --curve-color:#8fb3ff; --handle-fill:#ff6b6b; --handle-stroke:#171a21;
+    --shade-in: color-mix(in oklab, var(--if-accent), #000 70%);
+    --shade-out: rgba(255,255,255,.05);
+    --label-bg:#0f1115; --label-text:#e9edf1;
+  }
+
+  /* Map existing components to tokens (non-destructive overrides) */
+  body { background: var(--bg); color: var(--text); }
+  .card { background: var(--card); color: var(--text); box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .segment-heading { border-bottom: 2px solid var(--border); }
+  .flash-gold  { color: var(--when-accent) !important; }
+  .flash-green { color: var(--if-accent) !important; }
+  .flash-purple{ color: var(--result-accent) !important; }
+
+  .panel { background: color-mix(in oklab, var(--card), var(--bg) 8%); border:1px solid var(--border); }
+  .risk-inline { background: color-mix(in oklab, var(--card), var(--bg) 8%); border:1px solid var(--border); }
+  .tick { background: var(--tick-color); }
+  .heat-slider::-webkit-slider-thumb { border: 2px solid var(--thumb-border); }
+  .heat-slider::-moz-range-thumb { border: 2px solid var(--thumb-border); }
+  .heat-slider::-ms-thumb { border: 2px solid var(--thumb-border); }
+
+  .segment-heading .skip-btn {
+    background: color-mix(in oklab, var(--card), var(--text) 12%);
+    color: var(--subtle-text);
+  }
+  .segment-heading .skip-btn:hover {
+    background: color-mix(in oklab, var(--card), var(--text) 20%);
+  }
+
+  /* Buttons pick up theme tokens */
+  button { color: var(--btn-text); }
+  button.yes      { background: var(--btn-yes); }
+  button.no       { background: var(--btn-no); }
+  button.same     { background: var(--btn-same); }
+  button.next     { background: var(--btn-next); }
+  button.back     { background: var(--btn-back); }
+  button.restart  { background: var(--btn-restart); }
+  button.examples-btn, button.viz-btn, button.reasoning-btn { background: var(--btn-muted); }
+
+  /* ====== Graph typography & spacing (bigger, bolder, more outside) ====== */
+  .graph-axis text { font-size: 14px; font-weight: 600; fill: var(--axis-color); }
+  .graph-axis .dim  { fill: var(--axis-color-dim); }
+  .graph-grid line  { stroke: var(--grid-color); stroke-width: 1; }
+  .graph-curve      { fill:none; stroke: var(--curve-color); stroke-width: 2.5; }
+  .graph-handle     { fill: var(--handle-fill); stroke: var(--handle-stroke); stroke-width: 2; cursor: pointer; touch-action:none; }
+  .graph-shade-in   { fill: var(--if-accent); fill-opacity: .18; }  /* ✅ green shading */
+  .graph-shade-out  { fill: var(--shade-out); }
+
+  .ptlabel    { font-size: 16px; font-weight: 700; fill: var(--label-text); pointer-events:none; }
+  .ptlabel-bg { fill: var(--label-bg); fill-opacity:.98; stroke: var(--border); rx:10; ry:10; }
+  
+  /* ===== Rule + Verdict unified styles ===== */
+  .rule    { font-weight:700; margin-top:14px; }
+  .verdict { margin-top:12px; font-weight:700; }  /* top-only spacing */
+  .verdict.ok { color: var(--if-accent); }
+  .verdict.no { color: var(--subtle-text); }
+
+  /* ==== MINI GRAPH styles (additive) ==== */
+  .mini-lead { margin-bottom: 10px; }
+  .mini-wrap { display:block; border:1px solid var(--border); border-radius:8px; background: color-mix(in oklab, var(--card), var(--bg) 6%); padding:12px; margin:10px 0 16px; overflow: visible; }
+  .mini-wrap > a{font-size:.95rem;text-decoration:underline;color:var(--curve-color);margin-top:8px;display:inline-block}
+  .mini-fields { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 560px){ .mini-fields { grid-template-columns: 1fr 1fr; } }
+  .mini-field { display:flex; flex-direction:column; gap:6px; }
+  .mini-field input[type="number"], .mini-field select{
+    padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--card); color:var(--text); width: 100%; box-sizing: border-box;
+  }
+  
+  .mini-muted { opacity:.65; }
+  .verdict.ok { color: var(--if-accent); }
+  .verdict.no { color: var(--subtle-text); }
+  
+  /* SVG */
+  .mini-svg{width:100%;height:auto;display:block;touch-action:none;overflow:visible}
+  .mini-axis line{stroke: var(--grid-color);stroke-width: 1;opacity: .35}
+  .mini-axis text{font-size:14px; fill: var(--text); opacity:0.85; font-weight:600}
+  .mini-curve{fill:none;stroke:#1f4cff;stroke-width:2.5}
+  @media (prefers-color-scheme: dark) {
+    .mini-curve{stroke:#7ea3ff}
+  }
+  .mini-shade-in{fill:color-mix(in oklab, var(--if-accent), transparent 80%)}
+  .mini-shade-out{fill:transparent}
+  .mini-handle{fill:#ff3b3b;stroke:#fff;stroke-width:2;cursor:pointer;touch-action:none}
+  .mini-ptlabel{font-size:16px;font-weight:800;pointer-events:none; fill: var(--text); }
+  .mini-ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
+  .mini-axes-label{font-weight:800; font-size:16px; fill: var(--text); opacity:.9}
+  
 </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-VJSYRKHSRM');
+</script>
 </head>
 <body>
 <div class="container">
-  <div class="tabbar">
-    <div class="tab active" data-page="q6">Q6 • Decide</div>
-    <div class="tab" data-page="q7">Q7 • Explore</div>
-    <div class="tab" data-page="ab2">AB2 • How it works</div>
+  <div class="top-bar">
+    <button class="back" id="backBtn" onclick="goBack()" type="button">Back</button>
+    <!-- 🔹 Theme toggle -->
+    <button class="back" id="themeToggle" type="button" style="display:none;">Theme</button>
+    <button class="restart" id="restartTop" onclick="restart()" type="button">Restart</button>
   </div>
 
-  <!-- Q6 -->
-  <section id="q6" class="panel">
-    <h2>Should I act?</h2>
-    <div class="center" style="margin-bottom:10px">
-      <div class="mini-field" style="min-width:240px; width:100%">
-        <label>Total instances (N)</label>
-        <input id="N" type="number" min="1" step="1" value="1">
-      </div>
+  <div class="card">
+    <div id="segmentHeading" class="segment-heading">
+      <span id="segmentTitle" class="segment-title">
+        <img
+          src="./favicon_256_transparent.png"
+          alt="Discernment Logo"
+          class="logo"
+          width="256"
+          height="256"
+          loading="eager"
+          fetchpriority="high"
+          decoding="sync"
+        >
+        Discernment: A Decision-Making Guide
+      </span>
+      <button id="skipBtn" class="skip-btn" style="display:none;" title="Skip to When You Should Act" type="button">Skip ⏭</button>
     </div>
 
-    <div class="mini-fields" id="q6Fields">
-      <!-- Severity -->
-      <div class="mini-field">
-        <label>Severity (S) — up to 10 <span class="hint">| avg per instance</span></label>
-        <div class="hint" id="sevRow"><input id="tgSev" type="checkbox"> varies across instances</div>
-        <input id="S" type="number" min="0" max="10" step="0.01" placeholder="e.g. 5">
-        <div id="sevExtra" class="mini-field hidden">
-          <div class="hint">Total extra severity across outliers (sum)</div>
-          <input id="Sextra" type="number" step="any" placeholder="e.g. 3 (sum of outliers)">
-        </div>
-      </div>
+    <div>
+      <div id="text" class="text"></div>
 
-      <!-- Cost -->
-      <div class="mini-field">
-        <label>Cost (C) — up to 10 <span class="hint">| per instance</span></label>
-        <div class="hint" id="costRow"><input id="tgCost" type="checkbox"> varies across instances</div>
-        <input id="C" type="number" min="0" max="10" step="0.01" placeholder="e.g. 1">
-        <div id="costExtra" class="mini-field hidden">
-          <div class="hint">Total extra cost across outliers (sum)</div>
-          <input id="Cextra" type="number" step="any" placeholder="e.g. 2 (sum of outliers)">
-        </div>
+      <div class="controls-row">
+        <div id="leftControlsWrapper" class="left-controls"></div>
+        <div id="rightControlsWrapper" class="right-controls"></div>
       </div>
 
-      <!-- Probability -->
-      <div class="mini-field">
-        <label>Probability unit</label>
-        <select id="mode">
-          <option value="oneInX">1 in X</option>
-          <option value="percent">Percentage (%)</option>
-          <option value="micromort">Micromorts</option>
-        </select>
-        <div class="mini-field">
-          <label id="probLabel">Enter X (for “1 in X”)</label>
-          <input id="pVal" type="number" min="0" step="any" placeholder="e.g. 1,000,000">
-        </div>
-        <div class="hint" id="probRow"><input id="tgProb" type="checkbox"> probability varies across instances</div>
-
-        <!-- Groups -->
-        <div id="groupsWrap" class="mini-field hidden">
-          <div id="groups"></div>
-          <div class="center"><button id="addGroup" class="btn back small" type="button">Add probability group</button></div>
-          <div id="countMsg" class="hint" style="text-align:center;color:#f59e0b"></div>
-        </div>
-      </div>
+      <!-- Shared panel for examples, viz, reasoning -->
+      <div id="sharedPanel" class="panel" aria-hidden="true" role="region" aria-live="polite"></div>
+      <!-- Inline risk UI -->
+      <div id="riskInline" class="risk-inline" aria-hidden="true"></div>
+      <div id="errorBox" class="error" role="alert" aria-live="assertive"></div>
     </div>
 
-    <div style="margin-top:12px">
-      <svg id="plot" viewBox="0 0 900 420"></svg>
-      <div id="verdict" class="verdict"></div>
-    </div>
-
-    <div class="foot">
-      <button class="back" id="reset" type="button" class="restart">Restart</button>
-      <button class="back" id="continue" type="button">Continue</button>
-    </div>
-  </section>
-
-  <!-- Q7 -->
-  <section id="q7" class="card hidden">
-    <h2>Try different points (does not change Q6)</h2>
-    <div class="mini-fields muted">
-      <div class="mini-field"><label>Severity (S)</label><input disabled placeholder="Q6 value"></div>
-      <div class="mini-field"><label>Cost (C)</label><input disabled placeholder="Q6 value"></div>
-      <div class="mini-field"><label>Probability unit</label><input disabled placeholder="Q6 value"></div>
-      <div class="mini-field"><label>Instances (N)</label><input disabled placeholder="Q6 value"></div>
-    </div>
-    <div style="margin-top:12px">
-      <svg id="plotQ7" viewBox="0 0 900 420"></svg>
-      <div id="verdictQ7" class="verdict"></div>
-    </div>
-    <div class="foot">
-      <button class="back" data-page="q6">Back to Q6</button>
-    </div>
-  </section>
-
-  <!-- AB2 -->
-  <section id="ab2" class="card hidden">
-    <h2>How the math works</h2>
-    <div id="ab2Body"></div>
-  </section>
+    <div id="buttons" class="buttons"></div>
+  </div>
 </div>
 
 <script>
-// ---------- Utilities
-const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-const toProb=(mode,val)=>{
-  if(val==null||isNaN(val)) return null;
-  if(mode==='oneInX') return (val<=0)?null:1/val;
-  if(mode==='percent') return val/100;
-  if(mode==='micromort') return val/1_000_000;
-  return null;
-};
-const fmt1 = x => x>=1 ? Number(x.toFixed(3)).toString() : Number(x.toPrecision(3)).toString();
-const fmtProb = (p)=>{
-  if(p<=0) return '0';
-  if(p<1e-4) return '1 in '+fmt1(1/p);
-  if(p<0.01) return (p*100).toFixed(3)+'%';
-  return (p*100).toFixed(2)+'%';
-};
+/* ======= THEME INIT + TOGGLE ======= */
+(function initTheme(){
+  const root = document.documentElement;
+  const themeBtn = document.getElementById('themeToggle');
+  const mqDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
 
-// ---------- DOM + State
-const $ = s => document.querySelector(s);
-const el = {
-  N:$('#N'), S:$('#S'), C:$('#C'), mode:$('#mode'), pVal:$('#pVal'),
-  tgSev:$('#tgSev'), tgCost:$('#tgCost'), tgProb:$('#tgProb'),
-  sevRow:$('#sevRow'), costRow:$('#costRow'), probRow:$('#probRow'),
-  sevExtra:$('#sevExtra'), Sextra:$('#Sextra'),
-  costExtra:$('#costExtra'), Cextra:$('#Cextra'),
-  groupsWrap:$('#groupsWrap'), groups:$('#groups'), addGroup:$('#addGroup'),
-  countMsg:$('#countMsg'),
-  plot:$('#plot'), verdict:$('#verdict'),
-  cont:$('#continue'), reset:$('#reset'),
-  plotQ7:$('#plotQ7'), verdictQ7:$('#verdictQ7'),
-  ab2Body:$('#ab2Body')
-};
-const state = {N:1,S:null,C:null,mode:'oneInX',pVal:null,sevVar:false,costVar:false,probVar:false,Sextra:null,Cextra:null,groups:[]};
-
-// ---------- AB2 content
-el.ab2Body.innerHTML = `
-<h3>Inputs & Units</h3>
-<ul>
-  <li><b>Severity S</b> (0–10): average per instance.</li>
-  <li><b>Cost C</b> (0–10): cost per instance.</li>
-  <li><b>Probability</b> per instance in one unit: <code>1 in X</code>, <code>%</code>, or <code>micromorts</code>.</li>
-  <li><b>N</b>: how many instances.</li>
-  <li><b>Varies across instances</b>: add outlier groups and optional extra totals for S and C.</li>
-</ul>
-<h3>Exact multi‑instance probability</h3>
-<pre>n_base = N − Σ_g n_g
-P(any) = 1 − (1 − p_base)^{n_base} × ∏_g (1 − p_g)^{n_g}
-Σ p_i  = n_base·p_base + Σ_g n_g·p_g</pre>
-<h3>Severity & cost across N</h3>
-<pre>C_total = N·C_usual + C_extra
-S_avg   = (N·S_usual + S_extra)/N</pre>
-<h3>Decision rule</h3>
-<pre>EV_downside = S_avg × (Σ p_i)</pre>
-<p>Act iff <code>EV_downside &gt; C_total</code>.</p>`;
-
-// ---------- Groups UI
-function drawGroups(){
-  el.groups.innerHTML = '';
-  state.groups.forEach((g,i)=>{
-    const row = document.createElement('div');
-    row.className = 'mini-fields';
-    row.innerHTML = `
-      <div class="mini-field"><label>Group ${i+1} count</label><input data-i="${i}" data-k="count" type="number" min="0" step="1" value="${g.count||0}"></div>
-      <div class="mini-field"><label>Unit</label>
-        <select data-i="${i}" data-k="mode">
-          <option value="oneInX" ${g.mode==='oneInX'?'selected':''}>1 in X</option>
-          <option value="percent" ${g.mode==='percent'?'selected':''}>Percentage (%)</option>
-          <option value="micromort" ${g.mode==='micromort'?'selected':''}>Micromorts</option>
-        </select>
-      </div>
-      <div class="mini-field"><label>Value</label><input data-i="${i}" data-k="val" type="number" step="any" value="${g.val??''}" placeholder="e.g. 100,000"></div>
-      <div class="mini-field"><label>&nbsp;</label><button class="btn back small" data-remove="${i}" type="button">Remove</button></div>`;
-    el.groups.appendChild(row);
-  });
-  el.countMsg.textContent = '';
-}
-
-// ---------- Visibility
-function refreshVisibility(){
-  const N = Number(el.N.value||1);
-  const dis = (N===1);
-  function setRow(cb,row){
-    cb.disabled = dis;
-    row.classList.toggle('muted', dis);
-    if(dis) cb.checked = false;
+  let metaTheme = document.querySelector('meta[name="theme-color"]:not([media])');
+  if (!metaTheme) {
+    metaTheme = document.createElement('meta');
+    metaTheme.name = 'theme-color';
+    document.head.appendChild(metaTheme);
   }
-  setRow(el.tgSev, el.sevRow);
-  setRow(el.tgCost, el.costRow);
-  setRow(el.tgProb, el.probRow);
 
-  const hideSev  = dis || !el.tgSev.checked;
-  const hideCost = dis || !el.tgCost.checked;
-  const hideProb = dis || !el.tgProb.checked;
-
-  el.sevExtra.classList.toggle('hidden', hideSev);
-  el.costExtra.classList.toggle('hidden', hideCost);
-  el.groupsWrap.classList.toggle('hidden', hideProb);
-
-  if(hideSev) el.Sextra.value = '';
-  if(hideCost) el.Cextra.value = '';
-  if(hideProb){
-    state.groups = [];
-    el.groups.innerHTML = '';
-    el.countMsg.textContent = '';
+  function getSetting() {
+    const saved = localStorage.getItem('theme');
+    return (saved === 'light' || saved === 'dark' || saved === 'system') ? saved : 'system';
   }
-}
-
-// ---------- Math
-function computeAll(st){
-  const N = Math.max(1, st.N|0);
-  const pBase = toProb(st.mode, st.pVal);
-  if(pBase==null) return {ok:false, reason:'Enter a valid probability.'};
-
-  let used=0, prodNone=1, sumP=0;
-  if(st.probVar){
-    for(const g of st.groups){
-      const cnt = Math.max(0, g.count|0);
-      const pg = toProb(g.mode, g.val);
-      if(pg==null) return {ok:false, reason:'Check group probabilities.'};
-      used += cnt;
-      prodNone *= Math.pow(1-pg, cnt);
-      sumP += cnt*pg;
+  function getEffectiveTheme(setting) {
+    if (setting === 'dark') return 'dark';
+    if (setting === 'light') return 'light';
+    return (mqDark && mqDark.matches) ? 'dark' : 'light';
+  }
+  function setThemeColor(effective) {
+    metaTheme.setAttribute('content', effective === 'dark' ? '#0b0b0d' : '#ffffff');
+  }
+  function setButtonLabel() {
+    if (!themeBtn) return;
+    const setting = getSetting();
+    const effective = getEffectiveTheme(setting);
+    themeBtn.textContent = 'Theme: ' + (setting.charAt(0).toUpperCase() + setting.slice(1));
+    themeBtn.title = 'Effective: ' + (effective === 'dark' ? 'Dark' : 'Light');
+  }
+  function applySetting(setting) {
+    if (setting === 'system') {
+      root.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'system');
+    } else {
+      root.dataset.theme = setting;
+      localStorage.setItem('theme', setting);
     }
-    if(used>N) return {ok:false, reason:'Group counts exceed N.'};
+    const effective = getEffectiveTheme(setting);
+    setThemeColor(effective);
+    setButtonLabel();
   }
-  const nBase = N - used;
-  prodNone *= Math.pow(1-pBase, nBase);
-  sumP += nBase*pBase;
 
-  const S = Number(st.S ?? NaN);
-  const C = Number(st.C ?? NaN);
-  if(!isFinite(S) || !isFinite(C)) return {ok:false, reason:'Enter S and C.'};
-  if(S<0 || S>10 || C<0 || C>10) return {ok:false, reason:'S and C must be 0–10.'};
+  applySetting(getSetting());
 
-  const Sextra = st.sevVar ? Number(st.Sextra ?? 0) : 0;
-  const Cextra = st.costVar ? Number(st.Cextra ?? 0) : 0;
+  if (themeBtn) {
+    themeBtn.onclick = function(){
+      const setting = getSetting();
+      const next = (setting === 'system') ? 'dark' :
+                   (setting === 'dark')   ? 'light' : 'system';
+      applySetting(next);
+    };
+  }
 
-  const Ctotal = N*C + Cextra;
-  const Savg = (N*S + Sextra)/N;
-  const EVdown = Savg * sumP;
+  if (mqDark) {
+    mqDark.addEventListener('change', () => {
+      if (getSetting() === 'system') {
+        setButtonLabel();
+        setThemeColor(getEffectiveTheme('system'));
+      }
+    });
+  }
+  window.__refreshThemeButtonLabel = setButtonLabel;
+})();
 
-  const act = EVdown > Ctotal;
-  return {ok:true, act, sumP, Savg, Ctotal, EVdown, Pany: 1 - prodNone};
+/* ======= FLOW JSON (Q0–Q47 + About) ======= */
+var flowchart = [
+  { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and sliders later). Answer everything to the best of your knowledge, and if you don't know something, do what you can to find out (once there aren't any other more important things to do).", "next": "Q1" },
+  /* ===== IF YOU SHOULD ACT ===== */
+  { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1",  "no": "Q2" },
+  { "id": "Q2",  "type": "question", "text": "Is there a current <i>real problem</i> or desired functional QoL (quality of life) improvement, rather than just a <i>“problem”</i> or preference that doesn’t affect performance or outcomes?", "yes": "Q10",  "no": "Q3" },
+  { "id": "Q3",  "type": "question", "text": "Is there cause for a future potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q4" },
+  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a future POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "R2" },
+
+  { "id": "Q5",  "type": "question", "text": "Is the future potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
+
+  /* ==== NEW Q6: mini interactive slide ==== */
+  { "id": "Q6", "type": "mini", "text": "Use the interactive tool below to weigh the estimated <b>Severity</b>, <b>Cost</b>, and <b>Probability</b> of this future potential problem (for just this instance). Enter them into the boxes, and choose the probability measurement unit that applies.", "yes": "Q10", "no": "Q7" },
+
+  /* ==== NEW Q7: visualization-only slide ==== */
+  { "id": "Q7", "type": "miniViz", "text": "Is there a time further down the road that the circumstances in the <i>previous question</i> could change and flip the verdict?\nNote: This slide does not change your original input unless you go back and edit the last slide.", "yes": "R3", "no": "Q21" },
+  { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q11",  "no": "R4" },
+  { "id": "Q11", "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
+  { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q14", "no": "Q13" },
+  { "id": "Q13", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s within your control or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
+
+  { "id": "Q14", "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q15", "no": "Q16" },
+  { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q16" },
+  /* ==== Q16 split into trio (cost-before, cost-after, total) ==== */
+  { "id": "Q16", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it (for just this instance)?", "yes": "Q17", "no": "Q20" },
+  { "id": "Q17", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it (for just this instance)?", "yes": "Q18", "no": "Q20" },
+  { "id": "Q18", "type": "question", "text": "Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q22", "no": "Q20", "same": "Q19" },
+
+  { "id": "Q19", "type": "question", "text": "All things considered, would you <i>rather</i> address it than not?", "yes": "Q22", "no": "Q20" },
+  { "id": "Q20", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "Q21" },
+  { "id": "Q21", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s worth it or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
+  { "id": "Q22", "type": "question", "text": "Does addressing this issue involve a <i>diminishing returns</i> curve for effort applied?", "yes": "Q23", "no": "Q24" },
+  { "id": "Q23", "type": "info",     "text": "Find the <i>point of diminishing returns</i> and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL <i>without the addictive pull</i> and possibly even in a <i>better overall way</i>. Treat this approach as a \"better\", more effective overall solution, and <i>ALWAYS</i> use this approach over the original if it's available; if not, you may use the original approach if needed—but <i>only</i> with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q24" },
+  { "id": "Q24", "type": "question", "text": "Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an <i>objective sweet spot</i> where clear information is available to you?", "yes": "Q25", "no": "Q26" },
+  { "id": "Q25", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q31" },
+
+  { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed (assuming any potential future problems would occur)?", "yes": "Q27", "no": "R2" },
+  { "id": "Q27", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q31", "no": "Q28" },
+  { "id": "Q28", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q29", "no": "R2" },
+  { "id": "Q29", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time this situation arises</i>? (Or at least this time knowing it’s <i>temporary</i>?)", "yes": "Q31", "no": "Q30" },
+  { "id": "Q30", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL), in the long term or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
+  /* ===== WHEN YOU SHOULD ACT ===== */
+  { "id": "Q31", "type": "question", "text": "Does this address a potential <i>future</i> problem?", "yes": "Q32", "no": "Q35" },
+  { "id": "Q32", "type": "question", "text": "Does addressing this issue involve <i>preventative maintenance</i>?", "yes": "Q37", "no": "Q35" },
+
+  /* Severity selection */
+  { "id": "Q33", "type": "info",     "text": "Set the estimated catastrophic severity if you waited too long to act. (1-10)", "next": "Q34" },
+  { "id": "Q34", "type": "question", "text": "Would there be <i>guaranteed clear telltale signs</i> of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "Q46", "no": "Q47" },
+
+  /* Availability / timing */
+  { "id": "Q35", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria), assuming you could do it whenever you wanted?", "yes": "Q39", "no": "Q36" },
+  { "id": "Q36", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q39", "no": "R5" },
+
+  { "id": "Q37", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria)?", "yes": "Q33", "no": "Q38" },
+  { "id": "Q38", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q33", "no": "R5" },
+  { "id": "Q39", "type": "question", "text": "Is this solution <i>currently</i> available?", "yes": "Q40", "no": "Q41" },
+  { "id": "Q40", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q41", "no": "R7" },
+
+  { "id": "Q41", "type": "question", "text": "Assuming you waited until it was available, would the expected <i>overall benefits</i> of using this solution outweigh the expected <i>overall downsides</i> of having to wait?", "yes": "Q44", "no": "Q43", "same": "Q42" },
+  { "id": "Q42", "type": "question", "text": "All things considered, would you <i>rather</i> use this solution?", "yes": "Q44", "no": "Q43" },
+
+  { "id": "Q43", "type": "question", "text": "Is there a <i>next best</i> solution you know of?", "yes": "R5",  "no": "R4" },
+  { "id": "Q44", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
+  { "id": "Q45", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
+
+  /* WHEN thresholds */
+  { "id": "Q46", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
+  { "id": "Q47", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
+  /* RESULTS */
+  { "id": "R1",  "type": "result",   "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
+  { "id": "R2",  "type": "result",   "text": "<i>Don’t worry about it:)</i>" },
+  { "id": "R3",  "type": "result",   "text": "If that time ever does come, re-evaluate the issue. Until then, (once there aren't any other more important things to do), consider any other solutions that could work and be worth it, or perhaps even be <i>better overall</i>." },
+  { "id": "R4",  "type": "result",   "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, <i>find a solution or solutions</i>. If not, put in as much effort as you deem worth it." },
+  { "id": "R5",  "type": "result",   "text": "Consider any other solutions, from best to worst, if you haven’t already. Run them through the chart." },
+  { "id": "R6",  "type": "result",   "text": "Wait until this solution is available, then solve it once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any other solutions that could also work and be worth it." },
+  { "id": "R7",  "type": "result",   "text": "Address it <i>sooner than later</i>, once there aren’t any other more important things to do." },
+  { "id": "R8",  "type": "result",   "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any other solutions that could either also work and be worth it, or—in the case of preventative maintenance—mitigate consequences if failure did occur." },
+  { "id": "R9",  "type": "result",   "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) are met, once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any solutions that would mitigate consequences if failure did occur." },
+
+  /* ===== ABOUT MENU + PAGES ===== */
+  { "id": "AB0", "type": "aboutMenu", "heading": "About", "text": "Choose a section to learn more about the guide and its background." },
+  { "id": "AB1", "type": "about", "heading": "About Me", "text": "Hi! My name is Packer, I’m the creator of this guide. I've had OCD for as long as I can remember, and one of the most difficult things for me is knowing whether or not I should worry about or address something, which led me to create this guide over the course of a year and a half—molded from many, <i>many</i> mistakes in my actions. I've learned it's not about being content with imperfection, or striving to make everything perfect, but rather about <i>discerning</i> what to do (or not do), and when to do it. This guide aims to help others make decision—regardless of if they suffer from OCD, anxiety, or not—as the logic it uses can be applied to all areas of life.\n\nTo contact or support me, I'm reachable at:\npackerander22@gmail.com" },
+  { "id":"AB2","type":"about","heading":"Guide Concepts Explained","text":"Inputs, exact probability across many instances, and the decision rule are explained in detail in this build." }
+];
+
+/* ===== EXAMPLES (two per question; no info or results) ===== */
+window.examples = {
+  "Q1":  ["Finish homework due tonight before reorganizing the closet.", "Call the dentist first if you’re in pain instead of tweaking your workout plan."],
+  "Q2":  ["Laptop battery dies quickly during class; you need reliable runtime.", "Your shoe tread is worn and you slip when running on wet pavement."],
+  "Q3":  ["Small coolant drip under the car might lead to overheating later.", "Recurring mild chest tightness during runs that’s trending worse."],
+  "Q4":  ["A faint clicking in a hard drive on boot once this month.", "Occasional wobble in a chair leg that’s starting to loosen."],
+  "Q5":  ["Unsealed wood deck will inevitably weather and crack without treatment.", "Frayed charging cable will eventually fail if kept in use."],
+  "Q6":  ["Skipping a tetanus booster could mean a serious infection later vs. quick clinic visit now.", "Ignoring a leaky faucet risks mold and higher bills vs. a simple repair."],
+  "Q7":  ["Upgrading firmware may mean brief downtime, but stops data corruption.", "Aligning car wheels takes time, but avoids uneven tire wear after."],
+  "Q8":  ["Replacing a dangerously cracked phone screen beats cost + setup + short learning curve.", "Booking a medical evaluation now outweighs copay + scheduling hassle."],
+  "Q9":  ["Unpatched server is more likely than not to get compromised over months.", "Bald tire is more likely than not to blow out on a highway trip."],
+  "Q10": ["There’s a software update that fixes the crash you’re seeing.", "A waterproof spray exists to protect your suede shoes."],
+  "Q11": ["You can directly set the thermostat schedule yourself.", "You can swap the noisy fan on your PC today."],
+  "Q12": ["You can follow up with support once more before waiting.", "You can gather better measurements before concluding it’s out of your hands."],
+  "Q13": ["Use a lint roller daily instead of buying a new couch cover.", "Switch to a simpler training plan that still builds endurance."],
+  "Q14": ["Running a small pilot teaches you if the workflow scales.", "Testing two camera angles tells you what boosts watch time."],
+  "Q15": ["Doing a small A/B test is worth it just for the learning.", "Exploring a new note system is useful knowledge even if you keep the old one."],
+  "Q16": ["Replacing air filter improves HVAC and is cheap/quick.", "Organizing your tool drawer speeds every repair you do."],
+  "Q17": ["Changing to ergonomic keyboard helps wrists despite brief adjustment.", "Moving files to a sane folder system beats the re-indexing hassle."],
+  "Q18": ["Buying earplugs for sleep beats cost + carrying them + brief adaptation.", "Installing a password manager beats subscription + setup time."],
+  "Q19": ["You’d rather meal-prep Sundays than eat randomly all week.", "You’d rather patch the jacket now than buy a new one later."],
+  "Q20": ["Wait to buy winter tires until temperatures reliably drop.", "Postpone the camera upgrade until your next paid shoot."],
+  "Q21": ["Borrow a neighbor’s specialty tool instead of buying one.", "Use public transit route that’s nearly as fast and much cheaper."],
+  "Q22": ["Editing a video: each extra pass improves less and less.", "Polishing a resume: beyond a few rounds, gains are tiny."],
+  "Q24": ["Strength training: too light or too heavy both underperform; there’s a sweet spot.", "Caffeine: too little or too much is worse than a moderate dose."],
+  "Q26": ["Switching to noise-isolating tips yields clearly clearer audio in a blind test.", "Adding under-desk lighting makes reading small labels noticeably easier."],
+  "Q27": ["Sealing the driveway prevents cracks for years.", "Setting up automatic cloud backups prevents permanent data loss."],
+  "Q28": ["Ice ankle now to reduce swelling even if full recovery takes longer.", "Use a temporary phone battery case for this weekend event."],
+  "Q29": ["Wiping counters after each meal is always worth it.", "Running antivirus when a new USB is used is always worth it."],
+  "Q30": ["Use pre-cut veggies service instead of spending hours chopping.", "Switch to a simpler CMS that meets needs with fewer headaches."],
+  "Q31": ["Replace the washing machine hose before it bursts.", "Get a dental night guard to prevent grinding damage."],
+  "Q32": ["Oil changes at the recommended interval.", "Descaling the espresso machine on schedule."],
+  "Q33": ["If a brake failure would be catastrophic, set a higher severity; if a sticky cabinet hinge would be minor, set a low severity.", "For data loss on your main work laptop, pick higher severity; for a dead light bulb in a spare room, pick lower severity."],
+  "Q34": ["Brake pad sensor squeal gives plenty of warning before rotor damage.", "Battery health app alerts you before the phone shuts off randomly."],
+  "Q35": ["This sanding method gives the best finish among what you know.", "This study technique retains more than your alternatives."],
+  "Q36": ["You compared spaced-repetition vs. rereading.", "You evaluated vinegar soak vs. descaling solution."],
+  "Q37": ["Of all fixes, replacing the gasket stops the leak best.", "Of all methods, this interval plan builds speed most reliably."],
+  "Q38": ["You checked if a pro service does it better for less net cost.", "You considered switching brands with better reliability."],
+  "Q39": ["The repair kit is in stock today.", "Your mentor is free for a coaching session now."],
+  "Q40": ["Booking during off-season lowers cost and stress.", "Doing it after your finals yields better focus."],
+  "Q41": ["Waiting 2 weeks for the sale saves enough to justify the delay.", "Holding off until the skilled friend can help beats rushing today."],
+  "Q42": ["You’d rather take the evening class even if self-study is possible now.", "You’d rather buy once-cry-once than patch a stopgap twice."],
+  "Q43": ["Use the library’s 3D printer while you wait for parts.", "Try a nearby clinic that can see you tomorrow morning."],
+  "Q44": ["Do yard work in spring for best results instead of winter now.", "Schedule the upgrade after the current project ships."],
+  "Q45": ["Push the long trip until after the car service appointment.", "Delay filming until the new lights arrive next week."],
+  "Q46": ["Replace the bike chain when stretch indicator hits the mark and creaks start.", "Service the A/C when airflow drops and pressure readings trend bad."],
+  "Q47": ["Replace smoke alarm batteries when failure probability approaches your set threshold.", "Swap the UPS battery when charge-holding dips near your limit."]
+};
+
+/* ===== Special threshold-based examples for Q46/Q47 at extremes ===== */
+window.examplesThreshold = {
+  "Q46": {
+    "0": [
+      "Replace safety-critical parts at the first reliable warning—don’t wait for higher odds.",
+      "Schedule service immediately if early signs appear and you treat any chance of failure as unacceptable."
+    ],
+    "90": [
+      "Hold until clear warning signs stack up to near-certain failure, then act promptly.",
+      "Plan replacement when indicators are overwhelmingly pointing to imminent failure."
+    ]
+  },
+  "Q47": {
+    "0": [
+      "Change smoke-alarm batteries now if you’d lose sleep over even a tiny failure risk.",
+      "Replace a worn climbing sling immediately if any fraying makes you uneasy."
+    ],
+    "90": [
+      "Wait until the battery barely holds charge, then replace before it dies unpredictably.",
+      "Run shoes until cushioning is clearly shot, then swap just before the next big run."
+    ]
+  }
+};
+
+/* ============== MINI MATH + STATE (additive, no removals) ============== */
+
+// Shared master state for Q6 entries
+var miniMaster = {
+  S: 5, C: 1,             // up to 10; can be <1; not 0
+  mode: 'oneInX',         // 'oneInX' | 'percent' | 'micromort'
+  val: 1000000,           // user-entered value in selected mode
+  X_user: 1000000         // normalized to 1 in X
+};
+
+// Clear Q33 threshold if this page load is a browser refresh
+(function () {
+  const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]);
+  const isReload = nav ? (nav.type === 'reload') 
+                       : (performance && performance.navigation && performance.navigation.type === 1);
+  if (isReload) {
+    sessionStorage.removeItem('userThreshold');
+    // optional: also clear any cached mirror
+    delete window.currentThresholdPct;
+  }
+})();
+  
+// Blank-on-first-visit flag for Q6 (keeps user values if they come back)
+if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
+  
+// constants (match the mini prototype)
+var MINI_EPS = 1e-9, MINI_MAX = 10;
+var MINI_ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
+
+// math helpers
+function miniClamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
+function miniCeilPlaces(x,p){ var f=Math.pow(10,p); return Math.ceil(x*f)/f; }
+
+function miniNormalizeToX(mode, val){
+  if (mode === 'oneInX')   { if (!(val>1)) return null; return val; }
+  if (mode === 'percent')  { if (!(val>0 && val<100)) return null; return 100/val; }
+  if (mode === 'micromort'){ if (!(val>0 && val<1e6)) return null; return 1e6/val; }
+  return null;
+}
+function miniXcutoff_from_ratio(r) {
+  var tRaw = (r - 1) / 9;
+  var t = Math.max(0, Math.min(1, tRaw));
+  var exponent = 6 * Math.pow(t, MINI_ALPHA);
+  return Math.pow(10, exponent);
+}
+function miniComputeSCutoffForX(X){
+  return 1 + 9 * Math.pow((Math.log10(X)/6), 1/MINI_ALPHA);
 }
 
-// ---------- Plot
-function setupPlot(svg){
-  const NS='http://www.w3.org/2000/svg';
-  svg.innerHTML='';
-  const w=900,h=420,pad={l:60,r:16,t:14,b:44};
-  const W=w-pad.l-pad.r,H=h-pad.t-pad.b;
+function miniProbSymbol(mode){ return mode==='percent' ? '%' : (mode==='micromort' ? 'µm' : 'X'); }
+function miniXtoUnit(X,mode){ return mode==='percent' ? (100/X) : (mode==='micromort' ? (1e6/X) : X); }
+function unitToX(Y, mode){
+  // inverse of miniXtoUnit
+  if (mode === 'percent')   return 100 / Y;          // X = 100 / %
+  if (mode === 'micromort') return 1e6 / Y;          // X = 1e6 / µm
+  return Y;                                           // 1 in X scale -> X = Y
+}
 
-  // x: log from 1e-6..1e-1
-  const xTicks=[1e-6,1e-5,1e-4,1e-3,1e-2,1e-1];
-  const xTo = p => pad.l + (Math.log10(p)-(-6)) / (-1-(-6)) * W;
-  const yTo = y => pad.t + (1-y) * H;
+// Helper: fast fade-in → HOLD → fast fade-out (total time = --flash-dur)
+function flashWithPlateau(el, cls, opts) {
+  if (!el) return;
 
-  xTicks.forEach(p=>{
-    const x=xTo(p);
-    const l=document.createElementNS(NS,'line');
-    l.setAttribute('x1',x); l.setAttribute('x2',x);
-    l.setAttribute('y1',pad.t); l.setAttribute('y2',pad.t+H);
-    l.setAttribute('stroke','#1f2937'); svg.appendChild(l);
-    const t=document.createElementNS(NS,'text');
-    t.setAttribute('x',x); t.setAttribute('y',h-18);
-    t.setAttribute('fill','#9ca3af'); t.setAttribute('font-size','12');
-    t.setAttribute('text-anchor','middle');
-    t.textContent = fmtProb(p);
-    svg.appendChild(t);
+  // Read global duration (fallback 1500ms), then derive phase timings if not passed
+  const root = getComputedStyle(document.documentElement);
+  const durStr = (root.getPropertyValue('--flash-dur').trim() || '1500ms');
+  const totalMs = durStr.endsWith('ms') ? parseFloat(durStr) : parseFloat(durStr) * 1000;
+
+  const inMs   = opts?.inMs  ?? 180;   // fast in
+  const outMs  = opts?.outMs ?? 420;   // fast out
+  const holdMs = opts?.holdMs ?? Math.max(0, totalMs - inMs - outMs); // fill the rest
+
+  // Clear any prior flash classes
+  el.classList.remove('flash-purple','flash-green','flash-gold');
+
+  // PHASE 1: fast fade-in
+  el.style.setProperty('--flash-dur', inMs + 'ms');
+  requestAnimationFrame(() => {
+    el.classList.add(cls);
+
+    // After fade-in completes, HOLD solid (no transition running)
+    setTimeout(() => {
+      el.style.setProperty('--flash-dur', '0ms'); // instant changes while holding
+
+      // PHASE 3: fast fade-out back to base
+      setTimeout(() => {
+        el.style.setProperty('--flash-dur', outMs + 'ms');
+        requestAnimationFrame(() => {
+          el.classList.remove(cls);
+
+          // Cleanup: restore element to using the stylesheet’s --flash-dur
+          setTimeout(() => {
+            el.style.removeProperty('--flash-dur');
+          }, outMs + 50);
+        });
+      }, holdMs);
+
+    }, inMs + 20); // tiny buffer to ensure the first transition has finished
   });
-  [0.2,0.4,0.6,0.8,1].forEach(y=>{
-    const yy=yTo(y);
-    const l=document.createElementNS(NS,'line');
-    l.setAttribute('x1',pad.l); l.setAttribute('x2',pad.l+W);
-    l.setAttribute('y1',yy); l.setAttribute('y2',yy);
-    l.setAttribute('stroke','#1f2937'); svg.appendChild(l);
-    const t=document.createElementNS(NS,'text');
-    t.setAttribute('x',12); t.setAttribute('y',yy+4);
-    t.setAttribute('fill','#9ca3af'); t.setAttribute('font-size','12');
-    t.textContent = 'S_avg/C_total = '+y.toFixed(1); svg.appendChild(t);
+}
+  
+function flashAb2Heading(id) {
+  const h = document.getElementById(id);
+  if (!h) return;
+
+  // Reuse the same purple flash as verdict header
+  flashWithPlateau(h, 'flash-purple', { inMs: 300, holdMs: 900, outMs: 300 });
+}
+
+function formatCShort(c){
+  // show a compact C in the tooltip while preserving full-precision in state
+  if (!isFinite(c)) return String(c);
+  if (c >= 1) return Number(c).toFixed(3).replace(/\.?0+$/,'');
+  // for small values, show up to 4 significant digits
+  return Number(c.toPrecision(4)) + '';
+}
+
+// ---- persistence helpers (use for Q6/Q33/etc.) ----
+function saveNodeState(key, obj){
+  try { sessionStorage.setItem('node:'+key, JSON.stringify(obj)); } catch(_) {}
+}
+function loadNodeState(key){
+  try { const raw = sessionStorage.getItem('node:'+key); return raw ? JSON.parse(raw) : null; }
+  catch(_) { return null; }
+}
+function collectFormValues(root){
+  const out = {};
+  if (!root) return out;
+  root.querySelectorAll('input[name], select[name], textarea[name]').forEach(el => {
+    if (el.type === 'checkbox') out[el.name] = !!el.checked;
+    else if (el.type === 'radio') { if (el.checked) out[el.name] = el.value; }
+    else out[el.name] = el.value;
+  });
+  return out;
+}
+function applyFormValues(root, vals){
+  if (!root || !vals) return;
+  Object.keys(vals).forEach(name => {
+    root.querySelectorAll(`[name="${CSS.escape(name)}"]`).forEach(el => {
+      const v = vals[name];
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if (el.type === 'radio') el.checked = (el.value === v);
+      else el.value = v;
+      el.dispatchEvent(new Event('input',  { bubbles:true }));
+      el.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+  });
+}
+  
+/* ============== MINI RENDERERS FOR Q6 & Q7 ============== */
+/* -----------------------------------------------------------
+   Shared tiny haptic helper (safe no-op on iOS Safari)
+----------------------------------------------------------- */
+window.hapticBump = window.hapticBump || function () {
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
+};
+
+// Cosmetic: shorten long decimals for the floating label (does not change actual values)
+function trimDeci(val, places = 3) {
+  const n = Number(val);
+  if (!isFinite(n)) return String(val);
+  // keep small integers untouched; otherwise trim without trailing zeros
+  const s = n.toFixed(places);
+  return s.indexOf('.') === -1 ? s : s.replace(/\.?0+$/, '');
+}
+
+// Given a ratio r and the current mode, return the curve's **pixel Y** at that r
+function curveYPxAtRatio(r, mode, pad, plotH, yToPx) {
+  const Xc = miniXcutoff_from_ratio(r);
+  const yr = (function yRange(m){
+    if (m==='percent')   return { yMin: 0.0001, yMax: 100 };
+    if (m==='micromort') return { yMin: 1,      yMax: 1e6  };
+    return { yMin: 1,     yMax: 1e6  }; // 1 in X
+  })(mode);
+  const Yc = miniXtoUnit(Xc, mode);
+  return yToPx(Yc, yr.yMin, yr.yMax);
+}
+
+// --- GLOBAL: smooth scroll + back injection (single source of truth) ---
+function scrollToConcept(targetId, backQId) {
+  if (window.__isScrollingConcept) return;
+  window.__isScrollingConcept = true;
+
+  const START = performance.now();
+  const MAX_MS = 3000;
+  const INTERVAL = 120;
+
+  function scrollAndInject() {
+    const el = document.getElementById(targetId);
+    if (!el) return false;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    ensureConceptBackButton(targetId, backQId);
+    flashAb2Heading(targetId); // 👈 smooth purple pulse here
+    return true;
+  }
+
+  if (scrollAndInject()) { window.__isScrollingConcept = false; return; }
+  (function tick(){
+    if (scrollAndInject()) { window.__isScrollingConcept = false; return; }
+    if (performance.now() - START >= MAX_MS) { window.__isScrollingConcept = false; return; }
+    setTimeout(tick, INTERVAL);
+  })();
+}
+
+// Back button injected directly *below* the heading, blue-styled
+function ensureConceptBackButton(targetId, backQId) {
+  const heading = document.getElementById(targetId);
+  if (!heading) return;
+  if (heading.dataset.backInjected === '1') return;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  // Add both classes: keeps the semantic 'concept-back' marker,
+  // but also inherits the Restart button styling.
+  btn.className = 'concept-back restart';
+  btn.textContent = '← Back';
+
+  btn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    if (typeof goBack === 'function') goBack();
   });
 
-  // boundary (visual aid)
-  const path=document.createElementNS(NS,'path');
-  let d='';
-  for(let i=0;i<300;i++){
-    const p = 1e-6 * Math.pow(10, i*(5/299));
-    const y = Math.min(1, Math.max(0, 1/p / 100));
-    const X=xTo(p), Y=yTo(y);
-    d += (i===0?'M':'L')+X+','+Y;
+  heading.insertAdjacentElement('afterend', btn);
+  heading.dataset.backInjected = '1';
+}
+
+// Call this when clicking "See concept…" links from Q6/Q33/etc.
+function jumpToConcept(conceptId, backQId){
+  // one-shot intent for the very next AB2 render only
+  window.__pendingConceptScroll = { conceptId, backQId: backQId || currentNode?.id || 'Q0' };
+  // mark as a temp visit so Back skips AB2 once
+  window.__ab2TempVisit = true;
+  // go to AB2
+  goToNode('AB2');
+}
+
+/* ===========================================================
+   Q6 — interactive: inputs + 2D drag + snap + correct shading
+=========================================================== */
+function renderMiniQ6() {
+
+  const intoEl = document.getElementById('content') || document.body;
+
+  // Root
+  const wrap = document.createElement('div');
+  wrap.className = 'mini-wrap';
+  wrap.id = 'q6Root';
+  intoEl.innerHTML = '';
+  intoEl.appendChild(wrap);
+
+  // Instances (centered at top, full width)
+  const nRow = document.createElement('div');
+  nRow.className = 'mini-field';
+  nRow.style.gridColumn = '1 / -1';
+  nRow.style.textAlign = 'center';
+  nRow.innerHTML = `<label>Total instances (N)</label>
+                    <input id="N" type="number" min="1" step="1" value="1">`;
+  wrap.appendChild(nRow);
+
+  // Fields grid
+  const fields = document.createElement('div');
+  fields.className = 'mini-fields';
+  wrap.appendChild(fields);
+
+  // Severity
+  const sev = document.createElement('div');
+  sev.className = 'mini-field';
+  sev.innerHTML = `<label>Severity (S) — up to 10 <span class="hint">| avg per instance</span></label>
+                   <div class="hint" id="sevRow"><input id="tgSev" type="checkbox"> varies across instances</div>
+                   <input id="S" type="number" min="0" max="10" step="0.01" placeholder="e.g. 5">
+                   <div id="sevExtra" class="mini-field hidden">
+                     <div class="hint">Total extra severity across outliers (sum)</div>
+                     <input id="Sextra" type="number" step="any" placeholder="e.g. 3">
+                   </div>`;
+  fields.appendChild(sev);
+
+  // Cost
+  const cost = document.createElement('div');
+  cost.className = 'mini-field';
+  cost.innerHTML = `<label>Cost (C) — up to 10 <span class="hint">| per instance</span></label>
+                    <div class="hint" id="costRow"><input id="tgCost" type="checkbox"> varies across instances</div>
+                    <input id="C" type="number" min="0" max="10" step="0.01" placeholder="e.g. 1">
+                    <div id="costExtra" class="mini-field hidden">
+                      <div class="hint">Total extra cost across outliers (sum)</div>
+                      <input id="Cextra" type="number" step="any" placeholder="e.g. 2">
+                    </div>`;
+  fields.appendChild(cost);
+
+  // Probability
+  const prob = document.createElement('div');
+  prob.className = 'mini-field';
+  prob.innerHTML = `<label>Probability unit</label>
+                    <select id="mode">
+                      <option value="oneInX">1 in X</option>
+                      <option value="percent">Percentage (%)</option>
+                      <option value="micromort">Micromorts</option>
+                    </select>
+                    <div class="mini-field">
+                      <label id="probLabel">Enter X (for “1 in X”)</label>
+                      <input id="pVal" type="number" min="0" step="any" placeholder="e.g. 1,000,000">
+                    </div>
+                    <div class="hint" id="probRow"><input id="tgProb" type="checkbox"> probability varies across instances</div>
+                    <div id="groupsWrap" class="mini-field hidden">
+                      <div id="groups"></div>
+                      <div style="display:flex;justify-content:center"><button id="addGroup" class="back" type="button" style="padding:6px 10px">Add probability group</button></div>
+                      <div id="countMsg" class="error" style="text-align:center"></div>
+                    </div>`;
+  fields.appendChild(prob);
+
+  // Graph
+  const graphWrap = document.createElement('div');
+  graphWrap.innerHTML = `<svg id="plot" viewBox="0 0 900 420"></svg>
+                         <div id="verdict" class="risk-inline"></div>`;
+  wrap.appendChild(graphWrap);
+
+  // Footer buttons (use existing buttons container if present)
+  const btns = document.getElementById('buttons') || (function(){const d=document.createElement('div');wrap.appendChild(d);return d;})();
+  btns.innerHTML='';
+  const restart = document.createElement('button');
+  restart.type='button'; restart.className='restart'; restart.textContent='Restart';
+  const cont = document.createElement('button');
+  cont.type='button'; cont.className='back'; cont.textContent='Continue'; cont.disabled=true;
+  btns.appendChild(restart); btns.appendChild(cont);
+
+  // ------- State
+  const $ = s=>wrap.querySelector(s);
+  const el = {
+    N:$('#N'), S:$('#S'), C:$('#C'), mode:$('#mode'), pVal:$('#pVal'),
+    tgSev:$('#tgSev'), tgCost:$('#tgCost'), tgProb:$('#tgProb'),
+    sevRow:$('#sevRow'), costRow:$('#costRow'), probRow:$('#probRow'),
+    sevExtra:$('#sevExtra'), Sextra:$('#Sextra'), costExtra:$('#costExtra'), Cextra:$('#Cextra'),
+    groupsWrap:$('#groupsWrap'), groups:$('#groups'), addGroup:$('#addGroup'),
+    countMsg:$('#countMsg'), plot:$('#plot'), verdict:$('#verdict')
+  };
+  const state = {N:1,S:null,C:null,mode:'oneInX',pVal:null,sevVar:false,costVar:false,probVar:false,Sextra:null,Cextra:null,groups:[]};
+
+  // ------- Helpers
+  const toProb=(mode,val)=>{
+    if(val==null||isNaN(val)) return null;
+    if(mode==='oneInX') return (val<=0)?null:1/val;
+    if(mode==='percent') return val/100;
+    if(mode==='micromort') return val/1_000_000;
+    return null;
+  };
+  const fmt1 = x => x>=1 ? Number(x.toFixed(3)).toString() : Number(x.toPrecision(3)).toString();
+  const fmtProb = (p)=>{ if(p<=0) return '0'; if(p<1e-4) return '1 in '+fmt1(1/p); if(p<0.01) return (p*100).toFixed(3)+'%'; return (p*100).toFixed(2)+'%'; };
+
+  function drawGroups(){
+    el.groups.innerHTML='';
+    state.groups.forEach((g,i)=>{
+      const row=document.createElement('div'); row.className='mini-fields';
+      row.innerHTML = \`
+        <div class="mini-field"><label>Group \${i+1} count</label><input data-i="\${i}" data-k="count" type="number" min="0" step="1" value="\${g.count||0}"></div>
+        <div class="mini-field"><label>Unit</label>
+          <select data-i="\${i}" data-k="mode">
+            <option value="oneInX" \${g.mode==='oneInX'?'selected':''}>1 in X</option>
+            <option value="percent" \${g.mode==='percent'?'selected':''}>Percentage (%)</option>
+            <option value="micromort" \${g.mode==='micromort'?'selected':''}>Micromorts</option>
+          </select>
+        </div>
+        <div class="mini-field"><label>Value</label><input data-i="\${i}" data-k="val" type="number" step="any" value="\${g.val??''}" placeholder="e.g. 100,000"></div>
+        <div class="mini-field"><label>&nbsp;</label><button class="back" data-remove="\${i}" type="button" style="padding:6px 10px">Remove</button></div>\`;
+      el.groups.appendChild(row);
+    });
+    el.countMsg.textContent='';
   }
-  path.setAttribute('d',d);
-  path.setAttribute('stroke','#60a5fa'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
-  svg.appendChild(path);
 
-  return {xTo,yTo};
-}
-function redraw(svg, res){
-  const {xTo,yTo} = setupPlot(svg);
-  const p = clamp(res.sumP, 1e-6, 1e-1);
-  const y = clamp(res.Savg / Math.max(1e-9, res.Ctotal), 0, 1);
-  const NS='http://www.w3.org/2000/svg';
-  const dot=document.createElementNS(NS,'circle');
-  dot.setAttribute('r','6'); dot.setAttribute('fill', res.act ? '#22c55e' : '#ef4444');
-  dot.setAttribute('cx', xTo(p)); dot.setAttribute('cy', yTo(y));
-  svg.appendChild(dot);
-}
-
-// ---------- Read & Wire
-function readState(){
-  state.N = Math.max(1, el.N.valueAsNumber || 1);
-  state.S = el.S.value===''? null : el.S.valueAsNumber;
-  state.C = el.C.value===''? null : el.C.valueAsNumber;
-  state.mode = el.mode.value;
-  state.pVal = el.pVal.value===''? null : el.pVal.valueAsNumber;
-  state.sevVar = el.tgSev.checked;
-  state.costVar = el.tgCost.checked;
-  state.probVar = el.tgProb.checked;
-  state.Sextra = el.Sextra.value===''? null : el.Sextra.valueAsNumber;
-  state.Cextra = el.Cextra.value===''? null : el.Cextra.valueAsNumber;
-}
-function onChange(){
-  readState();
-  refreshVisibility();
-  const res = computeAll(state);
-  if(!res.ok){
-    el.verdict.className='verdict no';
-    el.verdict.textContent = res.reason;
-    el.cont.disabled = true;
-  }else{
-    redraw(el.plot, res);
-    el.verdict.className='verdict ' + (res.act?'ok':'no');
-    el.verdict.textContent = (res.act?'Act should be considered.':'Not worth it.') +
-      `  (Σp=${fmt1(res.sumP)}, S_avg=${fmt1(res.Savg)}, C_total=${fmt1(res.Ctotal)})`;
-    el.cont.disabled = false;
+  function refreshVisibility(){
+    const N = Number(el.N.value||1);
+    const dis=(N===1);
+    function setRow(cb,row){ cb.disabled=dis; row.classList.toggle('muted',dis); if(dis) cb.checked=false; }
+    setRow(el.tgSev,el.sevRow); setRow(el.tgCost,el.costRow); setRow(el.tgProb,el.probRow);
+    const hideSev=dis||!el.tgSev.checked, hideCost=dis||!el.tgCost.checked, hideProb=dis||!el.tgProb.checked;
+    el.sevExtra.classList.toggle('hidden',hideSev);
+    el.costExtra.classList.toggle('hidden',hideCost);
+    el.groupsWrap.classList.toggle('hidden',hideProb);
+    if(hideSev) el.Sextra.value='';
+    if(hideCost) el.Cextra.value='';
+    if(hideProb){ state.groups=[]; el.groups.innerHTML=''; el.countMsg.textContent=''; }
   }
-}
-['input','change'].forEach(evt=>{
-  [el.N,el.S,el.C,el.mode,el.pVal,el.tgSev,el.tgCost,el.tgProb,el.Sextra,el.Cextra]
-    .forEach(x=> x && x.addEventListener(evt,onChange));
-});
 
-// Groups
-el.addGroup.addEventListener('click', ()=>{
-  state.groups.push({count:0, mode:state.mode, val:null});
+  function computeAll(st){
+    const N = Math.max(1, st.N|0);
+    const pBase = toProb(st.mode, st.pVal);
+    if(pBase==null) return {ok:false, reason:'Enter a valid probability.'};
+    let used=0, prodNone=1, sumP=0;
+    if(st.probVar){
+      for(const g of st.groups){
+        const cnt=Math.max(0,g.count|0);
+        const pg=toProb(g.mode,g.val);
+        if(pg==null) return {ok:false,reason:'Check group probabilities.'};
+        used+=cnt; prodNone*=Math.pow(1-pg,cnt); sumP+=cnt*pg;
+      }
+      if(used>N) return {ok:false, reason:'Group counts exceed N.'};
+    }
+    const nBase=N-used; prodNone*=Math.pow(1-pBase,nBase); sumP+=nBase*pBase;
+
+    const S=Number(st.S ?? NaN), C=Number(st.C ?? NaN);
+    if(!isFinite(S)||!isFinite(C)) return {ok:false, reason:'Enter S and C.'};
+    if(S<0||S>10||C<0||C>10) return {ok:false, reason:'S and C must be 0–10.'};
+
+    const Sextra=st.sevVar?Number(st.Sextra ?? 0):0;
+    const Cextra=st.costVar?Number(st.Cextra ?? 0):0;
+
+    const Ctotal=N*C+Cextra;
+    const Savg=(N*S+Sextra)/N;
+    const EVdown=Savg*sumP;
+    const act = EVdown > Ctotal;
+    return {ok:true, act, sumP, Savg, Ctotal, EVdown, Pany:1-prodNone};
+  }
+
+  function setupPlot(svg){
+    const NS='http://www.w3.org/2000/svg';
+    svg.innerHTML='';
+    const w=900,h=420,pad={l:60,r:16,t:14,b:44};
+    const W=w-pad.l-pad.r,H=h-pad.t-pad.b;
+    const xTicks=[1e-6,1e-5,1e-4,1e-3,1e-2,1e-1];
+    const xTo=p=>pad.l+(Math.log10(p)-(-6))/(-1-(-6))*W;
+    const yTo=y=>pad.t+(1-y)*H;
+    xTicks.forEach(p=>{const x=xTo(p);const l=document.createElementNS(NS,'line');l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('y1',pad.t);l.setAttribute('y2',pad.t+H);l.setAttribute('stroke','#1f2937');svg.appendChild(l);
+      const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',h-18);t.setAttribute('fill','#9ca3af');t.setAttribute('font-size','12');t.setAttribute('text-anchor','middle');t.textContent=(p<1e-4)?('1 in '+(1/p).toFixed(0)):(p*100).toFixed(2)+'%';svg.appendChild(t);});
+    [0.2,0.4,0.6,0.8,1].forEach(y=>{const yy=yTo(y);const l=document.createElementNS(NS,'line');l.setAttribute('x1',pad.l);l.setAttribute('x2',pad.l+W);l.setAttribute('y1',yy);l.setAttribute('y2',yy);l.setAttribute('stroke','#1f2937');svg.appendChild(l);
+      const t=document.createElementNS(NS,'text');t.setAttribute('x',12);t.setAttribute('y',yy+4);t.setAttribute('fill','#9ca3af');t.setAttribute('font-size','12');t.textContent='S_avg/C_total = '+y.toFixed(1);svg.appendChild(t);});
+    return {xTo,yTo};
+  }
+  function redraw(svg,res){
+    const {xTo,yTo}=setupPlot(svg);
+    const p=Math.max(1e-6,Math.min(1e-1,res.sumP));
+    const y=Math.max(0,Math.min(1,res.Savg/Math.max(1e-9,res.Ctotal)));
+    const NS='http://www.w3.org/2000/svg';
+    const dot=document.createElementNS(NS,'circle');
+    dot.setAttribute('r','6'); dot.setAttribute('fill', res.act?'#22c55e':'#ef4444');
+    dot.setAttribute('cx',xTo(p)); dot.setAttribute('cy',yTo(y));
+    svg.appendChild(dot);
+  }
+
+  function readState(){
+    state.N=Math.max(1, $('#N').valueAsNumber||1);
+    state.S=$('#S').value===''?null:$('#S').valueAsNumber;
+    state.C=$('#C').value===''?null:$('#C').valueAsNumber;
+    state.mode=$('#mode').value;
+    state.pVal=$('#pVal').value===''?null:$('#pVal').valueAsNumber;
+    state.sevVar=$('#tgSev').checked;
+    state.costVar=$('#tgCost').checked;
+    state.probVar=$('#tgProb').checked;
+    state.Sextra=$('#Sextra').value===''?null:$('#Sextra').valueAsNumber;
+    state.Cextra=$('#Cextra').value===''?null:$('#Cextra').valueAsNumber;
+  }
+  function onChange(){
+    readState(); refreshVisibility();
+    const res=computeAll(state);
+    if(!res.ok){ $('#verdict').className='risk-inline'; $('#verdict').textContent=res.reason; cont.disabled=true; }
+    else { redraw($('#plot'),res); $('#verdict').className='risk-inline'; $('#verdict').textContent=(res.act?'Act should be considered.':'Not worth it.')+` (Σp=${fmt1(res.sumP)}, S_avg=${fmt1(res.Savg)}, C_total=${fmt1(res.Ctotal)})`; cont.disabled=false; }
+  }
+
+  // Wire
+  ['input','change'].forEach(evt=>{
+    ['#N','#S','#C','#mode','#pVal','#tgSev','#tgCost','#tgProb','#Sextra','#Cextra']
+      .forEach(sel=>{ const node=$(sel); if(node) node.addEventListener(evt,onChange); });
+  });
+  el.addGroup.addEventListener('click',()=>{ state.groups.push({count:0,mode:state.mode,val:null}); drawGroups(); onChange(); });
+  el.groups.addEventListener('input',e=>{ const t=e.target; const i=+t.dataset.i;
+    if(Number.isFinite(i)){ const k=t.dataset.k;
+      if(k==='count') state.groups[i].count = t.value===''?0:(t.value|0);
+      if(k==='mode')  state.groups[i].mode  = t.value;
+      if(k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
+      const used = state.groups.reduce((s,g)=>s+(g.count|0),0);
+      el.countMsg.textContent = used>state.N ? `Group counts exceed N (${used}/${state.N}).` : '';
+      onChange();
+    }});
+  el.groups.addEventListener('click',e=>{ const idx=e.target.dataset.remove; if(idx!=null){ state.groups.splice(+idx,1); drawGroups(); onChange(); }});
+
+  restart.addEventListener('click',()=>{ state.N=1;state.S=state.C=null;state.mode='oneInX';state.pVal=null;state.sevVar=state.costVar=state.probVar=false;state.Sextra=state.Cextra=null;state.groups=[];
+    $('#N').value=1; ['#S','#C','#pVal','#Sextra','#Cextra'].forEach(s=>{const n=$(s); if(n) n.value='';}); $('#mode').value='oneInX'; ['#tgSev','#tgCost','#tgProb'].forEach(s=>{const n=$(s); if(n) n.checked=false;}); drawGroups(); onChange(); });
+
+  cont.addEventListener('click',()=>{ if(typeof goToNode==='function') goToNode('Q7'); });
+
+  // Init
   drawGroups(); onChange();
-});
-el.groups.addEventListener('input',(e)=>{
-  const t=e.target; const i= +t.dataset.i;
-  if(Number.isFinite(i)){
-    const k=t.dataset.k;
-    if(k==='count') state.groups[i].count = t.value===''?0:(t.value|0);
-    if(k==='mode')  state.groups[i].mode  = t.value;
-    if(k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
-    const used = state.groups.reduce((s,g)=>s+(g.count|0),0);
-    el.countMsg.textContent = used>state.N ? `Group counts exceed N (${used}/${state.N}).` : '';
-    onChange();
+
+}
+
+
+/* ===========================================================
+   Q7 — visualization-only mirror (draggable; inputs greyed)
+=========================================================== */
+function renderMiniQ7() {
+
+  const intoEl = document.getElementById('content') || document.body;
+  intoEl.innerHTML='';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 900 420'); svg.id='plotQ7';
+  intoEl.appendChild(svg);
+  const verdict = document.createElement('div'); verdict.id='verdictQ7'; intoEl.appendChild(verdict);
+  verdict.className='risk-inline';
+
+  // Read current Q6 state if available globally, else use defaults
+  const st = window.q6SandboxSeed || {N:1,S:5,C:1,mode:'oneInX',pVal:1000000,sevVar:false,costVar:false,probVar:false,Sextra:null,Cextra:null,groups:[]};
+
+  function toProb(mode,val){
+    if(val==null||isNaN(val)) return null;
+    if(mode==='oneInX') return (val<=0)?null:1/val;
+    if(mode==='percent') return val/100;
+    if(mode==='micromort') return val/1_000_000;
+    return null;
   }
-});
-el.groups.addEventListener('click',(e)=>{
-  const i = e.target.dataset.remove;
-  if(i!=null){ state.groups.splice(+i,1); drawGroups(); onChange(); }
+  function computeAll(st){
+    const N = Math.max(1, st.N|0);
+    const pBase = toProb(st.mode, st.pVal);
+    if(pBase==null) return {ok:false, reason:'Enter a valid probability.'};
+    let used=0, prodNone=1, sumP=0;
+    if(st.probVar){
+      for(const g of st.groups){
+        const cnt=Math.max(0,g.count|0);
+        const pg=toProb(g.mode,g.val);
+        if(pg==null) return {ok:false,reason:'Check group probabilities.'};
+        used+=cnt; prodNone*=Math.pow(1-pg,cnt); sumP+=cnt*pg;
+      }
+      if(used>N) return {ok:false, reason:'Group counts exceed N.'};
+    }
+    const nBase=N-used; prodNone*=Math.pow(1-pBase,nBase); sumP+=nBase*pBase;
+    const S=Number(st.S ?? NaN), C=Number(st.C ?? NaN);
+    if(!isFinite(S)||!isFinite(C)) return {ok:false, reason:'Enter S and C.'};
+    const Sextra=st.sevVar?Number(st.Sextra ?? 0):0;
+    const Cextra=st.costVar?Number(st.Cextra ?? 0):0;
+    const Ctotal=N*C+Cextra; const Savg=(N*S+Sextra)/N; const EVdown=Savg*sumP; const act=EVdown>Ctotal;
+    return {ok:true, act, sumP, Savg, Ctotal, EVdown};
+  }
+  function setupPlot(svg){
+    const NS='http://www.w3.org/2000/svg';
+    svg.innerHTML='';
+    const w=900,h=420,pad={l:60,r:16,t:14,b:44}; const W=w-pad.l-pad.r,H=h-pad.t-pad.b;
+    const xTo=p=>pad.l+(Math.log10(p)-(-6))/(-1-(-6))*W; const yTo=y=>pad.t+(1-y)*H;
+    const xTicks=[1e-6,1e-5,1e-4,1e-3,1e-2,1e-1];
+    xTicks.forEach(p=>{const x=xTo(p);const l=document.createElementNS(NS,'line');l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('y1',pad.t);l.setAttribute('y2',pad.t+H);l.setAttribute('stroke','#1f2937');svg.appendChild(l);});
+    return {xTo,yTo,NS};
+  }
+  const tools=setupPlot(svg);
+  const res=computeAll(st);
+  const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('r','6'); dot.setAttribute('fill', res.act?'#22c55e':'#ef4444');
+  dot.setAttribute('cx', tools.xTo(Math.max(1e-6,Math.min(1e-1,res.sumP))));
+  dot.setAttribute('cy', tools.yTo(Math.max(0,Math.min(1,res.Savg/Math.max(1e-9,res.Ctotal)))));
+  svg.appendChild(dot);
+  verdict.textContent = res.act ? 'Act should be considered (exploration) — go back to Q6 to change values.' : 'Not worth it (exploration).';
+
+}
+
+
+/* ======= STATE ======= */
+var currentThresholdPct = 90;
+var miniActGate = false; // If Q6 verdict said "Act should be considered", skip Q16–Q18 later
+var hasFlashedIf = false;
+var hasFlashedWhen = false;
+var lastWasResult = false;
+var originalTitleHTML = null;
+
+/* ======= APP LOGIC ======= */
+var historyStack = [];
+var currentNode = flowchart.find(function(n){ return n.id === "Q0"; });
+var currentSegment = "If You Should Act";
+
+function getSegmentForNodeId(id) {
+  if (!id || id.charAt(0) !== 'Q') return currentSegment;
+  var m = /^Q(\d+)$/.exec(id);
+  if (!m) return currentSegment;
+  var num = parseInt(m[1], 10);
+  return num >= 31 ? "When You Should Act" : "If You Should Act";
+}
+
+/* Verdict/custom heading */
+function setHeadingText(node) {
+  var title = document.getElementById('segmentTitle');
+  var skipBtn = document.getElementById('skipBtn');
+
+  if (!node) { title.textContent = ''; skipBtn.style.display='none'; return; }
+
+  if ((node.type === 'about' || node.type === 'aboutMenu') && node.heading) {
+    title.textContent = node.heading;
+    skipBtn.style.display = 'none';
+    return;
+  }
+
+  if (node.id === 'Q0') {
+    if (originalTitleHTML) title.innerHTML = originalTitleHTML;
+    skipBtn.style.display = 'none';
+    return;
+  }
+
+  if (node.type === 'result') {
+    title.textContent = "👍👎 Verdict";
+    skipBtn.style.display = 'none';
+    return;
+  }
+
+  var segText = (currentSegment === "If You Should Act")
+    ? "⚖️ If You Should Act"
+    : "⏳ When You Should Act";
+
+  title.textContent = segText;
+  skipBtn.style.display = (currentSegment === "If You Should Act" && node.type !== 'result')
+    ? 'inline-block'
+    : 'none';
+}
+
+/* Flash heading */
+function flashHeadingColor(targetSegment, node) {
+  const el = document.getElementById('segmentHeading');
+  if (!el) return;
+  if (currentNode && currentNode.id === 'Q0') return;
+
+  let cls;
+  if (node && node.type === 'result')        cls = 'flash-purple';
+  else if (targetSegment === 'If You Should Act') cls = 'flash-green';
+  else                                        cls = 'flash-gold';
+
+  // 1500ms total by default: 180 in + 900 hold + 420 out
+  flashWithPlateau(el, cls, { inMs: 300, holdMs: 900, outMs: 300 });
+}
+
+function getSectionKey(n){
+  if (!n) return null;
+  if (n.type === 'about')  return 'about';
+  if (n.type === 'result') return 'result';
+  const s = (n.segmentLabel || n.segment || '').toLowerCase();
+  if (s.includes('if'))   return 'if';
+  if (s.includes('when')) return 'when';
+  return 'other';
+}
+
+function maybeFlashOnEnter(node, fromId){
+  if (!node || node.id !== 'Q1') return;
+
+  const fromNode    = flowchart.find(n => n.id === fromId);
+  const fromSection = getSectionKey(fromNode);
+
+  // Flash Q1 only if arriving from Q0 OR from a non-IF section
+  if (fromId === 'Q0' || (fromSection && fromSection !== 'if')) {
+    // This label is what your header uses for the IF segment
+    flashHeadingColor('If You Should Act', node);
+  }
+}
+
+/* Reset panels */
+function closeAllPanels() {
+  collapseSharedPanel();
+  var risk = document.getElementById('riskInline');
+  if (risk) {
+    risk.style.display = 'none';
+    risk.setAttribute('aria-hidden','true');
+  }
+}
+
+/* Auto-skip logic (based on Q6 verdict) */
+function beforeEnterNode(nextId) {
+  if (miniActGate && (nextId === 'Q16' || nextId === 'Q17' || nextId === 'Q18')) {
+    return 'Q22';
+  }
+  return nextId;
+}
+
+/* Navigation helpers */
+function makeButton(label, cls, action) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = label;
+  btn.className = cls;
+  btn.onclick = action;
+  return btn;
+}
+function goToNode(id) {
+  // Save Q33/Q6 state when navigating away
+  if (currentNode && (currentNode.id === 'Q33' || currentNode.id === 'Q6')) {
+    const root = document.getElementById('text');
+    if (root) {
+      const slider = root.querySelector('.heat-slider');
+      if (slider) setUserThreshold(slider.value);
+      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
+        saveNodeState(currentNode.id, collectFormValues(root));
+      }
+    }
+  }
+
+  closeAllPanels();
+  var adjustedId = beforeEnterNode(id);
+  noteOrigin(currentNode);
+  var fromId = currentNode ? currentNode.id : '';
+  var next = flowchart.find(n => n.id === adjustedId);
+  historyStack.push(currentNode ? currentNode.id : '');
+  currentNode = next; renderNode(currentNode);
+  maybeFlashOnEnter(currentNode, fromId);
+}
+function goBack() {
+  // Save Q33/Q6 state when navigating away
+  if (currentNode && (currentNode.id === 'Q33' || currentNode.id === 'Q6')) {
+    const root = document.getElementById('text');
+    if (root) {
+      const slider = root.querySelector('.heat-slider');
+      if (slider) setUserThreshold(slider.value);
+      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
+        saveNodeState(currentNode.id, collectFormValues(root));
+      }
+    }
+  }
+  closeAllPanels();
+  var fromId = currentNode ? currentNode.id : '';
+  var prevId = historyStack.pop();
+
+  // 🔹 If AB2 was a temporary concept visit, skip it
+  if (prevId === 'AB2' && window.__ab2TempVisit) {
+    window.__ab2TempVisit = false; // clear flag
+    prevId = historyStack.pop();   // jump one more back
+  }
+
+  var prev = flowchart.find(n => n.id === prevId);
+  currentNode = prev || currentNode;
+  renderNode(currentNode);
+  maybeFlashOnEnter(currentNode, fromId);
+}
+function restart() {
+  closeAllPanels();
+  resetQ6State();
+  historyStack = [];
+  currentSegment = "If You Should Act";
+  currentNode = flowchart.find(n => n.id === "Q0");
+  hasFlashedIf = false;
+  hasFlashedWhen = false;
+  lastWasResult = false;
+  miniActGate = false;
+  window.miniPristine = true;
+  window.__pendingConceptScroll = null;
+  window.__backTargetForAB2 = null;
+  window.__ab2TempVisit = false;
+  sessionStorage.removeItem('userThreshold');
+  delete window.currentThresholdPct;
+  if (originalTitleHTML) {
+    document.getElementById('segmentTitle').innerHTML = originalTitleHTML;
+    document.getElementById('skipBtn').style.display = 'none';
+  }
+  renderNode(currentNode);
+}
+
+/* Skip button */
+document.getElementById('skipBtn').addEventListener('click', function() {
+  closeAllPanels();
+  goToNode('Q31');
 });
 
-// Reset
-el.reset.addEventListener('click', ()=>{
-  Object.assign(state, {N:1,S:null,C:null,mode:'oneInX',pVal:null,sevVar:false,costVar:false,probVar:false,Sextra:null,Cextra:null,groups:[]});
-  el.N.value=1; el.S.value=''; el.C.value=''; el.mode.value='oneInX'; el.pVal.value='';
-  el.tgSev.checked=false; el.tgCost.checked=false; el.tgProb.checked=false;
-  el.Sextra.value=''; el.Cextra.value=''; drawGroups(); onChange();
+/* Shared panel */
+function collapseSharedPanel() {
+  var panel = document.getElementById('sharedPanel');
+  if (panel) {
+    panel.style.display = 'none';
+    panel.setAttribute('aria-hidden','true');
+    panel.dataset.mode = '';
+    panel.innerHTML = '';
+  }
+  var leftWrap  = document.getElementById('leftControlsWrapper');
+  var rightWrap = document.getElementById('rightControlsWrapper');
+
+  if (leftWrap) {
+    var exBtns = leftWrap.querySelectorAll('.examples-btn');
+    for (var i=0;i<exBtns.length;i++) {
+      exBtns[i].textContent = 'Show Examples';
+      exBtns[i].setAttribute('aria-expanded','false');
+      exBtns[i].classList.remove('active');
+    }
+  }
+  if (rightWrap) {
+    var rBtns = rightWrap.querySelectorAll('.viz-btn, .reasoning-btn');
+    for (var j=0;j<rBtns.length;j++) {
+      var btn = rBtns[j];
+      if (btn.classList.contains('viz-btn')) btn.textContent = 'Show Visualization';
+      if (btn.classList.contains('reasoning-btn')) btn.textContent = 'Show Percentage Reasoning';
+      btn.setAttribute('aria-expanded','false');
+      btn.classList.remove('active');
+    }
+  }
+}
+
+/* ======= Shared panel helpers + visuals ======= */
+function openSharedPanel(panel, mode) {
+  panel.style.display = 'block';
+  panel.setAttribute('aria-hidden','false');
+  panel.dataset.mode = mode;
+}
+
+function renderExamples(panel, qid) {
+  var ex = window.examples[qid];
+  if (!ex) {
+    panel.innerHTML = '<p>No examples available.</p>';
+    return;
+  }
+  var ul = document.createElement('ul');
+  for (var i=0;i<ex.length;i++) {
+    var li = document.createElement('li');
+    li.textContent = ex[i];
+    ul.appendChild(li);
+  }
+  panel.appendChild(ul);
+}
+
+function renderViz(panel, src, alt) {
+  var img = document.createElement('img');
+  img.src = src;
+  img.alt = alt;
+  panel.appendChild(img);
+}
+
+function createTickRow(where, wrap) {
+  var tickRow = document.createElement('div');
+  tickRow.className = 'tick-row ' + where;
+  for (var i=1;i<=10;i++) {
+    var tick = document.createElement('div');
+    tick.className = 'tick';
+    tick.style.left = (i-1) * (100/9) + '%';
+    tickRow.appendChild(tick);
+  }
+  wrap.appendChild(tickRow);
+}
+
+function updateSliderFill(slider, sev) {
+  const pct = ((sev - 1) / 9) * 100;
+  slider.style.setProperty('--pct', pct + '%');
+
+  // nonlinear progression: low severities push color shift faster
+  const t = Math.pow((sev - 1) / 9, 0.2); // exponent <1 makes early shift steeper
+  const hue = 240 - t * 240; // blue → red
+  const color = `hsl(${hue}, 90%, 50%)`;
+  slider.style.setProperty('--fill', color);
+}
+
+/* ---------- Controls under the text ---------- */
+function setupAuxToggles(node) {
+  var leftWrap = document.getElementById('leftControlsWrapper');
+  var rightWrap = document.getElementById('rightControlsWrapper');
+  var panel = document.getElementById('sharedPanel');
+
+  leftWrap.innerHTML = '';
+  rightWrap.innerHTML = '';
+  collapseSharedPanel();
+
+  // ✅ Show aux controls for questions, and ALSO for Q33 specifically
+  var allowAux = (node.type === 'question') || (node.id === 'Q33');
+  if (!allowAux) return;
+
+  // LEFT: Examples (always for allowed nodes)
+  var examplesBtn = document.createElement('button');
+  examplesBtn.type = 'button';
+  examplesBtn.textContent = 'Show Examples';
+  examplesBtn.className = 'examples-btn ctrl-btn';
+  examplesBtn.setAttribute('aria-expanded', 'false');
+  leftWrap.appendChild(examplesBtn);
+
+  examplesBtn.onclick = function() {
+    var isOpenExamples = panel.style.display === 'block' && panel.dataset.mode === 'examples';
+    if (isOpenExamples) {
+      collapseSharedPanel();
+    } else {
+      panel.innerHTML = '';
+      renderExamples(panel, node.id);
+      openSharedPanel(panel, 'examples');
+      examplesBtn.setAttribute('aria-expanded','true');
+      examplesBtn.classList.add('active');
+    }
+  };
+
+  // RIGHT: Only one graph/logic button per applicable slide
+  if (node.id === 'Q22' || node.id === 'Q24') {
+    var vizBtn = document.createElement('button');
+    vizBtn.type = 'button';
+    vizBtn.textContent = 'Show Visualization';
+    vizBtn.className = 'viz-btn ctrl-btn';
+    vizBtn.setAttribute('aria-expanded', 'false');
+    rightWrap.appendChild(vizBtn);
+
+    vizBtn.onclick = function() {
+      var isOpenViz = panel.style.display === 'block' && panel.dataset.mode === 'viz';
+      var src = node.id === 'Q22' ? './diminishing_returns_curve.png' : './inverted_u_curve.png';
+      var alt = node.id === 'Q22'
+        ? 'Diminishing Returns Curve: Effort/Resources vs Functional Results'
+        : 'Inverted-U Curve: Effort/Resources vs Functional Results';
+      if (isOpenViz) {
+        collapseSharedPanel();
+      } else {
+        panel.innerHTML = '';
+        renderViz(panel, src, alt);
+
+        var link = document.createElement('a');
+        link.href = (node.id === 'Q22') 
+          ? '#concept-diminishing-returns' 
+          : '#concept-inverted-u';
+        link.textContent = 'See full explanation and formulas';
+        link.style.display = 'inline-block';
+        link.style.marginTop = '8px';
+        
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = (node.id === 'Q22')
+            ? 'concept-diminishing-returns'
+            : 'concept-inverted-u';
+          history.replaceState(null, '', `#${target}`);
+          jumpToConcept(target, /* back */ node.id);
+        })
+        
+        panel.appendChild(link);
+
+        openSharedPanel(panel, 'viz');
+        vizBtn.setAttribute('aria-expanded','true');
+        vizBtn.classList.add('active');
+      }
+    };
+  } else if (node.id === 'Q46' || node.id === 'Q47') {
+    var reasonBtn = document.createElement('button');
+    reasonBtn.type = 'button';
+    reasonBtn.textContent = 'Show Percentage Reasoning';
+    reasonBtn.className = 'reasoning-btn ctrl-btn';
+    reasonBtn.setAttribute('aria-expanded','false');
+    rightWrap.appendChild(reasonBtn);
+
+    reasonBtn.onclick = function() {
+      var isOpenReason = panel.style.display === 'block' && panel.dataset.mode === 'reason';
+      if (isOpenReason) {
+        collapseSharedPanel();
+      } else {
+        panel.innerHTML = '';
+        var p = document.createElement('p');
+        p.textContent = 'Your current threshold is ' + currentThresholdPct + '%.';
+        panel.appendChild(p);
+        var img = document.createElement('img');
+        img.src = './linear_threshold_chart.png';
+        img.alt = 'Linear Severity to Action Threshold: Threshold = 100% − (Severity × 10%)';
+        panel.appendChild(img);
+        
+        var link = document.createElement('a');
+        link.href = '#concept-severity-threshold';
+        link.textContent = 'See full explanation';
+        link.style.display = 'inline-block';
+        link.style.marginTop = '8px';
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const target = 'concept-severity-threshold';
+          history.replaceState(null, '', `#${target}`);
+          jumpToConcept(target, /* back */ node.id);
+        })
+        panel.appendChild(link);
+
+        
+        openSharedPanel(panel, 'reason');
+        reasonBtn.setAttribute('aria-expanded','true');
+        reasonBtn.classList.add('active');
+      }
+    };
+  }
+}
+
+/* === Dynamic text transforms for Q46 / Q47 (optional) === */
+function formatPct(p){ 
+  // Keep integers clean, otherwise show up to 1 decimal
+  return (Math.round(p) === p ? String(p) : String(Number(p.toFixed(1))));
+}
+
+function transformQ46(html){
+  // Replace the hardcoded 50% with the live threshold
+  var pct = formatPct(currentThresholdPct);
+  return html.replace(/nearing or greater than 50%/g, 'nearing or greater than ' + pct + '%');
+}
+
+function transformQ47(html){
+  // Replace the hardcoded 50% with the live threshold
+  var pct = formatPct(currentThresholdPct);
+  return html.replace(/nearing or greater than 50%/g, 'nearing or greater than ' + pct + '%');
+}
+
+function showOrHideRiskInline(node) {
+  var container = document.getElementById('riskInline');
+  container.innerHTML = '';
+  if (!node || node.id !== 'Q33') {
+    container.style.display = 'none';
+    container.setAttribute('aria-hidden','true');
+    return;
+  }
+  container.style.display = 'block';
+  container.setAttribute('aria-hidden','false');
+
+  var sevDisplay = document.createElement('div');
+  sevDisplay.className = 'sev-display';
+  sevDisplay.id = 'sevDisplay';
+  sevDisplay.textContent = '1';
+  container.appendChild(sevDisplay);
+
+  var row = document.createElement('div'); row.className = 'risk-row';
+
+  var wrap = document.createElement('div');
+  wrap.className = 'slider-wrap';
+
+  var slider = document.createElement('input');
+  slider.type = 'range'; slider.min = '1'; slider.max = '10'; slider.step = '1';
+  slider.className = 'heat-slider';
+  slider.setAttribute('list','riskTicks');
+  var stored = getUserThreshold();
+  slider.value = (stored != null ? String(stored) : '1');
+  
+  createTickRow('top', wrap);
+  wrap.appendChild(slider);
+  createTickRow('bottom', wrap);
+
+  row.appendChild(wrap);
+  container.appendChild(row);
+
+  var ticks = document.createElement('datalist');
+  ticks.id = 'riskTicks';
+  for (var i=1;i<=10;i++){ var opt=document.createElement('option'); opt.value=String(i); ticks.appendChild(opt); }
+  container.appendChild(ticks);
+
+  function applyFromSeverity(sev) {
+    var s = Math.max(1, Math.min(10, Number(sev) || 1)); // clamp 1..10
+    var thr = 100 - s * 10;
+    window.currentThresholdPct = thr; // <-- make the global write explicit
+    sevDisplay.textContent = String(s);
+    updateSliderFill(slider, s);
+    
+    if (currentNode && (currentNode.id === 'Q46' || currentNode.id === 'Q47')) {
+      var textDiv = document.getElementById('text');
+      var html = currentNode.text || '';
+      html = currentNode.id === 'Q46' ? transformQ46(html) : transformQ47(html);
+      textDiv.innerHTML = '<div class="result-text">' + html + '</div>';
+    }
+  }
+
+  applyFromSeverity(parseInt(slider.value, 10));
+
+  slider.oninput = function() {
+    var sev = parseInt(slider.value, 10);
+    applyFromSeverity(sev);
+    setUserThreshold(slider.value);   // <— persist immediately
+    if (typeof hapticBump === 'function') hapticBump();
+  };
+}
+  
+/* ========= Concept deep-link helpers (clean, consolidated) ========= */
+
+// Map Q-ids to concept anchors (used by call sites if you prefer indirection)
+var CONCEPT_ANCHOR_BY_QID = {
+  Q22: 'concept-diminishing-returns',
+  Q24: 'concept-inverted-u',
+  Q46: 'concept-severity-threshold',
+  Q47: 'concept-severity-threshold',
+  Q6: 'concept-prob-sev-cost',
+  Q7: 'concept-prob-sev-cost'
+};
+
+function assignConceptAnchors() {
+  var textDiv = document.getElementById('text');
+  if (!textDiv) return;
+
+  function setIdByHeadingContains(phrase, id) {
+    var hs = textDiv.querySelectorAll('h2, h3');
+    for (var i=0;i<hs.length;i++){
+      var h = hs[i];
+      if ((h.textContent||'').toLowerCase().includes(phrase.toLowerCase())) {
+        h.id = id; return true;
+      }
+    }
+    return false;
+  }
+
+  // only (re)assign if missing
+  if (!textDiv.querySelector('#concepts-top')) {
+    setIdByHeadingContains('IF You Should Act', 'concepts-top');
+    setIdByHeadingContains('Diminishing Returns', 'concept-diminishing-returns');
+    setIdByHeadingContains('Inverted-U', 'concept-inverted-u');
+    setIdByHeadingContains('Severity and Threshold', 'concept-severity-threshold');
+    setIdByHeadingContains('Probability vs. Severity vs. Cost', 'concept-prob-sev-cost');
+  }
+}
+
+// Remember where the user came from (a Q# slide)
+let __lastQuestionId = null;
+function noteOrigin(node) {
+  if (node && node.id && /^Q\d+$/.test(node.id)) __lastQuestionId = node.id;
+}
+
+window.addEventListener('error', e => {
+  const box = document.getElementById('errorBox') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'errorBox'}));
+  box.style.cssText = 'white-space:pre-wrap;padding:12px;margin:8px;border:1px solid #a00;background:#2b0000;color:#fff';
+  box.textContent = 'JS Error: ' + (e.message || e.error || e);
 });
-
-// Continue → Q7
-el.cont.addEventListener('click', ()=>{
-  document.getElementById('q6').classList.add('hidden');
-  document.getElementById('q7').classList.remove('hidden');
-  const res = computeAll(state);
-  redraw(el.plotQ7, res);
-  el.verdictQ7.className='verdict ' + (res.act?'ok':'no');
-  el.verdictQ7.textContent = (res.act?'Act should be considered (exploration). Go back to Q6 to change values.':'Not worth it (exploration).');
+window.addEventListener('unhandledrejection', e => {
+  const box = document.getElementById('errorBox') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'errorBox'}));
+  box.style.cssText = 'white-space:pre-wrap;padding:12px;margin:8px;border:1px solid #a00;background:#2b0000;color:#fff';
+  box.textContent = 'Promise Rejection: ' + (e.reason && (e.reason.message || e.reason)) ;
 });
+  
+function bootGuide() {
+  // make sure DOM is present
+  const text = document.getElementById('text');
+  if (!text) {
+    console.warn('DOM not ready for boot; retrying…');
+    return setTimeout(bootGuide, 30);
+  }
 
-// Tabs
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  t.classList.add('active');
-  const page = t.dataset.page;
-  ['q6','q7','ab2'].forEach(id=>document.getElementById(id).classList.toggle('hidden', id!==page));
-}));
+  // flowchart must exist
+  if (!Array.isArray(window.flowchart) || !flowchart.length) {
+    console.warn('flowchart not ready; retrying…');
+    return setTimeout(bootGuide, 30);
+  }
 
-// Init
-drawGroups(); onChange();
+  // cache title safely
+  const titleEl = document.getElementById('segmentTitle');
+  if (titleEl && !window.originalTitleHTML) {
+    window.originalTitleHTML = titleEl.innerHTML || '';
+  }
+
+  // set starting node & render
+  window.currentNode = flowchart.find(n => n.id === 'Q0') || flowchart[0];
+  renderNode(window.currentNode);
+}
+
+// Run after DOM, or immediately if it’s already ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootGuide);
+} else {
+  bootGuide();
+}
+  
+function safeTypeset(rootEl) {
+  try {
+    if (window.MathJax && MathJax.typesetPromise && rootEl) {
+      return MathJax.typesetPromise([rootEl]).catch(()=>{});
+    }
+  } catch (_) {}
+  return Promise.resolve();
+}
+
+// Q33 threshold persistence
+function setUserThreshold(v){
+  const n = Number(v);
+  if (!Number.isFinite(n)) return;
+  sessionStorage.setItem('userThreshold', String(n));
+}
+function getUserThreshold(){
+  const s = sessionStorage.getItem('userThreshold');
+  if (s == null) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Ensure heat-slider's fill matches its value (in case no input handler ran yet)
+function syncHeatSliderFill(sl){
+  if (!sl) return;
+  const min = sl.min !== '' ? Number(sl.min) : 0;
+  const max = sl.max !== '' ? Number(sl.max) : 100;
+  const sev = Number(sl.value) || min;
+  const pct = Math.max(0, Math.min(100, ((sev - min) / (max - min)) * 100));
+  // percentage goes in --pct; color comes from updateSliderFill
+  sl.style.setProperty('--pct', pct + '%');
+  // also set the hue color so the gradient is correct
+  if (typeof updateSliderFill === 'function') {
+    updateSliderFill(sl, sev);
+  }
+}
+
+  // Wait for MathJax + images + a couple of frames, then resolve (or time out)
+  function waitForAB2Layout(root, {timeout=800} = {}) {
+    const waits = [];
+  
+    // MathJax settle
+    try {
+      if (window.MathJax && MathJax.typesetPromise) {
+        waits.push(MathJax.typesetPromise([root]).catch(()=>{}));
+      }
+    } catch (_) {}
+  
+    // Images settle
+    const imgs = Array.from(root.querySelectorAll('img'));
+    if (imgs.length) {
+      waits.push(Promise.all(imgs.map(img =>
+        img.complete ? Promise.resolve()
+                     : new Promise(res => {
+                         img.addEventListener('load',  res, {once:true});
+                         img.addEventListener('error', res, {once:true});
+                       })
+      )));
+    }
+  
+    // Next couple of frames
+    function nextFrames(n=2){ return new Promise(r=>{
+      let i=0; const step=()=>{ if(++i>n) r(); else requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });}
+    waits.push(nextFrames(2));
+  
+    // Race with a timeout so we never hang
+    return Promise.race([
+      Promise.all(waits),
+      new Promise(res => setTimeout(res, timeout))
+    ]);
+  }
+  
+  // Do the scroll now and once again after layout settles
+  async function robustScrollToConcept(root, conceptId, backQId) {
+    // your existing scroll now (keeps current behavior)
+    scrollToConcept(conceptId, backQId);
+  
+    // run after layout is stable, then re-scroll precisely
+    await waitForAB2Layout(root);
+    scrollToConcept(conceptId, backQId);
+  
+    // tiny nudge once more on the next frame for stubborn cases
+    requestAnimationFrame(() => scrollToConcept(conceptId, backQId));
+  }
+
+
+function resetQ6State() {
+  // Clear any persisted threshold or Q6 cache (if you’ve added one)
+  try {
+    sessionStorage.removeItem('userThreshold');   // already used elsewhere
+    sessionStorage.removeItem('miniMaster');      // only if you ever saved it
+  } catch (_) {}
+
+  // Blank-on-first-visit behavior for Q6
+  window.miniPristine = true;
+
+  // Reset the master values so nothing pre-fills
+  window.miniMaster = {
+    S: null,
+    C: null,
+    mode: 'oneInX',
+    val: null,
+    X_user: null
+  };
+
+  // If the Q6 UI might be on screen, clear its inputs immediately
+  const s = document.querySelector('#q6_S');
+  const c = document.querySelector('#q6_C');
+  const v = document.querySelector('#q6_val');
+  const modeSel = document.querySelector('#q6_mode');
+  if (s) s.value = '';
+  if (c) c.value = '';
+  if (v) v.value = '';
+  if (modeSel) modeSel.value = 'oneInX';
+}
+  
+/* Render node */
+if (!originalTitleHTML) {
+  originalTitleHTML = document.getElementById('segmentTitle').innerHTML;
+}
+
+function renderNode(node) {
+  closeAllPanels();
+  var errorBox = document.getElementById('errorBox');
+  errorBox.textContent = '';
+
+  if (!node) {
+    errorBox.textContent = "Error: Could not render step.";
+    document.getElementById('text').textContent = '';
+    document.getElementById('buttons').innerHTML = '';
+    setHeadingText('');
+    document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
+    document.getElementById('restartTop').style.display = 'inline-block';
+    return;
+  }
+
+  var previousSegment = currentSegment;
+  var thisSegment = (node.type === 'about' || node.type === 'aboutMenu')
+    ? previousSegment
+    : getSegmentForNodeId(node.id);
+
+  var comingFromResult = lastWasResult && node.type !== 'result';
+  var shouldFlash =
+    node.id !== 'Q0' && (
+      node.type === 'result' ||
+      comingFromResult ||
+      thisSegment !== previousSegment ||
+      (thisSegment === "If You Should Act" && !hasFlashedIf) ||
+      (thisSegment === "When You Should Act" && !hasFlashedWhen)
+    );
+
+  if (shouldFlash && !(node.type === 'about' || node.type === 'aboutMenu')) {
+    flashHeadingColor(thisSegment, node);
+    if (thisSegment === "If You Should Act") hasFlashedIf = true;
+    if (thisSegment === "When You Should Act") hasFlashedWhen = true;
+  }
+
+  currentSegment = thisSegment;
+  setHeadingText(node);
+  lastWasResult = (node.type === 'result');
+
+  var textDiv = document.getElementById('text');
+
+  // Theme button + back visibility
+  var themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) {
+    themeBtn.style.display = (node.id === 'Q0') ? 'inline-block' : 'none';
+    if (node.id === 'Q0' && window.__refreshThemeButtonLabel) window.__refreshThemeButtonLabel();
+  }
+  document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
+
+  // ✅ Custom slides Q6/Q7 are handled here with early returns
+  if (node.id === 'Q6') {
+    textDiv.innerHTML = '';
+    document.getElementById('buttons').innerHTML = '';
+    renderMiniQ6(textDiv, node);
+    return;
+  }
+  if (node.id === 'Q7') {
+    textDiv.innerHTML = '';
+    document.getElementById('buttons').innerHTML = '';
+    renderMiniQ7(textDiv, node);
+    return;
+  }
+  
+  // Default content
+  let html = node.text || '';
+  if (node && (node.id === 'Q46' || node.id === 'Q47')) {
+    html = (node.id === 'Q46') ? transformQ46(html) : transformQ47(html);
+  }
+  
+  /* ✅ ADD THIS: inject default slide content for all non-special slides */
+  document.getElementById('text').innerHTML = html;
+
+
+  // ==== Q33: restore + persist the .heat-slider ====
+  if (node && node.id === 'Q33') {
+    const q33Root = document.getElementById('text');
+    const slider  = q33Root.querySelector('.heat-slider');
+  
+    // Restore other persisted fields if you use them
+    const saved = (typeof loadNodeState === 'function') ? loadNodeState('Q33') : null;
+    if (saved && typeof applyFormValues === 'function') applyFormValues(q33Root, saved);
+  
+    // Defer restore two frames so defaults elsewhere can't overwrite us
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const stored = getUserThreshold();
+      if (slider && stored != null) {
+        slider.value = String(stored);
+        syncHeatSliderFill(slider);        // <-- uses the fixed helper
+      }
+    }));
+  
+    // Keep both stores in sync on any edit
+    const persistQ33 = () => {
+      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
+        saveNodeState('Q33', collectFormValues(q33Root));
+      }
+      if (slider) setUserThreshold(slider.value);
+    };
+    q33Root.addEventListener('input',  persistQ33);
+    q33Root.addEventListener('change', persistQ33);
+  
+    // Also set once on entry (covers first-visit / default write)
+    if (slider) setUserThreshold(slider.value);
+  }
+
+  // ==== Q46 / Q47: restore threshold from Q33 ====
+  if (node && (node.id === 'Q46' || node.id === 'Q47')) {
+    const root = document.getElementById('text');
+    const stored = getUserThreshold();
+  
+    // If you want to show the value somewhere in Q46/Q47
+    if (stored != null) {
+      const out = root.querySelector('.threshold-display');
+      if (out) out.textContent = stored;  // or set value on input if you have one
+    }
+  }
+
+  // 🔹 Inject content, but wrap AB2 so we have an element to target
+  if (node && node.id === 'AB2') {
+    const textDiv = document.getElementById('text');
+    textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
+  
+    const ab2El = document.getElementById('AB2');
+    assignConceptAnchors();
+  
+    // (safe MathJax typeset as you already have)
+    try {
+      if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+        if (typeof MathJax.typesetClear === 'function') MathJax.typesetClear();
+        MathJax.typesetPromise([ab2El]).catch(() => {});
+      }
+    } catch (err) { /* no-op */ }
+  
+    // === NEW: do special behavior ONLY when we have a pending concept scroll ===
+    const intent = window.__pendingConceptScroll;   // {conceptId, backQId} | undefined
+    if (intent && intent.conceptId) {
+      const backQId = intent.backQId || 'Q0';
+      // clear one-shot intent immediately so later AB2 loads are normal
+      window.__pendingConceptScroll = null;
+      window.__backTargetForAB2 = backQId;
+  
+      // 1) optional: flash AB2 heading only for concept intent
+      try { flashAb2Heading('ab2Heading'); } catch(_) {}
+  
+      // 2) scroll to concept
+      robustScrollToConcept(ab2El, intent.conceptId, backQId);
+  
+      // 3) handle in-page #anchor clicks only in this intent mode
+      ab2El.addEventListener('click', function (e) {
+        const a = e.target.closest('a[href^="#"]');
+        if (!a) return;
+        const id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        e.preventDefault();
+        history.replaceState(null, '', `#${id}`);
+        scrollToConcept(id, window.__backTargetForAB2 || 'Q0');
+      }, { passive: true });
+  
+  
+    } else {
+      // NORMAL AB2: no flash, no forced scroll, no injected back button
+      window.__backTargetForAB2 = null;
+      // optional: clear any stale hash from earlier sessions
+      // history.replaceState(null, '', location.pathname);
+    }
+  
+    // Aux toggles etc.
+    setupAuxToggles(node);
+    showOrHideRiskInline(node);
+    return;
+  }
+
+  setupAuxToggles(node);
+  showOrHideRiskInline(node);
+
+  var btns = document.getElementById('buttons');
+  btns.innerHTML = '';
+  const restartTop = document.getElementById('restartTop');
+
+  if (node.type === 'result') {
+    restartTop.style.display = 'none';
+    btns.classList.add('center');
+    const restartCentered = makeButton('Restart', 'restart', () => restart());
+    restartCentered.style.flex = '0 0 auto';
+    btns.appendChild(restartCentered);
+  } else {
+    restartTop.style.display = (node.id === 'Q0') ? 'none' : 'inline-block';
+    btns.classList.remove('center');
+
+    if (node.type === 'about') return;
+    if (node.type === 'aboutMenu') {
+      btns.appendChild(makeButton('About Me', 'next', () => goToNode('AB1')));
+      btns.appendChild(makeButton('Guide Concepts Explained', 'next', () => goToNode('AB2')));
+      return;
+    }
+
+    if (node.type === 'question') {
+      const yesBtn = makeButton('Yes', 'yes', () => goToNode(node.yes));
+      const noBtn  = makeButton('No',  'no',  () => goToNode(node.no));
+      btns.appendChild(yesBtn);
+      btns.appendChild(noBtn);
+      if (node.same) btns.appendChild(makeButton('Roughly the Same', 'same', () => goToNode(node.same)));
+    } else if (node.type === 'info') {
+      if (node.id === 'Q0') {
+        btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
+        btns.appendChild(makeButton('About', 'next', () => goToNode('AB0')));
+      } else {
+        btns.appendChild(makeButton('Next', 'next', () => goToNode(node.next)));
+      }
+    }
+  }
+}
+
 </script>
 </body>
 </html>
