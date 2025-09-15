@@ -1005,34 +1005,41 @@ function renderMiniQ6(intoEl, node){
   top.innerHTML = node.text || '';
   intoEl.appendChild(top);
 
-  // Wrapper + fields
+  
+  // Wrapper + fields (patched to new layout)
   const wrap = document.createElement('div'); wrap.className = 'mini-wrap';
   const fields = document.createElement('div'); fields.className = 'mini-fields';
 
-  // IMPORTANT: use type="text" so we can allow interim states while typing
-  const sBox = document.createElement('div'); sBox.className='mini-field';
-  sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
-  const cBox = document.createElement('div'); cBox.className='mini-field';
-  cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
-  fields.appendChild(sBox); fields.appendChild(cBox);
+  // N centered at top
+  const nRow = document.createElement('div'); nRow.className='mini-field'; nRow.style.gridColumn='1 / -1'; nRow.style.textAlign='center';
+  nRow.innerHTML = '<label>Total instances (N)</label><input id="adN" type="number" min="1" step="1" value="1" style="max-width:200px;margin:0 auto;display:block;">';
+  wrap.appendChild(nRow);
 
+  // Severity
+  const sBox = document.createElement('div'); sBox.className='mini-field';
+  sBox.innerHTML = '<label>Severity (S) — up to 10 <span class="mini-sub"><input id="tgSev" type="checkbox" style="margin-left:8px;"> varies across instances</span></label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5"><div id="sevExtraBox" class="mini-sub mini-muted"><div>Total extra severity across outliers</div><input id="miniSevExtra" type="number" step="any" placeholder="e.g. 3"></div>';
+  fields.appendChild(sBox);
+
+  // Cost
+  const cBox = document.createElement('div'); cBox.className='mini-field';
+  cBox.innerHTML = '<label>Cost (C) — up to 10 <span class="mini-sub"><input id="tgCost" type="checkbox" style="margin-left:8px;"> varies across instances</span></label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1"><div id="costExtraBox" class="mini-sub mini-muted"><div>Total extra cost across outliers</div><input id="miniCostExtra" type="number" step="any" placeholder="e.g. 2"></div>';
+  fields.appendChild(cBox);
+
+  // Probability
   const pRow = document.createElement('div'); pRow.className='mini-fields';
   const mBox = document.createElement('div'); mBox.className='mini-field';
-  mBox.innerHTML = '<label>Probability input mode</label>\
-    <select id="miniMode" name="q6Units">\
-      <option value="oneInX">1 in X</option>\
-      <option value="percent">Percentage (%)</option>\
-      <option value="micromort">Micromorts</option>\
-    </select>';
+  mBox.innerHTML = '<label>Probability input mode</label><select id="miniMode" name="q6Units"><option value="oneInX">1 in X</option><option value="percent">Percentage (%)</option><option value="micromort">Micromorts</option></select>';
   const vBox = document.createElement('div'); vBox.className='mini-field';
-  vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000,000">';
+  vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="0" step="any" placeholder="e.g. 1,000,000">';
   pRow.appendChild(mBox); pRow.appendChild(vBox);
-
   wrap.appendChild(fields); wrap.appendChild(pRow);
 
-  var q6Root = intoEl;  // this is the DOM container for Q6
+  const probVarRow = document.createElement('div'); probVarRow.className = 'mini-field';
+  probVarRow.innerHTML = '<label class="mini-sub" style="display:block;margin-top:6px;"><input id="tgProb" type="checkbox"> Probability varies across instances</label><div id="probExtraBox" class="mini-sub mini-muted"><div id="groups"></div><button type="button" class="back" id="addGroupBtn" style="margin-top:6px;padding:6px 10px;">Add probability group</button><div id="countMsg" class="error" style="margin-top:6px;"></div></div>';
+  wrap.appendChild(probVarRow);
 
-  // SVG
+  intoEl.appendChild(wrap);
+// SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg');
   svg.setAttribute('viewBox','0 0 940 620');
@@ -1061,7 +1068,6 @@ function renderMiniQ6(intoEl, node){
   wrap.appendChild(link);
 
   intoEl.appendChild(wrap);
-  wrap.id = 'q6Root';
 
   // Inputs
   const elS  = wrap.querySelector('#miniS');
@@ -1069,7 +1075,7 @@ function renderMiniQ6(intoEl, node){
   const elM  = wrap.querySelector('#miniMode');
   const elV  = wrap.querySelector('#miniVal');
   const labV = wrap.querySelector('#miniProbLabel');
-  let probName = null;
+  const probName = wrap.querySelector('#miniProbName');
 
   // ===== Persistence (restore first) =====
   const savedQ6 = loadNodeState('Q6');
@@ -1084,7 +1090,7 @@ function renderMiniQ6(intoEl, node){
   }
 
   elM.value = miniMaster.mode;
-  if (probName) probName.textContent = miniProbSymbol(miniMaster.mode);
+  probName.textContent = miniProbSymbol(miniMaster.mode);
   function updateProbLabelForMode(mode){
     if (mode==='oneInX'){ labV.textContent='Enter X (for “1 in X”)'; elV.placeholder='e.g. 1,000,000'; }
     else if (mode==='percent'){ labV.textContent='Enter percentage (%)'; elV.placeholder='e.g. 0.01'; }
@@ -1435,7 +1441,7 @@ function renderMiniQ6(intoEl, node){
 /* ===========================================================
    Q7 — visualization-only mirror (draggable; inputs greyed)
 =========================================================== */
-function renderMiniQ7(intoEl, node){
+function renderMiniQ7(/* sandbox */intoEl, node){
   intoEl.innerHTML = '';
 
   const top = document.createElement('div');
