@@ -808,9 +808,37 @@ function _toProb(mode, val) {
   return 1 / X;
 }
 
-function computeProbabilitiesSingleGroup(add) {
+
+function computeProbabilities(add) {
   const N = Math.max(0, add.N|0);
   if (N === 0) return { Pany:0, sumP:0, nBase:0, valid:false };
+
+  const pBase = _toProb(add.usual.pMode, add.usual.pVal);
+  if (pBase == null) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
+
+  let used = 0;
+  let productNone = 1;
+  let sumP = 0;
+
+  const groups = (add.toggles.pVar && Array.isArray(add.groups)) ? add.groups : [];
+  for (let i=0; i<groups.length; i++) {
+    const g = groups[i] || {};
+    const cnt = Math.max(0, (g.count|0));
+    const pg  = _toProb(g.mode, g.val);
+    if (pg == null) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
+    used += cnt;
+    productNone *= Math.pow(1 - pg, cnt);
+    sumP += cnt * pg;
+  }
+  if (used > N) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
+
+  const nBase = N - used;
+  productNone *= Math.pow(1 - pBase, nBase);
+  sumP += nBase * pBase;
+
+  return { Pany: 1 - productNone, sumP: sumP, nBase: nBase, valid:true };
+}
+;
 
   const pBase = _toProb(add.usual.pMode, add.usual.pVal);
   if (pBase == null) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
@@ -842,7 +870,7 @@ function computeCostSeverity(add) {
 }
 
 function computeMiniVerdict(add) {
-  const P = computeProbabilitiesSingleGroup(add);
+  const P = computeProbabilities(add);
   const CS = computeCostSeverity(add);
   if (!P.valid || isNaN(P.Pany) || isNaN(P.sumP)) return { ok:false, reason:'Check inputs: counts or probabilities invalid.' };
   const EV = CS.Savg * P.sumP;
@@ -1094,11 +1122,16 @@ function renderMiniQ6(intoEl, node){
 
   // Probability (usual)
   const pBox = document.createElement('div'); pBox.className='mini-field';
-  pBox.innerHTML = '<label>Probability unit</label>  <select id="miniMode" name="q6Units"><option value="oneInX">1 in X</option><option value="percent">Percentage (%)</option><option value="micromort">Micromorts</option></select>  <div class="mini-sub"><label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000,000"></div>  <div class="mini-sub"><label><input id="tgProb" type="checkbox"> Probability varies across instances</label></div>  <div id="probExtraBox" class="mini-sub mini-muted">\
+  pBox.innerHTML = '<label>Probability unit</label>\
+  <select id="miniMode" name="q6Units"><option value="oneInX">1 in X</option><option value="percent">Percentage (%)</option><option value="micromort">Micromorts</option></select>\
+  <div class="mini-sub"><label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000,000"></div>\
+  <div class="mini-sub"><label><input id="tgProb" type="checkbox"> Probability varies across instances</label></div>\
+  <div id="probExtraBox" class="mini-sub mini-muted">\
     <div id="groups"></div>\
     <button type="button" class="next" id="addGroupBtn" style="margin-top:6px;">Add probability group</button>\
     <div id="countMsg" class="error" style="margin-top:6px;"></div>\
-  </div>';\n  fields.appendChild(pBox);
+  </div>';
+  fields.appendChild(pBox);
 
   wrap.appendChild(fields);
 
@@ -1194,6 +1227,11 @@ const tgSev = fields.querySelector('#tgSev');
   }
 
   function onAnyChange(){
+    // update count message for groups
+    if (countMsg && tgProb.checked && miniAddition.groups){
+      var used = miniAddition.groups.reduce((s,g)=> s + Math.max(0,(g.count|0)), 0);
+      countMsg.textContent = (used > miniAddition.N) ? ('Group counts exceed total instances N=' + miniAddition.N + '.') : '';
+    }
     refreshToggles();
     syncState();
     // redraw graph exactly as before:
