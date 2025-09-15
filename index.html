@@ -2631,203 +2631,293 @@ function renderNode(node) {
 
 </script>
 
-<!-- Q6 non-destructive upgrade: keeps original layout/graph; only enhances inputs -->
+<!-- === Non-destructive Q6 upgrade & AB2 rewrite (appended) === -->
 <script>
 (function () {
-  if (typeof renderMiniQ6 !== 'function') return;
+  // ---------- Q6 UPGRADE (keeps original layout; only enhances the input stack)
+  if (typeof renderMiniQ6 === 'function') {
+    const _origQ6 = renderMiniQ6;
 
-  const _orig = renderMiniQ6;
-  renderMiniQ6 = function (intoEl, node) {
-    // 1) render original Q6 exactly as-is
-    _orig(intoEl, node);
+    renderMiniQ6 = function (intoEl, node) {
+      // Render original first
+      _origQ6(intoEl, node);
 
-    // 2) upgrade ONLY the number-entry area
-    const root = intoEl.querySelector('.mini-wrap') || intoEl;
-    if (!root) return;
+      const root = intoEl.querySelector('.mini-wrap') || intoEl;
+      if (!root) return;
 
-    // find original inputs (best-effort selectors that match your build)
-    const sInp = root.querySelector('input[name="severity"], #miniS, input[data-q="S"]');
-    const cInp = root.querySelector('input[name="cost"], #miniC, input[data-q="C"]');
-    const pMode = root.querySelector('select[name="q6Units"], #miniMode, select[data-q="mode"]');
-    const pVal  = root.querySelector('#miniVal, input[name="probVal"], input[data-q="pVal"]');
+      // Helper to safely remove a row around an input (prevents duplicate labels later on page)
+      function detachOriginalRow(sel) {
+        const inp = root.querySelector(sel);
+        if (!inp) return null;
+        const row = inp.closest('.mini-field') || inp.parentElement;
+        if (row && row.parentElement) row.parentElement.removeChild(row);
+        return inp;
+      }
 
-    if (!sInp || !cInp || !pMode || !pVal) return; // don't touch layout if not found
+      // Build the new stack container at the top of the original input area
+      let stack = root.querySelector('#q6-entry');
+      if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'q6-entry';
+        stack.className = 'mini-fields';
+        // Try to insert before the original first row, else prepend
+        const firstRow = root.querySelector('.mini-field');
+        if (firstRow && firstRow.parentElement) firstRow.parentElement.insertBefore(stack, firstRow);
+        else root.prepend(stack);
+      } else {
+        stack.innerHTML = '';
+      }
 
-    // build the new stack container above the existing inputs section
-    let stack = root.querySelector('#q6-entry');
-    if (!stack) {
-      stack = document.createElement('div');
-      stack.id = 'q6-entry';
-      stack.className = 'mini-fields';
-      const firstRow = sInp.closest('.mini-field') || sInp.parentElement;
-      if (firstRow && firstRow.parentElement) firstRow.parentElement.insertBefore(stack, firstRow);
-      else root.prepend(stack);
-    } else {
-      stack.innerHTML = '';
-    }
-
-    // Total instances (N) centered, same width
-    const nRow = document.createElement('div');
-    nRow.className = 'mini-field';
-    nRow.style.gridColumn = '1 / -1';
-    nRow.style.textAlign = 'center';
-    nRow.innerHTML = [
-      '<label>Total instances (N)</label>',
-      '<input id="q6N" type="number" min="1" step="1" value="1">'
-    ].join('');
-    stack.appendChild(nRow);
-
-    function wrapWithToggle(labelText, inputEl, idBase) {
-      const box = document.createElement('div');
-      box.className = 'mini-field';
-
-      const label = document.createElement('label');
-      label.textContent = labelText;
-      box.appendChild(label);
-
-      const toggleRow = document.createElement('div');
-      toggleRow.className = 'hint';
-      toggleRow.innerHTML = '<input id="'+idBase+'Tg" type="checkbox"> varies across instances';
-      box.appendChild(toggleRow);
-
-      if (inputEl.parentElement) inputEl.parentElement.removeChild(inputEl);
-      box.appendChild(inputEl);
-
-      const extra = document.createElement('div');
-      extra.className = 'mini-field hidden';
-      extra.id = idBase + 'ExtraWrap';
-      extra.innerHTML = [
-        '<div class="hint">Total extra ' + (idBase === 'q6S' ? 'severity' : 'cost') + ' across outliers (sum)</div>',
-        '<input id="'+idBase+'ExtraVal" type="number" step="any" placeholder="e.g. ' + (idBase === 'q6S' ? '3' : '2') + '">'
+      // N field (centered, same width)
+      const nRow = document.createElement('div');
+      nRow.className = 'mini-field';
+      nRow.style.gridColumn = '1 / -1';
+      nRow.style.textAlign = 'center';
+      nRow.innerHTML = [
+        '<label>Total instances (N)</label>',
+        '<input id="q6N" type="number" min="1" step="1" value="1">'
       ].join('');
-      box.appendChild(extra);
+      stack.appendChild(nRow);
 
-      return { box, toggleRow, extra };
-    }
+      // Wrap one field (label + toggle between label & input + extra section)
+      function wrapWithToggle(labelText, selector, idBase, placeholder) {
+        const inputEl = detachOriginalRow(selector);
+        const box = document.createElement('div');
+        box.className = 'mini-field';
 
-    // severity + cost (reuse your original inputs)
-    const sWrap = wrapWithToggle('Severity (S) — up to 10', sInp, 'q6S');
-    const cWrap = wrapWithToggle('Cost (C) — up to 10',     cInp, 'q6C');
-    stack.appendChild(sWrap.box);
-    stack.appendChild(cWrap.box);
+        const label = document.createElement('label');
+        label.textContent = labelText;
+        box.appendChild(label);
 
-    // probability section (reuse your original selects/inputs)
-    const pField = document.createElement('div');
-    pField.className = 'mini-field';
-    pField.innerHTML = '<label>Probability unit</label>';
-    if (pMode.parentElement) pMode.parentElement.removeChild(pMode);
-    pField.appendChild(pMode);
+        const toggleRow = document.createElement('div');
+        toggleRow.className = 'hint';
+        toggleRow.innerHTML = '<input id="'+idBase+'Tg" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+        box.appendChild(toggleRow);
 
-    const pValRow = document.createElement('div');
-    pValRow.className = 'mini-field';
-    const lab = document.createElement('label');
-    lab.id = 'q6ProbLabel';
-    lab.textContent = 'Enter X (for "1 in X")';
-    pValRow.appendChild(lab);
-    if (pVal.parentElement) pVal.parentElement.removeChild(pVal);
-    pValRow.appendChild(pVal);
-    pField.appendChild(pValRow);
+        if (inputEl) {
+          inputEl.id = idBase;
+          inputEl.placeholder = placeholder;
+          box.appendChild(inputEl);
+        }
 
-    const pToggleRow = document.createElement('div');
-    pToggleRow.className = 'hint';
-    pToggleRow.innerHTML = '<input id="q6TgProb" type="checkbox"> probability varies across instances';
-    pField.appendChild(pToggleRow);
-
-    // groups UI (hidden initially)
-    const groupsWrap = document.createElement('div');
-    groupsWrap.id = 'q6GroupsWrap';
-    groupsWrap.className = 'mini-field hidden';
-    groupsWrap.innerHTML = [
-      '<div id="q6Groups"></div>',
-      '<div style="display:flex;justify-content:center"><button id="q6AddGroup" class="back" type="button" style="padding:6px 10px">Add probability group</button></div>',
-      '<div id="q6CountMsg" class="error" style="text-align:center"></div>'
-    ].join('');
-    pField.appendChild(groupsWrap);
-    stack.appendChild(pField);
-
-    // behavior (no layout changes below this point)
-    const el = {
-      N: stack.querySelector('#q6N'),
-      tgSev: stack.querySelector('#q6STg'),
-      tgCost: stack.querySelector('#q6CTg'),
-      tgProb: stack.querySelector('#q6TgProb'),
-      sExtraWrap: stack.querySelector('#q6SExtraWrap'),
-      cExtraWrap: stack.querySelector('#q6CExtraWrap'),
-      sExtraVal:  stack.querySelector('#q6SExtraVal'),
-      cExtraVal:  stack.querySelector('#q6CExtraVal'),
-      groupsWrap, groups: groupsWrap.querySelector('#q6Groups'),
-      addGroup: groupsWrap.querySelector('#q6AddGroup'),
-      countMsg: groupsWrap.querySelector('#q6CountMsg'),
-      pMode, pVal
-    };
-    const state = { groups: [] };
-
-    function refreshVisibility() {
-      const N = Math.max(1, el.N.valueAsNumber || 1);
-      const dis = (N === 1);
-      [el.tgSev, el.tgCost, el.tgProb].forEach(cb => {
-        cb.disabled = dis;
-        if (cb.parentElement) cb.parentElement.classList.toggle('muted', dis);
-        if (dis) cb.checked = false;
-      });
-      if (el.sExtraWrap) el.sExtraWrap.classList.toggle('hidden', dis || !el.tgSev.checked);
-      if (el.cExtraWrap) el.cExtraWrap.classList.toggle('hidden', dis || !el.tgCost.checked);
-      if (el.groupsWrap)  el.groupsWrap.classList.toggle('hidden', dis || !el.tgProb.checked);
-      if (dis || !el.tgSev.checked) if (el.sExtraVal) el.sExtraVal.value = '';
-      if (dis || !el.tgCost.checked) if (el.cExtraVal) el.cExtraVal.value = '';
-      if (dis || !el.tgProb.checked) { state.groups = []; if (el.groups) el.groups.innerHTML = ''; if (el.countMsg) el.countMsg.textContent = ''; }
-    }
-
-    function drawGroups() {
-      if (!el.groups) return;
-      el.groups.innerHTML = '';
-      state.groups.forEach((g, i) => {
-        const row = document.createElement('div');
-        row.className = 'mini-fields';
-        row.innerHTML = [
-          '<div class="mini-field"><label>Group '+(i+1)+' count</label>',
-          '<input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'"></div>',
-          '<div class="mini-field"><label>Unit</label>',
-          '<select data-i="'+i+'" data-k="mode">',
-          '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>',
-          '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>',
-          '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>',
-          '</select></div>',
-          '<div class="mini-field"><label>Value</label>',
-          '<input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>',
-          '<div class="mini-field"><label>&nbsp;</label>',
-          '<button class="back" data-remove="'+i+'" type="button">Remove</button></div>'
+        const extra = document.createElement('div');
+        extra.className = 'mini-field hidden';
+        extra.id = idBase + 'ExtraWrap';
+        extra.innerHTML = [
+          '<div class="hint">Total extra ' + (idBase === 'q6S' ? 'severity' : 'cost') + ' across outliers (sum)</div>',
+          '<input id="'+idBase+'ExtraVal" type="number" step="any" placeholder="e.g. ' + (idBase === 'q6S' ? '3' : '2') + '">'
         ].join('');
-        el.groups.appendChild(row);
+        box.appendChild(extra);
+
+        return { box, toggleRow, extra };
+      }
+
+      // Reuse existing original inputs (and remove their old rows to prevent duplicates)
+      const sWrap = wrapWithToggle('Severity (S) — up to 10', 'input[name="severity"], #miniS, input[data-q="S"]', 'q6S', 'e.g. 5');
+      const cWrap = wrapWithToggle('Cost (C) — up to 10',     'input[name="cost"], #miniC, input[data-q="C"]',     'q6C', 'e.g. 1');
+      stack.appendChild(sWrap.box);
+      stack.appendChild(cWrap.box);
+
+      // Probability stack
+      const pField = document.createElement('div');
+      pField.className = 'mini-field';
+      pField.innerHTML = '<label>Probability unit</label>';
+      // Find and move original mode & value
+      const pMode = detachOriginalRow('select[name="q6Units"], #miniMode, select[data-q="mode"]') || document.createElement('select');
+      pField.appendChild(pMode);
+      const pValRow = document.createElement('div');
+      pValRow.className = 'mini-field';
+      pValRow.innerHTML = '<label id="q6ProbLabel">Enter X (for "1 in X")</label>';
+      const pVal = detachOriginalRow('#miniVal, input[name="probVal"], input[data-q="pVal"]') || document.createElement('input');
+      if (!pVal.type) pVal.type = 'number';
+      pValRow.appendChild(pVal);
+      pField.appendChild(pValRow);
+      const pToggleRow = document.createElement('div');
+      pToggleRow.className = 'hint';
+      pToggleRow.innerHTML = '<input id="q6TgProb" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+      pField.appendChild(pToggleRow);
+
+      // Groups UI (hidden initially)
+      const groupsWrap = document.createElement('div');
+      groupsWrap.id = 'q6GroupsWrap';
+      groupsWrap.className = 'mini-field hidden';
+      groupsWrap.innerHTML = [
+        '<div id="q6Groups"></div>',
+        '<div style="display:flex;justify-content:center"><button id="q6AddGroup" class="back" type="button" style="padding:6px 10px">Add probability group</button></div>',
+        '<div id="q6CountMsg" class="error" style="text-align:center"></div>'
+      ].join('');
+      pField.appendChild(groupsWrap);
+      stack.appendChild(pField);
+
+      // ------- Behavior
+      const el = {
+        N: stack.querySelector('#q6N'),
+        tgSev: stack.querySelector('#q6STg'),
+        tgCost: stack.querySelector('#q6CTg'),
+        tgProb: stack.querySelector('#q6TgProb'),
+        sExtraWrap: stack.querySelector('#q6SExtraWrap'),
+        cExtraWrap: stack.querySelector('#q6CExtraWrap'),
+        sExtraVal:  stack.querySelector('#q6SExtraVal'),
+        cExtraVal:  stack.querySelector('#q6CExtraVal'),
+        groupsWrap, groups: groupsWrap.querySelector('#q6Groups'),
+        addGroup: groupsWrap.querySelector('#q6AddGroup'),
+        countMsg: groupsWrap.querySelector('#q6CountMsg'),
+        pMode, pVal
+      };
+      const state = { groups: [] };
+
+      function setGrey(row, on) {
+        if (!row) return;
+        row.classList.toggle('muted', on);
+        const lbl = row.querySelector('.toggle-label');
+        if (lbl) lbl.style.opacity = on ? '0.6' : '';
+      }
+
+      function refreshVisibility() {
+        const N = Math.max(1, el.N.valueAsNumber || 1);
+        const dis = (N === 1);
+
+        [el.tgSev, el.tgCost, el.tgProb].forEach(cb => {
+          if (!cb) return;
+          cb.disabled = dis;
+          setGrey(cb.parentElement, dis);
+          if (dis) cb.checked = false;
+        });
+
+        if (el.sExtraWrap) el.sExtraWrap.classList.toggle('hidden', dis || !el.tgSev.checked);
+        if (el.cExtraWrap) el.cExtraWrap.classList.toggle('hidden', dis || !el.tgCost.checked);
+        if (el.groupsWrap) {
+          const hide = dis || !el.tgProb.checked;
+          el.groupsWrap.classList.toggle('hidden', hide);
+          // Also grey out the Add button when hidden/disabled
+          const addBtn = el.addGroup;
+          if (addBtn) {
+            addBtn.disabled = hide;
+            addBtn.classList.toggle('muted', hide);
+          }
+        }
+
+        if (dis || !el.tgSev.checked) if (el.sExtraVal) el.sExtraVal.value = '';
+        if (dis || !el.tgCost.checked) if (el.cExtraVal) el.cExtraVal.value = '';
+        if (dis || !el.tgProb.checked) { state.groups = []; if (el.groups) el.groups.innerHTML = ''; if (el.countMsg) el.countMsg.textContent = ''; }
+      }
+
+      function drawGroups() {
+        if (!el.groups) return;
+        el.groups.innerHTML = '';
+        state.groups.forEach((g, i) => {
+          const row = document.createElement('div');
+          row.className = 'mini-fields';
+          row.innerHTML = [
+            '<div class="mini-field"><label>Group '+(i+1)+' count</label>',
+            '<input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'"></div>',
+            '<div class="mini-field"><label>Unit</label>',
+            '<select data-i="'+i+'" data-k="mode">',
+            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>',
+            '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>',
+            '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>',
+            '</select></div>',
+            '<div class="mini-field"><label>Value</label>',
+            '<input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>',
+            '<div class="mini-field"><label>&nbsp;</label>',
+            '<button class="back" data-remove="'+i+'" type="button">Remove</button></div>'
+          ].join('');
+          el.groups.appendChild(row);
+        });
+        if (el.countMsg) el.countMsg.textContent = '';
+      }
+
+      // Wiring
+      ['input','change'].forEach(evt=>{
+        [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal]
+          .forEach(x => x && x.addEventListener(evt, refreshVisibility));
       });
-      if (el.countMsg) el.countMsg.textContent = '';
-    }
+      if (el.addGroup) el.addGroup.addEventListener('click', ()=>{
+        state.groups.push({count:0, mode: (el.pMode && el.pMode.value) || 'oneInX', val: null});
+        drawGroups(); refreshVisibility();
+      });
+      if (el.groups) el.groups.addEventListener('input', (e)=>{
+        const t = e.target, i = +t.dataset.i;
+        if (!Number.isFinite(i)) return;
+        const k = t.dataset.k;
+        if (k === 'count') state.groups[i].count = t.value === '' ? 0 : (t.value|0);
+        if (k === 'mode')  state.groups[i].mode  = t.value;
+        if (k === 'val')   state.groups[i].val   = t.value === '' ? null : +t.value;
+        const used = state.groups.reduce((s,g)=>s+(g.count|0),0);
+        if (el.countMsg && el.N) el.countMsg.textContent = used > (el.N.value|0) ? 'Group counts exceed N ('+used+'/'+el.N.value+').' : '';
+      });
+      if (el.groups) el.groups.addEventListener('click',(e)=>{
+        const idx = e.target.dataset.remove;
+        if (idx != null) { state.groups.splice(+idx,1); drawGroups(); refreshVisibility(); }
+      });
 
-    ['input','change'].forEach(evt=>{
-      [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal]
-        .forEach(x => x && x.addEventListener(evt, refreshVisibility));
-    });
-    if (el.addGroup) el.addGroup.addEventListener('click', ()=>{
-      state.groups.push({count:0, mode: el.pMode.value, val: null});
-      drawGroups(); refreshVisibility();
-    });
-    if (el.groups) el.groups.addEventListener('input', (e)=>{
-      const t = e.target, i = +t.dataset.i;
-      if (!Number.isFinite(i)) return;
-      const k = t.dataset.k;
-      if (k === 'count') state.groups[i].count = t.value === '' ? 0 : (t.value|0);
-      if (k === 'mode')  state.groups[i].mode  = t.value;
-      if (k === 'val')   state.groups[i].val   = t.value === '' ? null : +t.value;
-      const used = state.groups.reduce((s,g)=>s+(g.count|0),0);
-      if (el.countMsg) el.countMsg.textContent = used > (el.N.value|0) ? 'Group counts exceed N ('+used+'/'+el.N.value+').' : '';
-    });
-    if (el.groups) el.groups.addEventListener('click',(e)=>{
-      const idx = e.target.dataset.remove;
-      if (idx != null) { state.groups.splice(+idx,1); drawGroups(); refreshVisibility(); }
-    });
+      // Initial hide
+      refreshVisibility();
+    };
+  }
 
-    refreshVisibility();
-  };
+  // ---------- AB2 UPGRADE (replaces AB2 content with detailed formulas/explanations)
+  if (typeof renderNode === 'function') {
+    const _origRenderNode = renderNode;
+    renderNode = function (intoEl, node) {
+      _origRenderNode(intoEl, node);
+
+      // Node id/title detection (best-effort against various shapes)
+      const nid = (node && (node.id || node.key || node.slug || '')).toString().toUpperCase();
+      const ntitle = (node && (node.title || node.name || '')).toString().toUpperCase();
+      const isAB2 = nid === 'AB2' || ntitle.includes('AB2');
+
+      if (!isAB2) return;
+
+      const host = intoEl.querySelector('#ab2Body') || intoEl;
+      if (!host) return;
+
+      host.innerHTML = `
+        <div class="panel" style="padding:12px">
+          <h2>How the math works (multi-instance, exact)</h2>
+
+          <h3>1) Inputs</h3>
+          <ul>
+            <li><b>N</b>: number of instances.</li>
+            <li><b>S</b> (0–10): average severity per instance; option to add <i>extra severity</i> across outliers.</li>
+            <li><b>C</b> (0–10): cost per instance; option to add <i>extra cost</i> across outliers.</li>
+            <li><b>p</b>: per‑instance probability in one unit: <code>1 in X</code>, <code>%</code>, or <code>micromorts</code>.</li>
+            <li><b>Probability groups</b>: split instances into groups with their own probabilities.</li>
+          </ul>
+
+          <h3>2) Probability conversion</h3>
+          <pre>p = 
+  { 1 / X           if entered as "1 in X"
+  { percentage / 100
+  { micromorts / 1,000,000</pre>
+
+          <h3>3) Exact probability across many instances</h3>
+          <p>Let groups be indexed by <code>g</code> with count <code>n_g</code> and per‑instance probability <code>p_g</code>. The remainder are "base" with count <code>n_base = N − Σ n_g</code> and probability <code>p_base</code>.</p>
+          <pre>P(none) = (1 − p_base)^{n_base} × ∏_g (1 − p_g)^{n_g}
+P(any)   = 1 − P(none)
+Σ p_i    = n_base·p_base + Σ_g n_g·p_g    (sum of per‑instance probabilities)</pre>
+
+          <h3>4) Aggregating severity and cost</h3>
+          <pre>C_total = N·C_usual + C_extra
+S_avg   = (N·S_usual + S_extra) / N</pre>
+
+          <h3>5) Decision rule</h3>
+          <pre>EV_downside = S_avg × (Σ p_i)
+Act if EV_downside > C_total</pre>
+
+          <h3>6) Why use Σp instead of P(any)?</h3>
+          <p>For expected severity, we need the sum of per‑instance probabilities (<code>Σ p_i</code>). This matches exact expectation even when probabilities differ across instances; <code>P(any)</code> is still shown for intuition but is not used in the EV test.</p>
+
+          <h3>Worked example</h3>
+          <pre>Given: N=10, S=6, C=1, "1 in X" with X=100,000. One group: 2 outliers at 1 in 1,000.
+n_base=8, p_base=1/100000, p_group=1/1000.
+Σp = 8*(1/100000) + 2*(1/1000) = 0.00208
+S_avg = 6 (no extras), C_total = 10*1 = 10
+EV_downside = 6 * 0.00208 = 0.01248  <  10  ⇒  do not act.</pre>
+        </div>
+      `;
+    };
+  }
 })();
 </script>
 
