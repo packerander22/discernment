@@ -1887,6 +1887,7 @@ function goBack() {
 }
 function restart() {
   closeAllPanels();
+  resetQ6State();
   historyStack = [];
   currentSegment = "If You Should Act";
   currentNode = flowchart.find(n => n.id === "Q0");
@@ -2378,6 +2379,36 @@ function syncHeatSliderFill(sl){
     requestAnimationFrame(() => scrollToConcept(conceptId, backQId));
   }
 
+
+function resetQ6State() {
+  // Clear any persisted threshold or Q6 cache (if you’ve added one)
+  try {
+    sessionStorage.removeItem('userThreshold');   // already used elsewhere
+    sessionStorage.removeItem('miniMaster');      // only if you ever saved it
+  } catch (_) {}
+
+  // Blank-on-first-visit behavior for Q6
+  window.miniPristine = true;
+
+  // Reset the master values so nothing pre-fills
+  window.miniMaster = {
+    S: null,
+    C: null,
+    mode: 'oneInX',
+    val: null,
+    X_user: null
+  };
+
+  // If the Q6 UI might be on screen, clear its inputs immediately
+  const s = document.querySelector('#q6_S');
+  const c = document.querySelector('#q6_C');
+  const v = document.querySelector('#q6_val');
+  const modeSel = document.querySelector('#q6_mode');
+  if (s) s.value = '';
+  if (c) c.value = '';
+  if (v) v.value = '';
+  if (modeSel) modeSel.value = 'oneInX';
+}
   
 /* Render node */
 if (!originalTitleHTML) {
