@@ -1590,22 +1590,6 @@ const labV = wrap.querySelector('#miniProbLabel');
     goToNode(miniActGate ? 'Q10' : 'Q7');
   };
   btns.appendChild(cont);
-} || S > MINI_MAX){
-        S = miniClamp(S, MINI_EPS, MINI_MAX);
-        C = miniClamp(S / r, MINI_EPS, MINI_MAX);
-      }
-    }
-    elS.value = String(S); elC.value = String(C);
-
-    // compute user probability from yCursor (snap to curve if close)
-    const mode = elM.value;
-    const yr = yRange(mode);
-    let yPix = Math.min(pad.top+plotH, Math.max(pad.top, sp.y));
-    if (willSnap) yPix = yCurve;
-    const frac = 1 - (yPix - pad.top) / plotH;
-    const logY = Math.log10(yr.yMin) + frac * (Math.log10(yr.yMax) - Math.log10(yr.yMin));
-    const Y = Math.pow(10, logY);
-    const X_user = unitToX(Y, mode);
     miniMaster.S = S; miniMaster.C = C; miniMaster.mode = mode; miniMaster.X_user = X_user;
 
     // reflect into the input in chosen unit
