@@ -1030,7 +1030,7 @@ function renderMiniQ6(intoEl, node){
 
   wrap.appendChild(fields); wrap.appendChild(pRow);
 
-  const q6Root = intoEl;  // this is the DOM container for Q6
+  var q6Root = intoEl;  // this is the DOM container for Q6
 
   // SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -1061,7 +1061,7 @@ function renderMiniQ6(intoEl, node){
   wrap.appendChild(link);
 
   intoEl.appendChild(wrap);
-  const q6Root = wrap; if (!q6Root.id) q6Root.id='q6Root';
+  wrap.id = 'q6Root';
 
   // Inputs
   const elS  = wrap.querySelector('#miniS');
