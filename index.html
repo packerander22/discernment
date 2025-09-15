@@ -1232,7 +1232,11 @@ const tgSev = fields.querySelector('#tgSev');
   refreshToggles();
 wrap.appendChild(svg);
 
-  // Rule + verdict
+  
+  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.classList.add('mini-svg'); svg.setAttribute('viewBox','0 0 940 620'); svg.style.overflow='visible';
+  wrap.appendChild(svg);
+// Rule + verdict
   const rule = document.createElement('div'); rule.className='rule';
   rule.innerHTML = 'Rule: Only if <span id="miniProbName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.';
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
