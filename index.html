@@ -1012,17 +1012,17 @@ function renderMiniQ6(intoEl, node){
 
   // N centered at top
   const nRow = document.createElement('div'); nRow.className='mini-field'; nRow.style.gridColumn='1 / -1'; nRow.style.textAlign='center';
-  nRow.innerHTML = '<label>Total instances (N)</label><input id="adN" type="number" min="1" step="1" value="1" style="max-width:200px;margin:0 auto;display:block;">';
+  nRow.innerHTML = '<label>Total instances (N)</label><input id="adN" type="number" min="1" step="1" value="1">';
   wrap.appendChild(nRow);
 
   // Severity
   const sBox = document.createElement('div'); sBox.className='mini-field';
-  sBox.innerHTML = '<label>Severity (S) — up to 10 <span class="mini-sub"><input id="tgSev" type="checkbox" style="margin-left:8px;"> varies across instances</span></label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5"><div id="sevExtraBox" class="mini-sub mini-muted"><div>Total extra severity across outliers</div><input id="miniSevExtra" type="number" step="any" placeholder="e.g. 3"></div>';
+  sBox.innerHTML = '<label>Severity (S) — up to 10</label><div class="mini-sub"><input id="tgSev" type="checkbox"> varies across instances</div><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5"><div id="sevExtraBox" class="mini-sub mini-muted"><div>Total extra severity across outliers</div><input id="miniSevExtra" type="number" step="any" placeholder="e.g. 3"></div>';
   fields.appendChild(sBox);
 
   // Cost
   const cBox = document.createElement('div'); cBox.className='mini-field';
-  cBox.innerHTML = '<label>Cost (C) — up to 10 <span class="mini-sub"><input id="tgCost" type="checkbox" style="margin-left:8px;"> varies across instances</span></label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1"><div id="costExtraBox" class="mini-sub mini-muted"><div>Total extra cost across outliers</div><input id="miniCostExtra" type="number" step="any" placeholder="e.g. 2"></div>';
+  cBox.innerHTML = '<label>Cost (C) — up to 10</label><div class="mini-sub"><input id="tgCost" type="checkbox"> varies across instances</div><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1"><div id="costExtraBox" class="mini-sub mini-muted"><div>Total extra cost across outliers</div><input id="miniCostExtra" type="number" step="any" placeholder="e.g. 2"></div>';
   fields.appendChild(cBox);
 
   // Probability
@@ -1035,10 +1035,11 @@ function renderMiniQ6(intoEl, node){
   wrap.appendChild(fields); wrap.appendChild(pRow);
 
   const probVarRow = document.createElement('div'); probVarRow.className = 'mini-field';
-  probVarRow.innerHTML = '<label class="mini-sub" style="display:block;margin-top:6px;"><input id="tgProb" type="checkbox"> Probability varies across instances</label><div id="probExtraBox" class="mini-sub mini-muted"><div id="groups"></div><button type="button" class="back" id="addGroupBtn" style="margin-top:6px;padding:6px 10px;">Add probability group</button><div id="countMsg" class="error" style="margin-top:6px;"></div></div>';
+  probVarRow.innerHTML = '<div class="mini-sub" style="margin-top:6px;"><input id="tgProb" type="checkbox"> Probability varies across instances</div><div id="probExtraBox" class="mini-sub mini-muted"><div id="groups"></div><button type="button" class="back" id="addGroupBtn" style="margin-top:6px;padding:6px 10px;">Add probability group</button><div id="countMsg" class="error" style="margin-top:6px;"></div></div>';
   wrap.appendChild(probVarRow);
 
   intoEl.appendChild(wrap);
+  const q6Root = wrap; if (!q6Root.id) q6Root.id='q6Root';
 // SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg');
@@ -1080,8 +1081,26 @@ function renderMiniQ6(intoEl, node){
   // ===== Persistence (restore first) =====
   const savedQ6 = loadNodeState('Q6');
   if (savedQ6) applyFormValues(q6Root, savedQ6);
+  if (typeof refreshVisibility==='function') refreshVisibility();
 
   // helpers
+  function refreshVisibility(){
+    const N = Number(wrap.querySelector('#adN')?.value||1);
+    const tgSev = wrap.querySelector('#tgSev');
+    const tgCost= wrap.querySelector('#tgCost');
+    const tgProb= wrap.querySelector('#tgProb');
+    const sevExtraBox = wrap.querySelector('#sevExtraBox');
+    const costExtraBox= wrap.querySelector('#costExtraBox');
+    const probExtraBox= wrap.querySelector('#probExtraBox');
+
+    const dis = (N===1);
+    [tgSev,tgCost,tgProb].forEach(cb=>{ if(!cb) return; cb.disabled = dis; if(dis) cb.checked=false; });
+
+    if (sevExtraBox) sevExtraBox.style.display = (!tgSev || !tgSev.checked || dis) ? 'none' : '';
+    if (costExtraBox) costExtraBox.style.display = (!tgCost || !tgCost.checked || dis) ? 'none' : '';
+    if (probExtraBox) probExtraBox.style.display = (!tgProb || !tgProb.checked || dis) ? 'none' : '';
+  }
+
   function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
   function yRange(mode){
     if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Cutoff Probability (%) (log scale)" };
