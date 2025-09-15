@@ -993,7 +993,246 @@ function jumpToConcept(conceptId, backQId){
    Q6 — interactive: inputs + 2D drag + snap + correct shading
 =========================================================== */
 function renderMiniQ6() {
-/* Q6 integrated body (same as previous message's q6_body) */
+
+  const intoEl = document.getElementById('content') || document.body;
+
+  // Root
+  const wrap = document.createElement('div');
+  wrap.className = 'mini-wrap';
+  wrap.id = 'q6Root';
+  intoEl.innerHTML = '';
+  intoEl.appendChild(wrap);
+
+  // Instances (centered at top, full width)
+  const nRow = document.createElement('div');
+  nRow.className = 'mini-field';
+  nRow.style.gridColumn = '1 / -1';
+  nRow.style.textAlign = 'center';
+  nRow.innerHTML = `<label>Total instances (N)</label>
+                    <input id="N" type="number" min="1" step="1" value="1">`;
+  wrap.appendChild(nRow);
+
+  // Fields grid
+  const fields = document.createElement('div');
+  fields.className = 'mini-fields';
+  wrap.appendChild(fields);
+
+  // Severity
+  const sev = document.createElement('div');
+  sev.className = 'mini-field';
+  sev.innerHTML = `<label>Severity (S) — up to 10 <span class="hint">| avg per instance</span></label>
+                   <div class="hint" id="sevRow"><input id="tgSev" type="checkbox"> varies across instances</div>
+                   <input id="S" type="number" min="0" max="10" step="0.01" placeholder="e.g. 5">
+                   <div id="sevExtra" class="mini-field hidden">
+                     <div class="hint">Total extra severity across outliers (sum)</div>
+                     <input id="Sextra" type="number" step="any" placeholder="e.g. 3">
+                   </div>`;
+  fields.appendChild(sev);
+
+  // Cost
+  const cost = document.createElement('div');
+  cost.className = 'mini-field';
+  cost.innerHTML = `<label>Cost (C) — up to 10 <span class="hint">| per instance</span></label>
+                    <div class="hint" id="costRow"><input id="tgCost" type="checkbox"> varies across instances</div>
+                    <input id="C" type="number" min="0" max="10" step="0.01" placeholder="e.g. 1">
+                    <div id="costExtra" class="mini-field hidden">
+                      <div class="hint">Total extra cost across outliers (sum)</div>
+                      <input id="Cextra" type="number" step="any" placeholder="e.g. 2">
+                    </div>`;
+  fields.appendChild(cost);
+
+  // Probability
+  const prob = document.createElement('div');
+  prob.className = 'mini-field';
+  prob.innerHTML = `<label>Probability unit</label>
+                    <select id="mode">
+                      <option value="oneInX">1 in X</option>
+                      <option value="percent">Percentage (%)</option>
+                      <option value="micromort">Micromorts</option>
+                    </select>
+                    <div class="mini-field">
+                      <label id="probLabel">Enter X (for “1 in X”)</label>
+                      <input id="pVal" type="number" min="0" step="any" placeholder="e.g. 1,000,000">
+                    </div>
+                    <div class="hint" id="probRow"><input id="tgProb" type="checkbox"> probability varies across instances</div>
+                    <div id="groupsWrap" class="mini-field hidden">
+                      <div id="groups"></div>
+                      <div style="display:flex;justify-content:center"><button id="addGroup" class="back" type="button" style="padding:6px 10px">Add probability group</button></div>
+                      <div id="countMsg" class="error" style="text-align:center"></div>
+                    </div>`;
+  fields.appendChild(prob);
+
+  // Graph
+  const graphWrap = document.createElement('div');
+  graphWrap.innerHTML = `<svg id="plot" viewBox="0 0 900 420"></svg>
+                         <div id="verdict" class="risk-inline"></div>`;
+  wrap.appendChild(graphWrap);
+
+  // Footer buttons (use existing buttons container if present)
+  const btns = document.getElementById('buttons') || (function(){const d=document.createElement('div');wrap.appendChild(d);return d;})();
+  btns.innerHTML='';
+  const restart = document.createElement('button');
+  restart.type='button'; restart.className='restart'; restart.textContent='Restart';
+  const cont = document.createElement('button');
+  cont.type='button'; cont.className='back'; cont.textContent='Continue'; cont.disabled=true;
+  btns.appendChild(restart); btns.appendChild(cont);
+
+  // ------- State
+  const $ = s=>wrap.querySelector(s);
+  const el = {
+    N:$('#N'), S:$('#S'), C:$('#C'), mode:$('#mode'), pVal:$('#pVal'),
+    tgSev:$('#tgSev'), tgCost:$('#tgCost'), tgProb:$('#tgProb'),
+    sevRow:$('#sevRow'), costRow:$('#costRow'), probRow:$('#probRow'),
+    sevExtra:$('#sevExtra'), Sextra:$('#Sextra'), costExtra:$('#costExtra'), Cextra:$('#Cextra'),
+    groupsWrap:$('#groupsWrap'), groups:$('#groups'), addGroup:$('#addGroup'),
+    countMsg:$('#countMsg'), plot:$('#plot'), verdict:$('#verdict')
+  };
+  const state = {N:1,S:null,C:null,mode:'oneInX',pVal:null,sevVar:false,costVar:false,probVar:false,Sextra:null,Cextra:null,groups:[]};
+
+  // ------- Helpers
+  const toProb=(mode,val)=>{
+    if(val==null||isNaN(val)) return null;
+    if(mode==='oneInX') return (val<=0)?null:1/val;
+    if(mode==='percent') return val/100;
+    if(mode==='micromort') return val/1_000_000;
+    return null;
+  };
+  const fmt1 = x => x>=1 ? Number(x.toFixed(3)).toString() : Number(x.toPrecision(3)).toString();
+  const fmtProb = (p)=>{ if(p<=0) return '0'; if(p<1e-4) return '1 in '+fmt1(1/p); if(p<0.01) return (p*100).toFixed(3)+'%'; return (p*100).toFixed(2)+'%'; };
+
+  function drawGroups(){
+    el.groups.innerHTML='';
+    state.groups.forEach((g,i)=>{
+      const row=document.createElement('div'); row.className='mini-fields';
+      row.innerHTML = \`
+        <div class="mini-field"><label>Group \${i+1} count</label><input data-i="\${i}" data-k="count" type="number" min="0" step="1" value="\${g.count||0}"></div>
+        <div class="mini-field"><label>Unit</label>
+          <select data-i="\${i}" data-k="mode">
+            <option value="oneInX" \${g.mode==='oneInX'?'selected':''}>1 in X</option>
+            <option value="percent" \${g.mode==='percent'?'selected':''}>Percentage (%)</option>
+            <option value="micromort" \${g.mode==='micromort'?'selected':''}>Micromorts</option>
+          </select>
+        </div>
+        <div class="mini-field"><label>Value</label><input data-i="\${i}" data-k="val" type="number" step="any" value="\${g.val??''}" placeholder="e.g. 100,000"></div>
+        <div class="mini-field"><label>&nbsp;</label><button class="back" data-remove="\${i}" type="button" style="padding:6px 10px">Remove</button></div>\`;
+      el.groups.appendChild(row);
+    });
+    el.countMsg.textContent='';
+  }
+
+  function refreshVisibility(){
+    const N = Number(el.N.value||1);
+    const dis=(N===1);
+    function setRow(cb,row){ cb.disabled=dis; row.classList.toggle('muted',dis); if(dis) cb.checked=false; }
+    setRow(el.tgSev,el.sevRow); setRow(el.tgCost,el.costRow); setRow(el.tgProb,el.probRow);
+    const hideSev=dis||!el.tgSev.checked, hideCost=dis||!el.tgCost.checked, hideProb=dis||!el.tgProb.checked;
+    el.sevExtra.classList.toggle('hidden',hideSev);
+    el.costExtra.classList.toggle('hidden',hideCost);
+    el.groupsWrap.classList.toggle('hidden',hideProb);
+    if(hideSev) el.Sextra.value='';
+    if(hideCost) el.Cextra.value='';
+    if(hideProb){ state.groups=[]; el.groups.innerHTML=''; el.countMsg.textContent=''; }
+  }
+
+  function computeAll(st){
+    const N = Math.max(1, st.N|0);
+    const pBase = toProb(st.mode, st.pVal);
+    if(pBase==null) return {ok:false, reason:'Enter a valid probability.'};
+    let used=0, prodNone=1, sumP=0;
+    if(st.probVar){
+      for(const g of st.groups){
+        const cnt=Math.max(0,g.count|0);
+        const pg=toProb(g.mode,g.val);
+        if(pg==null) return {ok:false,reason:'Check group probabilities.'};
+        used+=cnt; prodNone*=Math.pow(1-pg,cnt); sumP+=cnt*pg;
+      }
+      if(used>N) return {ok:false, reason:'Group counts exceed N.'};
+    }
+    const nBase=N-used; prodNone*=Math.pow(1-pBase,nBase); sumP+=nBase*pBase;
+
+    const S=Number(st.S ?? NaN), C=Number(st.C ?? NaN);
+    if(!isFinite(S)||!isFinite(C)) return {ok:false, reason:'Enter S and C.'};
+    if(S<0||S>10||C<0||C>10) return {ok:false, reason:'S and C must be 0–10.'};
+
+    const Sextra=st.sevVar?Number(st.Sextra ?? 0):0;
+    const Cextra=st.costVar?Number(st.Cextra ?? 0):0;
+
+    const Ctotal=N*C+Cextra;
+    const Savg=(N*S+Sextra)/N;
+    const EVdown=Savg*sumP;
+    const act = EVdown > Ctotal;
+    return {ok:true, act, sumP, Savg, Ctotal, EVdown, Pany:1-prodNone};
+  }
+
+  function setupPlot(svg){
+    const NS='http://www.w3.org/2000/svg';
+    svg.innerHTML='';
+    const w=900,h=420,pad={l:60,r:16,t:14,b:44};
+    const W=w-pad.l-pad.r,H=h-pad.t-pad.b;
+    const xTicks=[1e-6,1e-5,1e-4,1e-3,1e-2,1e-1];
+    const xTo=p=>pad.l+(Math.log10(p)-(-6))/(-1-(-6))*W;
+    const yTo=y=>pad.t+(1-y)*H;
+    xTicks.forEach(p=>{const x=xTo(p);const l=document.createElementNS(NS,'line');l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('y1',pad.t);l.setAttribute('y2',pad.t+H);l.setAttribute('stroke','#1f2937');svg.appendChild(l);
+      const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',h-18);t.setAttribute('fill','#9ca3af');t.setAttribute('font-size','12');t.setAttribute('text-anchor','middle');t.textContent=(p<1e-4)?('1 in '+(1/p).toFixed(0)):(p*100).toFixed(2)+'%';svg.appendChild(t);});
+    [0.2,0.4,0.6,0.8,1].forEach(y=>{const yy=yTo(y);const l=document.createElementNS(NS,'line');l.setAttribute('x1',pad.l);l.setAttribute('x2',pad.l+W);l.setAttribute('y1',yy);l.setAttribute('y2',yy);l.setAttribute('stroke','#1f2937');svg.appendChild(l);
+      const t=document.createElementNS(NS,'text');t.setAttribute('x',12);t.setAttribute('y',yy+4);t.setAttribute('fill','#9ca3af');t.setAttribute('font-size','12');t.textContent='S_avg/C_total = '+y.toFixed(1);svg.appendChild(t);});
+    return {xTo,yTo};
+  }
+  function redraw(svg,res){
+    const {xTo,yTo}=setupPlot(svg);
+    const p=Math.max(1e-6,Math.min(1e-1,res.sumP));
+    const y=Math.max(0,Math.min(1,res.Savg/Math.max(1e-9,res.Ctotal)));
+    const NS='http://www.w3.org/2000/svg';
+    const dot=document.createElementNS(NS,'circle');
+    dot.setAttribute('r','6'); dot.setAttribute('fill', res.act?'#22c55e':'#ef4444');
+    dot.setAttribute('cx',xTo(p)); dot.setAttribute('cy',yTo(y));
+    svg.appendChild(dot);
+  }
+
+  function readState(){
+    state.N=Math.max(1, $('#N').valueAsNumber||1);
+    state.S=$('#S').value===''?null:$('#S').valueAsNumber;
+    state.C=$('#C').value===''?null:$('#C').valueAsNumber;
+    state.mode=$('#mode').value;
+    state.pVal=$('#pVal').value===''?null:$('#pVal').valueAsNumber;
+    state.sevVar=$('#tgSev').checked;
+    state.costVar=$('#tgCost').checked;
+    state.probVar=$('#tgProb').checked;
+    state.Sextra=$('#Sextra').value===''?null:$('#Sextra').valueAsNumber;
+    state.Cextra=$('#Cextra').value===''?null:$('#Cextra').valueAsNumber;
+  }
+  function onChange(){
+    readState(); refreshVisibility();
+    const res=computeAll(state);
+    if(!res.ok){ $('#verdict').className='risk-inline'; $('#verdict').textContent=res.reason; cont.disabled=true; }
+    else { redraw($('#plot'),res); $('#verdict').className='risk-inline'; $('#verdict').textContent=(res.act?'Act should be considered.':'Not worth it.')+` (Σp=${fmt1(res.sumP)}, S_avg=${fmt1(res.Savg)}, C_total=${fmt1(res.Ctotal)})`; cont.disabled=false; }
+  }
+
+  // Wire
+  ['input','change'].forEach(evt=>{
+    ['#N','#S','#C','#mode','#pVal','#tgSev','#tgCost','#tgProb','#Sextra','#Cextra']
+      .forEach(sel=>{ const node=$(sel); if(node) node.addEventListener(evt,onChange); });
+  });
+  el.addGroup.addEventListener('click',()=>{ state.groups.push({count:0,mode:state.mode,val:null}); drawGroups(); onChange(); });
+  el.groups.addEventListener('input',e=>{ const t=e.target; const i=+t.dataset.i;
+    if(Number.isFinite(i)){ const k=t.dataset.k;
+      if(k==='count') state.groups[i].count = t.value===''?0:(t.value|0);
+      if(k==='mode')  state.groups[i].mode  = t.value;
+      if(k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
+      const used = state.groups.reduce((s,g)=>s+(g.count|0),0);
+      el.countMsg.textContent = used>state.N ? `Group counts exceed N (${used}/${state.N}).` : '';
+      onChange();
+    }});
+  el.groups.addEventListener('click',e=>{ const idx=e.target.dataset.remove; if(idx!=null){ state.groups.splice(+idx,1); drawGroups(); onChange(); }});
+
+  restart.addEventListener('click',()=>{ state.N=1;state.S=state.C=null;state.mode='oneInX';state.pVal=null;state.sevVar=state.costVar=state.probVar=false;state.Sextra=state.Cextra=null;state.groups=[];
+    $('#N').value=1; ['#S','#C','#pVal','#Sextra','#Cextra'].forEach(s=>{const n=$(s); if(n) n.value='';}); $('#mode').value='oneInX'; ['#tgSev','#tgCost','#tgProb'].forEach(s=>{const n=$(s); if(n) n.checked=false;}); drawGroups(); onChange(); });
+
+  cont.addEventListener('click',()=>{ if(typeof goToNode==='function') goToNode('Q7'); });
+
+  // Init
+  drawGroups(); onChange();
+
 }
 
 
@@ -1001,7 +1240,64 @@ function renderMiniQ6() {
    Q7 — visualization-only mirror (draggable; inputs greyed)
 =========================================================== */
 function renderMiniQ7() {
-/* Q7 integrated body (same as previous message's q7_body) */
+
+  const intoEl = document.getElementById('content') || document.body;
+  intoEl.innerHTML='';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 900 420'); svg.id='plotQ7';
+  intoEl.appendChild(svg);
+  const verdict = document.createElement('div'); verdict.id='verdictQ7'; intoEl.appendChild(verdict);
+  verdict.className='risk-inline';
+
+  const st = window.q6SandboxSeed || {N:1,S:5,C:1,mode:'oneInX',pVal:1000000,sevVar:false,costVar:false,probVar:false,Sextra:null,Cextra:null,groups:[]};
+
+  function toProb(mode,val){
+    if(val==null||isNaN(val)) return null;
+    if(mode==='oneInX') return (val<=0)?null:1/val;
+    if(mode==='percent') return val/100;
+    if(mode==='micromort') return val/1_000_000;
+    return null;
+  }
+  function computeAll(st){
+    const N = Math.max(1, st.N|0);
+    const pBase = toProb(st.mode, st.pVal);
+    if(pBase==null) return {ok:false, reason:'Enter a valid probability.'};
+    let used=0, prodNone=1, sumP=0;
+    if(st.probVar){
+      for(const g of st.groups){
+        const cnt=Math.max(0,g.count|0);
+        const pg=toProb(g.mode,g.val);
+        if(pg==null) return {ok:false,reason:'Check group probabilities.'};
+        used+=cnt; prodNone*=Math.pow(1-pg,cnt); sumP+=cnt*pg;
+      }
+      if(used>N) return {ok:false, reason:'Group counts exceed N.'};
+    }
+    const nBase=N-used; prodNone*=Math.pow(1-pBase,nBase); sumP+=nBase*pBase;
+    const S=Number(st.S ?? NaN), C=Number(st.C ?? NaN);
+    if(!isFinite(S)||!isFinite(C)) return {ok:false, reason:'Enter S and C.'};
+    const Sextra=st.sevVar?Number(st.Sextra ?? 0):0;
+    const Cextra=st.costVar?Number(st.Cextra ?? 0):0;
+    const Ctotal=N*C+Cextra; const Savg=(N*S+Sextra)/N; const EVdown=Savg*sumP; const act=EVdown>Ctotal;
+    return {ok:true, act, sumP, Savg, Ctotal, EVdown};
+  }
+  function setupPlot(svg){
+    const NS='http://www.w3.org/2000/svg';
+    svg.innerHTML='';
+    const w=900,h=420,pad={l:60,r:16,t:14,b:44}; const W=w-pad.l-pad.r,H=h-pad.t-pad.b;
+    const xTo=p=>pad.l+(Math.log10(p)-(-6))/(-1-(-6))*W; const yTo=y=>pad.t+(1-y)*H;
+    const xTicks=[1e-6,1e-5,1e-4,1e-3,1e-2,1e-1];
+    xTicks.forEach(p=>{const x=xTo(p);const l=document.createElementNS(NS,'line');l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('y1',pad.t);l.setAttribute('y2',pad.t+H);l.setAttribute('stroke','#1f2937');svg.appendChild(l);});
+    return {xTo,yTo,NS};
+  }
+  const tools=setupPlot(svg);
+  const res=computeAll(st);
+  const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('r','6'); dot.setAttribute('fill', res.act?'#22c55e':'#ef4444');
+  dot.setAttribute('cx', tools.xTo(Math.max(1e-6,Math.min(1e-1,res.sumP))));
+  dot.setAttribute('cy', tools.yTo(Math.max(0,Math.min(1,res.Savg/Math.max(1e-9,res.Ctotal)))));
+  svg.appendChild(dot);
+  verdict.textContent = res.act ? 'Act should be considered (exploration) — go back to Q6 to change values.' : 'Not worth it (exploration).';
+
 }
 
 
