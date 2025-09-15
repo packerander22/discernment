@@ -809,10 +809,36 @@ function _toProb(mode, val) {
 }
 
 
+
 function computeProbabilities(add) {
   const N = Math.max(0, add.N|0);
   if (N === 0) return { Pany:0, sumP:0, nBase:0, valid:false };
 
+  const pBase = _toProb(add.usual.pMode, add.usual.pVal);
+  if (pBase == null) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
+
+  let used = 0;
+  let productNone = 1;
+  let sumP = 0;
+
+  const groups = (add.toggles.pVar && Array.isArray(add.groups)) ? add.groups : [];
+  for (let i=0; i<groups.length; i++) {
+    const g = groups[i] || {};
+    const cnt = Math.max(0, (g.count|0));
+    const pg  = _toProb(g.mode, g.val);
+    if (pg == null) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
+    used += cnt;
+    productNone *= Math.pow(1 - pg, cnt);
+    sumP += cnt * pg;
+  }
+  if (used > N) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
+
+  const nBase = N - used;
+  productNone *= Math.pow(1 - pBase, nBase);
+  sumP += nBase * pBase;
+
+  return { Pany: 1 - productNone, sumP: sumP, nBase: nBase, valid:true };
+}
 function computeCostSeverity(add) {
   const N = Math.max(0, add.N|0);
   const Cusual = +add.usual.cost || 0;
