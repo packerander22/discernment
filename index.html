@@ -1612,113 +1612,11 @@ const labV = wrap.querySelector('#miniProbLabel');
   // Bottom buttons
   const btns = document.getElementById('buttons');
   btns.innerHTML = '';
-  cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
-  cont.onclick = function(){
-    miniActGate = !!renderMiniQ6._act;
-    goToNode(miniActGate ? 'Q10' : 'Q7');
-  };
-  btns.appendChild(cont);
-    miniMaster.S = S; miniMaster.C = C; miniMaster.mode = mode; miniMaster.X_user = X_user;
-
-    // reflect into the input in chosen unit
-    let valOut = (mode==='oneInX') ? X_user : (mode==='percent' ? (100/X_user) : (1e6/X_user));
-    if (mode==='oneInX') { if (valOut < 2) valOut = 2; }
-    else if (mode==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
-    else { if (valOut<=0) valOut=0.0001; if (valOut>=1e6) valOut=999999.99; }
-    elV.value = String(valOut);
-    miniMaster.val = valOut;
-
-    draw();
-  }
-  function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
-
-  handle.addEventListener('pointerdown', onPointerDown, {passive:false});
-  svg.addEventListener('pointermove', onPointerMove, {passive:false});
-  svg.addEventListener('pointerup', onPointerUp, {passive:false});
-  svg.addEventListener('touchstart', onPointerDown, {passive:false});
-  svg.addEventListener('touchmove', onPointerMove, {passive:false});
-  svg.addEventListener('touchend', onPointerUp, {passive:false});
-
-  // ===== Micromorts lock (S=10 + grey out) & friendly inputs =====
-
-  // lock/unlock severity when micromorts is chosen
-  function lockSeverity(val = 10){
-    elS.value = String(val);
-    elS.disabled = true;
-    elS.classList.add('is-disabled');
-  }
-  function unlockSeverity(){
-    elS.disabled = false;
-    elS.classList.remove('is-disabled');
-  }
-  function applyUnitsRule(){
-    const mode = elM.value;
-    if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10);
-    else unlockSeverity();
-  }
-  applyUnitsRule();
-  elM.addEventListener('change', () => { updateProbLabelForMode(elM.value); applyUnitsRule(); });
-
-  // backspace-friendly inputs: sanitize on blur (NOT on every keystroke)
-  function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
-    if (!inp) return;
-
-    // Allow free typing; just strip obvious junk
-    inp.addEventListener('input', () => {
-      const s = inp.value;
-      const cleaned = s
-        .replace(/[^0-9.\-]/g, '')
-        .replace(/(.*\..*)\./, '$1')
-        .replace(/(.*-).*-/ , '$1');
-      if (cleaned !== s) inp.value = cleaned;
-    });
-
-    function normalize(){
-      const raw = (inp.value || '').trim();
-      if (raw === '' || raw === '-' || raw === '.' || raw === '-.') { inp.value = ''; return; }
-      let n = Number(raw);
-      if (!Number.isFinite(n)) { inp.value = ''; return; }
-      n = Math.min(max, Math.max(min, n));
-      inp.value = (decimals == null) ? String(n) : String(Number(n.toFixed(decimals)));
-      // After we accept a value, update visuals
-      window.miniPristine = false;
-      draw();
-    }
-    inp.addEventListener('blur', normalize);
-    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
-  }
-
-  wireNumericInput(elS, { min:0, max:10,   decimals:2 });
-  wireNumericInput(elC, { min:0, max:10,   decimals:2 });
-  wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
-
-  // inputs: no snap-back while typing; we only redraw on blur/Enter
-  elS.addEventListener('input', ()=>{ window.miniPristine=false; });
-  elC.addEventListener('input', ()=>{ window.miniPristine=false; });
-  elV.addEventListener('input', ()=>{ window.miniPristine=false; });
-
-  // Persist on any edit
-  const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
-  q6Root.addEventListener('input',  persistQ6);
-  q6Root.addEventListener('change', persistQ6);
-
-  // If fields already have values (e.g., returning from AB2), compute once
-  requestAnimationFrame(() => {
-    const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
-    if (hasAny) {
-      window.miniPristine = false; // don't bail early in draw()
-      snapInputs();                // clamp/normalize into miniMaster
-      draw();                      // compute verdict + enable Continue
-    }
-  });
-
-  // initial paint
-  draw();
-
-  // Bottom buttons
-  const btns = document.getElementById('buttons');
-  btns.innerHTML = '';
-  cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
+  cont = document.createElement('button');
+  cont.className = 'next';
+  cont.setAttribute('type','button');
+  cont.textContent = 'Continue';
+  cont.disabled = true;
   cont.onclick = function(){
     miniActGate = !!renderMiniQ6._act;
     goToNode(miniActGate ? 'Q10' : 'Q7');
