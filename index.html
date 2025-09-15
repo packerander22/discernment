@@ -1084,17 +1084,59 @@ function renderMiniQ6(intoEl, node){
   if (typeof refreshVisibility==='function') refreshVisibility();
 
   // helpers
-  function refreshVisibility(){
-    const N = Number(wrap.querySelector('#adN')?.value||1);
-    const tgSev = wrap.querySelector('#tgSev');
-    const tgCost= wrap.querySelector('#tgCost');
-    const tgProb= wrap.querySelector('#tgProb');
-    const sevExtraBox = wrap.querySelector('#sevExtraBox');
-    const costExtraBox= wrap.querySelector('#costExtraBox');
-    const probExtraBox= wrap.querySelector('#probExtraBox');
+  function refreshVisibility() {
+  const N = Number(el.N?.value) || 1;
+  const dis = (N === 1);
 
-    const dis = (N===1);
-    [tgSev,tgCost,tgProb].forEach(cb=>{ if(!cb) return; cb.disabled = dis; if(dis) cb.checked=false; });
+  function setRowDisabled(cbEl) {
+    if (!cbEl) return;
+    cbEl.disabled = dis;
+    const row = cbEl.parentElement;
+    if (row) row.classList.toggle('muted', dis);
+    if (dis) cbEl.checked = false;
+  }
+
+  setRowDisabled(el.tgSev);
+  setRowDisabled(el.tgCost);
+  setRowDisabled(el.tgProb);
+
+  const hideSev  = dis || !el.tgSev?.checked;
+  const hideCost = dis || !el.tgCost?.checked;
+  const hideProb = dis || !el.tgProb?.checked;
+
+  if (el.sevExtra)   el.sevExtra.classList.toggle('hidden', hideSev);
+  if (el.costExtra)  el.costExtra.classList.toggle('hidden', hideCost);
+  if (el.groupsWrap) el.groupsWrap.classList.toggle('hidden', hideProb);
+
+  if (hideSev && el.Sextra) el.Sextra.value = '';
+  if (hideCost && el.Cextra) el.Cextra.value = '';
+  if (hideProb) {
+    state.groups = [];
+    if (el.groups) el.groups.innerHTML = '';
+    if (el.countMsg) el.countMsg.textContent = '';
+  }
+}
+
+  setRowDisabled(el.tgSev);
+  setRowDisabled(el.tgCost);
+  setRowDisabled(el.tgProb);
+
+  const hideSev  = dis || !el.tgSev?.checked;
+  const hideCost = dis || !el.tgCost?.checked;
+  const hideProb = dis || !el.tgProb?.checked;
+
+  if (el.sevExtra)   el.sevExtra.classList.toggle('hidden', hideSev);
+  if (el.costExtra)  el.costExtra.classList.toggle('hidden', hideCost);
+  if (el.groupsWrap) el.groupsWrap.classList.toggle('hidden', hideProb);
+
+  if (hideSev && el.Sextra) el.Sextra.value = '';
+  if (hideCost && el.Cextra) el.Cextra.value = '';
+  if (hideProb) {
+    state.groups = [];
+    if (el.groups) el.groups.innerHTML = '';
+    if (el.countMsg) el.countMsg.textContent = '';
+  }
+});
 
     if (sevExtraBox) sevExtraBox.style.display = (!tgSev || !tgSev.checked || dis) ? 'none' : '';
     if (costExtraBox) costExtraBox.style.display = (!tgCost || !tgCost.checked || dis) ? 'none' : '';
