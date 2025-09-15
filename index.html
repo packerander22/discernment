@@ -793,13 +793,13 @@ function miniNormalizeToX(mode, val){
   if (mode === 'micromort'){ if (!(val>0 && val<1e6)) return null; return 1e6/val; }
   return null;
 }
-// === Q6 ADDITION: state & exact probability helpers ===
+// === Q6 ADDITION: multi-instance state & exact math ===
 var miniAddition = {
   N: 1,
   toggles: { costVar:false, sevVar:false, pVar:false },
-  usual: { cost:0, severity:1, pMode:'oneInX', pVal:1000000 },
-  extra: { costTotal:0, severityTotal:0 },
-  groups: [] // {count, mode, val}
+  usual: { cost:null, severity:null, pMode:'oneInX', pVal:null },
+  extra: { costTotal:null, severityTotal:null },
+  groups: [] // single optional outlier group: [{count:0, mode:'oneInX', val:null}]
 };
 
 function _toProb(mode, val) {
@@ -807,64 +807,57 @@ function _toProb(mode, val) {
   if (X == null || X <= 0 || !isFinite(X)) return null;
   return 1 / X;
 }
-function _partitionCounts(N, groups) {
-  let used = 0;
-  for (var gi=0; gi<groups.length; gi++) used += Math.max(0, (groups[gi].count|0));
-  if (used > N) return { nBase: 0, valid: false };
-  return { nBase: N - used, valid: true };
-}
-function computeProbabilities(add) {
-  const N = Math.max(0, add.N|0);
-  const baseP = _toProb(add.usual.pMode, add.usual.pVal);
-  if (N === 0 || baseP == null) return { Pany: 0, sumP: 0, nBase: 0, valid: N>0 };
-  const groups = (add.toggles.pVar ? add.groups : []);
-  const part = _partitionCounts(N, groups);
-  if (!part.valid) return { Pany: NaN, sumP: NaN, nBase: 0, valid: false };
 
-  var productNone = Math.pow(1 - baseP, Math.max(0, part.nBase));
-  var sumP = part.nBase * baseP;
-  for (var gi=0; gi<groups.length; gi++) {
-    var g = groups[gi];
-    var cnt = Math.max(0, (g.count|0));
-    var p = _toProb(g.mode, g.val);
-    if (p == null) return { Pany: NaN, sumP: NaN, nBase: part.nBase, valid: false };
-    productNone *= Math.pow(1 - p, cnt);
-    sumP += cnt * p;
+function computeProbabilitiesSingleGroup(add) {
+  const N = Math.max(0, add.N|0);
+  if (N === 0) return { Pany:0, sumP:0, nBase:0, valid:false };
+
+  const pBase = _toProb(add.usual.pMode, add.usual.pVal);
+  if (pBase == null) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
+
+  var nOut = 0, pOut = null;
+  if (add.toggles.pVar && add.groups.length>0) {
+    nOut = Math.max(0, (add.groups[0].count|0));
+    pOut = _toProb(add.groups[0].mode, add.groups[0].val);
+    if (pOut == null) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
   }
-  return { Pany: 1 - productNone, sumP: sumP, nBase: part.nBase, valid: true };
+  if (nOut > N) return { Pany:NaN, sumP:NaN, nBase:0, valid:false };
+
+  const nBase = N - nOut;
+  let prodNone = Math.pow(1-pBase, nBase);
+  let sumP = nBase * pBase;
+  if (nOut > 0) { prodNone *= Math.pow(1-pOut, nOut); sumP += nOut * pOut; }
+  return { Pany: 1 - prodNone, sumP: sumP, nBase: nBase, valid:true };
 }
+
 function computeCostSeverity(add) {
   const N = Math.max(0, add.N|0);
-  const Ctotal = N * (+add.usual.cost || 0) + (+add.extra.costTotal || 0);
-  const Savg = (N > 0) ? ((N * (+add.usual.severity || 0) + (+add.extra.severityTotal || 0)) / N) : 0;
+  const Cusual = +add.usual.cost || 0;
+  const Susual = +add.usual.severity || 0;
+  const Cextra = +add.extra.costTotal || 0;
+  const Sextra = +add.extra.severityTotal || 0;
+  const Ctotal = (N * Cusual) + (add.toggles.costVar ? Cextra : 0);
+  const Savg = (N>0) ? ((N * Susual + (add.toggles.sevVar ? Sextra : 0))/N) : 0;
   return { Ctotal: Ctotal, Savg: Savg };
 }
+
 function computeMiniVerdict(add) {
-  const P = computeProbabilities(add);
+  const P = computeProbabilitiesSingleGroup(add);
   const CS = computeCostSeverity(add);
-  if (!P.valid || isNaN(P.Pany) || isNaN(P.sumP)) return { ok:false, reason:'Invalid inputs or counts exceed N.' };
-  const expectedDownside = CS.Savg * P.sumP;
-  const ok = expectedDownside > CS.Ctotal;
-  const X_any = (P.Pany > 0) ? (1 / P.Pany) : Infinity;
-  return { ok: ok, expectedDownside: expectedDownside, Ctotal: CS.Ctotal, X_any: X_any, sumP: P.sumP, Savg: CS.Savg, Pany: P.Pany };
-}
-// Map multi-instance inputs to effective per-instance values for graphing
-function miniEffectivePerInstance(add){
-  // average per-instance probability
-  var P = computeProbabilities(add);
-  var CS = computeCostSeverity(add);
-  var N = Math.max(1, add.N|0);
-  var p_avg = (P.sumP / N); // average event probability per instance
-  if (!isFinite(p_avg) || p_avg < 0) p_avg = 0;
-  if (p_avg > 0.999999) p_avg = 0.999999; // keep in open interval for transforms
-  // convert p_avg to 1-in-X for your graph functions that expect X
-  var X_eff = (p_avg>0) ? (1/p_avg) : Infinity;
-  // effective S and C per instance for the old axes
-  var S_eff = CS.Savg;
-  var C_eff = CS.Ctotal / N;
-  return {X_eff: X_eff, S_eff: S_eff, C_eff: C_eff, sumP: P.sumP, Pany: P.Pany, N: N};
+  if (!P.valid || isNaN(P.Pany) || isNaN(P.sumP)) return { ok:false, reason:'Check inputs: counts or probabilities invalid.' };
+  const EV = CS.Savg * P.sumP;
+  const ok = EV > CS.Ctotal;
+  const Xany = (P.Pany>0) ? (1/P.Pany) : Infinity;
+  return { ok:ok, EV:EV, Ctotal:CS.Ctotal, Pany:P.Pany, sumP:P.sumP, Savg:CS.Savg, X_any:Xany };
 }
 
+function resetMiniAddition(){
+  miniAddition.N = 1;
+  miniAddition.toggles = { costVar:false, sevVar:false, pVar:false };
+  miniAddition.usual = { cost:null, severity:null, pMode:'oneInX', pVal:null };
+  miniAddition.extra = { costTotal:null, severityTotal:null };
+  miniAddition.groups = [];
+}
 
 function miniXcutoff_from_ratio(r) {
   var tRaw = (r - 1) / 9;
@@ -1065,258 +1058,521 @@ function jumpToConcept(conceptId, backQId){
 /* ===========================================================
    Q6 — interactive: inputs + 2D drag + snap + correct shading
 =========================================================== */
-
 function renderMiniQ6(intoEl, node){
+  // first-visit flag (keeps user values if they come back later)
   if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
+  let cont;
+
   intoEl.innerHTML = '';
 
-  // Heading/top text
-  var top = document.createElement('div');
+  // Top text
+  const top = document.createElement('div');
   top.className = 'mini-top';
   top.innerHTML = node.text || '';
   intoEl.appendChild(top);
 
-  // Wrap container
-  var wrap = document.createElement('div'); wrap.className = 'mini-wrap';
+  
+  // Wrapper + NEW compact fields (replaces old inputs)
+  const wrap = document.createElement('div'); wrap.className = 'mini-wrap';
+  const fields = document.createElement('div'); fields.className = 'mini-fields';
   intoEl.appendChild(wrap);
 
-  // === Replacement pre-graph inputs (Addition) ===
-  var fields = document.createElement('div'); fields.className = 'mini-fields';
+  // Instances first
+  const nBox = document.createElement('div'); nBox.className='mini-field';
+  nBox.innerHTML = '<label>Total instances (N)</label><input id="adN" type="number" min="1" step="1" value="1" placeholder="e.g. 1">';
+  fields.appendChild(nBox);
 
-  // N
-  var fN = document.createElement('div'); fN.className = 'mini-field';
-  fN.innerHTML = '<label>Total instances (N)</label><input id="adN" type="number" min="1" step="1">';
-  fields.appendChild(fN);
+  // Severity (usual)
+  const sBox = document.createElement('div'); sBox.className='mini-field';
+  sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">  <div class="mini-sub"><label><input id="tgSev" type="checkbox"> Severity varies across instances</label></div>  <div id="sevExtraBox" class="mini-sub mini-muted"><label>Total extra severity across outliers</label><input id="miniSevExtra" type="number" step="any" placeholder="e.g. 3 (sum of outliers)"></div>';
+  fields.appendChild(sBox);
 
-  // Usual prob unit
-  var fMode = document.createElement('div'); fMode.className = 'mini-field';
-  fMode.innerHTML = '<label>Usual probability unit</label>\
-  <select id="adPmode"><option value="oneInX">1 in X</option><option value="percent">Percent (%)</option><option value="micromort">Micromorts</option></select>';
-  fields.appendChild(fMode);
+  // Cost (usual)
+  const cBox = document.createElement('div'); cBox.className='mini-field';
+  cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">  <div class="mini-sub"><label><input id="tgCost" type="checkbox"> Cost varies across instances</label></div>  <div id="costExtraBox" class="mini-sub mini-muted"><label>Total extra cost across outliers</label><input id="miniCostExtra" type="number" step="any" placeholder="e.g. 2 (sum of outliers)"></div>';
+  fields.appendChild(cBox);
 
-  // Usual prob value
-  var fVal = document.createElement('div'); fVal.className = 'mini-field';
-  fVal.innerHTML = '<label>Usual probability value</label><input id="adPval" type="number" min="0" step="any">';
-  fields.appendChild(fVal);
-
-  // Usual cost
-  var fCost = document.createElement('div'); fCost.className = 'mini-field';
-  fCost.innerHTML = '<label>Usual cost per instance</label><input id="adCost" type="number" step="any">';
-  fields.appendChild(fCost);
-
-  // Usual severity
-  var fSev = document.createElement('div'); fSev.className = 'mini-field';
-  fSev.innerHTML = '<label>Usual severity per instance</label><input id="adSev" type="number" step="any">';
-  fields.appendChild(fSev);
-
-  // Toggles row
-  var togglesRow = document.createElement('div'); togglesRow.className = 'mini-fields'; togglesRow.style.marginTop = '8px';
-  var fTgCost = document.createElement('div'); fTgCost.className = 'mini-field';
-  fTgCost.innerHTML = '<label><input id="tgCost" type="checkbox"> Cost varies</label>\
-  <div id="costExtraBox" class="mini-muted" style="margin-top:6px;"><label>Total extra cost across outliers</label><input id="adCostExtra" type="number" step="any"></div>';
-  var fTgSev = document.createElement('div'); fTgSev.className = 'mini-field';
-  fTgSev.innerHTML = '<label><input id="tgSev" type="checkbox"> Severity varies</label>\
-  <div id="sevExtraBox" class="mini-muted" style="margin-top:6px;"><label>Total extra severity across outliers</label><input id="adSevExtra" type="number" step="any"></div>';
-  togglesRow.appendChild(fTgCost); togglesRow.appendChild(fTgSev);
-
-  // Prob varies
-  var tgProbWrap = document.createElement('div'); tgProbWrap.style.marginTop = '8px';
-  tgProbWrap.innerHTML = '<label><input id="tgProb" type="checkbox"> Probability varies (add groups)</label>';
-
-  var groupWrap = document.createElement('div'); groupWrap.id = 'groupWrap'; groupWrap.className = 'mini-muted'; groupWrap.style.marginTop = '8px';
-  var groupsDiv = document.createElement('div'); groupsDiv.id = 'groups'; groupWrap.appendChild(groupsDiv);
-  var addBtn = document.createElement('button'); addBtn.type = 'button'; addBtn.className = 'next'; addBtn.id = 'addGroupBtn'; addBtn.style.marginTop = '8px'; addBtn.textContent = 'Add probability group'; groupWrap.appendChild(addBtn);
-  var countMsg = document.createElement('div'); countMsg.id = 'countMsg'; countMsg.className = 'error'; countMsg.style.marginTop = '6px'; groupWrap.appendChild(countMsg);
+  // Probability (usual)
+  const pBox = document.createElement('div'); pBox.className='mini-field';
+  pBox.innerHTML = '<label>Probability unit</label>  <select id="miniMode" name="q6Units"><option value="oneInX">1 in X</option><option value="percent">Percentage (%)</option><option value="micromort">Micromorts</option></select>  <div class="mini-sub"><label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000,000"></div>  <div class="mini-sub"><label><input id="tgProb" type="checkbox"> Probability varies across instances</label></div>  <div id="probExtraBox" class="mini-sub mini-muted">    <div class="mini-fields">      <div class="mini-field"><label>Outlier count</label><input id="pOutCount" type="number" min="0" step="1" placeholder="e.g. 5"></div>      <div class="mini-field"><label>Outlier unit</label>        <select id="pOutMode"><option value="oneInX">1 in X</option><option value="percent">Percentage (%)</option><option value="micromort">Micromorts</option></select>      </div>      <div class="mini-field"><label>Outlier value</label><input id="pOutVal" type="number" min="0" step="any" placeholder="e.g. 100,000"></div>    </div>    <div id="countMsg" class="error" style="margin-top:6px;"></div>  </div>';
+  fields.appendChild(pBox);
 
   wrap.appendChild(fields);
-  wrap.appendChild(togglesRow);
-  wrap.appendChild(tgProbWrap);
-  wrap.appendChild(groupWrap);
 
-  // === Graph (unchanged below inputs) ===
-  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.classList.add('mini-svg'); svg.setAttribute('viewBox','0 0 940 620'); svg.style.overflow='visible';
-  wrap.appendChild(svg);
+  // Element refs
+  const elN = fields.querySelector('#adN');
+  const elS = fields.querySelector('#miniS');
+  const elC = fields.querySelector('#miniC');
+  const elM = fields.querySelector('#miniMode');
+  const elV = fields.querySelector('#miniVal');
+  const tgSev = fields.querySelector('#tgSev');
+  const tgCost= fields.querySelector('#tgCost');
+  const tgProb= fields.querySelector('#tgProb');
+  const sevExtraBox = fields.querySelector('#sevExtraBox');
+  const costExtraBox= fields.querySelector('#costExtraBox');
+  const probExtraBox= fields.querySelector('#probExtraBox');
+  const elSevExtra = fields.querySelector('#miniSevExtra');
+  const elCostExtra= fields.querySelector('#miniCostExtra');
+  const elOutCount = fields.querySelector('#pOutCount');
+  const elOutMode  = fields.querySelector('#pOutMode');
+  const elOutVal   = fields.querySelector('#pOutVal');
+  const countMsg   = fields.querySelector('#countMsg');
 
-  // Rule + verdict (reuse your existing rule/verdict styles)
-  var rule = document.createElement('div'); rule.className='rule';
-  rule.innerHTML = 'Rule: Only if <b>Expected Downside (instances)</b> exceeds <b>Total Cost (instances)</b> can action be considered.';
-  var verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
+  function refreshToggles(){
+    const N = Math.max(1, elN.value|0);
+    const disable = (N === 1);
+    [tgSev, tgCost, tgProb].forEach(cb => { cb.checked = disable ? false : cb.checked; cb.disabled = disable; });
+    sevExtraBox.classList.toggle('mini-muted', !tgSev.checked || disable);
+    costExtraBox.classList.toggle('mini-muted', !tgCost.checked || disable);
+    probExtraBox.classList.toggle('mini-muted', !tgProb.checked || disable);
+  }
+
+  function syncState(){
+    miniAddition.N = Math.max(1, elN.value|0);
+    miniAddition.usual.severity = elS.value ? +elS.value : null;
+    miniAddition.usual.cost     = elC.value ? +elC.value : null;
+    miniAddition.usual.pMode    = elM.value;
+    miniAddition.usual.pVal     = elV.value ? +elV.value : null;
+    miniAddition.toggles.sevVar = !!tgSev.checked;
+    miniAddition.toggles.costVar= !!tgCost.checked;
+    miniAddition.toggles.pVar   = !!tgProb.checked;
+    miniAddition.extra.severityTotal = (tgSev.checked && elSevExtra.value) ? +elSevExtra.value : null;
+    miniAddition.extra.costTotal     = (tgCost.checked && elCostExtra.value) ? +elCostExtra.value : null;
+    if (tgProb.checked) {
+      miniAddition.groups = [{ count: elOutCount.value ? (elOutCount.value|0) : 0, mode: elOutMode.value, val: elOutVal.value ? +elOutVal.value : null }];
+    } else {
+      miniAddition.groups = [];
+    }
+    // enforce counts
+    countMsg.textContent = '';
+    if (miniAddition.groups.length>0 && miniAddition.groups[0].count > miniAddition.N) {
+      countMsg.textContent = 'Outlier count exceeds total instances N=' + miniAddition.N + '.';
+    }
+  }
+
+  function updateVerdict(){
+    const out = computeMiniVerdict(miniAddition);
+    const verdict = document.getElementById('miniVerdict');
+    if (out.ok === false && out.reason){
+      verdict.textContent = out.reason;
+      verdict.classList.remove('ok'); verdict.classList.add('no');
+      window.miniActGate = false;
+      return;
+    }
+    verdict.textContent = out.ok ? 'Act should be considered.' : 'Not worth it.';
+    verdict.classList.toggle('ok', out.ok);
+    verdict.classList.toggle('no', !out.ok);
+    window.miniActGate = !!out.ok;
+  }
+
+  function onAnyChange(){
+    refreshToggles();
+    syncState();
+    // redraw graph exactly as before:
+    if (typeof draw === 'function') try { draw(); } catch(_){}
+    updateVerdict();
+  }
+
+  // Wire events
+  [elN, elS, elC, elM, elV, elSevExtra, elCostExtra, elOutCount, elOutMode, elOutVal].forEach(el=>{ if (el) el.addEventListener('input', onAnyChange); });
+  [tgSev, tgCost, tgProb].forEach(el=>{ if (el) el.addEventListener('change', onAnyChange); });
+
+  // Initial state (only N prefilled as 1; others blank)
+  resetMiniAddition(); // ensures blanks
+  elN.value = 1; miniAddition.N = 1;
+  refreshToggles();
+wrap.appendChild(svg);
+
+  // Rule + verdict
+  const rule = document.createElement('div'); rule.className='rule';
+  rule.innerHTML = 'Rule: Only if <span id="miniProbName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.';
+  const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(rule); wrap.appendChild(verdict);
 
-  // Link to concept (keep behavior)
-  var link = document.createElement('a');
-  link.href = '#concept-probability'; link.textContent = 'See Probability Concept';
-  link.onclick = function(e){ e.preventDefault(); window.__pendingConceptScroll = 'concept-probability'; openConcepts(); };
+  // 🔗 Inline “See Probability Concept” link (kept)
+  const link = document.createElement('a');
+  link.href = '#concept-prob-sev-cost';
+  link.textContent = 'See full explanation of Probability × Severity × Cost';
+  link.style.display = 'inline-block';
+  link.style.marginTop = '8px';
+  link.addEventListener('click', function(e){
+    e.preventDefault();
+    const target = 'concept-prob-sev-cost';
+    history.replaceState(null, '', `#${target}`);
+    jumpToConcept(target, /* back */ node.id);
+  });
   wrap.appendChild(link);
 
-  // Summary
-  var summary = document.createElement('div'); summary.id = 'additionSummary'; summary.style.marginTop = '10px';
-  wrap.appendChild(summary);
+  intoEl.appendChild(wrap);
 
-  // === Wire up inputs
-  var elN = wrap.querySelector('#adN');
-  var elPmode = wrap.querySelector('#adPmode');
-  var elPval = wrap.querySelector('#adPval');
-  var elCost = wrap.querySelector('#adCost');
-  var elSev = wrap.querySelector('#adSev');
-  var elTgCost = wrap.querySelector('#tgCost');
-  var elTgSev  = wrap.querySelector('#tgSev');
-  var elTgProb = wrap.querySelector('#tgProb');
-  var elCostExtra = wrap.querySelector('#adCostExtra');
-  var elSevExtra  = wrap.querySelector('#adSevExtra');
+  // Inputs
+  const elS  = wrap.querySelector('#miniS');
+  const elC  = wrap.querySelector('#miniC');
+  const elM  = wrap.querySelector('#miniMode');
+  const elV  = wrap.querySelector('#miniVal');
+  const labV = wrap.querySelector('#miniProbLabel');
+  const probName = wrap.querySelector('#miniProbName');
 
-  // hydrate defaults
-  elN.value = miniAddition.N;
-  elPmode.value = miniAddition.usual.pMode;
-  elPval.value = miniAddition.usual.pVal;
-  elCost.value = miniAddition.usual.cost;
-  elSev.value = miniAddition.usual.severity;
-  elTgCost.checked = miniAddition.toggles.costVar;
-  elTgSev.checked  = miniAddition.toggles.sevVar;
-  elTgProb.checked = miniAddition.toggles.pVar;
-  elCostExtra.value = miniAddition.extra.costTotal;
-  elSevExtra.value  = miniAddition.extra.severityTotal;
+  // ===== Persistence (restore first) =====
+  const savedQ6 = loadNodeState('Q6');
+  if (savedQ6) applyFormValues(q6Root, savedQ6);
 
-  function toggleClasses() {
-    var ceb = wrap.querySelector('#costExtraBox');
-    var seb = wrap.querySelector('#sevExtraBox');
-    ceb.classList.toggle('mini-muted', !elTgCost.checked);
-    seb.classList.toggle('mini-muted', !elTgSev.checked);
-    groupWrap.classList.toggle('mini-muted', !elTgProb.checked);
+  // helpers
+  function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
+  function yRange(mode){
+    if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Cutoff Probability (%) (log scale)" };
+    if (mode==='micromort') return { yMin: 1,      yMax: 1e6,   ticks:[1e6,1e5,1e4,1e3,100,10,1],        label:"Cutoff Probability (µm) (log scale)" };
+    return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
 
-  function drawGroups(){
-    groupsDiv.innerHTML='';
-    for (var i=0;i<miniAddition.groups.length;i++){
-      var g=miniAddition.groups[i];
-      var row=document.createElement('div'); row.className='mini-fields'; row.style.marginTop='6px';
-      row.innerHTML = '<div class="mini-field"><label>Group '+(i+1)+' count</label><input data-idx="'+i+'" data-k="count" type="number" min="0" step="1" value="'+(g.count||0)+'"></div>\
-      <div class="mini-field"><label>Unit</label><select data-idx="'+i+'" data-k="mode">\
-      <option value="oneInX"'+(g.mode==='oneInX'?' selected':'')+'>1 in X</option>\
-      <option value="percent"'+(g.mode==='percent'?' selected':'')+'>Percent (%)</option>\
-      <option value="micromort"'+(g.mode==='micromort'?' selected':'')+'>Micromorts</option>\
-      </select></div>\
-      <div class="mini-field"><label>Value</label><input data-idx="'+i+'" data-k="val" type="number" min="0" step="any" value="'+(g.val||'')+'"></div>\
-      <div class="mini-field"><label>&nbsp;</label><button type="button" class="back" data-remove="'+i+'">Remove</button></div>';
-      groupsDiv.appendChild(row);
+  elM.value = miniMaster.mode;
+  probName.textContent = miniProbSymbol(miniMaster.mode);
+  function updateProbLabelForMode(mode){
+    if (mode==='oneInX'){ labV.textContent='Enter X (for “1 in X”)'; elV.placeholder='e.g. 1,000,000'; }
+    else if (mode==='percent'){ labV.textContent='Enter percentage (%)'; elV.placeholder='e.g. 0.01'; }
+    else { labV.textContent='Enter micromorts (µm)'; elV.placeholder='e.g. 1'; }
+    probName.textContent = miniProbSymbol(mode);
+  }
+  updateProbLabelForMode(miniMaster.mode);
+
+  // hydrate or blank based on pristine
+  if (!window.miniPristine) {
+    if (!elS.value) elS.value = String(miniMaster.S);
+    if (!elC.value) elC.value = String(miniMaster.C);
+    if (!elV.value) elV.value = String(miniMaster.val);
+  } else {
+    if (!savedQ6) {
+      elS.value = ''; elC.value = ''; elV.value = '';
+      miniMaster.X_user = null;
     }
   }
-  function sumGroupCounts(){
-    var s=0; for (var i=0;i<miniAddition.groups.length;i++){ s+= Math.max(0, (miniAddition.groups[i].count|0)); } return s;
-  }
 
-  function updateAll(){
-    var N = Math.max(0, elN.value|0);
-    var used = sumGroupCounts();
-    var countMsgEl = wrap.querySelector('#countMsg');
-    if (countMsgEl) countMsgEl.textContent = (used > N) ? ('Group counts ('+used+') exceed total instances N='+N+'. Please reduce.') : '';
+  // SVG layers (unchanged)
+  const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
+  const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
+  const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
+  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','mini-handle'); handle.setAttribute('r','12'); svg.appendChild(handle);
 
-    miniAddition.N = N;
-    miniAddition.usual.pMode = elPmode.value;
-    miniAddition.usual.pVal  = +elPval.value;
-    miniAddition.usual.cost  = +elCost.value;
-    miniAddition.usual.severity = +elSev.value;
-    miniAddition.toggles.costVar = !!elTgCost.checked;
-    miniAddition.toggles.sevVar  = !!elTgSev.checked;
-    miniAddition.toggles.pVar    = !!elTgProb.checked;
-    miniAddition.extra.costTotal = miniAddition.toggles.costVar ? (+elCostExtra.value) : 0;
-    miniAddition.extra.severityTotal = miniAddition.toggles.sevVar ? (+elSevExtra.value) : 0;
+  const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); labelG.style.pointerEvents='none'; svg.appendChild(labelG);
+  const labelBg= document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','mini-ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
+  const labelTx= document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','mini-ptlabel'); labelG.appendChild(labelTx);
 
-    toggleClasses();
+  const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
+  const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
-    var M = computeMiniVerdict(miniAddition);
-    var verdictEl = wrap.querySelector('#miniVerdict');
-    if (M.ok === false && M.reason){
-      if (verdictEl){ verdictEl.textContent = M.reason; verdictEl.classList.remove('ok'); verdictEl.classList.add('no'); }
-      return;
+  // geometry (unchanged)
+  const pad = { left:120, right:30, top:34, bottom:96 };
+  const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
+  const rMin=1, rMax=10;
+  function rToPx(r){ return pad.left + (r-rMin)/(rMax-rMin)*plotW; }
+  function pxToR(px){ return (rMin + (px-pad.left)/plotW*(rMax-rMin)); }
+  function yToPx(y,yMin,yMax){ return pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); }
+
+  function drawAxes(mode){
+    axesG.innerHTML='';
+    // x grid + ticks
+    for (let r=1;r<=10;r++){
+      const x = rToPx(r);
+      const v = document.createElementNS('http://www.w3.org/2000/svg','line');
+      v.setAttribute('x1',x); v.setAttribute('x2',x); v.setAttribute('y1',pad.top); v.setAttribute('y2',pad.top+plotH);
+      axesG.appendChild(v);
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',x); t.setAttribute('y', pad.top + plotH + 16);
+      t.setAttribute('dominant-baseline','hanging'); t.setAttribute('text-anchor','middle'); t.textContent=r;
+      axesG.appendChild(t);
     }
-    if (verdictEl){
-      verdictEl.textContent = M.ok ? 'Act should be considered (instances-aware).' : 'Not worth it (instances-aware).';
-      verdictEl.classList.toggle('ok', M.ok);
-      verdictEl.classList.toggle('no', !M.ok);
-    }
-    window.miniActGate = !!M.ok;
-
-    var XanyDisp = (M.X_any === Infinity) ? '∞' : (M.X_any >= 1e8 ? (M.X_any.toExponential(2)) : (M.X_any >= 1e4 ? Math.round(M.X_any).toLocaleString() : (Math.round(M.X_any*100)/100).toLocaleString()));
-    summary.innerHTML = '<div><b>Combined chance of ≥1 event:</b> ~ 1 in '+XanyDisp+'</div>\
-    <div><b>Sum of per-instance probabilities (Σp):</b> '+(M.sumP).toFixed(6)+'</div>\
-    <div><b>Average severity (per instance):</b> '+(M.Savg).toFixed(3)+'</div>\
-    <div><b>Expected downside across N:</b> '+(M.expectedDownside).toFixed(3)+'</div>\
-    <div><b>Total cost across N:</b> '+(M.Ctotal).toFixed(3)+'</div>';
-
-    // If you have a graph draw function, call it
-    if (typeof drawMiniGraph === 'function') drawMiniGraph();
-  }
-
-  addBtn.onclick = function(){
-    if (!elTgProb.checked) return;
-    miniAddition.groups.push({ count:0, mode: miniAddition.usual.pMode, val: miniAddition.usual.pVal });
-    drawGroups(); updateAll();
-  };
-  groupsDiv.addEventListener('input', function(e){
-    var t=e.target;
-    if (t.dataset && t.dataset.idx !== undefined){
-      var idx = +t.dataset.idx;
-      var k = t.dataset.k;
-      if (k === 'count') miniAddition.groups[idx].count = Math.max(0, (t.value|0));
-      if (k === 'mode')  miniAddition.groups[idx].mode = t.value;
-      if (k === 'val')   miniAddition.groups[idx].val  = +t.value;
-      updateAll();
-    }
-  });
-  groupsDiv.addEventListener('click', function(e){
-    var t=e.target;
-    if (t.dataset && t.dataset.remove !== undefined){
-      var idx = +t.dataset.remove;
-      miniAddition.groups.splice(idx,1);
-      drawGroups(); updateAll();
-    }
-  });
-
-  // Default hydration and first draw
-  drawGroups();
-  updateAll();
-
-  
-  // ---- Graph drawing adapted to new logic ----
-  function drawMiniGraph(){
-    // derive per-instance effective values to feed existing graph math
-    var eff = miniEffectivePerInstance(miniAddition);
-    // your existing graph code relied on miniMaster-like values;
-    // we temporarily mirror those so existing draw code (if any global helpers read it) still works.
-    window.miniMaster = { S: eff.S_eff, C: eff.C_eff, mode: 'oneInX', val: eff.X_eff, X_user: eff.X_eff };
-    // If you had functions like drawAxes/buildCurve that read from current inputs, call them here.
-    // For safety, we simply redraw static axes and a marker for the effective point.
-    // Create simple axes if none exist
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var axesG = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
-    var W=940, H=620, pad={left:120,right:30,top:34,bottom:96};
-    var plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
-    // Draw border
-    var border = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    border.setAttribute('x', pad.left); border.setAttribute('y', pad.top);
-    border.setAttribute('width', plotW); border.setAttribute('height', plotH);
-    border.setAttribute('fill','none'); border.setAttribute('stroke','currentColor'); border.setAttribute('stroke-opacity','0.3');
-    svg.appendChild(border);
-    // Place a point representing S_eff/C_eff vs X_eff: x encodes X (log scale), y encodes S/C ratio
-    function xFromX(X){ if (!isFinite(X) || X<=1) X=1.0001; var logX=Math.log10(X); var minL=0, maxL=8; var t=(logX-minL)/(maxL-minL); return pad.left + t*plotW; }
-    function yFromRatio(r){ var rMin=1, rMax=10; var t=(r - rMin)/(rMax - rMin); t = Math.max(0, Math.min(1,t)); return pad.top + (1-t)*plotH; }
-    var ratio = (eff.S_eff && eff.C_eff) ? (eff.S_eff/eff.C_eff) : 0;
-    var x = xFromX(eff.X_eff);
-    var y = yFromRatio(ratio);
-    var pt = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    pt.setAttribute('cx', x); pt.setAttribute('cy', y); pt.setAttribute('r','8'); svg.appendChild(pt);
+    // y grid + ticks
+    const yr=yRange(mode);
+    yr.ticks.forEach(yv=>{
+      const y = yToPx(yv, yr.yMin, yr.yMax);
+      const h=document.createElementNS('http://www.w3.org/2000/svg','line');
+      h.setAttribute('x1',pad.left); h.setAttribute('x2',pad.left+plotW); h.setAttribute('y1',y); h.setAttribute('y2',y);
+      axesG.appendChild(h);
+      const yt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      yt.setAttribute('x', pad.left - 10); yt.setAttribute('y', y);
+      yt.setAttribute('text-anchor','end'); yt.setAttribute('dominant-baseline','middle');
+      yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
+      axesG.appendChild(yt);
+    });
     // labels
-    var txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-    txt.setAttribute('x', x+10); txt.setAttribute('y', y-10);
-    txt.textContent = 'Effective point';
-    svg.appendChild(txt);
+    xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
+    xLab.textContent = 'Severity / Cost Ratio (S / C)';
+
+    const Y_LABEL_OFFSET = 90, desiredLeftPadding=8;
+    yLab.textContent = yRange(mode).label;
+    yLab.setAttribute('text-anchor','middle'); yLab.setAttribute('dominant-baseline','middle');
+    const cy = pad.top + plotH/2, cx0 = pad.left - Y_LABEL_OFFSET;
+    yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
+    const bb = yLab.getBBox(); const currentLeft = cx0 - (bb.height/2);
+    const dx = Math.max(0, desiredLeftPadding - currentLeft);
+    yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
   }
 
-  // Initial draw
-  drawMiniGraph();
+  function buildCurve(mode){
+    const yr=yRange(mode), N=800;
+    let d='';
+    for (let i=0;i<=N;i++){
+      const r = 1 + 9*(i/N);
+      const X = miniXcutoff_from_ratio(r);
+      const Y = miniXtoUnit(X, mode);
+      const x = rToPx(r), y = yToPx(Y, yr.yMin, yr.yMax);
+      d += (i? 'L ':'M ') + x + ',' + y + ' ';
+    }
+    curve.setAttribute('d', d);
+
+    // shaded region (act region)
+    const leftX=rToPx(1), rightX=rToPx(10);
+    if (mode === 'oneInX'){
+      const bottom = yToPx(yr.yMin, yr.yMin, yr.yMax);
+      shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
+    } else {
+      const top = yToPx(yr.yMax, yr.yMin, yr.yMax);
+      shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + top + ' L ' + leftX + ',' + top + ' Z');
+    }
+  }
+
+  function curveYPxAtRatio(r, mode){
+    const yr = yRange(mode);
+    const Xc = miniXcutoff_from_ratio(r);
+    const Yc = miniXtoUnit(Xc, mode);
+    return yToPx(Yc, yr.yMin, yr.yMax);
+  }
+
+  function snapInputs(){
+    if (window.miniPristine) return;
+    let S = parseFloat(elS.value);
+    let C = parseFloat(elC.value);
+    const mode = elM.value;
+    let vv = parseFloat(elV.value);
+
+    if (!isFinite(S)) S = miniMaster.S;
+    if (!isFinite(C)) C = miniMaster.C;
+    if (S<=0) S = MINI_EPS; if (C<=0) C = MINI_EPS;
+    S = Math.min(S, MINI_MAX); C = Math.min(C, MINI_MAX);
+
+    if (!isFinite(vv)) vv = miniMaster.val;
+    if (mode==='oneInX' && vv < 2) vv = 2;
+    if (mode==='percent'){ if (vv<=0) vv=0.000001; if (vv>=100) vv=99.999999; }
+    if (mode==='micromort'){ if (vv<=0) vv=0.0001; if (vv>=1e6) vv=999999.99; }
+
+    elS.value = String(S); elC.value = String(C); elV.value = String(vv);
+
+    miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
+    miniMaster.X_user = miniNormalizeToX(mode, vv);
+  }
+
+  const SNAP_PX = 22;
+  let isSnapped = false;
+
+  function draw(){
+    const mode = elM.value;
+    drawAxes(mode);
+    buildCurve(mode);
+
+    // --- FIX: if we have values, don't treat as pristine ---
+    if (window.miniPristine) {
+      const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
+      if (!hasAny) {
+        verdict.textContent = 'Enter values to see if action should be considered.';
+        verdict.classList.remove('ok','no');
+        handle.setAttribute('visibility','hidden');
+        labelG.setAttribute('visibility','hidden');
+        if (cont) cont.disabled = true;
+        return;
+      }
+      // We DO have values → flip pristine off so we compute verdict & enable button
+      window.miniPristine = false;
+    }
+    // --- end fix ---
+  
+    handle.removeAttribute('visibility');
+    labelG.removeAttribute('visibility');
+  
+    snapInputs();
+
+    const r  = miniMaster.S/miniMaster.C;
+    const Xc = miniXcutoff_from_ratio(r);
+    const yr = yRange(mode);
+
+    const Yuser = (miniMaster.X_user != null)
+      ? miniXtoUnit(miniMaster.X_user, mode)
+      : miniXtoUnit(Xc, mode);
+
+    const cx = rToPx(miniClamp(r,1,10));
+    const cy = yToPx(Yuser, yr.yMin, yr.yMax);
+    handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
+
+    const label = 'S=' + trimDeci(miniMaster.S) + ' , C=' + trimDeci(miniMaster.C) + ' · S/C=' + trimDeci(r) + ' · ' +
+      (mode==='percent' ? ('X≈' + trimDeci(100/Xc,6) + '%') : (mode==='micromort' ? ('X≈' + trimDeci(1e6/Xc,2) + ' µm') : ('X≈' + Math.round(Xc).toLocaleString())));
+    labelTx.textContent = label;
+    labelTx.setAttribute('text-anchor','middle');
+    let ly = cy - 34; const minTop = pad.top + 20; if (ly < minTop) ly = minTop;
+    labelTx.setAttribute('x', cx); labelTx.setAttribute('y', ly);
+    const bb = labelTx.getBBox(); const padBox=10;
+    labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
+    labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
+
+    const act = (miniMaster.X_user != null) ? (miniMaster.X_user <= Xc + 1e-15) : false;
+    verdict.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
+    verdict.classList.toggle('ok', act);
+    verdict.classList.toggle('no', !act);
+
+    renderMiniQ6._act = act;
+    if (cont) cont.disabled = false;
+  }
+
+  // pointer helpers (unchanged)
+  function svgPoint(evt){
+    const pt = svg.createSVGPoint();
+    pt.x = (evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX);
+    pt.y = (evt.touches && evt.touches[0] ? evt.touches[0].clientY : evt.clientY);
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  let dragging=false;
+  function onPointerDown(e){ e.preventDefault(); window.miniPristine=false; dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){ } onPointerMove(e); }
+  function onPointerMove(e){
+    if(!dragging) return; e.preventDefault();
+    const sp = svgPoint(e);
+    const px = miniClamp(sp.x, pad.left, pad.left+plotW);
+    const r  = pxToR(px);
+
+    // snapping (vertical)
+    const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
+    const yCurve  = curveYPxAtRatio(r, elM.value);
+    const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
+    if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
+    isSnapped = willSnap;
+
+    // vary C to follow r = S/C, keep within bounds
+    let S = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
+    let C = S / r;
+    if (C <= MINI_EPS || C > MINI_MAX){
+      C = miniClamp(parseFloat(elC.value)||miniMaster.C||1, MINI_EPS, MINI_MAX);
+      S = r * C;
+      if (S <= MINI_EPS || S > MINI_MAX){
+        S = miniClamp(S, MINI_EPS, MINI_MAX);
+        C = miniClamp(S / r, MINI_EPS, MINI_MAX);
+      }
+    }
+    elS.value = String(S); elC.value = String(C);
+
+    // compute user probability from yCursor (snap to curve if close)
+    const mode = elM.value;
+    const yr = yRange(mode);
+    let yPix = Math.min(pad.top+plotH, Math.max(pad.top, sp.y));
+    if (willSnap) yPix = yCurve;
+    const frac = 1 - (yPix - pad.top) / plotH;
+    const logY = Math.log10(yr.yMin) + frac * (Math.log10(yr.yMax) - Math.log10(yr.yMin));
+    const Y = Math.pow(10, logY);
+    const X_user = unitToX(Y, mode);
+    miniMaster.S = S; miniMaster.C = C; miniMaster.mode = mode; miniMaster.X_user = X_user;
+
+    // reflect into the input in chosen unit
+    let valOut = (mode==='oneInX') ? X_user : (mode==='percent' ? (100/X_user) : (1e6/X_user));
+    if (mode==='oneInX') { if (valOut < 2) valOut = 2; }
+    else if (mode==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
+    else { if (valOut<=0) valOut=0.0001; if (valOut>=1e6) valOut=999999.99; }
+    elV.value = String(valOut);
+    miniMaster.val = valOut;
+
+    draw();
+  }
+  function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
+
+  handle.addEventListener('pointerdown', onPointerDown, {passive:false});
+  svg.addEventListener('pointermove', onPointerMove, {passive:false});
+  svg.addEventListener('pointerup', onPointerUp, {passive:false});
+  svg.addEventListener('touchstart', onPointerDown, {passive:false});
+  svg.addEventListener('touchmove', onPointerMove, {passive:false});
+  svg.addEventListener('touchend', onPointerUp, {passive:false});
+
+  // ===== Micromorts lock (S=10 + grey out) & friendly inputs =====
+
+  // lock/unlock severity when micromorts is chosen
+  function lockSeverity(val = 10){
+    elS.value = String(val);
+    elS.disabled = true;
+    elS.classList.add('is-disabled');
+  }
+  function unlockSeverity(){
+    elS.disabled = false;
+    elS.classList.remove('is-disabled');
+  }
+  function applyUnitsRule(){
+    const mode = elM.value;
+    if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10);
+    else unlockSeverity();
+  }
+  applyUnitsRule();
+  elM.addEventListener('change', () => { updateProbLabelForMode(elM.value); applyUnitsRule(); });
+
+  // backspace-friendly inputs: sanitize on blur (NOT on every keystroke)
+  function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
+    if (!inp) return;
+
+    // Allow free typing; just strip obvious junk
+    inp.addEventListener('input', () => {
+      const s = inp.value;
+      const cleaned = s
+        .replace(/[^0-9.\-]/g, '')
+        .replace(/(.*\..*)\./, '$1')
+        .replace(/(.*-).*-/ , '$1');
+      if (cleaned !== s) inp.value = cleaned;
+    });
+
+    function normalize(){
+      const raw = (inp.value || '').trim();
+      if (raw === '' || raw === '-' || raw === '.' || raw === '-.') { inp.value = ''; return; }
+      let n = Number(raw);
+      if (!Number.isFinite(n)) { inp.value = ''; return; }
+      n = Math.min(max, Math.max(min, n));
+      inp.value = (decimals == null) ? String(n) : String(Number(n.toFixed(decimals)));
+      // After we accept a value, update visuals
+      window.miniPristine = false;
+      draw();
+    }
+    inp.addEventListener('blur', normalize);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+  }
+
+  wireNumericInput(elS, { min:0, max:10,   decimals:2 });
+  wireNumericInput(elC, { min:0, max:10,   decimals:2 });
+  wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
+
+  // inputs: no snap-back while typing; we only redraw on blur/Enter
+  elS.addEventListener('input', ()=>{ window.miniPristine=false; });
+  elC.addEventListener('input', ()=>{ window.miniPristine=false; });
+  elV.addEventListener('input', ()=>{ window.miniPristine=false; });
+
+  // Persist on any edit
+  const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
+  q6Root.addEventListener('input',  persistQ6);
+  q6Root.addEventListener('change', persistQ6);
+
+  // If fields already have values (e.g., returning from AB2), compute once
+  requestAnimationFrame(() => {
+    const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
+    if (hasAny) {
+      window.miniPristine = false; // don't bail early in draw()
+      snapInputs();                // clamp/normalize into miniMaster
+      draw();                      // compute verdict + enable Continue
+    }
+  });
+
+  // initial paint
+  draw();
+
+  // Bottom buttons
+  const btns = document.getElementById('buttons');
+  btns.innerHTML = '';
+  cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
+  cont.onclick = function(){
+    miniActGate = !!renderMiniQ6._act;
+    goToNode(miniActGate ? 'Q10' : 'Q7');
+  };
+  btns.appendChild(cont);
 }
 
 /* ===========================================================
@@ -1331,64 +1587,94 @@ function renderMiniQ7(intoEl, node){
   top.innerHTML = node.text || '';
   intoEl.appendChild(top);
 
-  // Greyed out controls (mirroring Q6 UI but disabled)
   const wrap = document.createElement('div'); wrap.className = 'mini-wrap';
+  const fields = document.createElement('div'); fields.className = 'mini-fields mini-muted';
   intoEl.appendChild(wrap);
 
-  // We show the same fields but disabled; they reflect current miniAddition
-  const fields = document.createElement('div'); fields.className = 'mini-fields mini-muted';
-  fields.innerHTML = '<div class="mini-field"><label>Total instances (N)</label><input type="number" disabled value="'+miniAddition.N+'"></div>\
-  <div class="mini-field"><label>Usual probability unit</label><input disabled value="'+miniAddition.usual.pMode+'"></div>\
-  <div class="mini-field"><label>Usual probability value</label><input disabled value="'+miniAddition.usual.pVal+'"></div>\
-  <div class="mini-field"><label>Usual cost per instance</label><input disabled value="'+miniAddition.usual.cost+'"></div>\
-  <div class="mini-field"><label>Usual severity per instance</label><input disabled value="'+miniAddition.usual.severity+'"></div>';
+  // Mirror of Q6 fields but disabled
+  fields.innerHTML = '<div class="mini-field"><label>Total instances (N)</label><input type="number" disabled value="'+miniAddition.N+'"></div>  <div class="mini-field"><label>Severity (S) — up to 10</label><input type="number" disabled value="'+(miniAddition.usual.severity ?? '')+'"></div>  <div class="mini-field"><label>Cost (C) — up to 10</label><input type="number" disabled value="'+(miniAddition.usual.cost ?? '')+'"></div>  <div class="mini-field"><label>Probability unit</label><input disabled value="'+miniAddition.usual.pMode+'"></div>  <div class="mini-field"><label>Probability value</label><input type="number" disabled value="'+(miniAddition.usual.pVal ?? '')+'"></div>';
   wrap.appendChild(fields);
 
-  // Graph that can be interacted with locally (without mutating global state)
-  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  // SVG graph (same as Q6 original below)
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg'); svg.setAttribute('viewBox','0 0 940 620'); svg.style.overflow='visible';
   wrap.appendChild(svg);
 
-  // Local clone values (start from effective point)
-  var eff = miniEffectivePerInstance(miniAddition);
-  var local = { S: eff.S_eff, C: eff.C_eff, X: eff.X_eff };
+  // Verdict line (read-only page)
+  let verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdictQ7';
+  verdict.textContent = 'Drag the point to explore.';
+  wrap.appendChild(verdict);
+
+  // Use the existing draw code from Q6, but we maintain a local miniMaster clone for interaction
+  var local = { S: miniAddition.usual.severity || 0, C: miniAddition.usual.cost || 0, mode: miniAddition.usual.pMode||'oneInX', val: miniAddition.usual.pVal || 0, X_user: null };
+
+  // Provide minimal functions used by the original draw code via closures if needed.
+
+  // Reuse the original Q6 draw by copying its inner helpers is heavyweight; instead, we let the existing global draw use the current fields.
+  // We simulate field values by temporarily setting #miniS/#miniC/#miniMode/#miniVal within this wrap only for the purpose of drawing.
+  // Create hidden inputs with those ids inside wrap, so draw() reads them.
+  let shim = document.createElement('div'); shim.style.display='none';
+  shim.innerHTML = '<input id="miniS"><input id="miniC"><select id="miniMode"><option value="oneInX">1 in X</option><option value="percent">Percentage (%)</option><option value="micromort">Micromorts</option></select><input id="miniVal">';
+  wrap.appendChild(shim);
 
   function drawLocal(){
+    // set shim values to local
+    shim.querySelector('#miniS').value = local.S;
+    shim.querySelector('#miniC').value = local.C;
+    shim.querySelector('#miniMode').value = local.mode;
+    shim.querySelector('#miniVal').value = local.val;
+    // temporarily replace the svg in Q6 draw with this svg (if your draw targets current context). If not feasible, we do a minimalist plot:
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     var W=940, H=620, pad={left:120,right:30,top:34,bottom:96};
     var plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
     var border = document.createElementNS('http://www.w3.org/2000/svg','rect');
     border.setAttribute('x', pad.left); border.setAttribute('y', pad.top);
     border.setAttribute('width', plotW); border.setAttribute('height', plotH);
-    border.setAttribute('fill','none'); border.setAttribute('stroke','currentColor'); border.setAttribute('stroke-opacity','0.2');
+    border.setAttribute('fill','none'); border.setAttribute('stroke','currentColor'); border.setAttribute('stroke-opacity','0.3');
     svg.appendChild(border);
     function xFromX(X){ if (!isFinite(X) || X<=1) X=1.0001; var logX=Math.log10(X); var minL=0, maxL=8; var t=(logX-minL)/(maxL-minL); return pad.left + t*plotW; }
     function yFromRatio(r){ var rMin=1, rMax=10; var t=(r - rMin)/(rMax - rMin); t = Math.max(0, Math.min(1,t)); return pad.top + (1-t)*plotH; }
     var ratio = (local.S && local.C) ? (local.S/local.C) : 0;
-    var x = xFromX(local.X);
+    var Xc = 1; // not used in this simplified plot
+    var x = xFromX(miniNormalizeToX(local.mode, 1/(1/miniNormalizeToX(local.mode, local.val)))); // map unit to X (hacky but preserves axis)
+    // simpler: compute 1-in-X from mode
+    var Xeff = (function(){var X = miniNormalizeToX(local.mode, local.val); return X ? X : 1e6;})();
+    x = xFromX(Xeff);
     var y = yFromRatio(ratio);
     var pt = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    pt.setAttribute('cx', x); pt.setAttribute('cy', y); pt.setAttribute('r','10'); pt.setAttribute('fill','currentColor'); pt.setAttribute('opacity','0.6');
+    pt.setAttribute('cx', x); pt.setAttribute('cy', y); pt.setAttribute('r','10'); pt.setAttribute('fill','currentColor'); pt.setAttribute('opacity','0.7');
     svg.appendChild(pt);
-    // simple drag on x to explore probability effects (does not change Q6)
-    var dragging=false;
-    svg.addEventListener('mousedown', function(evt){ dragging=true; });
-    svg.addEventListener('mouseup', function(){ dragging=false; });
-    svg.addEventListener('mouseleave', function(){ dragging=false; });
-    svg.addEventListener('mousemove', function(evt){
-      if(!dragging) return;
-      var rect = svg.getBoundingClientRect();
-      var px = evt.clientX - rect.left;
-      // map px back to X (1..1e8)
-      var t = (px - pad.left)/plotW; t = Math.max(0, Math.min(1,t));
-      var logX = 0 + t*(8);
-      local.X = Math.pow(10, logX);
-      drawLocal();
-    }, {passive:true});
   }
-  drawLocal();
 
-  // Note: No writes to miniAddition or miniMaster here, exploration only.
+  // Basic drag to change local.X via local.val when in oneInX mode (keeps demo feel)
+  let dragging=false;
+  svg.addEventListener('mousedown', ()=> dragging=true);
+  svg.addEventListener('mouseup', ()=> dragging=false);
+  svg.addEventListener('mouseleave', ()=> dragging=false);
+  svg.addEventListener('mousemove', (evt)=>{
+    if(!dragging) return;
+    const rect = svg.getBoundingClientRect();
+    const pad={left:120,right:30,top:34,bottom:96};
+    const plotW=940-pad.left-pad.right;
+    const t = Math.max(0, Math.min(1, (evt.clientX-rect.left - pad.left)/plotW));
+    const logX = 0 + t*8;
+    const X = Math.pow(10, logX);
+    local.mode = 'oneInX'; local.val = X;
+    drawLocal();
+    // If within act threshold, show green verdict prompting to go back to Q6
+    // We approximate by checking S/C vs cutoff using existing helpers:
+    var r = (local.C>0) ? (local.S/local.C) : 0;
+    var Xcut = (typeof miniXcutoff_from_ratio==='function') ? miniXcutoff_from_ratio(r) : Infinity;
+    if (X <= Xcut) {
+      verdict.textContent = 'Act should be considered (based on this exploration). Please go back to Q6 to update values.';
+      verdict.classList.add('ok'); verdict.classList.remove('no');
+    } else {
+      verdict.textContent = 'Below the action threshold here.';
+      verdict.classList.remove('ok'); verdict.classList.remove('no');
+    }
+  }, {passive:true});
+
+  drawLocal();
 }
 
 
@@ -2058,20 +2344,12 @@ function syncHeatSliderFill(sl){
 
 
 function resetQ6State() {
+  try { resetMiniAddition(); } catch(_) {}
+
   // Clear any persisted threshold or Q6 cache (if you’ve added one)
   try {
     sessionStorage.removeItem('userThreshold');   // already used elsewhere
-    sessionStorage.removeItem('miniMaster');
-
-  // Reset the addition state
-  if (typeof miniAddition !== 'undefined') {
-    miniAddition.N = 1;
-    miniAddition.toggles = { costVar:false, sevVar:false, pVar:false };
-    miniAddition.usual = { cost:0, severity:1, pMode:'oneInX', pVal:1000000 };
-    miniAddition.extra = { costTotal:0, severityTotal:0 };
-    miniAddition.groups = [];
-  }
-      // only if you ever saved it
+    sessionStorage.removeItem('miniMaster');      // only if you ever saved it
   } catch (_) {}
 
   // Blank-on-first-visit behavior for Q6
