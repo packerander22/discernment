@@ -911,6 +911,7 @@ function flashAb2Heading(id) {
   flashWithPlateau(h, 'flash-purple', { inMs: 300, holdMs: 900, outMs: 300 });
 }
 
+
 function formatCShort(c){
   // show a compact C in the tooltip while preserving full-precision in state
   if (!isFinite(c)) return String(c);
@@ -918,6 +919,7 @@ function formatCShort(c){
   // for small values, show up to 4 significant digits
   return Number(c.toPrecision(4)) + '';
 }
+
 
 // ---- persistence helpers (use for Q6/Q33/etc.) ----
 function saveNodeState(key, obj){
