@@ -2543,15 +2543,6 @@ function renderNode(node) {
         scrollToConcept(id, window.__backTargetForAB2 || 'Q0');
       }, { passive: true });
   
-      // 4) inject a purple back button (inline, no helper needed)
-      if (!ab2El.querySelector('.ab2-back-btn')) {
-        const btn = document.createElement('button');
-        btn.className = 'next ab2-back-btn'; // "next" gives it the purple style
-        btn.type = 'button';
-        btn.textContent = 'Back';
-        btn.addEventListener('click', () => goToNode(backQId));
-        ab2El.prepend(btn);
-      }
   
     } else {
       // NORMAL AB2: no flash, no forced scroll, no injected back button
