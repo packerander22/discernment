@@ -1189,12 +1189,8 @@ function renderMiniQ6(intoEl, node){
         const show = !!cb.checked;
         setExtra(show);
         if (!show) clearGroups();
-      } else {
-        setExtra(false);
-        clearGroups();
-      }
-      refreshMsg();
-    } else {
+    }
+else {
         setExtra(false);
         clearGroups();
       }
