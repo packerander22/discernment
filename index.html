@@ -967,14 +967,6 @@ function trimDeci(val, places = 3) {
   return s.indexOf('.') === -1 ? s : s.replace(/\.?0+$/, '');
 }
 
-// Given a ratio r and the current mode, return the curve's **pixel Y** at that r
-;
-    if (m==='micromort') return { yMin: 1,      yMax: 1e6  };
-    return { yMin: 1,     yMax: 1e6  }; // 1 in X
-  })(mode);
-  const Yc = miniXtoUnit(Xc, mode);
-  return yToPx(Yc, yr.yMin, yr.yMax);
-}
 
 // --- GLOBAL: smooth scroll + back injection (single source of truth) ---
 function scrollToConcept(targetId, backQId) {
