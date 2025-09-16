@@ -1621,10 +1621,7 @@ else {
     const elV2= rootQ6.querySelector('#miniVal2');
     const elSX = rootQ6.querySelector('#miniSExtra');
     const elCX = rootQ6.querySelector('#miniCExtra');
-    const elSX = rootQ6.querySelector('#miniSExtra');
-    const elCX = rootQ6.querySelector('#miniCExtra');
-
-    [elC, elV, elV2, elSX, elCX].forEach(function(f){ if(!f) return; f.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+[elC, elV, elV2, elSX, elCX].forEach(function(f){ if(!f) return; f.addEventListener('input', function(){ this.dataset.touched='1'; }); });
     if (elS){
       ['input','change'].forEach(function(evt){
         elS.addEventListener(evt, function(){
