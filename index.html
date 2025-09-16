@@ -482,31 +482,26 @@
   gtag('config', 'G-VJSYRKHSRM');
 </script>
 
-<style id="mini-clean-css">
-  /* Keep scrolling, avoid right overflow */
-  #q6-entry, #q7-entry { max-width:100%; overflow-x:hidden; }
+<style id="mini-fix-css">
+  /* Restore vertical scroll; prevent side overflow */
   .mini-wrap { width:100%; max-width:100%; overflow-x:hidden; overflow-y:visible; }
-  /* Single-column form layout inside tiles; keep visual tokens from base */
-  #q6-entry .mini-fields, #q6-entry .fields,
-  #q7-entry .mini-fields, #q7-entry .fields { display:grid; grid-template-columns: 1fr !important; gap:14px; }
-  #q6-entry .mini-field input, #q6-entry .mini-field select, #q6-entry .mini-field textarea,
-  #q7-entry .mini-field input, #q7-entry .mini-field select, #q7-entry .mini-field textarea {
-    width:100% !important; max-width:100% !important; box-sizing:border-box;
-  }
-  /* Graphs scale but don't push layout */
-  #q6-entry svg, #q7-entry svg { width:100%; max-width:100%; height:auto; display:block; }
-  /* Varies label size parity */
+  /* Single-column, full-width layout inside the tile */
+  .mini-wrap .mini-fields,
+  .mini-wrap .fields { display:grid; grid-template-columns: 1fr !important; gap:14px; }
+  .mini-wrap .mini-field input,
+  .mini-wrap .mini-field select,
+  .mini-wrap .mini-field textarea { width:100% !important; max-width:100% !important; box-sizing:border-box; }
+  /* Graph scales without pushing layout */
+  .mini-wrap svg { width:100%; max-width:100%; height:auto; }
+  /* Make "Varies across instances" labels match input labels */
   .mini-field label { font-size: 0.95rem; line-height: 1.35; }
   .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
 </style>
 
 
-<style id="mini-clean-css-2">
-  .tile, .content, .mini-wrap, #q6-entry, #q7-entry { max-width:100%; box-sizing:border-box; overflow-x:hidden; }
-  /* Keep Q7 visual parity with Q6 even when readonly/disabled */
-  #q7-entry .mini-field input[readonly], #q7-entry .mini-field select[disabled] {
-    opacity: .7;
-  }
+<style id="mini-fix-css-ovr">
+  #q6-entry, #q7-entry { max-width:100%; overflow-x:hidden; }
+  .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
 </head>
@@ -706,7 +701,7 @@ var flowchart = [
   /* ===== ABOUT MENU + PAGES ===== */
   { "id": "AB0", "type": "aboutMenu", "heading": "About", "text": "Choose a section to learn more about the guide and its background." },
   { "id": "AB1", "type": "about", "heading": "About Me", "text": "Hi! My name is Packer, I’m the creator of this guide. I've had OCD for as long as I can remember, and one of the most difficult things for me is knowing whether or not I should worry about or address something, which led me to create this guide over the course of a year and a half—molded from many, <i>many</i> mistakes in my actions. I've learned it's not about being content with imperfection, or striving to make everything perfect, but rather about <i>discerning</i> what to do (or not do), and when to do it. This guide aims to help others make decision—regardless of if they suffer from OCD, anxiety, or not—as the logic it uses can be applied to all areas of life.\n\nTo contact or support me, I'm reachable at:\npackerander22@gmail.com" },
-  { "id":"AB2","type":"about","heading":"Guide Concepts Explained","text":"text" }
+  { "id":"AB2","type":"about","heading":"Guide Concepts Explained","text":"<p>This guide is built to prevent wasted effort, “analysis paralysis,” and unhealthy worry, by walking through the two essential questions of decision-making: <b>Should I act?</b> (IF) and <b>When should I act?</b> (WHEN). Along the way, it uses concepts from psychology, economics, and systems thinking. Below is a deep dive into each principle, ordered as they appear in the guide. Where equations appear, they’re written so a curious, non-technical reader can follow them step-by-step.</p><h2 id='concepts-top'>IF You Should Act</h2><h3 id='concept-real-vs-cosmetic'>1. Real Problems vs. Cosmetic Problems</h3><p>Not every “problem” is a <i>real</i> problem.</p><ul><li><b>Real problems</b> affect functionality, outcomes, or safety.</li><li><b>Cosmetic or preference problems</b> only affect comfort, appearance, or personal taste.</li></ul><p><b>How it works:</b> By sorting issues into these two categories, you focus only on what actually changes results. Cosmetic issues can be ignored without consequence.</p><h3 id='concept-potential-vs-inevitable'>2. Potential vs. Inevitable Problems</h3><p>A potential problem may or may not happen. An inevitable problem <i>will</i> happen if ignored.</p><ul><li>Example: a frayed charging cable is <i>inevitably</i> going to fail.</li><li>Example: a squeaky door hinge <i>might</i> get worse, but may never actually break.</li></ul><p><b>How it works:</b> If a problem is inevitable, fixing it early prevents larger costs later. Potential problems require more analysis, especially when severity is high.</p><h3 id='concept-costs-benefits'>3. Costs vs. Benefits</h3><p>Every action carries a trade-off:</p><ul><li><b>Upfront costs/efforts:</b> time, money, or energy you spend right now.</li><li><b>Resulting downsides:</b> risks or hassles created by the fix itself.</li><li><b>Combined total:</b> both categories together, compared against what happens if you do nothing.</li></ul><p><b>Simple Rule:</b> Act if doing nothing causes more downside than acting: <i>D<sub>nothing</sub> > (C<sub>upfront</sub> + D<sub>action</sub>)</i>.</p><p><b>Worked Example:</b> If ignoring a car repair will eventually cost $500, while fixing now costs $100 and creates $50 in hassles, then 500 > (100+50) → 500 > 150 → Act now.</p><h3 id='concept-prob-sev-cost'>4. Probability vs. Severity vs. Cost</h3><p>Use this when the issue is a <i>non-inevitable potential future problem</i>. Even if failure is unlikely, <b>severity</b> matters; and even if it would be severe, the <b>cost of prevention</b> matters.</p><ul><li><b>Low probability + low severity:</b> usually safe to ignore.</li><li><b>Low probability + high severity:</b> often worth preventing (e.g., helmet).</li><li><b>High probability + low severity:</b> acceptable to ignore if prevention costs more than the nuisance.</li><li><b>High probability + high severity:</b> always act.</li></ul><p><b>4.1 The straight-ahead test (expected value):</b> treat probability (P), severity (S, 1–10), and cost (C, 1–10). If the expected downside beats the cost, act.</p><div class='mathblock'><math display='block'><mrow><mi>P</mi><mo>×</mo><mi>S</mi><mo>></mo><mi>C</mi></mrow></math></div><p><i>Meaning:</i> multiply chance by how bad it would be; if that “expected hit” is bigger than the cost of preventing it, do it.</p><p><b>4.2 A calibrated, more conservative cutoff (one-in-X scale):</b> For very rare but severe outcomes, people still tend to act. We encode that with a tuned cutoff curve on a log scale of “1 in X”. Let X be the probability denominator (e.g., X=1,000 means 1-in-1,000 chance). Given your <b>S/C</b> ratio (severity divided by cost), the <b>largest</b> X you should accept is:</p><div class='mathblock'><math display='block'><mrow><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>=</mo><msup><mn>10</mn><mrow><mn>6</mn><mo>⋅</mo><msup><mrow><mo>(</mo><mfrac><mrow><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>−</mo><mn>1</mn></mrow><mn>9</mn></mfrac><mo>)</mo></mrow><mi>α</mi></msup></mrow></msup></mrow></math></div><p>Here <i>α</i> is a constant chosen so the curve hits intuitive anchor points:</p><div class='mathblock'><math display='block'><mrow><mi>α</mi><mo>=</mo><mfrac><mrow><mi>ln</mi><mo>(</mo><mn>0.5</mn><mo>)</mo></mrow><mrow><mi>ln</mi><mo>(</mo><mfrac><mrow><msqrt><mn>10</mn></msqrt><mo>−</mo><mn>1</mn></mrow><mn>9</mn></mfrac><mo>)</mo></mrow></mfrac><mo>≈</mo><mn>0.48606</mn></mrow></math></div><p><i>Sanity checks (what the curve guarantees):</i></p><ul><li><math display='inline'><mrow><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>=</mo><mn>1</mn></mrow></math> ⇒ <math display='inline'><mrow><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>=</mo><mn>1</mn></mrow></math> (only act if certain).</li><li><math display='inline'><mrow><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>=</mo><mn>10</mn></mrow></math> ⇒ <math display='inline'><mrow><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>=</mo><msup><mn>10</mn><mn>6</mn></msup></mrow></math> (act even at one-in-a-million).</li><li><math display='inline'><mrow><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>=</mo><msqrt><mn>10</mn></msqrt></mrow></math> ⇒ <math display='inline'><mrow><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>≈</mo><msup><mn>10</mn><mn>3</mn></msup></mrow></math> (act around one-in-a-thousand).</li></ul><p><b>How to use the chart:</b> On the X-axis you’ll see <b>S/C</b> from 1 to 10. On the Y-axis you’ll see the probability written as <b>1 in X</b> on a log scale from 1 to 1,000,000. The blue line is the cutoff <i>X<sub>cutoff</sub></i>. The green region shows where action is justified: for a given <b>S/C</b>, points <i>below</i> the blue line (smaller X ⇒ higher risk) mean “act”, points above mean “don’t act”.</p><figure style='margin:8px 0;'><img src='./prob_sev_cost_chart.png' alt='Probability–Severity–Cost decision boundary: X-axis S/C (1–10), Y-axis 1 in X (1–1,000,000), blue cutoff curve, green “act” region below the curve.' style='max-width:100%;height:auto;'/><figcaption style='font-size:.95em;opacity:.85'>Blue curve = calibrated cutoff; green area = “act”.</figcaption></figure><p><b>Worked single-instance example:</b> Suppose there’s a 1-in-10,000 risk (<i>X</i>=10,000) of a severity 8 outcome (<i>S</i>=8), and prevention costs <i>C</i>=5. Your ratio is <i>S/C</i>=1.6. From the curve, <i>X<sub>cutoff</sub></i> at 1.6 is roughly a few thousand; since 10,000 is <i>above</i> that cutoff (safer than the limit), you would not act. If the cost drops or severity rises, the blue cutoff falls and you cross into the green region.</p><p><b>4.3 Repeated or multiple instances (trips, sessions, days):</b> When the same risk shows up many times, combine the instances instead of judging one in isolation.</p><p><u>Exact combined chance:</u></p><div class='mathblock'><math display='block'><mrow><msub><mi>p</mi><mtext>total</mtext></msub><mo>=</mo><mn>1</mn><mo>−</mo><munder><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow></munder><msup><mrow><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>i</mi></msub><mo>)</mo></mrow><msub><mi>n</mi><mi>i</mi></msub></msup></mrow></math></div><p>For small probabilities this is well-approximated by a simple sum:</p><div class='mathblock'><math display='block'><mrow><msub><mi>p</mi><mtext>total</mtext></msub><mo>≈</mo><munder><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow></munder><mrow><msub><mi>n</mi><mi>i</mi></msub><mo>⋅</mo><msub><mi>p</mi><mi>i</mi></msub></mrow></mrow></math></div><p><u>Expected-value test across groups:</u></p><div class='mathblock'><math display='block'><mrow><msub><mi>E</mi><mtext>total</mtext></msub><mo>=</mo><munder><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow></munder><mrow><msub><mi>n</mi><mi>i</mi></msub><mo>⋅</mo><msub><mi>p</mi><mi>i</mi></msub><mo>⋅</mo><msub><mi>S</mi><mi>i</mi></msub></mrow><mo>></mo><mi>C</mi></mrow></math></div><p><i>Interpretation:</i> sum each group’s “chance × severity”, then compare that total to the prevention cost. If it’s bigger than <i>C</i>, act.</p><p><u>Identical instances shortcut:</u> If all <i>N</i> instances have the same severity <i>S</i> and probability denominator <i>X</i> (so per-instance <i>p</i>=1/<i>X</i>), you can compare an “effective” denominator to the same blue cutoff by dividing by <i>N</i>:</p><div class='mathblock'><math display='block'><mrow><msub><mi>X</mi><mtext>eff</mtext></msub><mo>=</mo><mfrac><mi>X</mi><mi>N</mi></mfrac><mo>,</mo><mspace width='0.5em'/><msub><mi>X</mi><mtext>eff</mtext></msub><mo>≤</mo><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>(</mo><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>)</mo></mrow></math></div><p><i>Why this works:</i> over <i>N</i> tries, the combined chance is about <i>N/X</i>; smaller denominators mean riskier. Dividing <i>X</i> by <i>N</i> puts the repeated scenario on the same chart.</p><p><b>Worked multi-group example:</b> You’ll play 100 matches. 95 are low-risk at 1-in-1,000,000; 5 are higher-risk at 1-in-100,000. Assume the severe outcome is <i>S</i>=8 and prevention cost is <i>C</i>=5. Expected total impact: <math display='inline'><mrow><mn>95</mn><mo>⋅</mo><mfrac><mn>1</mn><mn>1,000,000</mn></mfrac><mo>⋅</mo><mn>8</mn><mo>+</mo><mn>5</mn><mo>⋅</mo><mfrac><mn>1</mn><mn>100,000</mn></mfrac><mo>⋅</mo><mn>8</mn><mo>=</mo><mn>0.00476</mn></mrow></math>. Since 0.00476 < 5, prevention is not justified here. If cost dropped to 0.1, or severity rose, the inequality could flip.</p><p><b>4.4 Practical notes:</b> (1) If probabilities aren’t tiny, use the exact combined formula. (2) If prevention reduces both probability <i>and</i> severity, compute expected downside <i>with</i> and <i>without</i> prevention and compare the improvement to cost. (3) Our scales cap S and C at 10 to keep judgments stable and comparable.</p><h3 id='concept-alternatives'>5. Alternative Solutions</h3><p>The first idea isn’t always best. Consider simpler fixes, substitutes, or better long-term approaches.</p><p><b>How it works:</b> Surveying alternatives reduces downside and can add unexpected upsides.</p><h3 id='concept-info-value'>6. Information Value</h3><p>Sometimes action is worth it for the <i>learning</i> alone.</p><p><b>How it works:</b> Small experiments reduce uncertainty and improve future choices.</p><h3 id='concept-diminishing-returns'>7. Diminishing Returns</h3><p>Beyond a point, extra effort yields smaller improvements.</p><p><b>Rule of thumb:</b> Stop when marginal benefit < marginal cost.</p><figure style='margin:8px 0;'><img src='./diminishing_returns_curve.png' alt='Diminishing Returns Curve' style='max-width:100%;height:auto;'/></figure><h3 id='concept-inverted-u'>8. Inverted-U Curve (Sweet Spot)</h3><p>Too little or too much effort hurts results; there’s an objective optimum.</p><p><b>Why invest:</b> You’re not chasing perfection; you’re closing in on a measurable optimum, so extra effort to find it is justified.</p><figure style='margin:8px 0;'><img src='./inverted_u_curve.png' alt='Inverted-U Curve' style='max-width:100%;height:auto;'/></figure><h3 id='concept-functional-diff'>9. Functional Difference (Blind Test)</h3><p>Only differences you can actually detect (and that matter for purpose) count.</p><p><b>How it works:</b> If a change isn’t noticeable in use, it shouldn’t drive the decision.</p><h3 id='concept-long-vs-short'>10. Long-Term vs. Short-Term Benefits</h3><p>Short-term relief vs. root-cause fixes.</p><p><b>How it works:</b> Temporary fixes are fine for temporary issues; root-cause fixes justify more cost because they stop repeats.</p><h3 id='concept-always-vs-sometimes'>11. Always vs. Sometimes Worth It</h3><p>Some actions are habit-worthy (always worth it); others depend on context.</p><p><b>How it works:</b> Make the universal ones automatic; evaluate the conditional ones each time.</p><h3 id='concept-preventative'>12. Preventative Maintenance</h3><p>Prevent small issues from becoming large failures.</p><p><b>How it works:</b> Small predictable costs now avert large unpredictable costs later.</p><h2 id='when-top'>WHEN You Should Act</h2><h3 id='concept-severity-threshold'>13. Severity and Thresholds</h3><p>Severity is worst-case impact; threshold is your acceptable limit.</p><p><b>Simple Rule:</b> act when severity meets or exceeds your threshold:</p><div class='mathblock'><math display='block'><mrow><mfrac><mi>S</mi><mi>T</mi></mfrac><mo>≥</mo><mn>1</mn></mrow></math></div><p><b>Worked Example:</b> If severity = 7.5 and your threshold = 5.0, then 7.5 ÷ 5.0 = 1.5 ≥ 1 → Act now.</p><figure style='margin:8px 0;'><img src='./linear_threshold_chart.png' alt='Linear Severity to Action Threshold' style='max-width:100%;height:auto;'/></figure><h3 id='concept-telltale-signs'>14. Telltale Signs</h3><p>Warnings before failure (e.g., brake squeal, storage warnings) give safe buffer time.</p><p><b>How it works:</b> Use the buffer to plan; ignoring signs risks urgent, expensive fixes.</p><h3 id='concept-timing'>15. Timing and Availability</h3><p>When you act changes value.</p><p><b>How it works:</b> Wait for better conditions or act now to prevent escalation—whichever maximizes benefit vs. cost.</p><h3 id='concept-better-later'>16. Better Alternatives Down the Road</h3><p>Sometimes waiting yields a clearly superior option.</p><p><b>How it works:</b> Avoid near-term obsolescence by delaying when a better option is imminent.</p><h2 id='concepts-summary'>Putting It All Together</h2><h3 id='concept-decision-logic'>17. The Decision Logic</h3><p>The guide’s structure reflects real-world logic:</p><ol><li>Is this a real or inevitable problem?</li><li>Do benefits outweigh costs?</li><li>How do probability, severity, and cost balance out (including repeated instances)?</li><li>Are alternatives better?</li><li>Is the solution functional and noticeable?</li><li>Where’s the sweet spot for effort?</li><li>Is it a long-term or short-term fix?</li><li>Is it universally worth it, or conditional?</li><li>Should you prevent it early?</li><li>How severe is it compared to your threshold?</li><li>Are there warning signs?</li><li>Is the timing right, or should you wait for a better alternative?</li></ol><p><b>Bottom line:</b> Layering these concepts prevents wasted energy, avoids unhealthy overthinking, and leads to decisions that are rational, balanced, and sustainable.</p>"}
 ];
 
 /* ===== EXAMPLES (two per question; no info or results) ===== */
@@ -2989,83 +2984,95 @@ function renderNode(node) {
 </script>
 
 
-<script id="mini-clean-runtime">
+
+<script id="mini-runtime-fixes">
 (function(){
-  "use strict";
   function q(sel, r){ return (r||document).querySelector(sel); }
   function qa(sel, r){ return Array.prototype.slice.call((r||document).querySelectorAll(sel)); }
   function up(el, sel){ while(el && el.nodeType===1){ if(el.matches(sel)) return el; el = el.parentElement; } return null; }
-  function getRoot(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
 
-  function fullWidth(root){
-    if (!root) return;
-    qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
-      if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
-    });
-    var wrap = root.querySelector('.mini-wrap');
-    if (wrap && wrap.style){
-      wrap.style.width='100%'; wrap.style.maxWidth='100%';
-      wrap.style.overflowX='hidden'; wrap.style.overflowY='visible';
-    }
-    qa('svg', root).forEach(function(svg){
-      if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
+  function rootFor(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
+
+  function ensureFullWidth(scope){
+    try{
+      var root = scope || document;
+      qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
+        if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
+      });
+      var wrap = root.querySelector('.mini-wrap');
+      if (wrap && wrap.style){
+        wrap.style.width='100%';
+        wrap.style.maxWidth='100%';
+        wrap.style.overflowX='hidden';
+        wrap.style.overflowY='visible';
+      }
+      qa('svg', root).forEach(function(svg){
+        if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
+      });
+    }catch(e){}
+  }
+
+  function dedupeVaries(scope){
+    ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(function(sel){
+      var all = qa(sel, scope);
+      for (var i=1;i<all.length;i++){ var w = up(all[i], '.mini-field'); if (w) w.remove(); }
     });
   }
 
-  function keepProbBase(root){
-    if (!root) return;
-    var unit = q('#miniMode', root), val  = q('#miniVal', root);
-    var uw = unit && up(unit, '.mini-field'), vw = val && up(val, '.mini-field');
-    if (uw) uw.style.display='';
-    if (vw) vw.style.display='';
+  function keepBaseProbabilityVisible(scope){
+    var unit = q('#miniMode', scope), val  = q('#miniVal', scope);
+    var uw = unit && up(unit, '.mini-field'); var vw = val && up(val, '.mini-field');
+    if (uw) uw.style.display = ''; if (vw) vw.style.display = '';
   }
 
-  function probVaries(root){
-    if (!root) return;
-    keepProbBase(root);
-    var cb = q('#miniProbVaries', root);
-    var m2 = q('#miniMode2', root), v2 = q('#miniVal2', root), g = q('#miniProbGroups', root);
-    var m2w = m2 && up(m2, '.mini-field'), v2w = v2 && up(v2, '.mini-field'), gw = g && up(g, '.mini-field');
+  function wireProbabilityVaries(scope){
+    keepBaseProbabilityVisible(scope);
+    var cb    = q('#miniProbVaries', scope);
+    var mBox2 = q('#miniMode2', scope) && up(q('#miniMode2', scope), '.mini-field');
+    var vBox2 = q('#miniVal2',  scope) && up(q('#miniVal2',  scope), '.mini-field');
+    var gWrap = q('#miniProbGroups', scope) && up(q('#miniProbGroups', scope), '.mini-field');
     function show(on){
-      if (m2w) m2w.style.display = on ? '' : 'none';
-      if (v2w) v2w.style.display = on ? '' : 'none';
-      if (gw)  gw.style.display  = on ? '' : 'none';
+      if (mBox2) mBox2.style.display = on ? '' : 'none';
+      if (vBox2) vBox2.style.display = on ? '' : 'none';
+      if (gWrap) gWrap.style.display  = on ? '' : 'none';
     }
-    if (cb){
-      cb.addEventListener('change', function(){ keepProbBase(root); show(cb.checked); });
-      show(!!cb.checked);
-    } else { show(false); }
+    if (cb){ cb.addEventListener('change', function(){ keepBaseProbabilityVisible(scope); show(cb.checked); }); show(!!cb.checked); }
+    else { show(false); }
   }
 
-  function findN(root){
-    var lbls = qa('.mini-field label', root);
+  function findInstancesInput(scope){
+    var lbls = qa('.mini-field label', scope);
     for (var i=0;i<lbls.length;i++){
       if (/total\s+instances/i.test(lbls[i].textContent||'')){
         var inp = lbls[i].parentElement && lbls[i].parentElement.querySelector('input[type="number"]');
         if (inp) return inp;
       }
     }
-    return null;
+    return q('input[type="number"]', scope);
   }
 
-  function blankUntilEdited(root){
-    if (!root) return;
+  function blankUntilEdited(scope){
+    var root = scope || document;
     var nums = qa('.mini-field input[type="number"]', root);
     nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
-    var s = q('#miniS', root), n = findN(root);
+
+    var s = q('#miniS', root);
+    var n = findInstancesInput(root);
 
     function clearUntouched(){
       qa('.mini-field input[type="number"]', root).forEach(function(inp){
         if (inp === s) return;
-        if (n && inp === n) return;   // never clear Instances
+        if (n && inp === n) return;
         if (!inp.dataset.touched) inp.value = '';
       });
     }
+
     if (s){
       ['input','change'].forEach(function(evt){
         s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
       });
     }
+
     if (n){
       n.addEventListener('input', function(){
         var digits = String(this.value||'').replace(/[^0-9]/g, '');
@@ -3077,7 +3084,7 @@ function renderNode(node) {
         this.value = String(v);
       });
     }
-    // Cap probability groups to N
+
     var groups = q('#miniProbGroups', root);
     if (groups){
       groups.addEventListener('input', function(e){
@@ -3099,65 +3106,37 @@ function renderNode(node) {
     }
   }
 
-  function freezeQ7(root){
-    if (!root) return;
-    // Prefer readonly over disabled to keep styling consistent; hide Add Group
-    qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', root).forEach(function(el){
-      if (up(el,'svg')) return;                   // keep graph interactive
+  function freezeQ7(scope){
+    qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', scope).forEach(function(el){
+      if (up(el,'svg')) return;
       if (el.id === 'miniProbAddGroup') el.style.display='none';
-      if (el.tagName === 'INPUT'){ el.readOnly = true; el.tabIndex = -1; }
-      else if (el.tagName === 'SELECT' || el.tagName === 'TEXTAREA'){ el.setAttribute('disabled','disabled'); el.tabIndex = -1; }
+      el.disabled = true; if (el.tagName==='INPUT') el.readOnly = true;
       el.classList.add('mini-muted');
-      el.style.pointerEvents = 'none';
     });
-  }
-);
   }
 
   function applyQ6(){
-    var r = getRoot('q6-entry');
-    if (!r) return;
-    keepProbBase(r);
-    probVaries(r);
-    blankUntilEdited(r);
-    fullWidth(r);
-  }
-  function applyQ7(){
-    var r = getRoot('q7-entry');
-    if (!r) return;
-    fullWidth(r);
-    freezeQ7(r);
+    var root = rootFor('q6-entry');
+    if (!root) return;
+    dedupeVaries(root);
+    keepBaseProbabilityVisible(root);
+    wireProbabilityVaries(root);
+    blankUntilEdited(root);
+    ensureFullWidth(root);
   }
 
-  function sanitizeInitial(root){
+  function applyQ7(){
+    var root = rootFor('q7-entry');
     if (!root) return;
-    var n = (function(){
-      var lbls = qa('.mini-field label', root);
-      for (var i=0;i<lbls.length;i++){
-        if (/total\s+instances/i.test(lbls[i].textContent||'')){
-          var inp = lbls[i].parentElement && lbls[i].parentElement.querySelector('input[type="number"]');
-          if (inp) return inp;
-        }
-      }
-      return null;
-    })();
-    var badDefaults = {'1':true,'1.0':true,'1,000,000':true,'1000000':true,'1 000 000':true};
-    qa('.mini-field input[type="number"]', root).forEach(function(inp){
-      if (n && inp === n) return; // keep Instances
-      if (!inp.dataset.touched && badDefaults[String(inp.value||'').trim()]){
-        inp.value = '';
-      }
-    });
+    ensureFullWidth(root);
+    freezeQ7(root);
   }
-  function run(){
-    var r6 = getRoot('q6-entry');
-    sanitizeInitial(r6);
-    applyQ6();
-    var r7 = getRoot('q7-entry');
-    sanitizeInitial(r7);
-    applyQ7();
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+
+  function run(){ applyQ6(); applyQ7(); }
+
+  if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', run); }
+  else { run(); }
+
   new MutationObserver(function(muts){
     for (var i=0;i<muts.length;i++){
       var t = muts[i].target;
@@ -3166,9 +3145,10 @@ function renderNode(node) {
         run(); break;
       }
     }
-  }).observe(document.body, { childList:true, subtree:true });
+  }).observe(document.body, {childList:true, subtree:true});
 })();
 </script>
+
 
 </body>
 </html>
