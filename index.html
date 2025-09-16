@@ -2631,22 +2631,24 @@ function renderNode(node) {
 
 </script>
 
-<!-- === Q6/Q7 single-column upgrade (full-width, persistence) === -->
+
+
+
+<!-- === Q6/Q7 single-column upgrade (full-width fix, cleanup, toggle fix) === -->
 <style>
-  /* Single-column layout for Q6/Q7 upgraded sections */
+  /* Make the mini area stretch like the rest of the site */
+  .mini-wrap, #q6-entry, #q7-entry { width: 100%; }
   #q6-entry, #q7-entry {
     display: grid;
     grid-template-columns: 1fr;
     gap: 14px;
-    max-width: 960px; /* stretch like other site elements */
+    max-width: none;  /* allow full-width */
   }
-  /* Mini headings larger & bold */
   #q6-entry .mini-heading, #q7-entry .mini-heading {
     font-weight: 700;
     font-size: 1.2rem;
     margin-top: 10px;
   }
-  /* Labels slightly smaller/lighter */
   #q6-entry label, #q7-entry label {
     font-size: 0.95rem;
     font-weight: 400;
@@ -2654,7 +2656,7 @@ function renderNode(node) {
   #q6-entry .mini-field input, #q6-entry .mini-field select,
   #q7-entry .mini-field input, #q7-entry .mini-field select {
     width: 100%;
-    max-width: none; /* full width */
+    max-width: none;
   }
   #q7-entry input, #q7-entry select, #q7-entry button,
   #q7-entry .hint { opacity: .6; pointer-events: none; }
@@ -2663,19 +2665,20 @@ function renderNode(node) {
 </style>
 <script>
 (function () {
-  // Persisted state across navigation (non-invasive)
-  window.__q6State = window.__q6State || null;
-
-  function cloneVal(v){ return (v && typeof v==='object') ? JSON.parse(JSON.stringify(v)) : v; }
+  function absorbOriginalRow(root, sel) {
+    const inp = root.querySelector(sel);
+    if (!inp) return null;
+    const row = inp.closest('.mini-field') || inp.parentElement;
+    if (row && row.parentElement) row.parentElement.removeChild(row);
+    return inp;
+  }
+  function killStrays(root, stack) {
+    // hide anything outside our stack to avoid leftover right-side fields
+    const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
+    kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
+  }
 
   function buildOneColumn(root, opts) {
-    function detachInput(sel) {
-      const inp = root.querySelector(sel);
-      if (!inp) return null;
-      const row = inp.closest('.mini-field') || inp.parentElement;
-      if (row && row.parentElement) row.parentElement.removeChild(row);
-      return inp;
-    }
     const id = opts.id;
     let stack = root.querySelector('#' + id + '-entry');
     if (!stack) {
@@ -2691,11 +2694,11 @@ function renderNode(node) {
     // Instances
     const nRow = document.createElement('div');
     nRow.className = 'mini-field';
-    nRow.style.textAlign = 'center';
+    nRow.style.textAlign = 'left';
     nRow.innerHTML = '<label>Total instances (N)</label><input id="' + id + 'N" type="number" min="1" step="1" value="1">';
     stack.appendChild(nRow);
 
-    function makeSection(sectionTitle, selector, baseId, placeholder, extraLabel, extraKind) {
+    function makeSection(sectionTitle, selectors, baseId, placeholder, extraLabel, extraKind) {
       const h = document.createElement('div');
       h.className = 'mini-heading';
       h.textContent = sectionTitle;
@@ -2711,7 +2714,11 @@ function renderNode(node) {
       const field = document.createElement('div');
       field.className = 'mini-field';
       field.innerHTML = '<label>' + extraLabel + '</label>';
-      const inputEl = detachInput(selector) || document.createElement('input');
+      // try a few selectors for Q6 and Q7 variants
+      const inputEl = absorbOriginalRow(root, selectors[0]) ||
+                      absorbOriginalRow(root, selectors[1]) ||
+                      absorbOriginalRow(root, selectors[2]) ||
+                      document.createElement('input');
       if (!inputEl.type) inputEl.type = 'number';
       inputEl.id = baseId;
       inputEl.placeholder = placeholder;
@@ -2730,8 +2737,12 @@ function renderNode(node) {
     }
 
     // Severity & Cost
-    const sev = makeSection('Severity', 'input[name="severity"], #miniS, input[data-q="S"]', id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
-    const cost = makeSection('Cost', 'input[name="cost"], #miniC, input[data-q="C"]', id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
+    const sev = makeSection('Severity',
+      ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
+      id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
+    const cost = makeSection('Cost',
+      ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
+      id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
 
     // Probability
     const hP = document.createElement('div');
@@ -2748,20 +2759,26 @@ function renderNode(node) {
 
     const modeRow = document.createElement('div');
     modeRow.className = 'mini-field';
+    modeRow.id = id + 'ModeRow';
     modeRow.innerHTML = '<label>Probability unit</label>';
-    const modeSel = detachInput('select[name="q6Units"], #miniMode, select[data-q="mode"]') || document.createElement('select');
+    const modeSel = absorbOriginalRow(root, 'select[name="q6Units"]') ||
+                    absorbOriginalRow(root, '#miniMode') ||
+                    absorbOriginalRow(root, 'select[data-q="mode"]') ||
+                    document.createElement('select');
     modeRow.appendChild(modeSel);
     stack.appendChild(modeRow);
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
     pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
-    const pVal = detachInput('#miniVal, input[name="probVal"], input[data-q="pVal"]') || document.createElement('input');
+    const pVal = absorbOriginalRow(root, '#miniVal') ||
+                 absorbOriginalRow(root, 'input[name="probVal"]') ||
+                 absorbOriginalRow(root, 'input[data-q="pVal"]') ||
+                 document.createElement('input');
     if (!pVal.type) pVal.type = 'number';
     pValRow.appendChild(pVal);
     stack.appendChild(pValRow);
 
-    // Groups area
     const groupsWrap = document.createElement('div');
     groupsWrap.id = id + 'GroupsWrap';
     groupsWrap.className = 'mini-field';
@@ -2772,6 +2789,9 @@ function renderNode(node) {
       '</div>' +
       '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
     stack.appendChild(groupsWrap);
+
+    // hide any leftover original rows not moved
+    killStrays(root, stack);
 
     return {
       stack,
@@ -2786,11 +2806,12 @@ function renderNode(node) {
       groupsWrap, groups: groupsWrap.querySelector('#' + id + 'Groups'),
       addGroup: groupsWrap.querySelector('#' + id + 'AddGroup'),
       countMsg: groupsWrap.querySelector('#' + id + 'CountMsg'),
-      pMode: modeSel, pVal: pVal
+      pMode: modeSel, pVal: pVal,
+      modeRow: modeRow
     };
   }
 
-  // Q6 (interactive, persisted)
+  // Q6
   if (typeof renderMiniQ6 === 'function') {
     const _orig6 = renderMiniQ6;
     renderMiniQ6 = function (intoEl, node) {
@@ -2801,7 +2822,7 @@ function renderNode(node) {
       const el = buildOneColumn(root, { id: 'q6' });
       const state = window.__q6State || { groups: [] };
 
-      // Restore previous state if present
+      // restore
       try {
         if (el.N && state.N != null) el.N.value = state.N;
         if (el.tgSev) el.tgSev.checked = !!state.tgSev;
@@ -2811,6 +2832,7 @@ function renderNode(node) {
         if (el.cExtraVal && state.cExtraVal != null) el.cExtraVal.value = state.cExtraVal;
         if (el.pMode && state.pModeVal != null) el.pMode.value = state.pModeVal;
         if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
+        if (state.groups && state.groups.length) setTimeout(()=>drawGroups(),0);
       } catch(_) {}
 
       function setHidden(e,on){ if(e){ e.style.display=on?'none':''; e.classList.toggle('hidden',on);} }
@@ -2834,14 +2856,14 @@ function renderNode(node) {
         setHidden(el.groupsWrap, hideGroups);
         if (el.addGroup) { el.addGroup.disabled = hideGroups; el.addGroup.classList.toggle('muted', hideGroups); }
 
-        // Hide the main probability unit dropdown when varies is checked
-        if (el.pMode) setHidden(el.pMode.closest('.mini-field') || el.pMode.parentElement, !!(el.tgProb && el.tgProb.checked));
+        // FIX: hide probability unit row ONLY when varies is checked; show otherwise
+        setHidden(el.modeRow, !!(el.tgProb && el.tgProb.checked));
 
         if (dis || !(el.tgSev && el.tgSev.checked)) if (el.sExtraVal) el.sExtraVal.value='';
         if (dis || !(el.tgCost && el.tgCost.checked)) if (el.cExtraVal) el.cExtraVal.value='';
         if (dis || !(el.tgProb && el.tgProb.checked)) { state.groups=[]; if (el.groups) el.groups.innerHTML=''; if (el.countMsg) el.countMsg.textContent=''; }
 
-        // Persist
+        // persist
         window.__q6State = {
           N: el.N ? el.N.value : 1,
           tgSev: el.tgSev ? el.tgSev.checked : false,
@@ -2851,13 +2873,13 @@ function renderNode(node) {
           cExtraVal: el.cExtraVal ? el.cExtraVal.value : null,
           pModeVal: el.pMode ? el.pMode.value : null,
           pVal: el.pVal ? el.pVal.value : null,
-          groups: cloneVal(state.groups)
+          groups: JSON.parse(JSON.stringify(state.groups || []))
         };
       }
 
       function drawGroups(){
         if (!el.groups) return;
-        el.groups.innerHTML = '';
+        el.groups.innerHTML='';
         (state.groups || []).forEach((g,i)=>{
           const wrap=document.createElement('div');
           wrap.className='mini-fields';
@@ -2880,7 +2902,7 @@ function renderNode(node) {
           .forEach(x => x && x.addEventListener(evt, refreshVisibility));
       });
       if (el.addGroup) el.addGroup.addEventListener('click', ()=>{
-        (state.groups = state.groups || []).push({count:0, mode: (el.pMode && el.pMode.value) || 'oneInX', val: null});
+        (state.groups = state.groups || []).push({count:0, mode:(el.pMode && el.pMode.value) || 'oneInX', val:null});
         drawGroups(); refreshVisibility();
       });
       if (el.groups) {
@@ -2892,7 +2914,7 @@ function renderNode(node) {
           if (k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
           const used = (state.groups||[]).reduce((s,g)=>s+(g.count|0),0);
           if (el.countMsg && el.N) el.countMsg.textContent = used > (el.N.value|0) ? 'Group counts exceed N ('+used+'/'+el.N.value+').' : '';
-          refreshVisibility(); // persist
+          refreshVisibility();
         });
         el.groups.addEventListener('click', e=>{
           const idx = e.target.dataset.remove;
@@ -2900,24 +2922,21 @@ function renderNode(node) {
         });
       }
 
-      // Initial paint: draw groups from persisted state, then set visibility
       drawGroups();
       refreshVisibility();
     };
   }
 
-  // Q7 (mirrors persisted values; read-only; matched styling)
+  // Q7 (read-only mirror; hide leftovers)
   if (typeof renderMiniQ7 === 'function') {
     const _orig7 = renderMiniQ7;
     renderMiniQ7 = function (intoEl, node) {
       _orig7(intoEl, node);
       const root = intoEl.querySelector('.mini-wrap') || intoEl;
       if (!root) return;
-
       const el = buildOneColumn(root, { id: 'q7' });
 
       const state = window.__q6State || { groups: [] };
-      // Populate fields to mirror Q6
       try {
         if (el.N && state.N != null) el.N.value = state.N;
         if (el.tgSev) el.tgSev.checked = !!state.tgSev;
@@ -2929,17 +2948,15 @@ function renderNode(node) {
         if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
       } catch(_) {}
 
-      // Disable all interactions (grayed in CSS)
       ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
-
-      // Hide groups area in Q7; graph remains interactive per your app
       if (el.groupsWrap) el.groupsWrap.style.display = 'none';
+
+      // Hide any leftover original rows too
+      const stack = root.querySelector('#q7-entry'); if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
     };
   }
 
-  // AB2: remove any previous forced content logic; do nothing (leave "text" in your JSON)
-  // (No-op on purpose)
-
+  // AB2 untouched (leave original 'text')
 })();
 </script>
 
