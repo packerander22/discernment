@@ -1023,6 +1023,42 @@ function renderMiniQ6(intoEl, node){
   const cBox = document.createElement('div'); cBox.className='mini-field';
   cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
   fields.appendChild(sBox); fields.appendChild(cBox);
+  // Severity "Varies across instances" -> show extra total across outliers
+  const sVarWrap = document.createElement('div');
+  sVarWrap.className = 'mini-field';
+  sVarWrap.innerHTML = '<label><input id="miniSVaries" type="checkbox"> Varies across instances</label>';
+  const sExtraBox = document.createElement('div');
+  sExtraBox.className = 'mini-field';
+  sExtraBox.innerHTML = '<label>Total extra severity across outliers (sum)</label><input id="miniSExtra" type="number" step="any" placeholder="e.g. 3">';
+  sExtraBox.style.display = 'none';
+  fields.appendChild(sVarWrap);
+  fields.appendChild(sExtraBox);
+
+  (function(){
+    const cb = document.getElementById('miniSVaries');
+    const extra = document.getElementById('miniSExtra');
+    function show(on){ sExtraBox.style.display = on ? '' : 'none'; if (!on && extra) extra.value = ''; }
+    if (cb){ cb.addEventListener('change', function(){ show(!!cb.checked); }); show(false); }
+  })();
+
+  // Cost "Varies across instances" -> show extra total across outliers
+  const cVarWrap = document.createElement('div');
+  cVarWrap.className = 'mini-field';
+  cVarWrap.innerHTML = '<label><input id="miniCVaries" type="checkbox"> Varies across instances</label>';
+  const cExtraBox = document.createElement('div');
+  cExtraBox.className = 'mini-field';
+  cExtraBox.innerHTML = '<label>Total extra cost across outliers (sum)</label><input id="miniCExtra" type="number" step="any" placeholder="e.g. 2">';
+  cExtraBox.style.display = 'none';
+  fields.appendChild(cVarWrap);
+  fields.appendChild(cExtraBox);
+
+  (function(){
+    const cb = document.getElementById('miniCVaries');
+    const extra = document.getElementById('miniCExtra');
+    function show(on){ cExtraBox.style.display = on ? '' : 'none'; if (!on && extra) extra.value = ''; }
+    if (cb){ cb.addEventListener('change', function(){ show(!!cb.checked); }); show(false); }
+  })();
+
 
   const pRow = document.createElement('div'); pRow.className='mini-fields';
   const mBox = document.createElement('div'); mBox.className='mini-field';
@@ -1076,7 +1112,7 @@ function renderMiniQ6(intoEl, node){
     pRow.appendChild(groupsWrap);
 
     const cb   = document.getElementById('miniProbVaries');
-    const n    = document.getElementById('miniN');  // Total instances (N)
+    // Total instances (N)
     const lbl  = cb ? cb.parentElement : null;
     const gEl  = document.getElementById('miniProbGroups');
     const btnAdd = document.getElementById('miniProbAddGroup');
@@ -1149,16 +1185,16 @@ function renderMiniQ6(intoEl, node){
     }
 
     function refresh(){
-      const N = Math.max(1, Number(n && n.value) || 1);
-      const dis = (N === 1);
       if (cb){
-        cb.disabled = dis;
-        if (lbl) lbl.classList.toggle('mini-muted', dis);
-        if (dis) cb.checked = false;
-        const show = !dis && cb.checked;
+        const show = !!cb.checked;
         setExtra(show);
         if (!show) clearGroups();
       } else {
+        setExtra(false);
+        clearGroups();
+      }
+      refreshMsg();
+    } else {
         setExtra(false);
         clearGroups();
       }
@@ -1174,7 +1210,6 @@ function renderMiniQ6(intoEl, node){
     }
 
     if (cb) cb.addEventListener('change', refresh);
-    if (n)  n.addEventListener('input', refresh);
     refresh();
   })();
 
@@ -1588,15 +1623,22 @@ function renderMiniQ6(intoEl, node){
     const elC = rootQ6.querySelector('#miniC, input[name="cost"], input[data-q="C"]');
     const elV = rootQ6.querySelector('#miniVal, input[name="probVal"], input[data-q="pVal"]');
     const elV2= rootQ6.querySelector('#miniVal2');
+    const elSX = rootQ6.querySelector('#miniSExtra');
+    const elCX = rootQ6.querySelector('#miniCExtra');
+    const elSX = rootQ6.querySelector('#miniSExtra');
+    const elCX = rootQ6.querySelector('#miniCExtra');
 
-    [elC, elV, elV2].forEach(function(f){ if(!f) return; f.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+    [elC, elV, elV2, elSX, elCX].forEach(function(f){ if(!f) return; f.addEventListener('input', function(){ this.dataset.touched='1'; }); });
     if (elS){
       ['input','change'].forEach(function(evt){
         elS.addEventListener(evt, function(){
           if (elC && !elC.dataset.touched) elC.value = '';
           if (elV && !elV.dataset.touched) elV.value = '';
           if (elV2 && !elV2.dataset.touched) elV2.value = '';
-        });
+          if (elSX && !elSX.dataset.touched) elSX.value = '';
+          if (elCX && !elCX.dataset.touched) elCX.value = '';
+          if (elSX && !elSX.dataset.touched) elSX.value = '';
+          if (elCX && !elCX.dataset.touched) elCX.value = '';});
       });
     }
   }catch(_){}
