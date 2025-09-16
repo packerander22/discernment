@@ -2631,170 +2631,172 @@ function renderNode(node) {
 
 </script>
 
-
-
-
-
-
-
-
-
-<!-- === Q6/AB2 upgrade (3-col grid + centered probability, AB2 kept) === -->
+<!-- === Q6/Q7 single-column upgrade + AB2 content injection === -->
 <style>
-  /* Responsive grid for Q6 entry */
-  #q6-entry { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap: 12px; }
-  @media (max-width: 900px) { #q6-entry { grid-template-columns: 1fr; } }
-  #q6-entry .mini-field input, #q6-entry .mini-field select { width: 100%; }
-  #q6-entry .muted { opacity: 0.6; }
+  /* Single-column layout for Q6/Q7 upgraded sections */
+  #q6-entry, #q7-entry {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    max-width: 640px;
+  }
+  #q6-entry .mini-heading, #q7-entry .mini-heading {
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-top: 6px;
+  }
+  #q6-entry .mini-field input, #q6-entry .mini-field select,
+  #q7-entry .mini-field input, #q7-entry .mini-field select {
+    width: 100%;
+  }
+  #q7-entry input, #q7-entry select, #q7-entry button,
+  #q7-entry label,  #q7-entry .hint { opacity: .6; pointer-events: none; }
+  #q6-entry .muted { opacity: .6; }
+  .mini-spacer { height: 6px; }
 </style>
 <script>
 (function () {
+  // ---- helpers used by both Q6 and Q7
+  function buildOneColumn(root, opts) {
+    function detachInput(sel) {
+      const inp = root.querySelector(sel);
+      if (!inp) return null;
+      const row = inp.closest('.mini-field') || inp.parentElement;
+      if (row && row.parentElement) row.parentElement.removeChild(row);
+      return inp;
+    }
+    const id = opts.id; // 'q6' or 'q7'
+    let stack = root.querySelector('#' + id + '-entry');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = id + '-entry';
+      const anchor = root.querySelector('.mini-field');
+      if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(stack, anchor);
+      else root.prepend(stack);
+    } else {
+      stack.innerHTML = '';
+    }
+
+    // Instances row (centered, no mini heading)
+    if (opts.includeInstances !== false) {
+      const nRow = document.createElement('div');
+      nRow.className = 'mini-field';
+      nRow.style.textAlign = 'center';
+      nRow.innerHTML = '<label>Total instances (N)</label><input id="' + id + 'N" type="number" min="1" step="1" value="1" style="max-width:420px">';
+      stack.appendChild(nRow);
+    }
+
+    function makeSection(sectionTitle, selector, baseId, placeholder, extraLabel, extraKind) {
+      const h = document.createElement('div');
+      h.className = 'mini-heading';
+      h.textContent = sectionTitle;
+      stack.appendChild(h);
+
+      const toggle = document.createElement('div');
+      toggle.className = 'hint';
+      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+      stack.appendChild(toggle);
+
+      stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+
+      const field = document.createElement('div');
+      field.className = 'mini-field';
+      field.innerHTML = '<label>' + extraLabel + '</label>';
+      const inputEl = detachInput(selector) || document.createElement('input');
+      if (!inputEl.type) inputEl.type = 'number';
+      inputEl.id = baseId;
+      inputEl.placeholder = placeholder;
+      field.appendChild(inputEl);
+      stack.appendChild(field);
+
+      const extra = document.createElement('div');
+      extra.className = 'mini-field';
+      extra.id = baseId + 'ExtraWrap';
+      extra.innerHTML =
+        '<div class="hint">Total extra ' + extraKind + ' across outliers (sum)</div>' +
+        '<input id="' + baseId + 'ExtraVal" type="number" step="any" placeholder="e.g. ' + (extraKind === 'severity' ? '3' : '2') + '">';
+      stack.appendChild(extra);
+
+      return { toggle, inputEl, extra };
+    }
+
+    // Severity and Cost
+    const sev = makeSection('Severity', 'input[name="severity"], #miniS, input[data-q="S"]', id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
+    const cost = makeSection('Cost', 'input[name="cost"], #miniC, input[data-q="C"]', id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
+
+    // Probability
+    const hP = document.createElement('div');
+    hP.className = 'mini-heading';
+    hP.textContent = 'Probability';
+    stack.appendChild(hP);
+
+    const probToggle = document.createElement('div');
+    probToggle.className = 'hint';
+    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+    stack.appendChild(probToggle);
+
+    stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+
+    const modeRow = document.createElement('div');
+    modeRow.className = 'mini-field';
+    modeRow.innerHTML = '<label>Probability unit</label>';
+    const modeSel = detachInput('select[name="q6Units"], #miniMode, select[data-q="mode"]') || document.createElement('select');
+    modeRow.appendChild(modeSel);
+    stack.appendChild(modeRow);
+
+    const pValRow = document.createElement('div');
+    pValRow.className = 'mini-field';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
+    const pVal = detachInput('#miniVal, input[name="probVal"], input[data-q="pVal"]') || document.createElement('input');
+    if (!pVal.type) pVal.type = 'number';
+    pValRow.appendChild(pVal);
+    stack.appendChild(pValRow);
+
+    const groupsWrap = document.createElement('div');
+    groupsWrap.id = id + 'GroupsWrap';
+    groupsWrap.className = 'mini-field';
+    groupsWrap.innerHTML =
+      '<div id="' + id + 'Groups"></div>' +
+      '<div class="mini-field" style="margin:0;padding:0">' +
+      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%;max-width:420px">Add probability group</button>' +
+      '</div>' +
+      '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
+    stack.appendChild(groupsWrap);
+
+    return {
+      stack,
+      N: stack.querySelector('#' + id + 'N'),
+      tgSev: sev.toggle.querySelector('input'),
+      tgCost: cost.toggle.querySelector('input'),
+      tgProb: probToggle.querySelector('input'),
+      sExtraWrap: sev.extra,
+      cExtraWrap: cost.extra,
+      sExtraVal: sev.extra.querySelector('input'),
+      cExtraVal: cost.extra.querySelector('input'),
+      groupsWrap, groups: groupsWrap.querySelector('#' + id + 'Groups'),
+      addGroup: groupsWrap.querySelector('#' + id + 'AddGroup'),
+      countMsg: groupsWrap.querySelector('#' + id + 'CountMsg'),
+      pMode: modeSel, pVal: pVal
+    };
+  }
+
+  // -------- Q6
   if (typeof renderMiniQ6 === 'function') {
-    const _origQ6 = renderMiniQ6;
-
+    const _orig6 = renderMiniQ6;
     renderMiniQ6 = function (intoEl, node) {
-      _origQ6(intoEl, node);
-
+      _orig6(intoEl, node);
       const root = intoEl.querySelector('.mini-wrap') || intoEl;
       if (!root) return;
 
-      function detachRowByInput(sel) {
-        const inp = root.querySelector(sel);
-        if (!inp) return null;
-        const row = inp.closest('.mini-field') || inp.parentElement;
-        if (row && row.parentElement) row.parentElement.removeChild(row);
-        return inp;
-      }
-
-      let stack = root.querySelector('#q6-entry');
-      if (!stack) {
-        stack = document.createElement('div');
-        stack.id = 'q6-entry';
-        // grid CSS is in the style block above
-        const anchor = root.querySelector('.mini-field');
-        if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(stack, anchor);
-        else root.prepend(stack);
-      } else {
-        stack.innerHTML = '';
-      }
-
-      // N row (centered, full row)
-      const nRow = document.createElement('div');
-      nRow.className = 'mini-field';
-      nRow.style.gridColumn = '1 / -1';
-      nRow.style.textAlign = 'center';
-      nRow.style.justifySelf = 'center';
-      nRow.innerHTML = '<label>Total instances (N)</label><input id=\"q6N\" type=\"number\" min=\"1\" step=\"1\" value=\"1\" style=\"max-width:420px\">';
-      stack.appendChild(nRow);
-
-      function makeField(labelText, selector, idBase, placeholder, col) {
-        const inputEl = detachRowByInput(selector);
-        const box = document.createElement('div');
-        box.className = 'mini-field';
-        if (col) box.style.gridColumn = String(col);
-
-        const label = document.createElement('label');
-        label.textContent = labelText;
-        box.appendChild(label);
-
-        const toggleRow = document.createElement('div');
-        toggleRow.className = 'hint';
-        toggleRow.innerHTML = '<input id=\"'+idBase+'Tg\" type=\"checkbox\"> <span class=\"toggle-label\">Varies across instances</span>';
-        box.appendChild(toggleRow);
-
-        if (inputEl) {
-          inputEl.id = idBase;
-          inputEl.placeholder = placeholder;
-          box.appendChild(inputEl);
-        }
-
-        const extra = document.createElement('div');
-        extra.className = 'mini-field';
-        extra.id = idBase + 'ExtraWrap';
-        extra.style.gridColumn = '3';
-        extra.innerHTML = '<div class=\"hint\">Total extra ' + (idBase === 'q6S' ? 'severity' : 'cost') + ' across outliers (sum)</div>' +
-                          '<input id=\"'+idBase+'ExtraVal\" type=\"number\" step=\"any\" placeholder=\"e.g. ' + (idBase === 'q6S' ? '3' : '2') + '\">';
-        stack.appendChild(box);
-        stack.appendChild(extra);
-
-        return { box, toggleRow, extra };
-      }
-
-      // Base inputs in columns 1 and 2; extras live in column 3
-      const sWrap = makeField('Severity (S) — up to 10', 'input[name=\"severity\"], #miniS, input[data-q=\"S\"]', 'q6S', 'e.g. 5', 1);
-      const cWrap = makeField('Cost (C) — up to 10',     'input[name=\"cost\"], #miniC, input[data-q=\"C\"]',     'q6C', 'e.g. 1', 2);
-
-      // Probability unit (centered like N, with toggle between label and dropdown)
-      const pUnit = document.createElement('div');
-      pUnit.className = 'mini-field';
-      pUnit.style.gridColumn = '1 / -1';
-      pUnit.style.textAlign = 'center';
-      pUnit.style.justifySelf = 'center';
-      pUnit.innerHTML = '<label>Probability unit</label>';
-      const pToggleRow = document.createElement('div');
-      pToggleRow.className = 'hint';
-      pToggleRow.innerHTML = '<input id=\"q6TgProb\" type=\"checkbox\"> <span class=\"toggle-label\">Varies across instances</span>';
-      pUnit.appendChild(pToggleRow);
-      const pMode = detachRowByInput('select[name=\"q6Units\"], #miniMode, select[data-q=\"mode\"]') || document.createElement('select');
-      pMode.style.maxWidth = '420px';
-      pUnit.appendChild(pMode);
-      stack.appendChild(pUnit);
-
-      const pValBox = document.createElement('div');
-      pValBox.className = 'mini-field';
-      pValBox.style.gridColumn = '1 / -1';
-      pValBox.style.textAlign = 'center';
-      pValBox.style.justifySelf = 'center';
-      pValBox.innerHTML = '<label id=\"q6ProbLabel\">Enter X (for \"1 in X\")</label>';
-      const pVal = detachRowByInput('#miniVal, input[name=\"probVal\"], input[data-q=\"pVal\"]') || document.createElement('input');
-      if (!pVal.type) pVal.type = 'number';
-      pVal.style.maxWidth = '420px';
-      pValBox.appendChild(pVal);
-      stack.appendChild(pValBox);
-
-      // Groups full width, centered
-      const groupsWrap = document.createElement('div');
-      groupsWrap.id = 'q6GroupsWrap';
-      groupsWrap.className = 'mini-field';
-      groupsWrap.style.gridColumn = '1 / -1';
-      groupsWrap.style.textAlign = 'center';
-      groupsWrap.style.justifySelf = 'center';
-      groupsWrap.innerHTML = '<div id=\"q6Groups\"></div>' +
-                             '<div class=\"mini-field\" style=\"margin:0;padding:0\">' +
-                             '<button id=\"q6AddGroup\" class=\"back\" type=\"button\" style=\"width:100%;max-width:420px\">Add probability group</button>' +
-                             '</div>' +
-                             '<div id=\"q6CountMsg\" class=\"error\" style=\"text-align:center\"></div>';
-      stack.appendChild(groupsWrap);
-
-      // Wiring/visibility
-      const el = {
-        N: stack.querySelector('#q6N'),
-        tgSev: stack.querySelector('#q6STg'),
-        tgCost: stack.querySelector('#q6CTg'),
-        tgProb: stack.querySelector('#q6TgProb'),
-        sExtraWrap: stack.querySelector('#q6SExtraWrap'),
-        cExtraWrap: stack.querySelector('#q6CExtraWrap'),
-        sExtraVal:  stack.querySelector('#q6SExtraVal'),
-        cExtraVal:  stack.querySelector('#q6CExtraVal'),
-        groupsWrap, groups: groupsWrap.querySelector('#q6Groups'),
-        addGroup: groupsWrap.querySelector('#q6AddGroup'),
-        countMsg: groupsWrap.querySelector('#q6CountMsg'),
-        pMode, pVal
-      };
+      const el = buildOneColumn(root, { id: 'q6' });
       const state = { groups: [] };
 
-      function setHidden(elm, on) { if (elm) { elm.style.display = on ? 'none' : ''; elm.classList.toggle('hidden', on); } }
-      function setGrey(row, on) {
-        if (!row) return;
-        row.classList.toggle('muted', on);
-        const lbl = row.querySelector('.toggle-label');
-        if (lbl) lbl.style.opacity = on ? '0.6' : '';
-      }
+      function setHidden(e, on) { if (e) { e.style.display = on ? 'none' : ''; e.classList.toggle('hidden', on); } }
+      function setGrey(row, on) { if (row) row.classList.toggle('muted', on); }
 
       function refreshVisibility() {
-        const N = Math.max(1, el.N.valueAsNumber || 1);
+        const N = Math.max(1, el.N ? (el.N.valueAsNumber || 1) : 1);
         const dis = (N === 1);
-
         [el.tgSev, el.tgCost, el.tgProb].forEach(cb => {
           if (!cb) return;
           cb.disabled = dis;
@@ -2809,64 +2811,110 @@ function renderNode(node) {
         setHidden(el.groupsWrap, hideGroups);
         if (el.addGroup) { el.addGroup.disabled = hideGroups; el.addGroup.classList.toggle('muted', hideGroups); }
 
-        if (dis || !el.tgSev?.checked) if (el.sExtraVal) el.sExtraVal.value = '';
-        if (dis || !el.tgCost?.checked) if (el.cExtraVal) el.cExtraVal.value = '';
-        if (dis || !el.tgProb?.checked) { state.groups = []; if (el.groups) el.groups.innerHTML = ''; if (el.countMsg) el.countMsg.textContent = ''; }
+        if (dis || !(el.tgSev && el.tgSev.checked)) if (el.sExtraVal) el.sExtraVal.value = '';
+        if (dis || !(el.tgCost && el.tgCost.checked)) if (el.cExtraVal) el.cExtraVal.value = '';
+        if (dis || !(el.tgProb && el.tgProb.checked)) { state.groups = []; if (el.groups) el.groups.innerHTML = ''; if (el.countMsg) el.countMsg.textContent = ''; }
       }
 
       function drawGroups() {
         if (!el.groups) return;
         el.groups.innerHTML = '';
         state.groups.forEach((g, i) => {
-          const row = document.createElement('div');
-          row.className = 'mini-fields';
-          row.style.display = 'grid';
-          row.style.gridTemplateColumns = '1fr 1fr';
-          row.style.gap = '12px';
-          row.innerHTML =
-            '<div class=\"mini-field\"><label>Group '+(i+1)+' count</label>' +
-            '<input data-i=\"'+i+'\" data-k=\"count\" type=\"number\" min=\"0\" step=\"1\" value=\"'+((g.count ?? 0))+'\"></div>' +
-            '<div class=\"mini-field\"><label>Unit</label>' +
-            '<select data-i=\"'+i+'\" data-k=\"mode\">' +
-            '<option value=\"oneInX\" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>' +
-            '<option value=\"percent\" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>' +
-            '<option value=\"micromort\" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>' +
+          const wrap = document.createElement('div');
+          wrap.className = 'mini-fields';
+          wrap.innerHTML =
+            '<div class="mini-field"><label>Group ' + (i + 1) + ' count</label><input data-i="' + i + '" data-k="count" type="number" min="0" step="1" value="' + ((g.count ?? 0)) + '"></div>' +
+            '<div class="mini-field"><label>Unit</label><select data-i="' + i + '" data-k="mode">' +
+            '<option value="oneInX" ' + (g.mode === 'oneInX' ? 'selected' : '') + '>1 in X</option>' +
+            '<option value="percent" ' + (g.mode === 'percent' ? 'selected' : '') + '>Percentage (%)</option>' +
+            '<option value="micromort" ' + (g.mode === 'micromort' ? 'selected' : '') + '>Micromorts</option>' +
             '</select></div>' +
-            '<div class=\"mini-field\" style=\"grid-column:1 / -1\"><label>Value</label>' +
-            '<input data-i=\"'+i+'\" data-k=\"val\" type=\"number\" step=\"any\" value=\"'+((g.val ?? ''))+'\" placeholder=\"e.g. 100,000\"></div>' +
-            '<div class=\"mini-field\" style=\"grid-column:1 / -1\"><label>&nbsp;</label>' +
-            '<button class=\"back\" data-remove=\"'+i+'\" type=\"button\" style=\"width:100%;max-width:420px\">Remove</button></div>';
-          el.groups.appendChild(row);
+            '<div class="mini-field"><label>Value</label><input data-i="' + i + '" data-k="val" type="number" step="any" value="' + ((g.val ?? '')) + '" placeholder="e.g. 100,000"></div>' +
+            '<div class="mini-field"><label>&nbsp;</label><button class="back" data-remove="' + i + '" type="button" style="max-width:420px">Remove</button></div>';
+          el.groups.appendChild(wrap);
         });
         if (el.countMsg) el.countMsg.textContent = '';
       }
 
-      ['input','change'].forEach(evt=>{
+      ['input','change'].forEach(evt => {
         [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal]
           .forEach(x => x && x.addEventListener(evt, refreshVisibility));
       });
-      if (el.addGroup) el.addGroup.addEventListener('click', ()=>{
-        state.groups.push({count:0, mode: (el.pMode && el.pMode.value) || 'oneInX', val: null});
+      if (el.addGroup) el.addGroup.addEventListener('click', () => {
+        state.groups.push({ count: 0, mode: (el.pMode && el.pMode.value) || 'oneInX', val: null });
         drawGroups(); refreshVisibility();
       });
-      if (el.groups) el.groups.addEventListener('input', (e)=>{
-        const t = e.target, i = +t.dataset.i;
-        if (!Number.isFinite(i)) return;
-        const k = t.dataset.k;
-        if (k === 'count') state.groups[i].count = t.value === '' ? 0 : (t.value|0);
-        if (k === 'mode')  state.groups[i].mode  = t.value;
-        if (k === 'val')   state.groups[i].val   = t.value === '' ? null : +t.value;
-        const used = state.groups.reduce((s,g)=>s+(g.count|0),0);
-        if (el.countMsg && el.N) el.countMsg.textContent = used > (el.N.value|0) ? 'Group counts exceed N ('+used+'/'+el.N.value+').' : '';
-      });
-      if (el.groups) el.groups.addEventListener('click',(e)=>{
-        const idx = e.target.dataset.remove;
-        if (idx != null) { state.groups.splice(+idx,1); drawGroups(); refreshVisibility(); }
-      });
+      if (el.groups) {
+        el.groups.addEventListener('input', e => {
+          const t = e.target, i = +t.dataset.i; if (!Number.isFinite(i)) return;
+          const k = t.dataset.k;
+          if (k === 'count') state.groups[i].count = t.value === '' ? 0 : (t.value | 0);
+          if (k === 'mode')  state.groups[i].mode  = t.value;
+          if (k === 'val')   state.groups[i].val   = t.value === '' ? null : +t.value;
+          const used = state.groups.reduce((s, g) => s + (g.count | 0), 0);
+          if (el.countMsg && el.N) el.countMsg.textContent = used > (el.N.value | 0) ? 'Group counts exceed N (' + used + '/' + el.N.value + ').' : '';
+        });
+        el.groups.addEventListener('click', e => { const idx = e.target.dataset.remove; if (idx != null) { state.groups.splice(+idx, 1); drawGroups(); refreshVisibility(); } });
+      }
 
       refreshVisibility();
     };
   }
+
+  // -------- Q7 (mirrored, grayed, non-mutating)
+  if (typeof renderMiniQ7 === 'function') {
+    const _orig7 = renderMiniQ7;
+    renderMiniQ7 = function (intoEl, node) {
+      _orig7(intoEl, node);
+      const root = intoEl.querySelector('.mini-wrap') || intoEl;
+      if (!root) return;
+      const el = buildOneColumn(root, { id: 'q7', includeInstances: true });
+      ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k => { if (el[k]) el[k].disabled = true; });
+      if (el.addGroup) el.addGroup.disabled = true;
+      if (el.groupsWrap) el.groupsWrap.style.display = 'none'; // keep graph-only interactivity
+    };
+  }
+
+  // -------- AB2 replacement via MutationObserver (to catch late JSON injection)
+  try {
+    const payloadHTML = [
+      '<div class="panel" style="padding:12px">',
+      '<h2>How the math works (multi-instance, exact)</h2>',
+      '<h3>1) Inputs</h3>',
+      '<ul>',
+      '<li><b>N</b>: number of instances.</li>',
+      '<li><b>S</b> (0–10): average severity per instance; optional extra severity across outliers.</li>',
+      '<li><b>C</b> (0–10): cost per instance; optional extra cost across outliers.</li>',
+      '<li><b>p</b>: per-instance probability as 1 in X, %, or micromorts.</li>',
+      '<li><b>Groups</b>: split instances into groups with their own probabilities.</li>',
+      '</ul>',
+      '<h3>2) Probability conversion</h3>',
+      '<pre>p = { 1/X,  percentage/100,  micromorts/1,000,000 }</pre>',
+      '<h3>3) Exact probability across many instances</h3>',
+      '<pre>P(none) = (1 − p_base)^{n_base} × ∏_g (1 − p_g)^{n_g}\nP(any) = 1 − P(none)\nΣp = n_base·p_base + Σ_g n_g·p_g</pre>',
+      '<h3>4) Aggregating severity and cost</h3>',
+      '<pre>C_total = N·C_usual + C_extra\nS_avg = (N·S_usual + S_extra) / N</pre>',
+      '<h3>5) Decision rule</h3>',
+      '<pre>EV_downside = S_avg × (Σp)\nAct if EV_downside > C_total</pre>',
+      '<h3>Worked example</h3>',
+      '<pre>Example: N=10, S=6, C=1; base p=1/100,000; two outliers at 1/1,000.\nΣp = 8*(1/100000) + 2*(1/1000) = 0.00208\nS_avg = 6, C_total = 10\nEV_downside = 6 × 0.00208 = 0.01248 < 10 → do not act.</pre>',
+      '</div>'
+    ].join('');
+
+    const obs = new MutationObserver((muts) => {
+      muts.forEach(m => {
+        (m.addedNodes || []).forEach(n => {
+          if (!(n instanceof HTMLElement)) return;
+          const txt = (n.textContent || '').toUpperCase();
+          if (txt.includes('AB2')) {
+            const host = n.querySelector('#ab2Body') || n;
+            if (host) host.innerHTML = payloadHTML;
+          }
+        });
+      });
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  } catch (e) { console.warn('AB2 observer skipped', e); }
 })();
 </script>
 
