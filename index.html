@@ -2633,14 +2633,7 @@ function renderNode(node) {
 
 <!-- === Q6/Q7 upgrade: single-column, full-width, stable === -->
 <style>
-  #q6-entry, #q7-entry {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    width: 100%;
-    max-width: none;
-    grid-column: 1 / -1;
-  }
+  #q6-entry, #q7-entry{display:grid;grid-template-columns:1fr;gap:14px;width:100%;max-width:100%;grid-column:1 / -1;box-sizing:border-box;margin:0;padding:0;}
   #q6-entry .mini-heading, #q7-entry .mini-heading {
     font-weight: 700;
     font-size: 1.18rem;
@@ -2658,7 +2651,7 @@ function renderNode(node) {
     display: block !important;
   }
   .muted, .muted * { opacity: 0.6; }
-  #q7-entry { opacity: 0.9; }
+  #q7-entry { opacity: 0.9; } #q7-entry .mini-heading, #q7-entry .hint, #q7-entry label { opacity: 0.7; }
   #q7-entry input, #q7-entry select, #q7-entry button { pointer-events: none; }
   .mini-spacer { height: 6px; }
 </style>
@@ -2862,6 +2855,12 @@ function renderNode(node) {
         if (el.countMsg) el.countMsg.textContent='';
       }
 
+      // keep later inputs blank unless user actually edited them
+      if (fldC && !fldC.dataset.touched) fldC.value = '';
+      if (fldPV && !fldPV.dataset.touched) fldPV.value = '';
+      if (el.sExtraVal && !el.sExtraVal.dataset.touched) el.sExtraVal.value = '';
+      if (el.cExtraVal && !el.cExtraVal.dataset.touched) el.cExtraVal.value = '';
+
       // persist
       window.__q6State = {
         N: el.N ? el.N.value : 1,
@@ -2900,9 +2899,18 @@ function renderNode(node) {
     }
 
     // wiring
+    var fldS = el.stack.querySelector('#q6S');
+    var fldC = el.stack.querySelector('#q6C');
+    var fldPV = el.pVal;
+    [fldS,fldC,fldPV,el.sExtraVal,el.cExtraVal].forEach(function(f){
+      if(!f) return;
+      f.addEventListener('input', function(){ this.dataset.touched = '1'; });
+    });
+
     ['input','change'].forEach(function(evt){
-      [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal, el.stack.querySelector('#q6S'), el.stack.querySelector('#q6C')]
+      [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal, fldS, fldC]
         .forEach(function(x){ if (x) x.addEventListener(evt, refresh); });
+    });
     });
     if (el.addGroup) el.addGroup.addEventListener('click', function(){
       (state.groups = state.groups || []).push({count:0, mode:(el.pMode && el.pMode.value)||'oneInX', val:null});
