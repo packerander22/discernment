@@ -498,6 +498,12 @@
   .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
 </style>
 
+
+<style id="mini-fix-css-ovr">
+  #q6-entry, #q7-entry { max-width:100%; overflow-x:hidden; }
+  .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -2983,11 +2989,27 @@ function renderNode(node) {
   function q(sel, r){ return (r||document).querySelector(sel); }
   function qa(sel, r){ return Array.prototype.slice.call((r||document).querySelectorAll(sel)); }
   function up(el, sel){ while(el && el.nodeType===1){ if(el.matches(sel)) return el; el = el.parentElement; } return null; }
-  function rootFor(idGuess){ return q('#'+idGuess) || q('[data-id="'+idGuess+'"]') || q('.mini-wrap') || document; }
+  function rootFor(idGuess){
+    var el = document.getElementById(idGuess) || document.querySelector('[data-id="'+idGuess+'"]');
+    return el || null;  // do NOT fall back to .mini-wrap to avoid hitting the wrong tile
+  }
 
   function ensureFullWidth(scope){
-    qa('.mini-field input, .mini-field select, .mini-field textarea', scope)
-      .forEach(el => { el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; });
+    try{
+      Array.prototype.slice.call((scope||document).querySelectorAll('.mini-field input, .mini-field select, .mini-field textarea'))
+        .forEach(function(el){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; });
+      var wrap = (scope||document).querySelector('.mini-wrap');
+      if (wrap && wrap.style){
+        wrap.style.width='100%';
+        wrap.style.maxWidth='100%';
+        wrap.style.overflowX='hidden';
+        wrap.style.overflowY='visible';
+      }
+      Array.prototype.slice.call((scope||document).querySelectorAll('svg')).forEach(function(svg){
+        if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
+      });
+    }catch(e){ /* no-op */ }
+  });
     let wrap = q('.mini-wrap', scope) || scope;
     if (wrap){ wrap.style.width='100%'; wrap.style.maxWidth='100%'; wrap.style.overflowX='hidden'; wrap.style.overflowY='visible'; }
     qa('svg', scope).forEach(svg => { svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; });
@@ -3064,7 +3086,8 @@ function renderNode(node) {
     ensureFullWidth(root);
   }
   function applyQ7(){
-    const root = rootFor('q7-entry');
+    var root = rootFor('q7-entry');
+    if (!root) return;        // no Q7 section rendered yet
     ensureFullWidth(root);
     freezeQ7(root);
   }
