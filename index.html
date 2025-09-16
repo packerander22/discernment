@@ -481,6 +481,14 @@
   gtag('js', new Date());
   gtag('config', 'G-VJSYRKHSRM');
 </script>
+
+<style id="mini-upgrade-css">
+/* Full-width & one-column mini layout; keep theme intact */
+.mini-wrap{width:100%;max-width:100%;box-sizing:border-box;}
+.mini-fields{display:grid;grid-template-columns:1fr;gap:14px;}
+.mini-field input,.mini-field select,.mini-field textarea{width:100%;max-width:100%;box-sizing:border-box;display:block;}
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -1092,16 +1100,9 @@ function renderMiniQ6(intoEl, node){
   }
   updateProbLabelForMode(miniMaster.mode);
 
-  // hydrate or blank based on pristine
-  if (!window.miniPristine) {
-    if (!elS.value) elS.value = String(miniMaster.S);
-    if (!elC.value) elC.value = String(miniMaster.C);
-    if (!elV.value) elV.value = String(miniMaster.val);
-  } else {
-    if (!savedQ6) {
-      elS.value = ''; elC.value = ''; elV.value = '';
-      miniMaster.X_user = null;
-    }
+  // keep later fields blank unless restored from saved state
+  if (!savedQ6) { elS.value=''; elC.value=''; elV.value=''; miniMaster.X_user = null; }
+
   }
 
   // SVG layers (unchanged)
@@ -2630,77 +2631,5 @@ function renderNode(node) {
 }
 
 </script>
-
-<!-- Minimal, safe CSS tweaks -->
-<style>
-  /* Make mini input blocks stretch full width within their container */
-  .mini-wrap { grid-column: 1 / -1; width: 100%; box-sizing: border-box; }
-  .mini-wrap .mini-field input,
-  .mini-wrap .mini-field select,
-  .mini-wrap .mini-field textarea {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    display: block;
-  }
-  /* Q7 read-only appearance (won't disable graph elsewhere) */
-  .q7-readonly .mini-field input,
-  .q7-readonly .mini-field select,
-  .q7-readonly .mini-field textarea,
-  .q7-readonly .mini-field button {
-    pointer-events: none;
-    opacity: 0.7;
-  }
-</style>
-
-
-<script>
-(function(){
-  function $(root, sel){ return (root || document).querySelector(sel); }
-  function q$(root, sel){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
-
-  function addQ7Readonly(){
-    var q7 = document.querySelector('[id="Q7"], [data-id="Q7"]') || document.querySelector('.slide[data-id="Q7"]') || null;
-    if (!q7) return;
-    q7.classList.add('q7-readonly');
-  }
-
-  function guardQ6(){
-    var q6 = document.querySelector('[id="Q6"], [data-id="Q6"]') || document.querySelector('.slide[data-id="Q6"]') || null;
-    if (!q6) return;
-    var root = q6.querySelector('.mini-wrap') || q6;
-
-    var s = root.querySelector('#miniS, input[name="severity"], input[data-q="S"]');
-    var c = root.querySelector('#miniC, input[name="cost"], input[data-q="C"]');
-    var p = root.querySelector('#miniVal, input[name="probVal"], input[data-q="pVal"]');
-    var sx = root.querySelector('#miniSExtra, input[name="sExtra"]');
-    var cx = root.querySelector('#miniCExtra, input[name="cExtra"]');
-
-    [c,p,sx,cx].forEach(function(el){ if (!el) return; el.addEventListener('input', function(){ this.dataset.touched='1'; }); });
-
-    if (s){
-      ['input','change'].forEach(function(evt){
-        s.addEventListener(evt, function(){
-          if (c && !c.dataset.touched) c.value = '';
-          if (p && !p.dataset.touched) p.value = '';
-          if (sx && !sx.dataset.touched) sx.value = '';
-          if (cx && !cx.dataset.touched) cx.value = '';
-        });
-      });
-    }
-  }
-
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){
-      addQ7Readonly();
-      guardQ6();
-    });
-  } else {
-    addQ7Readonly();
-    guardQ6();
-  }
-})();
-</script>
-
 </body>
 </html>
