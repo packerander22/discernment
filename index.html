@@ -1063,13 +1063,25 @@ function renderMiniQ6(intoEl, node){
   pRow.appendChild(mBox2); pRow.appendChild(vBox2); pRow.appendChild(gWrap);
 
   const cbProb = pRow.querySelector('#miniProbVaries');
-  function showProbExtras(on){ mBox2.style.display = on?'':'none'; vBox2.style.display = on?'':'none'; gWrap.style.display = on?'':'none'; if(!on){ vBox2.querySelector('input').value=''; document.getElementById('miniProbGroups').innerHTML=''; document.getElementById('miniProbMsg').textContent=''; } }
+  const groupsDiv = ()=> pRow.querySelector('#miniProbGroups');
+  const msgDiv = ()=> pRow.querySelector('#miniProbMsg');
+  function showProbExtras(on){
+    if(!mBox2||!vBox2||!gWrap) return;
+    mBox2.style.display = on?'':'none';
+    vBox2.style.display = on?'':'none';
+    gWrap.style.display = on?'':'none';
+    if(!on){
+      const extra = vBox2.querySelector('input'); if(extra){ extra.value=''; delete extra.dataset.touched; }
+      const g = groupsDiv(); if(g) g.innerHTML='';
+      const m = msgDiv(); if(m) m.textContent='';
+    }
+  }
   if (cbProb){ cbProb.addEventListener('change', () => showProbExtras(cbProb.checked)); showProbExtras(false); }
 
   // Groups behavior
   (function(){
-    const gEl = document.getElementById('miniProbGroups');
-    const addBtn = document.getElementById('miniProbAddGroup');
+    const gEl = pRow.querySelector('#miniProbGroups');
+    const addBtn = pRow.querySelector('#miniProbAddGroup');
     const state = { groups: [] };
     function render(){
       gEl.innerHTML='';
