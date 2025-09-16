@@ -482,26 +482,22 @@
   gtag('config', 'G-VJSYRKHSRM');
 </script>
 
-<style id="mini-fix-css">
-  /* Restore vertical scroll; prevent side overflow */
+<style id="mini-clean-css">
+  /* Keep scrolling, avoid right overflow */
+  #q6-entry, #q7-entry { max-width:100%; overflow-x:hidden; }
   .mini-wrap { width:100%; max-width:100%; overflow-x:hidden; overflow-y:visible; }
-  /* Single-column, full-width layout inside the tile */
-  .mini-wrap .mini-fields,
-  .mini-wrap .fields { display:grid; grid-template-columns: 1fr !important; gap:14px; }
-  .mini-wrap .mini-field input,
-  .mini-wrap .mini-field select,
-  .mini-wrap .mini-field textarea { width:100% !important; max-width:100% !important; box-sizing:border-box; }
-  /* Graph scales without pushing layout */
-  .mini-wrap svg { width:100%; max-width:100%; height:auto; }
-  /* Make "Varies across instances" labels match input labels */
+  /* Single-column form layout inside tiles; keep visual tokens from base */
+  #q6-entry .mini-fields, #q6-entry .fields,
+  #q7-entry .mini-fields, #q7-entry .fields { display:grid; grid-template-columns: 1fr !important; gap:14px; }
+  #q6-entry .mini-field input, #q6-entry .mini-field select, #q6-entry .mini-field textarea,
+  #q7-entry .mini-field input, #q7-entry .mini-field select, #q7-entry .mini-field textarea {
+    width:100% !important; max-width:100% !important; box-sizing:border-box;
+  }
+  /* Graphs scale but don't push layout */
+  #q6-entry svg, #q7-entry svg { width:100%; max-width:100%; height:auto; display:block; }
+  /* Varies label size parity */
   .mini-field label { font-size: 0.95rem; line-height: 1.35; }
   .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
-</style>
-
-
-<style id="mini-fix-css-ovr">
-  #q6-entry, #q7-entry { max-width:100%; overflow-x:hidden; }
-  .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
 </head>
@@ -2984,173 +2980,152 @@ function renderNode(node) {
 </script>
 
 
-<script id="mini-runtime-fixes">
+<script id="mini-clean-runtime">
 (function(){
+  "use strict";
   function q(sel, r){ return (r||document).querySelector(sel); }
   function qa(sel, r){ return Array.prototype.slice.call((r||document).querySelectorAll(sel)); }
   function up(el, sel){ while(el && el.nodeType===1){ if(el.matches(sel)) return el; el = el.parentElement; } return null; }
-  function rootFor(idGuess){
-    var el = document.getElementById(idGuess) || document.querySelector('[data-id="'+idGuess+'"]');
-    return el || null;  // do NOT fall back to .mini-wrap to avoid hitting the wrong tile
-  }
+  function getRoot(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
 
-  function ensureFullWidth(scope){
-  try{
-    var root = scope || document;
-    Array.prototype.slice.call(root.querySelectorAll('.mini-field input, .mini-field select, .mini-field textarea'))
-      .forEach(function(el){
-        if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
-      });
+  function fullWidth(root){
+    if (!root) return;
+    qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
+      if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
+    });
     var wrap = root.querySelector('.mini-wrap');
     if (wrap && wrap.style){
-      wrap.style.width='100%';
-      wrap.style.maxWidth='100%';
-      wrap.style.overflowX='hidden';
-      wrap.style.overflowY='visible';
+      wrap.style.width='100%'; wrap.style.maxWidth='100%';
+      wrap.style.overflowX='hidden'; wrap.style.overflowY='visible';
     }
-    Array.prototype.slice.call(root.querySelectorAll('svg')).forEach(function(svg){
+    qa('svg', root).forEach(function(svg){
       if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
     });
-  }catch(e){ /* no-op */ }
-}
-      Array.prototype.slice.call((scope||document).querySelectorAll('svg')).forEach(function(svg){
-        if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
-      });
-    }catch(e){ /* no-op */ }
-  });
-    let wrap = q('.mini-wrap', scope) || scope;
-    if (wrap){ wrap.style.width='100%'; wrap.style.maxWidth='100%'; wrap.style.overflowX='hidden'; wrap.style.overflowY='visible'; }
-    qa('svg', scope).forEach(svg => { svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; });
   }
 
-  function dedupeVaries(scope){
-    ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(sel=>{
-      const all = qa(sel, scope);
-      for (let i=1;i<all.length;i++){ const w = up(all[i], '.mini-field'); if (w) w.remove(); }
-    });
+  function keepProbBase(root){
+    if (!root) return;
+    var unit = q('#miniMode', root), val  = q('#miniVal', root);
+    var uw = unit && up(unit, '.mini-field'), vw = val && up(val, '.mini-field');
+    if (uw) uw.style.display='';
+    if (vw) vw.style.display='';
   }
 
-  function keepBaseProbabilityVisible(scope){
-    const unit = q('#miniMode', scope), val  = q('#miniVal', scope);
-    const uw = unit && up(unit, '.mini-field'); const vw = val && up(val, '.mini-field');
-    if (uw) uw.style.display = ''; if (vw) vw.style.display = '';
-  }
-  function wireProbabilityVaries(scope){
-    keepBaseProbabilityVisible(scope);
-    const cb   = q('#miniProbVaries', scope);
-    const mBox2 = q('#miniMode2', scope) && up(q('#miniMode2', scope), '.mini-field');
-    const vBox2 = q('#miniVal2',  scope) && up(q('#miniVal2',  scope), '.mini-field');
-    const gWrap = q('#miniProbGroups', scope) && up(q('#miniProbGroups', scope), '.mini-field');
+  function probVaries(root){
+    if (!root) return;
+    keepProbBase(root);
+    var cb = q('#miniProbVaries', root);
+    var m2 = q('#miniMode2', root), v2 = q('#miniVal2', root), g = q('#miniProbGroups', root);
+    var m2w = m2 && up(m2, '.mini-field'), v2w = v2 && up(v2, '.mini-field'), gw = g && up(g, '.mini-field');
     function show(on){
-      if (mBox2) mBox2.style.display = on ? '' : 'none';
-      if (vBox2) vBox2.style.display = on ? '' : 'none';
-      if (gWrap) gWrap.style.display = on ? '' : 'none';
+      if (m2w) m2w.style.display = on ? '' : 'none';
+      if (v2w) v2w.style.display = on ? '' : 'none';
+      if (gw)  gw.style.display  = on ? '' : 'none';
     }
-    if (cb){ cb.addEventListener('change', ()=>{ keepBaseProbabilityVisible(scope); show(cb.checked); }); show(!!cb.checked); }
-    else { show(false); }
+    if (cb){
+      cb.addEventListener('change', function(){ keepProbBase(root); show(cb.checked); });
+      show(!!cb.checked);
+    } else { show(false); }
   }
 
-  function findInstancesInput(scope){
-    const lbl = Array.from(scope.querySelectorAll('.mini-field label'))
-      .find(l => /total\s+instances/i.test(l.textContent||''));
-    if (lbl){
-      const after = lbl.parentElement && lbl.parentElement.querySelector('input[type="number"]');
-      if (after) return after;
-    }
-    return q('input[type="number"]', scope);
-  }
-
-  function blankUntilEdited(scope){
-  const root = scope || document;
-  const nums = Array.prototype.slice.call(root.querySelectorAll('.mini-field input[type="number"]'));
-  nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
-
-  const s = root.querySelector('#miniS');
-  const n = findInstancesInput(root);
-
-  function clearUntouched(){
-    Array.prototype.slice.call(root.querySelectorAll('.mini-field input[type="number"]')).forEach(function(inp){
-      if (inp === s) return;
-      if (n && inp === n) return;
-      if (!inp.dataset.touched) inp.value = '';
-    });
-  }
-
-  if (s){
-    ['input','change'].forEach(function(evt){
-      s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
-    });
-  }
-
-  if (n){
-    n.addEventListener('input', function(){
-      const digits = this.value.replace(/[^0-9]/g, '');
-      this.value = digits;
-    });
-    n.addEventListener('blur', function(){
-      if (this.value === '') return;
-      let v = parseInt(this.value,10); if (!isFinite(v) || v < 1) v = 1;
-      this.value = String(v);
-    });
-  }
-
-  const groups = root.querySelector('#miniProbGroups');
-  if (groups){
-    groups.addEventListener('input', function(e){
-      const target = e.target;
-      if (!target || target.type !== 'number') return;
-      const maxN = n && n.value ? parseInt(n.value,10) : null;
-      if (!maxN) return;
-      const inputs = Array.prototype.slice.call(groups.querySelectorAll('input[type="number"]'));
-      let sum = 0;
-      for (let i=0;i<inputs.length;i++){
-        let v = parseInt(inputs[i].value||'0',10) || 0;
-        if (inputs[i] === target){
-          if (sum + v > maxN){ inputs[i].value = String(Math.max(0, maxN - sum)); }
-          v = parseInt(inputs[i].value||'0',10) || 0;
-        }
-        sum += v;
+  function findN(root){
+    var lbls = qa('.mini-field label', root);
+    for (var i=0;i<lbls.length;i++){
+      if (/total\s+instances/i.test(lbls[i].textContent||'')){
+        var inp = lbls[i].parentElement && lbls[i].parentElement.querySelector('input[type="number"]');
+        if (inp) return inp;
       }
-    });
+    }
+    return null;
   }
-}
 
-  function freezeQ7(scope){
-    qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', scope)
-      .forEach(el=>{
-        if (up(el,'svg')) return;                  // keep graph interactive
-        if (el.id === 'miniProbAddGroup') el.style.display='none';
-        el.disabled = true; if (el.tagName==='INPUT') el.readOnly = true;
-        el.classList.add('mini-muted');
+  function blankUntilEdited(root){
+    if (!root) return;
+    var nums = qa('.mini-field input[type="number"]', root);
+    nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+    var s = q('#miniS', root), n = findN(root);
+
+    function clearUntouched(){
+      qa('.mini-field input[type="number"]', root).forEach(function(inp){
+        if (inp === s) return;
+        if (n && inp === n) return;   // never clear Instances
+        if (!inp.dataset.touched) inp.value = '';
       });
+    }
+    if (s){
+      ['input','change'].forEach(function(evt){
+        s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
+      });
+    }
+    if (n){
+      n.addEventListener('input', function(){
+        var digits = String(this.value||'').replace(/[^0-9]/g, '');
+        this.value = digits;
+      });
+      n.addEventListener('blur', function(){
+        if (this.value === '') return;
+        var v = parseInt(this.value,10); if (!isFinite(v) || v < 1) v = 1;
+        this.value = String(v);
+      });
+    }
+    // Cap probability groups to N
+    var groups = q('#miniProbGroups', root);
+    if (groups){
+      groups.addEventListener('input', function(e){
+        var target = e.target;
+        if (!target || target.type !== 'number') return;
+        var maxN = n && n.value ? parseInt(n.value,10) : null;
+        if (!maxN) return;
+        var inputs = qa('input[type="number"]', groups);
+        var sum = 0;
+        for (var i=0;i<inputs.length;i++){
+          var v = parseInt(inputs[i].value||'0',10) || 0;
+          if (inputs[i] === target){
+            if (sum + v > maxN){ inputs[i].value = String(Math.max(0, maxN - sum)); }
+            v = parseInt(inputs[i].value||'0',10) || 0;
+          }
+          sum += v;
+        }
+      });
+    }
+  }
+
+  function freezeQ7(root){
+    if (!root) return;
+    qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', root).forEach(function(el){
+      if (up(el,'svg')) return;                   // keep graph interactive
+      if (el.id === 'miniProbAddGroup') el.style.display='none';
+      el.disabled = true; if (el.tagName==='INPUT') el.readOnly = true;
+      el.classList.add('mini-muted');
+    });
   }
 
   function applyQ6(){
-    const root = rootFor('q6-entry');
-    dedupeVaries(root);
-    keepBaseProbabilityVisible(root);
-    wireProbabilityVaries(root);
-    blankUntilEdited(root);
-    ensureFullWidth(root);
+    var r = getRoot('q6-entry');
+    if (!r) return;
+    keepProbBase(r);
+    probVaries(r);
+    blankUntilEdited(r);
+    fullWidth(r);
   }
   function applyQ7(){
-    var root = rootFor('q7-entry');
-    if (!root) return;        // no Q7 section rendered yet
-    ensureFullWidth(root);
-    freezeQ7(root);
+    var r = getRoot('q7-entry');
+    if (!r) return;
+    fullWidth(r);
+    freezeQ7(r);
   }
 
   function run(){ applyQ6(); applyQ7(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
-  new MutationObserver((muts)=>{
-    for (const m of muts){
-      const t = m.target;
+  new MutationObserver(function(muts){
+    for (var i=0;i<muts.length;i++){
+      var t = muts[i].target;
       if (!t) continue;
       if (t.id==='q6-entry' || t.id==='q7-entry' || (t.dataset && (t.dataset.id==='q6' || t.dataset.id==='q7'))){
         run(); break;
       }
     }
-  }).observe(document.body, {childList:true, subtree:true});
+  }).observe(document.body, { childList:true, subtree:true });
 })();
 </script>
 
