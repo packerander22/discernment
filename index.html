@@ -472,17 +472,6 @@
   .mini-ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
   .mini-axes-label{font-weight:800; font-size:16px; fill: var(--text); opacity:.9}
   
-
-
-/* === Normalize disabled mini inputs to match active style (keep read-only cursor) === */
-.mini-field input[disabled],
-.mini-field select[disabled]{
-  opacity: 1;
-  background: var(--card);
-  color: var(--text);
-  border-color: var(--border);
-  cursor: not-allowed;
-}
 </style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
@@ -515,6 +504,19 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
+<style>
+
+/* Normalize disabled mini inputs to visually match active fields (keeps read-only cursor) */
+.mini-field input[disabled],
+.mini-field select[disabled]{
+  opacity: 1;
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+
+</style>
 </head>
 <body>
 <div class="container">
@@ -1250,7 +1252,6 @@ function renderMiniQ6(intoEl, node){
 const sHad = String(elS.value||'').trim() !== '';
 const cHad = String(elC.value||'').trim() !== '';
 const vHad = String(elV.value||'').trim() !== '';
-
 if (sHad) elS.value = String(S);
 if (cHad) elC.value = String(C);
 if (vHad) elV.value = String(vv);
@@ -1485,7 +1486,7 @@ function renderMiniQ7(intoEl, node){
   const local = { S: miniMaster.S, C: miniMaster.C, mode: miniMaster.mode, val: miniMaster.val, X_user: miniMaster.X_user };
 
   const wrap = document.createElement('div'); wrap.className = 'mini-wrap';
-  const fields = document.createElement('div'); fields.className = 'mini-fields';
+  const fields = document.createElement('div'); fields.className = 'mini-fields mini-muted';
 
   const sBox = document.createElement('div'); sBox.className='mini-field';
   sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS2" type="number" step="0.01" max="10" inputmode="decimal" disabled>';
@@ -1493,7 +1494,7 @@ function renderMiniQ7(intoEl, node){
   cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC2" type="number" step="0.01" max="10" inputmode="decimal" disabled>';
   fields.appendChild(sBox); fields.appendChild(cBox);
 
-  const pRow = document.createElement('div'); pRow.className = 'mini-fields';
+  const pRow = document.createElement('div'); pRow.className='mini-fields mini-muted';
   const mBox = document.createElement('div'); mBox.className='mini-field';
   mBox.innerHTML = '<label>Probability input mode</label>\
     <select id="miniMode2" disabled>\
@@ -2937,14 +2938,7 @@ function renderNode(node) {
         if (el.countMsg) el.countMsg.textContent='';
       }
 
-      
-      // Enforce integer-only on group counts
-      if (el.groups) el.groups.addEventListener('input', function(ev){
-        const t = ev.target; if (t && t.dataset && t.dataset.k==='count') {
-          t.value = String((t.value||'').replace(/[^0-9]/g,''));
-        }
-      });
-['input','change'].forEach(evt=>{
+      ['input','change'].forEach(evt=>{
         [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal]
           .forEach(x => x && x.addEventListener(evt, refreshVisibility));
       });
@@ -2956,7 +2950,7 @@ function renderNode(node) {
         el.groups.addEventListener('input', e=>{
           const t=e.target, i=+t.dataset.i; if(!Number.isFinite(i)) return;
           const k=t.dataset.k;
-          if (k==='count') state.groups[i].count = t.value===''?0:(t.value|0);
+          if (k==='count') { t.value = String((t.value||'').replace(/[^0-9]/g,'')); state.groups[i].count = t.value===''?0:(t.value|0); }
           if (k==='mode')  state.groups[i].mode  = t.value;
           if (k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
           const used = (state.groups||[]).reduce((s,g)=>s+(g.count|0),0);
@@ -3004,10 +2998,8 @@ function renderNode(node) {
         if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
       } catch(_) {}
 
-      
-      if (el.refreshVisibility) el.refreshVisibility();
-['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
-      
+      ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
+      if (el.groupsWrap) el.groupsWrap.style.display = 'none';
 
       // Hide any leftover original rows too
       const stack = root.querySelector('#q7-entry'); if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
