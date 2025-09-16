@@ -2817,7 +2817,7 @@ function renderNode(node) {
           row.style.gap = '12px';
           row.innerHTML =
             '<div class="mini-field"><label>Group '+(i+1)+' count</label>' +
-            '<input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count or 0))+'" style="width:100%"></div>' + \
+            '<input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'" style="width:100%"></div>' +
             '<div class="mini-field"><label>Unit</label>' +
             '<select data-i="'+i+'" data-k="mode" style="width:100%">' +
             '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>' +
@@ -2825,7 +2825,7 @@ function renderNode(node) {
             '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>' +
             '</select></div>' +
             '<div class="mini-field" style="grid-column:1 / -1"><label>Value</label>' +
-            '<input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val if g.val is not None else ""))+'" placeholder="e.g. 100,000" style="width:100%"></div>' +
+            '<input data-i="'+i+'" data-k="val" type="number" step="any" value="'+(g.val ?? '')+'" placeholder="e.g. 100,000" style="width:100%"></div>' +
             '<div class="mini-field" style="grid-column:1 / -1"><label>&nbsp;</label>' +
             '<button class="back" data-remove="'+i+'" type="button" style="width:100%;max-width:360px">Remove</button></div>';
           el.groups.appendChild(row);
