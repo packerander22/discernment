@@ -2995,16 +2995,24 @@ function renderNode(node) {
   }
 
   function ensureFullWidth(scope){
-    try{
-      Array.prototype.slice.call((scope||document).querySelectorAll('.mini-field input, .mini-field select, .mini-field textarea'))
-        .forEach(function(el){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; });
-      var wrap = (scope||document).querySelector('.mini-wrap');
-      if (wrap && wrap.style){
-        wrap.style.width='100%';
-        wrap.style.maxWidth='100%';
-        wrap.style.overflowX='hidden';
-        wrap.style.overflowY='visible';
-      }
+  try{
+    var root = scope || document;
+    Array.prototype.slice.call(root.querySelectorAll('.mini-field input, .mini-field select, .mini-field textarea'))
+      .forEach(function(el){
+        if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
+      });
+    var wrap = root.querySelector('.mini-wrap');
+    if (wrap && wrap.style){
+      wrap.style.width='100%';
+      wrap.style.maxWidth='100%';
+      wrap.style.overflowX='hidden';
+      wrap.style.overflowY='visible';
+    }
+    Array.prototype.slice.call(root.querySelectorAll('svg')).forEach(function(svg){
+      if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
+    });
+  }catch(e){ /* no-op */ }
+}
       Array.prototype.slice.call((scope||document).querySelectorAll('svg')).forEach(function(svg){
         if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
       });
@@ -3053,19 +3061,59 @@ function renderNode(node) {
   }
 
   function blankUntilEdited(scope){
-    const nums = qa('.mini-field input[type="number"]', scope);
-    nums.forEach(inp => inp.addEventListener('input', function(){ this.dataset.touched='1'; }));
-    const s = q('#miniS', scope);
-    const n = findInstancesInput(scope);
-    if (!s) return;
-    s.addEventListener('input', ()=>{
-      nums.forEach(inp=>{
-        if (inp === s) return;
-        if (n && inp === n) return;       // never clear Instances
-        if (!inp.dataset.touched) inp.value = ''; // keep blank until user edits
-      });
+  const root = scope || document;
+  const nums = Array.prototype.slice.call(root.querySelectorAll('.mini-field input[type="number"]'));
+  nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+
+  const s = root.querySelector('#miniS');
+  const n = findInstancesInput(root);
+
+  function clearUntouched(){
+    Array.prototype.slice.call(root.querySelectorAll('.mini-field input[type="number"]')).forEach(function(inp){
+      if (inp === s) return;
+      if (n && inp === n) return;
+      if (!inp.dataset.touched) inp.value = '';
     });
   }
+
+  if (s){
+    ['input','change'].forEach(function(evt){
+      s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
+    });
+  }
+
+  if (n){
+    n.addEventListener('input', function(){
+      const digits = this.value.replace(/[^0-9]/g, '');
+      this.value = digits;
+    });
+    n.addEventListener('blur', function(){
+      if (this.value === '') return;
+      let v = parseInt(this.value,10); if (!isFinite(v) || v < 1) v = 1;
+      this.value = String(v);
+    });
+  }
+
+  const groups = root.querySelector('#miniProbGroups');
+  if (groups){
+    groups.addEventListener('input', function(e){
+      const target = e.target;
+      if (!target || target.type !== 'number') return;
+      const maxN = n && n.value ? parseInt(n.value,10) : null;
+      if (!maxN) return;
+      const inputs = Array.prototype.slice.call(groups.querySelectorAll('input[type="number"]'));
+      let sum = 0;
+      for (let i=0;i<inputs.length;i++){
+        let v = parseInt(inputs[i].value||'0',10) || 0;
+        if (inputs[i] === target){
+          if (sum + v > maxN){ inputs[i].value = String(Math.max(0, maxN - sum)); }
+          v = parseInt(inputs[i].value||'0',10) || 0;
+        }
+        sum += v;
+      }
+    });
+  }
+}
 
   function freezeQ7(scope){
     qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', scope)
