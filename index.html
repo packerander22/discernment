@@ -504,6 +504,31 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
+
+<style id="mini-clean-css">
+  /* Container clamps */
+  .tile, .content, .mini-wrap, #q6-entry, #q7-entry { max-width:100%; box-sizing:border-box; overflow-x:hidden; }
+  .mini-wrap { width:100%; max-width:100%; overflow-x:hidden; overflow-y:visible; }
+  /* One-column layout for the entry area */
+  #q6-entry .mini-fields, #q6-entry .fields,
+  #q7-entry .mini-fields, #q7-entry .fields { display:grid; grid-template-columns: 1fr !important; gap:14px; }
+  /* Full-width controls */
+  #q6-entry .mini-field input, #q6-entry .mini-field select, #q6-entry .mini-field textarea,
+  #q7-entry .mini-field input, #q7-entry .mini-field select, #q7-entry .mini-field textarea {
+    width:100% !important; max-width:100% !important; box-sizing:border-box;
+  }
+  /* Graph scales without pushing layout */
+  #q6-entry svg, #q7-entry svg { width:100%; max-width:100%; height:auto; display:block; }
+  /* Varies label size parity */
+  .mini-field label { font-size: .95rem; line-height: 1.35; }
+  .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
+  /* Q7 frozen visuals */
+  .q7-frozen .mini-field input,
+  .q7-frozen .mini-field select,
+  .q7-frozen .mini-field textarea { pointer-events:none; opacity:.65; }
+  .q7-frozen svg .mini-handle { pointer-events:auto; opacity:1; }
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -2954,94 +2979,86 @@ function renderNode(node) {
 
 
 
-<script id="mini-runtime-fixes">
+
+
+
+
+<script id="mini-clean-runtime">
 (function(){
+  "use strict";
   function q(sel, r){ return (r||document).querySelector(sel); }
   function qa(sel, r){ return Array.prototype.slice.call((r||document).querySelectorAll(sel)); }
   function up(el, sel){ while(el && el.nodeType===1){ if(el.matches(sel)) return el; el = el.parentElement; } return null; }
+  function getRoot(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
 
-  function rootFor(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
-
-  function ensureFullWidth(scope){
-    try{
-      var root = scope || document;
-      qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
-        if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
-      });
-      var wrap = root.querySelector('.mini-wrap');
-      if (wrap && wrap.style){
-        wrap.style.width='100%';
-        wrap.style.maxWidth='100%';
-        wrap.style.overflowX='hidden';
-        wrap.style.overflowY='visible';
-      }
-      qa('svg', root).forEach(function(svg){
-        if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
-      });
-    }catch(e){}
-  }
-
-  function dedupeVaries(scope){
-    ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(function(sel){
-      var all = qa(sel, scope);
-      for (var i=1;i<all.length;i++){ var w = up(all[i], '.mini-field'); if (w) w.remove(); }
+  function fullWidth(root){
+    if (!root) return;
+    qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
+      if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
+    });
+    var wrap = root.querySelector('.mini-wrap');
+    if (wrap && wrap.style){
+      wrap.style.width='100%'; wrap.style.maxWidth='100%';
+      wrap.style.overflowX='hidden'; wrap.style.overflowY='visible';
+    }
+    qa('svg', root).forEach(function(svg){
+      if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
     });
   }
 
-  function keepBaseProbabilityVisible(scope){
-    var unit = q('#miniMode', scope), val  = q('#miniVal', scope);
+  function keepProbBase(root){
+    if (!root) return;
+    var unit = q('#miniMode', root), val  = q('#miniVal', root);
     var uw = unit && up(unit, '.mini-field'); var vw = val && up(val, '.mini-field');
-    if (uw) uw.style.display = ''; if (vw) vw.style.display = '';
+    if (uw) uw.style.display='';
+    if (vw) vw.style.display='';
   }
 
-  function wireProbabilityVaries(scope){
-    keepBaseProbabilityVisible(scope);
-    var cb    = q('#miniProbVaries', scope);
-    var mBox2 = q('#miniMode2', scope) && up(q('#miniMode2', scope), '.mini-field');
-    var vBox2 = q('#miniVal2',  scope) && up(q('#miniVal2',  scope), '.mini-field');
-    var gWrap = q('#miniProbGroups', scope) && up(q('#miniProbGroups', scope), '.mini-field');
+  function probVaries(root){
+    if (!root) return;
+    keepProbBase(root);
+    var cb = q('#miniProbVaries', root);
+    var m2 = q('#miniMode2', root), v2 = q('#miniVal2', root), g  = q('#miniProbGroups', root);
+    var m2w = m2 && up(m2,'.mini-field'), v2w = v2 && up(v2,'.mini-field'), gw = g && up(g,'.mini-field');
     function show(on){
-      if (mBox2) mBox2.style.display = on ? '' : 'none';
-      if (vBox2) vBox2.style.display = on ? '' : 'none';
-      if (gWrap) gWrap.style.display  = on ? '' : 'none';
+      if (m2w) m2w.style.display = on ? '' : 'none';
+      if (v2w) v2w.style.display = on ? '' : 'none';
+      if (gw)  gw.style.display  = on ? '' : 'none';
     }
-    if (cb){ cb.addEventListener('change', function(){ keepBaseProbabilityVisible(scope); show(cb.checked); }); show(!!cb.checked); }
+    if (cb){ cb.addEventListener('change', function(){ keepProbBase(root); show(cb.checked); }); show(!!cb.checked); }
     else { show(false); }
   }
 
-  function findInstancesInput(scope){
-    var lbls = qa('.mini-field label', scope);
+  function findInstancesInput(root){
+    var lbls = qa('.mini-field label', root);
     for (var i=0;i<lbls.length;i++){
       if (/total\s+instances/i.test(lbls[i].textContent||'')){
         var inp = lbls[i].parentElement && lbls[i].parentElement.querySelector('input[type="number"]');
         if (inp) return inp;
       }
     }
-    return q('input[type="number"]', scope);
+    return null;
   }
 
-  function blankUntilEdited(scope){
-    var root = scope || document;
+  function blankUntilEdited(root){
+    if (!root) return;
     var nums = qa('.mini-field input[type="number"]', root);
     nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
-
     var s = q('#miniS', root);
     var n = findInstancesInput(root);
 
     function clearUntouched(){
       qa('.mini-field input[type="number"]', root).forEach(function(inp){
         if (inp === s) return;
-        if (n && inp === n) return;
+        if (n && inp === n) return;   // never clear Instances
         if (!inp.dataset.touched) inp.value = '';
       });
     }
-
     if (s){
       ['input','change'].forEach(function(evt){
         s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
       });
     }
-
     if (n){
       n.addEventListener('input', function(){
         var digits = String(this.value||'').replace(/[^0-9]/g, '');
@@ -3053,7 +3070,6 @@ function renderNode(node) {
         this.value = String(v);
       });
     }
-
     var groups = q('#miniProbGroups', root);
     if (groups){
       groups.addEventListener('input', function(e){
@@ -3075,37 +3091,36 @@ function renderNode(node) {
     }
   }
 
-  function freezeQ7(scope){
-    qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', scope).forEach(function(el){
-      if (up(el,'svg')) return;
+  function freezeQ7(root){
+    if (!root) return;
+    root.classList.add('q7-frozen');
+    qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', root).forEach(function(el){
+      if (up(el,'svg')) return;   // keep graph interactive
       if (el.id === 'miniProbAddGroup') el.style.display='none';
-      el.disabled = true; if (el.tagName==='INPUT') el.readOnly = true;
+      if (el.tagName === 'INPUT'){ el.readOnly = true; el.tabIndex = -1; }
+      else { el.setAttribute('disabled','disabled'); el.tabIndex = -1; }
       el.classList.add('mini-muted');
+      el.style.pointerEvents = 'none';
     });
   }
 
   function applyQ6(){
-    var root = rootFor('q6-entry');
-    if (!root) return;
-    dedupeVaries(root);
-    keepBaseProbabilityVisible(root);
-    wireProbabilityVaries(root);
-    blankUntilEdited(root);
-    ensureFullWidth(root);
+    var r = getRoot('q6-entry');
+    if (!r) return;
+    keepProbBase(r);
+    probVaries(r);
+    blankUntilEdited(r);
+    fullWidth(r);
   }
-
   function applyQ7(){
-    var root = rootFor('q7-entry');
-    if (!root) return;
-    ensureFullWidth(root);
-    freezeQ7(root);
+    var r = getRoot('q7-entry');
+    if (!r) return;
+    fullWidth(r);
+    freezeQ7(r);
   }
 
   function run(){ applyQ6(); applyQ7(); }
-
-  if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', run); }
-  else { run(); }
-
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
   new MutationObserver(function(muts){
     for (var i=0;i<muts.length;i++){
       var t = muts[i].target;
@@ -3114,10 +3129,9 @@ function renderNode(node) {
         run(); break;
       }
     }
-  }).observe(document.body, {childList:true, subtree:true});
+  }).observe(document.body, { childList:true, subtree:true });
 })();
 </script>
-
 
 </body>
 </html>
