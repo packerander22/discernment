@@ -2636,10 +2636,19 @@ function renderNode(node) {
 
 
 
-<!-- === Q6/AB2 upgrade (layout refined) === -->
+
+
+
+<!-- === Q6/AB2 upgrade (3-col grid + centered probability, AB2 kept) === -->
+<style>
+  /* Responsive grid for Q6 entry */
+  #q6-entry { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap: 12px; }
+  @media (max-width: 900px) { #q6-entry { grid-template-columns: 1fr; } }
+  #q6-entry .mini-field input, #q6-entry .mini-field select { width: 100%; }
+  #q6-entry .muted { opacity: 0.6; }
+</style>
 <script>
 (function () {
-  // ---------- Q6 UPGRADE
   if (typeof renderMiniQ6 === 'function') {
     const _origQ6 = renderMiniQ6;
 
@@ -2657,16 +2666,11 @@ function renderNode(node) {
         return inp;
       }
 
-      // Ensure only one upgrade
       let stack = root.querySelector('#q6-entry');
       if (!stack) {
         stack = document.createElement('div');
         stack.id = 'q6-entry';
-        stack.className = 'mini-fields';
-        // enforce consistent grid so controls fill left-to-right like your other rows
-        stack.style.display = 'grid';
-        stack.style.gridTemplateColumns = '1fr 1fr';
-        stack.style.gap = '12px';
+        // grid CSS is in the style block above
         const anchor = root.querySelector('.mini-field');
         if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(stack, anchor);
         else root.prepend(stack);
@@ -2674,19 +2678,20 @@ function renderNode(node) {
         stack.innerHTML = '';
       }
 
-      // N row (spans both columns, centered; input takes same width as other controls)
+      // N row (centered, full row)
       const nRow = document.createElement('div');
       nRow.className = 'mini-field';
       nRow.style.gridColumn = '1 / -1';
-      nRow.style.justifySelf = 'center';
       nRow.style.textAlign = 'center';
-      nRow.innerHTML = '<label>Total instances (N)</label><input id="q6N" type="number" min="1" step="1" value="1" style="width:100%;max-width:360px;">';
+      nRow.style.justifySelf = 'center';
+      nRow.innerHTML = '<label>Total instances (N)</label><input id=\"q6N\" type=\"number\" min=\"1\" step=\"1\" value=\"1\" style=\"max-width:420px\">';
       stack.appendChild(nRow);
 
-      function makeField(labelText, selector, idBase, placeholder) {
+      function makeField(labelText, selector, idBase, placeholder, col) {
         const inputEl = detachRowByInput(selector);
         const box = document.createElement('div');
         box.className = 'mini-field';
+        if (col) box.style.gridColumn = String(col);
 
         const label = document.createElement('label');
         label.textContent = labelText;
@@ -2694,68 +2699,71 @@ function renderNode(node) {
 
         const toggleRow = document.createElement('div');
         toggleRow.className = 'hint';
-        toggleRow.innerHTML = '<input id="'+idBase+'Tg" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+        toggleRow.innerHTML = '<input id=\"'+idBase+'Tg\" type=\"checkbox\"> <span class=\"toggle-label\">Varies across instances</span>';
         box.appendChild(toggleRow);
 
         if (inputEl) {
           inputEl.id = idBase;
           inputEl.placeholder = placeholder;
-          inputEl.style.width = '100%';
           box.appendChild(inputEl);
         }
 
         const extra = document.createElement('div');
         extra.className = 'mini-field';
         extra.id = idBase + 'ExtraWrap';
-        extra.innerHTML = '<div class="hint">Total extra ' + (idBase === 'q6S' ? 'severity' : 'cost') + ' across outliers (sum)</div>' +
-                          '<input id="'+idBase+'ExtraVal" type="number" step="any" placeholder="e.g. ' + (idBase === 'q6S' ? '3' : '2') + '" style="width:100%;">';
-        box.appendChild(extra);
+        extra.style.gridColumn = '3';
+        extra.innerHTML = '<div class=\"hint\">Total extra ' + (idBase === 'q6S' ? 'severity' : 'cost') + ' across outliers (sum)</div>' +
+                          '<input id=\"'+idBase+'ExtraVal\" type=\"number\" step=\"any\" placeholder=\"e.g. ' + (idBase === 'q6S' ? '3' : '2') + '\">';
+        stack.appendChild(box);
+        stack.appendChild(extra);
 
         return { box, toggleRow, extra };
       }
 
-      const sWrap = makeField('Severity (S) — up to 10', 'input[name="severity"], #miniS, input[data-q="S"]', 'q6S', 'e.g. 5');
-      const cWrap = makeField('Cost (C) — up to 10',     'input[name="cost"], #miniC, input[data-q="C"]',     'q6C', 'e.g. 1');
-      stack.appendChild(sWrap.box);
-      stack.appendChild(cWrap.box);
+      // Base inputs in columns 1 and 2; extras live in column 3
+      const sWrap = makeField('Severity (S) — up to 10', 'input[name=\"severity\"], #miniS, input[data-q=\"S\"]', 'q6S', 'e.g. 5', 1);
+      const cWrap = makeField('Cost (C) — up to 10',     'input[name=\"cost\"], #miniC, input[data-q=\"C\"]',     'q6C', 'e.g. 1', 2);
 
-      // Probability (two grid columns: unit + value)
+      // Probability unit (centered like N, with toggle between label and dropdown)
       const pUnit = document.createElement('div');
       pUnit.className = 'mini-field';
+      pUnit.style.gridColumn = '1 / -1';
+      pUnit.style.textAlign = 'center';
+      pUnit.style.justifySelf = 'center';
       pUnit.innerHTML = '<label>Probability unit</label>';
-      const pMode = detachRowByInput('select[name="q6Units"], #miniMode, select[data-q="mode"]') || document.createElement('select');
-      pMode.style.width = '100%';
+      const pToggleRow = document.createElement('div');
+      pToggleRow.className = 'hint';
+      pToggleRow.innerHTML = '<input id=\"q6TgProb\" type=\"checkbox\"> <span class=\"toggle-label\">Varies across instances</span>';
+      pUnit.appendChild(pToggleRow);
+      const pMode = detachRowByInput('select[name=\"q6Units\"], #miniMode, select[data-q=\"mode\"]') || document.createElement('select');
+      pMode.style.maxWidth = '420px';
       pUnit.appendChild(pMode);
       stack.appendChild(pUnit);
 
       const pValBox = document.createElement('div');
       pValBox.className = 'mini-field';
-      pValBox.innerHTML = '<label id="q6ProbLabel">Enter X (for "1 in X")</label>';
-      const pVal = detachRowByInput('#miniVal, input[name="probVal"], input[data-q="pVal"]') || document.createElement('input');
+      pValBox.style.gridColumn = '1 / -1';
+      pValBox.style.textAlign = 'center';
+      pValBox.style.justifySelf = 'center';
+      pValBox.innerHTML = '<label id=\"q6ProbLabel\">Enter X (for \"1 in X\")</label>';
+      const pVal = detachRowByInput('#miniVal, input[name=\"probVal\"], input[data-q=\"pVal\"]') || document.createElement('input');
       if (!pVal.type) pVal.type = 'number';
-      pVal.style.width = '100%';
+      pVal.style.maxWidth = '420px';
       pValBox.appendChild(pVal);
       stack.appendChild(pValBox);
 
-      // Probability toggle (left column under pVal row)
-      const pToggleRow = document.createElement('div');
-      pToggleRow.className = 'hint';
-      pToggleRow.style.gridColumn = '1 / -1';
-      pToggleRow.innerHTML = '<input id="q6TgProb" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
-      stack.appendChild(pToggleRow);
-
-      // Groups UI occupying full width; button aligned within grid
+      // Groups full width, centered
       const groupsWrap = document.createElement('div');
       groupsWrap.id = 'q6GroupsWrap';
       groupsWrap.className = 'mini-field';
       groupsWrap.style.gridColumn = '1 / -1';
-      groupsWrap.innerHTML = (
-        '<div id="q6Groups"></div>' +
-        '<div class="mini-field" style="margin:0;padding:0">' +
-          '<button id="q6AddGroup" class="back" type="button" style="width:100%;max-width:360px;align-self:center">Add probability group</button>' +
-        '</div>' +
-        '<div id="q6CountMsg" class="error" style="text-align:center"></div>'
-      );
+      groupsWrap.style.textAlign = 'center';
+      groupsWrap.style.justifySelf = 'center';
+      groupsWrap.innerHTML = '<div id=\"q6Groups\"></div>' +
+                             '<div class=\"mini-field\" style=\"margin:0;padding:0\">' +
+                             '<button id=\"q6AddGroup\" class=\"back\" type=\"button\" style=\"width:100%;max-width:420px\">Add probability group</button>' +
+                             '</div>' +
+                             '<div id=\"q6CountMsg\" class=\"error\" style=\"text-align:center\"></div>';
       stack.appendChild(groupsWrap);
 
       // Wiring/visibility
@@ -2816,18 +2824,18 @@ function renderNode(node) {
           row.style.gridTemplateColumns = '1fr 1fr';
           row.style.gap = '12px';
           row.innerHTML =
-            '<div class="mini-field"><label>Group '+(i+1)+' count</label>' +
-            '<input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'" style="width:100%"></div>' +
-            '<div class="mini-field"><label>Unit</label>' +
-            '<select data-i="'+i+'" data-k="mode" style="width:100%">' +
-            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>' +
-            '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>' +
-            '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>' +
+            '<div class=\"mini-field\"><label>Group '+(i+1)+' count</label>' +
+            '<input data-i=\"'+i+'\" data-k=\"count\" type=\"number\" min=\"0\" step=\"1\" value=\"'+((g.count ?? 0))+'\"></div>' +
+            '<div class=\"mini-field\"><label>Unit</label>' +
+            '<select data-i=\"'+i+'\" data-k=\"mode\">' +
+            '<option value=\"oneInX\" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>' +
+            '<option value=\"percent\" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>' +
+            '<option value=\"micromort\" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>' +
             '</select></div>' +
-            '<div class="mini-field" style="grid-column:1 / -1"><label>Value</label>' +
-            '<input data-i="'+i+'" data-k="val" type="number" step="any" value="'+(g.val ?? '')+'" placeholder="e.g. 100,000" style="width:100%"></div>' +
-            '<div class="mini-field" style="grid-column:1 / -1"><label>&nbsp;</label>' +
-            '<button class="back" data-remove="'+i+'" type="button" style="width:100%;max-width:360px">Remove</button></div>';
+            '<div class=\"mini-field\" style=\"grid-column:1 / -1\"><label>Value</label>' +
+            '<input data-i=\"'+i+'\" data-k=\"val\" type=\"number\" step=\"any\" value=\"'+((g.val ?? ''))+'\" placeholder=\"e.g. 100,000\"></div>' +
+            '<div class=\"mini-field\" style=\"grid-column:1 / -1\"><label>&nbsp;</label>' +
+            '<button class=\"back\" data-remove=\"'+i+'\" type=\"button\" style=\"width:100%;max-width:420px\">Remove</button></div>';
           el.groups.appendChild(row);
         });
         if (el.countMsg) el.countMsg.textContent = '';
@@ -2858,55 +2866,6 @@ function renderNode(node) {
 
       refreshVisibility();
     };
-  }
-
-  // ---------- AB2 INLINE JSON TEXT REPLACEMENT
-  try {
-    // Locate the giant inline JSON blob and replace the AB2 "text" value.
-    // We search for an object with "id":"AB2" and a "text": "..." property.
-    var replaceAB2 = function () {
-      var scriptTags = document.getElementsByTagName('script');
-      for (var i=0;i<scriptTags.length;i++) {
-        var s = scriptTags[i].textContent || '';
-        if (!s) continue;
-        if (s.indexOf('"id":"AB2"') !== -1 && s.indexOf('"text"') !== -1) {
-          // Build new HTML payload for AB2
-          var payload = [
-            '<div class="panel">',
-            '<h2>How the math works (multi‑instance, exact)</h2>',
-            '<h3>1) Inputs</h3>',
-            '<ul>',
-            '<li><b>N</b>: number of instances.</li>',
-            '<li><b>S</b> (0–10): average severity per instance; optional extra severity across outliers.</li>',
-            '<li><b>C</b> (0–10): cost per instance; optional extra cost across outliers.</li>',
-            '<li><b>p</b>: per‑instance probability as 1 in X, %, or micromorts.</li>',
-            '<li><b>Groups</b>: split instances into groups with their own probabilities.</li>',
-            '</ul>',
-            '<h3>2) Probability conversion</h3>',
-            '<pre>p = { 1/X,  percentage/100,  micromorts/1,000,000 }</pre>',
-            '<h3>3) Exact probability across many instances</h3>',
-            '<pre>P(none) = (1 − p_base)^{n_base} × ∏_g (1 − p_g)^{n_g}\nP(any) = 1 − P(none)\nΣp = n_base·p_base + Σ_g n_g·p_g</pre>',
-            '<h3>4) Aggregating severity and cost</h3>',
-            '<pre>C_total = N·C_usual + C_extra\nS_avg = (N·S_usual + S_extra) / N</pre>',
-            '<h3>5) Decision rule</h3>',
-            '<pre>EV_downside = S_avg × (Σp)\nAct if EV_downside > C_total</pre>',
-            '<h3>Worked example</h3>',
-            '<pre>Example: N=10, S=6, C=1; base p=1/100,000; two outliers at 1/1,000.\nΣp = 8*(1/100000) + 2*(1/1000) = 0.00208\nS_avg = 6, C_total = 10\nEV_downside = 6 × 0.00208 = 0.01248 &lt; 10 → do not act.</pre>',
-            '</div>'
-          ].join('');
-
-          // Replace only the AB2 text field inside that JSON
-          var newText = s.replace(/("id"\s*:\s*"AB2"[\s\S]*?"text"\s*:\s*")[\s\S]*?(")/, '$1' + payload.replace(/"/g, '\\"') + '$2');
-
-          if (newText !== s) {
-            scriptTags[i].textContent = newText;
-          }
-        }
-      }
-    };
-    replaceAB2();
-  } catch(e) {
-    console.warn('AB2 replacement skipped:', e);
   }
 })();
 </script>
