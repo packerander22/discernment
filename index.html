@@ -481,6 +481,14 @@
   gtag('js', new Date());
   gtag('config', 'G-VJSYRKHSRM');
 </script>
+
+<style id="mini-upgrade-css">
+  .mini-wrap{width:100%;max-width:100%;box-sizing:border-box;}
+  .mini-fields{display:grid;grid-template-columns:1fr !important;gap:14px;}
+  .mini-field input,.mini-field select,.mini-field textarea{width:100% !important;max-width:100% !important;box-sizing:border-box;display:block;}
+  .mini-muted{opacity:.7;}
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -1010,23 +1018,80 @@ function renderMiniQ6(intoEl, node){
   const fields = document.createElement('div'); fields.className = 'mini-fields';
 
   // IMPORTANT: use type="text" so we can allow interim states while typing
+  const sHead = document.createElement('div'); sHead.className='mini-field'; sHead.innerHTML='<strong>Severity</strong>';
+  const sVar = document.createElement('div'); sVar.className='mini-field';
+  sVar.innerHTML = '<label><input id="miniSVaries" type="checkbox"> Varies across instances</label>';
   const sBox = document.createElement('div'); sBox.className='mini-field';
-  sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
+  sBox.innerHTML = '<label>Enter Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
+  const sExtra = document.createElement('div'); sExtra.className='mini-field';
+  sExtra.innerHTML = '<label>Total extra severity across outliers (sum)</label><input id="miniSExtra" type="number" step="0.01" placeholder="e.g. 3">';
+  sExtra.style.display = 'none';
+  fields.appendChild(sHead); fields.appendChild(sVar); fields.appendChild(sBox); fields.appendChild(sExtra);
+  (function(){ const c=document.getElementById('miniSVaries'); const x=document.getElementById('miniSExtra'); function show(on){sExtra.style.display=on?'':'none'; if(!on){x.value=''; delete x.dataset.touched;}} if(c){c.addEventListener('change',()=>show(c.checked)); show(false);} })();
+
+  const cHead = document.createElement('div'); cHead.className='mini-field'; cHead.innerHTML='<strong>Cost</strong>';
+  const cVar = document.createElement('div'); cVar.className='mini-field';
+  cVar.innerHTML = '<label><input id="miniCVaries" type="checkbox"> Varies across instances</label>';
   const cBox = document.createElement('div'); cBox.className='mini-field';
-  cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
-  fields.appendChild(sBox); fields.appendChild(cBox);
+  cBox.innerHTML = '<label>Enter Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
+  const cExtra = document.createElement('div'); cExtra.className='mini-field';
+  cExtra.innerHTML = '<label>Total extra cost across outliers (sum)</label><input id="miniCExtra" type="number" step="0.01" placeholder="e.g. 2">';
+  cExtra.style.display = 'none';
+  fields.appendChild(cHead); fields.appendChild(cVar); fields.appendChild(cBox); fields.appendChild(cExtra);
+  (function(){ const c=document.getElementById('miniCVaries'); const x=document.getElementById('miniCExtra'); function show(on){cExtra.style.display=on?'':'none'; if(!on){x.value=''; delete x.dataset.touched;}} if(c){c.addEventListener('change',()=>show(c.checked)); show(false);} })();
 
   const pRow = document.createElement('div'); pRow.className='mini-fields';
+  const pHead = document.createElement('div'); pHead.className='mini-field'; pHead.innerHTML='<strong>Probability</strong>';
+  const pVar = document.createElement('div'); pVar.className='mini-field';
+  pVar.innerHTML = '<label><input id="miniProbVaries" type="checkbox"> Varies across instances</label>';
   const mBox = document.createElement('div'); mBox.className='mini-field';
-  mBox.innerHTML = '<label>Probability input mode</label>\
-    <select id="miniMode" name="q6Units">\
-      <option value="oneInX">1 in X</option>\
-      <option value="percent">Percentage (%)</option>\
-      <option value="micromort">Micromorts</option>\
-    </select>';
+  mBox.innerHTML = '<label>Probability input mode</label>    <select id="miniMode" name="q6Units">      <option value="oneInX">1 in X</option>      <option value="percent">Percentage (%)</option>      <option value="micromort">Micromorts</option>    </select>';
+  pRow.appendChild(pHead); pRow.appendChild(pVar);
   const vBox = document.createElement('div'); vBox.className='mini-field';
   vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000,000">';
   pRow.appendChild(mBox); pRow.appendChild(vBox);
+
+  // extras for probability (hidden until 'varies' is checked)
+  const mBox2 = document.createElement('div'); mBox2.className='mini-field';
+  mBox2.innerHTML = '<label>Probability input mode (extra)</label>    <select id="miniMode2">      <option value="oneInX">1 in X</option>      <option value="percent">Percentage (%)</option>      <option value="micromort">Micromorts</option>    </select>';
+  const vBox2 = document.createElement('div'); vBox2.className='mini-field';
+  vBox2.innerHTML = '<label id="miniProbLabel2">Enter X (for “1 in X”) (extra)</label><input id="miniVal2" type="number" step="1">';
+  const gWrap = document.createElement('div'); gWrap.className = 'mini-field';
+  gWrap.innerHTML = '<div id="miniProbGroups"></div><div class="mini-field" style="margin:0;padding:0"><button id="miniProbAddGroup" class="back" type="button" style="width:100%">Add probability group</button></div><div id="miniProbMsg" class="error" style="text-align:left"></div>';
+
+  mBox2.style.display = 'none'; vBox2.style.display = 'none'; gWrap.style.display = 'none';
+  pRow.appendChild(mBox2); pRow.appendChild(vBox2); pRow.appendChild(gWrap);
+
+  const cbProb = pRow.querySelector('#miniProbVaries');
+  function showProbExtras(on){ mBox2.style.display = on?'':'none'; vBox2.style.display = on?'':'none'; gWrap.style.display = on?'':'none'; if(!on){ vBox2.querySelector('input').value=''; document.getElementById('miniProbGroups').innerHTML=''; document.getElementById('miniProbMsg').textContent=''; } }
+  if (cbProb){ cbProb.addEventListener('change', () => showProbExtras(cbProb.checked)); showProbExtras(false); }
+
+  // Groups behavior
+  (function(){
+    const gEl = document.getElementById('miniProbGroups');
+    const addBtn = document.getElementById('miniProbAddGroup');
+    const state = { groups: [] };
+    function render(){
+      gEl.innerHTML='';
+      state.groups.forEach((gr,i)=>{
+        const row=document.createElement('div'); row.className='mini-fields';
+        row.innerHTML = '<div class="mini-field"><label>Group '+(i+1)+' count</label><input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+(gr.count ?? 0)+'"></div>                         <div class="mini-field"><label>Unit</label><select data-i="'+i+'" data-k="mode"><option value="oneInX" '+(gr.mode==='oneInX'?'selected':'')+'>1 in X</option><option value="percent" '+(gr.mode==='percent'?'selected':'')+'>Percentage (%)</option><option value="micromort" '+(gr.mode==='micromort'?'selected':'')+'>Micromorts</option></select></div>                         <div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+(gr.val ?? '')+'" placeholder="e.g. 100,000"></div>                         <div class="mini-field"><button class="back" data-remove="'+i+'" type="button" style="width:100%">Remove</button></div>';
+        gEl.appendChild(row);
+      });
+    }
+    if (addBtn) addBtn.addEventListener('click', ()=>{ state.groups.push({count:0, mode:'oneInX', val:null}); render(); });
+    if (gEl){
+      gEl.addEventListener('input', (e)=>{
+        const t=e.target, i=+t.dataset.i; if(!Number.isFinite(i)) return;
+        const k=t.dataset.k;
+        state.groups[i] = state.groups[i] || {count:0, mode:'oneInX', val:null};
+        if (k==='count') state.groups[i].count = t.value===''?0:(t.value|0);
+        if (k==='mode')  state.groups[i].mode  = t.value;
+        if (k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
+      });
+      gEl.addEventListener('click', (e)=>{ const idx=e.target.dataset.remove; if(idx!=null){ state.groups.splice(+idx,1); render(); } });
+    }
+  })();
 
   wrap.appendChild(fields); wrap.appendChild(pRow);
 
@@ -1429,7 +1494,30 @@ function renderMiniQ6(intoEl, node){
     goToNode(miniActGate ? 'Q10' : 'Q7');
   };
   btns.appendChild(cont);
+  /*__q6_touched__*/
+  try{
+    const rootQ6 = intoEl && (intoEl.querySelector('.mini-wrap') || intoEl) || document;
+    const elS = rootQ6.querySelector('#miniS');
+    const elC = rootQ6.querySelector('#miniC');
+    const elV = rootQ6.querySelector('#miniVal');
+    const elV2= rootQ6.querySelector('#miniVal2');
+    const elSX= rootQ6.querySelector('#miniSExtra');
+    const elCX= rootQ6.querySelector('#miniCExtra');
+    [elC, elV, elV2, elSX, elCX].forEach(f=>{ if(!f) return; f.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+    if (elS){
+      ['input','change'].forEach(evt=>{
+        elS.addEventListener(evt, function(){
+          if (elC && !elC.dataset.touched) elC.value = '';
+          if (elV && !elV.dataset.touched) elV.value = '';
+          if (elV2 && !elV2.dataset.touched) elV2.value = '';
+          if (elSX && !elSX.dataset.touched) elSX.value = '';
+          if (elCX && !elCX.dataset.touched) elCX.value = '';
+        });
+      });
+    }
+  }catch(_){}
 }
+
 
 /* ===========================================================
    Q7 — visualization-only mirror (draggable; inputs greyed)
@@ -1713,7 +1801,18 @@ function renderMiniQ7(intoEl, node){
   const noBtn = document.createElement('button'); noBtn.type='button'; noBtn.className='no'; noBtn.textContent='No';
   noBtn.onclick  = function(){ goToNode(node.no); };
   btns.appendChild(yesBtn); btns.appendChild(noBtn);
+  /*__q7_freeze__*/
+  try{
+    const root = intoEl && (intoEl.querySelector('.mini-wrap') || intoEl) || document;
+    root.querySelectorAll('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button').forEach(el => {
+      // keep graph controls active; disable form inputs
+      if (el.id === 'miniProbAddGroup') el.style.display='none';
+      el.disabled = true; if (el.tagName === 'INPUT') el.readOnly = true;
+      el.classList.add('mini-muted');
+    });
+  }catch(_){}
 }
+
 
 /* ======= STATE ======= */
 var currentThresholdPct = 90;
