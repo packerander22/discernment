@@ -3024,5 +3024,135 @@ function renderNode(node) {
 })();
 </script>
 
+
+<script id="mini-runtime-fixes">
+(function(){
+  function closest(el, sel){ while(el && el.nodeType===1){ if(el.matches(sel)) return el; el = el.parentElement; } return null; }
+  function qSel(root, sel){ return (root||document).querySelector(sel); }
+  function qAll(root, sel){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+
+  function getMiniRoot(idGuess){
+    // Try common anchors for Q6/Q7
+    var root = qSel(document, '#'+idGuess) || qSel(document, '[data-id="'+idGuess+'"]');
+    if (root && root.querySelector('.mini-wrap')) return root;
+    // Fallback: pick the section that contains #miniS label for q6 or a grayed section for q7
+    var s = qSel(document, '#miniS'); if (s) return closest(s, '.mini-wrap') || s.closest('.tile') || document.body;
+    return document.body;
+  }
+
+  function keepBaseProbabilityVisible(scope){
+    var unit = qSel(scope, '#miniMode');  // unit dropdown
+    var val  = qSel(scope, '#miniVal');   // base probability value
+    if (unit){ var uw = closest(unit, '.mini-field'); if (uw) uw.style.display=''; }
+    if (val){  var vw = closest(val, '.mini-field');  if (vw) vw.style.display=''; }
+  }
+
+  function removeDuplicateVaries(scope){
+    ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(function(sel){
+      var all = qAll(scope, sel);
+      if (all.length > 1){
+        for (var i=1;i<all.length;i++){
+          var wrap = closest(all[i], '.mini-field'); if (wrap) wrap.remove();
+        }
+      }
+    });
+  }
+
+  function wireBlankUntilEdited(scope){
+    var nums = qAll(scope, '.mini-field input[type="number"]');
+    nums.forEach(function(inp){
+      inp.addEventListener('input', function(){ this.dataset.touched='1'; });
+    });
+    var s = qSel(scope, '#miniS');
+    if (s){
+      s.addEventListener('input', function(){
+        nums.forEach(function(inp){
+          if (inp === s) return;
+          // don't clear Instances if present (id contains 'N' or label text nearby)
+          if (inp.id && /N\b/.test(inp.id)) return;
+          // if not user-edited, keep blank
+          if (!inp.dataset.touched) inp.value = '';
+        });
+      });
+    }
+  }
+
+  function fixProbabilityVaries(scope){
+    var cb = qSel(scope, '#miniProbVaries');
+    var mBox2 = qSel(scope, '#miniMode2') && closest(qSel(scope, '#miniMode2'), '.mini-field');
+    var vBox2 = qSel(scope, '#miniVal2')  && closest(qSel(scope, '#miniVal2'),  '.mini-field');
+    var gWrap = qSel(scope, '#miniProbGroups') && closest(qSel(scope, '#miniProbGroups'), '.mini-field');
+    function show(on){
+      if (mBox2) mBox2.style.display = on ? '' : 'none';
+      if (vBox2) vBox2.style.display = on ? '' : 'none';
+      if (gWrap) gWrap.style.display = on ? '' : 'none';
+    }
+    keepBaseProbabilityVisible(scope);
+    if (cb){
+      cb.addEventListener('change', function(){ keepBaseProbabilityVisible(scope); show(cb.checked); });
+      show(cb.checked);
+    } else {
+      show(false);
+    }
+  }
+
+  function fullWidth(scope){
+    // make inputs/selects stretch
+    qAll(scope, '.mini-field input, .mini-field select, .mini-field textarea').forEach(function(el){
+      el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box';
+    });
+    // prevent right overflow
+    var wrap = closest(qSel(scope, '.mini-field'), '.mini-wrap') || scope;
+    if (wrap){ wrap.style.width='100%'; wrap.style.maxWidth='100%'; wrap.style.overflow='hidden'; }
+    qAll(scope, 'svg').forEach(function(svg){ svg.style.maxWidth='100%'; svg.style.width='100%'; });
+  }
+
+  function freezeQ7(scope){
+    // Disable inputs/selects/buttons (leave graph)
+    qAll(scope, '.mini-field input, .mini-field select, .mini-field textarea, .mini-field button').forEach(function(el){
+      if (el.closest('svg')) return;
+      if (el.id === 'miniProbAddGroup') el.style.display='none';
+      el.disabled = true; if (el.tagName==='INPUT') el.readOnly = true;
+      el.classList.add('mini-muted');
+    });
+  }
+
+  function applyQ6(){
+    var root = getMiniRoot('q6-entry');
+    removeDuplicateVaries(root);
+    keepBaseProbabilityVisible(root);
+    fixProbabilityVaries(root);
+    wireBlankUntilEdited(root);
+    fullWidth(root);
+  }
+  function applyQ7(){
+    var root = getMiniRoot('q7-entry');
+    fullWidth(root);
+    freezeQ7(root);
+  }
+
+  // Run after load and also re-run if the app re-renders
+  function tryApply(){
+    applyQ6(); applyQ7();
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', tryApply);
+  } else {
+    tryApply();
+  }
+  // In case of re-renders, observe mutations and re-apply lightly
+  var obs = new MutationObserver(function(muts){
+    for (var i=0;i<muts.length;i++){
+      var t = muts[i].target;
+      if (t && (t.id==='q6-entry' || t.id==='q7-entry' || (t.dataset && (t.dataset.id==='q6' || t.dataset.id==='q7')))){
+        tryApply();
+        break;
+      }
+    }
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
 </body>
 </html>
