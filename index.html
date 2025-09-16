@@ -2695,10 +2695,12 @@ function renderNode(node) {
   }
 
   function hideStraysAggressive(root, stack){
-    // Hide ANY element with .mini-field not inside our stack
-    root.querySelectorAll('.mini-field').forEach(n => {
-      if (!stack.contains(n)) n.style.display = 'none';
+    // Only hide stray rows that are `.mini-field` and not our stack.
+    // Leave other children (graphs, verdict, buttons) alone.
+    root.querySelectorAll(':scope > .mini-field').forEach(n => {
+      if (!stack.contains(n) && n !== stack) n.style.display = 'none';
     });
+  });
     // Also hide direct children not part of stack
     Array.from(root.children).forEach(n => {
       if (n !== stack) n.style.display = 'none';
@@ -2974,9 +2976,7 @@ function renderNode(node) {
     ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
     if (el.groupsWrap) el.groupsWrap.style.display='none';
 
-    // Aggressively hide leftovers on Q7
-    const root = (intoEl.querySelector('.mini-wrap') || intoEl);
-    root.querySelectorAll('.mini-field').forEach(n => { if(!el.stack.contains(n)) n.style.display='none'; });
+    // Keep original non-field content visible on Q7.
     Array.from(root.children).forEach(n => { if (n !== el.stack) n.style.display='none'; });
   }
 
