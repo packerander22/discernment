@@ -494,6 +494,18 @@
   .toggle-label{font-size:.95rem;line-height:1.35;vertical-align:middle;margin-left:.35rem;}
 </style>
 
+
+<style id="mini-fix-css">
+  #q6-entry .mini-fields, #q7-entry .mini-fields { display:grid; grid-template-columns: 1fr !important; gap:14px; }
+  #q6-entry .mini-field input, #q6-entry .mini-field select,
+  #q7-entry .mini-field input, #q7-entry .mini-field select { width:100% !important; max-width:100% !important; box-sizing:border-box; }
+  .mini-wrap { width:100%; max-width:100%; overflow:hidden; }
+  .mini-svg { width:100%; height:auto; max-width:100%; }
+  /* Checkbox label sizing */
+  .mini-field label { font-size: 0.95rem; line-height: 1.35; }
+  .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -2834,6 +2846,25 @@ function renderNode(node) {
 
       const el = buildOneColumn(root, { id: 'q6' });
       const state = window.__q6State || { groups: [] };
+      /*__q6_blank_guard__*/
+      try{
+        const stack = el.stack || root;
+        // mark number inputs as touched on user edit
+        stack.querySelectorAll('input[type="number"]').forEach(inp=>{
+          inp.addEventListener('input', ()=>{ inp.dataset.touched = '1'; });
+        });
+        const s = stack.querySelector('#miniS');
+        if (s){
+          s.addEventListener('input', ()=>{
+            stack.querySelectorAll('input[type="number"]').forEach(inp=>{
+              if (inp === s) return;              // don't touch severity
+              if (el.N && inp === el.N) return;   // don't touch instances
+              if (!inp.dataset.touched) inp.value = '';
+            });
+          });
+        }
+      }catch(_){}
+    
       /*__blank_until_edit__*/
       try{
         const stack = el.stack || root;
