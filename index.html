@@ -472,6 +472,17 @@
   .mini-ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
   .mini-axes-label{font-weight:800; font-size:16px; fill: var(--text); opacity:.9}
   
+
+
+/* === Normalize disabled mini inputs to match active style (keep read-only cursor) === */
+.mini-field input[disabled],
+.mini-field select[disabled]{
+  opacity: 1;
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
 </style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
@@ -1235,9 +1246,15 @@ function renderMiniQ6(intoEl, node){
     if (mode==='percent'){ if (vv<=0) vv=0.000001; if (vv>=100) vv=99.999999; }
     if (mode==='micromort'){ if (vv<=0) vv=0.0001; if (vv>=1e6) vv=999999.99; }
 
-    elS.value = String(S); elC.value = String(C); elV.value = String(vv);
+    
+const sHad = String(elS.value||'').trim() !== '';
+const cHad = String(elC.value||'').trim() !== '';
+const vHad = String(elV.value||'').trim() !== '';
 
-    miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
+if (sHad) elS.value = String(S);
+if (cHad) elC.value = String(C);
+if (vHad) elV.value = String(vv);
+miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
     miniMaster.X_user = miniNormalizeToX(mode, vv);
   }
 
@@ -1251,8 +1268,8 @@ function renderMiniQ6(intoEl, node){
 
     // --- FIX: if we have values, don't treat as pristine ---
     if (window.miniPristine) {
-      const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
-      if (!hasAny) {
+      const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
+      if (!hasAll) {
         verdict.textContent = 'Enter values to see if action should be considered.';
         verdict.classList.remove('ok','no');
         handle.setAttribute('visibility','hidden');
@@ -1432,8 +1449,8 @@ function renderMiniQ6(intoEl, node){
 
   // If fields already have values (e.g., returning from AB2), compute once
   requestAnimationFrame(() => {
-    const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
-    if (hasAny) {
+    const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
+    if (hasAll) {
       window.miniPristine = false; // don't bail early in draw()
       snapInputs();                // clamp/normalize into miniMaster
       draw();                      // compute verdict + enable Continue
