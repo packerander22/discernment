@@ -2652,5 +2652,109 @@ function renderNode(node) {
 }
 
 </script>
+
+<script>
+// Clean wiring for Q6/Q7 after original renderers run
+(function(){
+  function bySel(root, sel){ return (root||document).querySelector(sel); }
+  function allSel(root, sel){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+  function slide(id){
+    return document.querySelector('[data-id="'+id+'"]') || document.getElementById(id) || null;
+  }
+  function rowOf(el){ return el ? (el.closest ? el.closest('.mini-field') : el.parentElement) : null; }
+
+  // Keep later fields blank until edited (Cost, Prob value, extra prob value)
+  function installTouchedGuards(root){
+    var c = bySel(root, '#miniC, input[name="cost"][data-q="C"]');
+    var pv = bySel(root, '#miniVal, input[name="probVal"], input[data-q="pVal"]');
+    var pv2 = bySel(root, '#miniVal2');
+    [c,pv,pv2].forEach(function(el){
+      if (!el) return;
+      el.addEventListener('input', function(){ this.dataset.touched = '1'; });
+    });
+    // When severity changes, keep others blank unless touched
+    var s = bySel(root, '#miniS, input[name="severity"], input[data-q="S"]');
+    if (s){
+      ['input','change'].forEach(function(evt){
+        s.addEventListener(evt, function(){
+          if (c && !c.dataset.touched) c.value = '';
+          if (pv && !pv.dataset.touched) pv.value = '';
+          if (pv2 && !pv2.dataset.touched) pv2.value = '';
+        });
+      });
+    }
+  }
+
+  function wireQ6Extras(root){
+    var n = bySel(root, '#miniN'); // instances
+    var cb = bySel(root, '#miniProbVaries'); // our inserted checkbox
+    var mode2 = bySel(root, '#miniMode2');
+    var val2  = bySel(root, '#miniVal2');
+    var extraModeRow = rowOf(mode2);
+    var extraValRow  = rowOf(val2);
+    var labelCb = cb ? cb.parentElement : null;
+
+    function setExtra(on){
+      if (extraModeRow) extraModeRow.style.display = on ? '' : 'none';
+      if (extraValRow)  extraValRow.style.display  = on ? '' : 'none';
+    }
+    function refresh(){
+      var N = Math.max(1, +(n && n.value) || 1);
+      var dis = (N===1);
+      if (cb){
+        cb.disabled = dis;
+        if (labelCb) labelCb.classList.toggle('mini-muted', dis);
+        if (dis) cb.checked = false;
+        setExtra(!dis && cb.checked);
+      } else {
+        setExtra(false);
+      }
+    }
+
+    if (cb) cb.addEventListener('change', refresh);
+    if (n) n.addEventListener('input', refresh);
+    refresh();
+  }
+
+  function freezeQ7(){
+    var s = slide('Q7');
+    if (!s) return;
+    var root = s.querySelector('.mini-wrap') || s;
+    var fields = allSel(root, '.mini-field input, .mini-field select, .mini-field textarea');
+    fields.forEach(function(el){ el.disabled = true; });
+    // Gray the mini area to match Q6 muted style
+    allSel(root, '.mini-heading, .hint, label').forEach(function(el){ el.classList.add('mini-muted'); });
+  }
+
+  // Monkey-patch the app's renderers to inject wiring right after original DOM is built
+  function patchRenderers(){
+    if (typeof window.renderMiniQ6 === 'function' && !window._patchedMiniQ6){
+      var _orig6 = window.renderMiniQ6;
+      window.renderMiniQ6 = function(intoEl, node){
+        _orig6(intoEl, node);
+        var root = (intoEl && (intoEl.querySelector('.mini-wrap') || intoEl)) || document;
+        installTouchedGuards(root);
+        wireQ6Extras(root);
+      };
+      window._patchedMiniQ6 = true;
+    }
+    if (typeof window.renderMiniQ7 === 'function' && !window._patchedMiniQ7){
+      var _orig7 = window.renderMiniQ7;
+      window.renderMiniQ7 = function(intoEl, node){
+        _orig7(intoEl, node);
+        freezeQ7();
+      };
+      window._patchedMiniQ7 = true;
+    }
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', patchRenderers);
+  } else {
+    patchRenderers();
+  }
+})();
+</script>
+
 </body>
 </html>
