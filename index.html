@@ -481,14 +481,6 @@
   gtag('js', new Date());
   gtag('config', 'G-VJSYRKHSRM');
 </script>
-
-<style id="mini-upgrade-css">
-/* Full-width & one-column mini layout; keep theme intact */
-.mini-wrap{width:100%;max-width:100%;box-sizing:border-box;}
-.mini-fields{display:grid;grid-template-columns:1fr;gap:14px;}
-.mini-field input,.mini-field select,.mini-field textarea{width:100%;max-width:100%;box-sizing:border-box;display:block;}
-</style>
-
 </head>
 <body>
 <div class="container">
@@ -1035,6 +1027,28 @@ function renderMiniQ6(intoEl, node){
   const vBox = document.createElement('div'); vBox.className='mini-field';
   vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000,000">';
   pRow.appendChild(mBox); pRow.appendChild(vBox);
+  // Add 'Varies across instances' for Probability (Q6)
+  const varyWrap = document.createElement('div'); varyWrap.className='mini-field';
+  varyWrap.innerHTML = '<label><input id="miniProbVaries" type="checkbox"> Varies across instances</label>';
+  const mBox2 = document.createElement('div'); mBox2.className='mini-field';
+  mBox2.innerHTML = '<label>Probability input mode (extra)</label>\
+    <select id="miniMode2">\
+      <option value="oneInX">1 in X</option>\
+      <option value="percent">Percentage (%)</option>\
+      <option value="micromort">Micromorts</option>\
+    </select>';
+  const vBox2 = document.createElement('div'); vBox2.className='mini-field';
+  vBox2.innerHTML = '<label id="miniProbLabel2">Enter X (for “1 in X”) (extra)</label><input id="miniVal2" type="number">';
+  mBox2.style.display = 'none'; vBox2.style.display = 'none';
+  pRow.appendChild(varyWrap);
+  pRow.appendChild(mBox2); pRow.appendChild(vBox2);
+
+  (function(){
+    const cb = document.getElementById('miniProbVaries');
+    function refresh(){ const on = !!cb.checked; mBox2.style.display = on ? '' : 'none'; vBox2.style.display = on ? '' : 'none'; }
+    if (cb){ cb.addEventListener('change', refresh); refresh(); }
+  })();
+
 
   wrap.appendChild(fields); wrap.appendChild(pRow);
 
@@ -1100,9 +1114,16 @@ function renderMiniQ6(intoEl, node){
   }
   updateProbLabelForMode(miniMaster.mode);
 
-  // keep later fields blank unless restored from saved state
-  if (!savedQ6) { elS.value=''; elC.value=''; elV.value=''; miniMaster.X_user = null; }
-
+  // hydrate or blank based on pristine
+  if (!window.miniPristine) {
+    if (!elS.value) elS.value = String(miniMaster.S);
+    if (!elC.value) elC.value = String(miniMaster.C);
+    if (!elV.value) elV.value = String(miniMaster.val);
+  } else {
+    if (!savedQ6) {
+      elS.value = ''; elC.value = ''; elV.value = '';
+      miniMaster.X_user = null;
+    }
   }
 
   // SVG layers (unchanged)
