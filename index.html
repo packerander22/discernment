@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- build: q7-readonly-fix 2025-09-17T22:46:02.764181Z -->
-
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment: A Decision-Making Guide</title>
@@ -1440,9 +1438,15 @@ miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
   wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
 
   // inputs: no snap-back while typing; we only redraw on blur/Enter
-  elS.addEventListener('input', ()=>{ window.miniPristine=false; });
-  elC.addEventListener('input', ()=>{ window.miniPristine=false; });
-  elV.addEventListener('input', ()=>{ window.miniPristine=false; });
+  function __maybeDirtyQ6(){
+  try{
+    const hasAll = [elS,elC,elV].every(el => el && String(el.value||'').trim() !== '');
+    if (hasAll) window.miniPristine = false;
+  }catch(_){/*noop*/}
+}
+elS.addEventListener('input', __maybeDirtyQ6);
+elC.addEventListener('input', __maybeDirtyQ6);
+elV.addEventListener('input', __maybeDirtyQ6);
 
   // Persist on any edit
   const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
@@ -1487,8 +1491,29 @@ function renderMiniQ7(intoEl, node){
   const local = { S: miniMaster.S, C: miniMaster.C, mode: miniMaster.mode, val: miniMaster.val, X_user: miniMaster.X_user };
 
   const wrap = document.createElement('div'); wrap.className = 'mini-wrap';
-  /* Q7 mirrors Q6 visually but is read-only; duplicate compact inputs removed */
-const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  const fields = document.createElement('div'); fields.className = 'mini-fields ';
+
+  const sBox = document.createElement('div'); sBox.className='mini-field';
+  sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS2" type="number" step="0.01" max="10" inputmode="decimal" disabled>';
+  const cBox = document.createElement('div'); cBox.className='mini-field';
+  cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC2" type="number" step="0.01" max="10" inputmode="decimal" disabled>';
+  fields.appendChild(sBox); fields.appendChild(cBox);
+
+  const pRow = document.createElement('div'); pRow.className='mini-fields ';
+  const mBox = document.createElement('div'); mBox.className='mini-field';
+  mBox.innerHTML = '<label>Probability input mode</label>\
+    <select id="miniMode2" disabled>\
+      <option value="oneInX">1 in X</option>\
+      <option value="percent">Percentage (%)</option>\
+      <option value="micromort">Micromorts</option>\
+    </select>';
+  const vBox = document.createElement('div'); vBox.className='mini-field';
+  vBox.innerHTML = '<label id="miniProbLabel2">Enter X (for “1 in X”)</label><input id="miniVal2" type="number" disabled>';
+  pRow.appendChild(mBox); pRow.appendChild(vBox);
+
+  wrap.appendChild(fields); wrap.appendChild(pRow);
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg'); svg.setAttribute('viewBox','0 0 940 620'); svg.style.overflow='visible';
   wrap.appendChild(svg);
 
@@ -1515,12 +1540,12 @@ const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   })
   wrap.appendChild(link);
   
-  const elS = null;
-const elC = null;
-const elM = null;
-const elV = null;
-const labV = null;
-const probName2 = wrap.querySelector('#miniProbName2');
+  const elS = wrap.querySelector('#miniS2');
+  const elC = wrap.querySelector('#miniC2');
+  const elM = wrap.querySelector('#miniMode2');
+  const elV = wrap.querySelector('#miniVal2');
+  const labV= wrap.querySelector('#miniProbLabel2');
+  const probName2 = wrap.querySelector('#miniProbName2');
 
   function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
   function yRange(mode){
@@ -1542,13 +1567,12 @@ const probName2 = wrap.querySelector('#miniProbName2');
     probName2.textContent = miniProbSymbol(mode);
   }
   function hydrate(){
-  // Display-only mirror; inputs were removed. Keep rule label in sync if present.
-  if (probName2) {
-    probName2.textContent = (local.mode === 'percent') ? '%' :
-                           (local.mode === 'micromort') ? 'micromorts' : 'X';
+    elS.value = String(local.S);
+    elC.value = String(local.C);
+    elM.value = local.mode;
+    elV.value = String(local.val);
+    setModeLabel(local.mode);
   }
-}
-
   hydrate();
 
   // layers
@@ -1665,7 +1689,7 @@ const probName2 = wrap.querySelector('#miniProbName2');
     vEl.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
     vEl.classList.toggle('ok', act); vEl.classList.toggle('no', !act);
 
-    /*removed*/ elS /*.value*/ = String(local.S); /*removed*/ elC /*.value*/ = String(local.C); /*removed*/ elM /*.value*/ = local.mode; /*removed*/ elV /*.value*/ = String(local.val);
+    elS.value = String(local.S); elC.value = String(local.C); elM.value = local.mode; elV.value = String(local.val);
   }
 
   // 2D drag with snapping (local copy only)
@@ -1712,7 +1736,7 @@ const probName2 = wrap.querySelector('#miniProbName2');
     if (local.mode==='oneInX') { if (valOut < 2) valOut = 2; }
     else if (local.mode==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
     else { if (valOut<=0) valOut=0.0001; if (valOut>=1e6) valOut=999999.99; }
-    /*removed*/ elS /*.value*/ =String(local.S); /*removed*/ elC /*.value*/ =String(local.C); /*removed*/ elV /*.value*/ =String(valOut);
+    elS.value=String(local.S); elC.value=String(local.C); elV.value=String(valOut);
 
     draw();
   }
