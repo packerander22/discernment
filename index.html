@@ -2998,25 +2998,6 @@ function renderNode(node) {
   // Hide any leftover rows not contained in the stack
   if (typeof killStrays === 'function' && el.stack) killStrays(root, el.stack);
 };
-      try {
-        if (el.N && state.N != null) el.N.value = state.N;
-        if (el.tgSev) el.tgSev.checked = !!state.tgSev;
-        if (el.tgCost) el.tgCost.checked = !!state.tgCost;
-        if (el.tgProb) el.tgProb.checked = !!state.tgProb;
-        if (el.sExtraVal && state.sExtraVal != null) el.sExtraVal.value = state.sExtraVal;
-        if (el.cExtraVal && state.cExtraVal != null) el.cExtraVal.value = state.cExtraVal;
-        if (el.pMode && state.pModeVal != null) el.pMode.value = state.pModeVal;
-        if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
-      } catch(_) {}
-
-      ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
-      if (el.groupsWrap) el.groupsWrap.style.display = 'none';
-
-      // Hide any leftover original rows too
-      const stack = root.querySelector('#q7-entry'); if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
-    };
-  }
-
   // AB2 untouched (leave original 'text')
 })();
 </script>
