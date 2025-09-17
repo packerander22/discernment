@@ -2681,8 +2681,7 @@ function renderNode(node) {
     width: 100%;
     max-width: none;
   }
-  #q7-entry input, #q7-entry select, #q7-entry button,
-  #q7-entry .hint { opacity: .6; pointer-events: none; }
+  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint { opacity: 1; pointer-events: none; }
   #q6-entry .muted { opacity: .6; }
   .mini-spacer { height: 6px; }
 </style>
@@ -2972,27 +2971,42 @@ function renderNode(node) {
       } catch(_) {}
 
       
-['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
-      
-// Mirror Q6 visibility on Q7 (frozen but identical layout)
+
+// ---- Cleanup: remove any original Q7 input groups that appear before the SVG ----
 (function(){
-  try{
+  var wrap = root; // mini-wrap
+  var svg = wrap.querySelector('svg');
+  if (svg) {
+    var c = svg.previousElementSibling;
+    while (c) {
+      var prev = c.previousElementSibling;
+      if (c.id !== 'q7-entry') c.style.display = 'none';
+      c = prev;
+    }
+  } else {
+    // No SVG yet; hide any pre-existing mini-fields except our mirrored stack
+    Array.prototype.slice.call(wrap.children).forEach(function(ch){
+      if (ch.id !== 'q7-entry' && ch.classList && (ch.classList.contains('mini-field') || ch.classList.contains('mini-fields'))) {
+        ch.style.display = 'none';
+      }
+    });
+  }
+})();
+
+// ---- Mirror Q6 show/hide rules on Q7 (but keep inputs frozen) ----
+(function(){
+  try {
     var N = Math.max(1, el.N ? (parseInt(el.N.value,10) || 1) : 1);
     var dis = (N === 1);
-
-    // match Q6 hide/show for extra S/C rows
-    if (el.sExtraWrap) { var showS = !dis && (el.tgSev && el.tgSev.checked); el.sExtraWrap.style.display = showS ? '' : 'none'; }
-    if (el.cExtraWrap) { var showC = !dis && (el.tgCost && el.tgCost.checked); el.cExtraWrap.style.display = showC ? '' : 'none'; }
-
-    // probability unit row stays visible (design fix carried over)
-    if (el.modeRow) el.modeRow.style.display = '';
-
-    // groups visible only when "varies" is checked and N>1
-    var showGroups = !dis && (el.tgProb && el.tgProb.checked);
-    if (el.groupsWrap) el.groupsWrap.style.display = showGroups ? '' : 'none';
-  }catch(e){}
+    if (el.sExtraWrap) el.sExtraWrap.style.display = (dis || !(el.tgSev && el.tgSev.checked)) ? 'none' : '';
+    if (el.cExtraWrap) el.cExtraWrap.style.display = (dis || !(el.tgCost && el.tgCost.checked)) ? 'none' : '';
+    if (el.modeRow) el.modeRow.style.display = ''; // always keep probability unit row visible like Q6
+    if (el.groupsWrap) el.groupsWrap.style.display = (dis || !(el.tgProb && el.tgProb.checked)) ? 'none' : '';
+  } catch (_) {}
 })();
-// Hide any leftover original rows too
+
+['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
+      // Hide any leftover original rows too
       const stack = root.querySelector('#q7-entry'); if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
     };
   }
@@ -3105,8 +3119,7 @@ function renderNode(node) {
 
     var groups = q('#miniProbGroups', root);
     if (groups){
-      
-groups.addEventListener('input', function(e){
+      groups.addEventListener('input', function(e){
         var target = e.target;
         if (!target || target.type !== 'number') return;
         var maxN = n && n.value ? parseInt(n.value,10) : null;
@@ -3123,16 +3136,7 @@ groups.addEventListener('input', function(e){
         }
       });
     }
-  
-// Also coerce any group count inputs to non-negative integers on blur
-qa('input[type="number"]', groups).forEach(function(inp){
-  inp.addEventListener('blur', function(){
-    var v = parseInt(this.value||'0',10);
-    if (!isFinite(v) || v < 0) v = 0;
-    this.value = String(v);
-  });
-});
-}
+  }
 
   function freezeQ7(scope){
     qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', scope).forEach(function(el){
