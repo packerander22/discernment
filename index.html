@@ -472,17 +472,6 @@
   .mini-ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
   .mini-axes-label{font-weight:800; font-size:16px; fill: var(--text); opacity:.9}
   
-
-
-/* === Normalize disabled mini inputs to match active style (keep read-only cursor) === */
-.mini-field input[disabled],
-.mini-field select[disabled]{
-  opacity: 1;
-  background: var(--card);
-  color: var(--text);
-  border-color: var(--border);
-  cursor: not-allowed;
-}
 </style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
@@ -1246,15 +1235,9 @@ function renderMiniQ6(intoEl, node){
     if (mode==='percent'){ if (vv<=0) vv=0.000001; if (vv>=100) vv=99.999999; }
     if (mode==='micromort'){ if (vv<=0) vv=0.0001; if (vv>=1e6) vv=999999.99; }
 
-    
-const sHad = String(elS.value||'').trim() !== '';
-const cHad = String(elC.value||'').trim() !== '';
-const vHad = String(elV.value||'').trim() !== '';
+    elS.value = String(S); elC.value = String(C); elV.value = String(vv);
 
-if (sHad) elS.value = String(S);
-if (cHad) elC.value = String(C);
-if (vHad) elV.value = String(vv);
-miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
+    miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
     miniMaster.X_user = miniNormalizeToX(mode, vv);
   }
 
@@ -1268,8 +1251,8 @@ miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
 
     // --- FIX: if we have values, don't treat as pristine ---
     if (window.miniPristine) {
-      const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
-      if (!hasAll) {
+      const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
+      if (!hasAny) {
         verdict.textContent = 'Enter values to see if action should be considered.';
         verdict.classList.remove('ok','no');
         handle.setAttribute('visibility','hidden');
@@ -1449,8 +1432,8 @@ miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
 
   // If fields already have values (e.g., returning from AB2), compute once
   requestAnimationFrame(() => {
-    const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
-    if (hasAll) {
+    const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
+    if (hasAny) {
       window.miniPristine = false; // don't bail early in draw()
       snapInputs();                // clamp/normalize into miniMaster
       draw();                      // compute verdict + enable Continue
@@ -2988,10 +2971,28 @@ function renderNode(node) {
         if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
       } catch(_) {}
 
-      ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
-      if (el.groupsWrap) el.groupsWrap.style.display = 'none';
+      
+['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
+      
+// Mirror Q6 visibility on Q7 (frozen but identical layout)
+(function(){
+  try{
+    var N = Math.max(1, el.N ? (parseInt(el.N.value,10) || 1) : 1);
+    var dis = (N === 1);
 
-      // Hide any leftover original rows too
+    // match Q6 hide/show for extra S/C rows
+    if (el.sExtraWrap) { var showS = !dis && (el.tgSev && el.tgSev.checked); el.sExtraWrap.style.display = showS ? '' : 'none'; }
+    if (el.cExtraWrap) { var showC = !dis && (el.tgCost && el.tgCost.checked); el.cExtraWrap.style.display = showC ? '' : 'none'; }
+
+    // probability unit row stays visible (design fix carried over)
+    if (el.modeRow) el.modeRow.style.display = '';
+
+    // groups visible only when "varies" is checked and N>1
+    var showGroups = !dis && (el.tgProb && el.tgProb.checked);
+    if (el.groupsWrap) el.groupsWrap.style.display = showGroups ? '' : 'none';
+  }catch(e){}
+})();
+// Hide any leftover original rows too
       const stack = root.querySelector('#q7-entry'); if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
     };
   }
@@ -3104,7 +3105,8 @@ function renderNode(node) {
 
     var groups = q('#miniProbGroups', root);
     if (groups){
-      groups.addEventListener('input', function(e){
+      
+groups.addEventListener('input', function(e){
         var target = e.target;
         if (!target || target.type !== 'number') return;
         var maxN = n && n.value ? parseInt(n.value,10) : null;
@@ -3121,7 +3123,16 @@ function renderNode(node) {
         }
       });
     }
-  }
+  
+// Also coerce any group count inputs to non-negative integers on blur
+qa('input[type="number"]', groups).forEach(function(inp){
+  inp.addEventListener('blur', function(){
+    var v = parseInt(this.value||'0',10);
+    if (!isFinite(v) || v < 0) v = 0;
+    this.value = String(v);
+  });
+});
+}
 
   function freezeQ7(scope){
     qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', scope).forEach(function(el){
