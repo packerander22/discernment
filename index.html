@@ -2974,7 +2974,8 @@ function renderNode(node) {
       _orig7(intoEl, node);
       const root = intoEl.querySelector('.mini-wrap') || intoEl;
       if (!root) return;
-      const el = buildOneColumn(root, { id: 'q7' });
+      // buildOneColumn disabled for Q7OneColumn disabled for Q7 (clone)
+// /* disabled:  */
 
       const state = window.__q6State || { groups: [] };
       try {
