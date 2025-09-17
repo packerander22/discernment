@@ -2971,13 +2971,33 @@ function renderNode(node) {
   if (typeof renderMiniQ7 === 'function') {
     const _orig7 = renderMiniQ7;
     renderMiniQ7 = function (intoEl, node) {
-      _orig7(intoEl, node);
-      const root = intoEl.querySelector('.mini-wrap') || intoEl;
-      if (!root) return;
-      // buildOneColumn disabled for Q7OneColumn disabled for Q7 (clone)
-// /* disabled:  */
+  _orig7(intoEl, node);
+  const root = intoEl.querySelector('.mini-wrap') || intoEl;
+  if (!root) return;
 
-      const state = window.__q6State || { groups: [] };
+  // Build the single-column stack for Q7 (clone of Q6's addition)
+  const el = buildOneColumn(root, { id: 'q7' });
+
+  // Restore values from Q6 state if available
+  const state = window.__q6State || { groups: [] };
+  try {
+    if (el.N && state.N != null) el.N.value = state.N;
+    if (el.tgSev) el.tgSev.checked = !!state.tgSev;
+    if (el.tgCost) el.tgCost.checked = !!state.tgCost;
+    if (el.tgProb) el.tgProb.checked = !!state.tgProb;
+    if (el.sExtraVal && state.sExtraVal != null) el.sExtraVal.value = state.sExtraVal;
+    if (el.cExtraVal && state.cExtraVal != null) el.cExtraVal.value = state.cExtraVal;
+    if (el.pMode && state.pModeVal != null) el.pMode.value = state.pModeVal;
+    if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
+  } catch (_) {}
+
+  // Freeze all inputs in Q7
+  ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
+  if (el.groupsWrap) el.groupsWrap.style.display = 'none';
+
+  // Hide any leftover rows not contained in the stack
+  if (typeof killStrays === 'function' && el.stack) killStrays(root, el.stack);
+};
       try {
         if (el.N && state.N != null) el.N.value = state.N;
         if (el.tgSev) el.tgSev.checked = !!state.tgSev;
