@@ -1482,7 +1482,7 @@ function renderMiniQ7(intoEl, node){
   const freeze = intoEl.querySelectorAll('input, select, textarea, button');
   freeze.forEach(el => {
     if (el.closest('#buttons')) return; // we'll manage buttons separately
-    if (el.tagName.toLowerCase() === 'button') return;
+    if (el.tagName && el.tagName.toLowerCase() === 'button') return;
     el.setAttribute('disabled', 'true');
     el.setAttribute('aria-readonly', 'true');
     el.classList.add('mini-muted');
@@ -1497,7 +1497,6 @@ function renderMiniQ7(intoEl, node){
   const btns = document.getElementById('buttons');
   if (btns){
     btns.innerHTML = '';
-
     function mkBtn(cls, label, dest){
       const b = document.createElement('button');
       b.className = cls;
@@ -1506,9 +1505,8 @@ function renderMiniQ7(intoEl, node){
       b.onclick = function(){ if (dest) goToNode(dest); };
       return b;
     }
-    // Q7 is a question with yes/no
     btns.appendChild(mkBtn('yes', 'Yes', node.yes || null));
-    btns.appendChild(mkBtn('no', 'No',   node.no  || null));
+    btns.appendChild(mkBtn('no',  'No',  node.no  || null));
   }
 }
 ;
