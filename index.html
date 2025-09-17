@@ -2971,42 +2971,17 @@ function renderNode(node) {
       } catch(_) {}
 
       
-
-// ---- Cleanup: remove any original Q7 input groups that appear before the SVG ----
-(function(){
-  var wrap = root; // mini-wrap
-  var svg = wrap.querySelector('svg');
-  if (svg) {
-    var c = svg.previousElementSibling;
-    while (c) {
-      var prev = c.previousElementSibling;
-      if (c.id !== 'q7-entry') c.style.display = 'none';
-      c = prev;
-    }
-  } else {
-    // No SVG yet; hide any pre-existing mini-fields except our mirrored stack
-    Array.prototype.slice.call(wrap.children).forEach(function(ch){
-      if (ch.id !== 'q7-entry' && ch.classList && (ch.classList.contains('mini-field') || ch.classList.contains('mini-fields'))) {
-        ch.style.display = 'none';
-      }
-    });
-  }
-})();
-
-// ---- Mirror Q6 show/hide rules on Q7 (but keep inputs frozen) ----
-(function(){
-  try {
-    var N = Math.max(1, el.N ? (parseInt(el.N.value,10) || 1) : 1);
-    var dis = (N === 1);
-    if (el.sExtraWrap) el.sExtraWrap.style.display = (dis || !(el.tgSev && el.tgSev.checked)) ? 'none' : '';
-    if (el.cExtraWrap) el.cExtraWrap.style.display = (dis || !(el.tgCost && el.tgCost.checked)) ? 'none' : '';
-    if (el.modeRow) el.modeRow.style.display = ''; // always keep probability unit row visible like Q6
-    if (el.groupsWrap) el.groupsWrap.style.display = (dis || !(el.tgProb && el.tgProb.checked)) ? 'none' : '';
-  } catch (_) {}
-})();
-
+// Mirror Q6 show/hide on Q7 (frozen)
+try {
+  var N = Math.max(1, el.N ? (parseInt(el.N.value,10) || 1) : 1);
+  var dis = (N === 1);
+  if (el.sExtraWrap) el.sExtraWrap.style.display = (dis || !(el.tgSev && el.tgSev.checked)) ? 'none' : '';
+  if (el.cExtraWrap) el.cExtraWrap.style.display = (dis || !(el.tgCost && el.tgCost.checked)) ? 'none' : '';
+  if (el.modeRow) el.modeRow.style.display = ''; // match Q6 (unit row visible)
+  if (el.groupsWrap) el.groupsWrap.style.display = (dis || !(el.tgProb && el.tgProb.checked)) ? 'none' : '';
+} catch(_) {}
 ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
-      // Hide any leftover original rows too
+// Hide any leftover original rows too
       const stack = root.querySelector('#q7-entry'); if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
     };
   }
@@ -3141,10 +3116,8 @@ function renderNode(node) {
   function freezeQ7(scope){
     qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', scope).forEach(function(el){
       if (up(el,'svg')) return;
-      if (el.id === 'miniProbAddGroup') el.style.display='none';
       el.disabled = true; if (el.tagName==='INPUT') el.readOnly = true;
-      el.classList.add('mini-muted');
-    });
+      });
   }
 
   function applyQ6(){
