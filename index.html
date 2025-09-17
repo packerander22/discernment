@@ -1438,15 +1438,9 @@ miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
   wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
 
   // inputs: no snap-back while typing; we only redraw on blur/Enter
-  function __maybeDirtyQ6(){
-  try{
-    const hasAll = [elS,elC,elV].every(el => el && String(el.value||'').trim() !== '');
-    if (hasAll) window.miniPristine = false;
-  }catch(_){/*noop*/}
-}
-elS.addEventListener('input', __maybeDirtyQ6);
-elC.addEventListener('input', __maybeDirtyQ6);
-elV.addEventListener('input', __maybeDirtyQ6);
+  elS.addEventListener('input', ()=>{ window.miniPristine=false; });
+  elC.addEventListener('input', ()=>{ window.miniPristine=false; });
+  elV.addEventListener('input', ()=>{ window.miniPristine=false; });
 
   // Persist on any edit
   const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
@@ -1481,17 +1475,46 @@ elV.addEventListener('input', __maybeDirtyQ6);
    Q7 — visualization-only mirror (draggable; inputs greyed)
 =========================================================== */
 function renderMiniQ7(intoEl, node){
-  intoEl.innerHTML = '';
+  // Render Q6 UI verbatim first (identical structure/markup/styles)
+  renderMiniQ6(intoEl, node);
 
-  const top = document.createElement('div');
-  top.className = 'mini-top';
-  top.innerHTML = node.text || '';
-  intoEl.appendChild(top);
+  // 1) Freeze all form controls inside this container
+  const freeze = intoEl.querySelectorAll('input, select, textarea, button');
+  freeze.forEach(el => {
+    if (el.closest('#buttons')) return; // we'll manage buttons separately
+    if (el.tagName.toLowerCase() === 'button') return;
+    el.setAttribute('disabled', 'true');
+    el.setAttribute('aria-readonly', 'true');
+    el.classList.add('mini-muted');
+  });
 
-  const local = { S: miniMaster.S, C: miniMaster.C, mode: miniMaster.mode, val: miniMaster.val, X_user: miniMaster.X_user };
+  // 2) Prevent graph interactions (no dragging/hover)
+  intoEl.querySelectorAll('.mini-svg,.mini-handle').forEach(svg => {
+    svg.style.pointerEvents = 'none';
+  });
+
+  // 3) Replace Q6's "Continue" with Q7's Yes/No buttons
+  const btns = document.getElementById('buttons');
+  if (btns){
+    btns.innerHTML = '';
+
+    function mkBtn(cls, label, dest){
+      const b = document.createElement('button');
+      b.className = cls;
+      b.type = 'button';
+      b.textContent = label;
+      b.onclick = function(){ if (dest) goToNode(dest); };
+      return b;
+    }
+    // Q7 is a question with yes/no
+    btns.appendChild(mkBtn('yes', 'Yes', node.yes || null));
+    btns.appendChild(mkBtn('no', 'No',   node.no  || null));
+  }
+}
+;
 
   const wrap = document.createElement('div'); wrap.className = 'mini-wrap';
-  const fields = document.createElement('div'); fields.className = 'mini-fields ';
+  const fields = document.createElement('div'); fields.className = 'mini-fields mini-muted';
 
   const sBox = document.createElement('div'); sBox.className='mini-field';
   sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS2" type="number" step="0.01" max="10" inputmode="decimal" disabled>';
@@ -1499,7 +1522,7 @@ function renderMiniQ7(intoEl, node){
   cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC2" type="number" step="0.01" max="10" inputmode="decimal" disabled>';
   fields.appendChild(sBox); fields.appendChild(cBox);
 
-  const pRow = document.createElement('div'); pRow.className='mini-fields ';
+  const pRow = document.createElement('div'); pRow.className='mini-fields mini-muted';
   const mBox = document.createElement('div'); mBox.className='mini-field';
   mBox.innerHTML = '<label>Probability input mode</label>\
     <select id="miniMode2" disabled>\
