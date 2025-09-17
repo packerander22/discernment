@@ -472,6 +472,17 @@
   .mini-ptlabel-bg{fill:var(--card);fill-opacity:.98;stroke:var(--border)}
   .mini-axes-label{font-weight:800; font-size:16px; fill: var(--text); opacity:.9}
   
+
+
+/* === Normalize disabled mini inputs to match active style (keep read-only cursor) === */
+.mini-field input[disabled],
+.mini-field select[disabled]{
+  opacity: 1;
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
 </style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VJSYRKHSRM"></script>
@@ -502,19 +513,6 @@
 <style id="mini-fix-css-ovr">
   #q6-entry, #q7-entry { max-width:100%; overflow-x:hidden; }
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
-</style>
-
-
-<style>
-/* Q7 disabled normalize */
-#q7-entry input[disabled],
-#q7-entry select[disabled],
-#q7-entry textarea[disabled]{
-  opacity: 1;
-  background: var(--card);
-  color: var(--text);
-  border-color: var(--border);
-}
 </style>
 
 </head>
@@ -1248,9 +1246,15 @@ function renderMiniQ6(intoEl, node){
     if (mode==='percent'){ if (vv<=0) vv=0.000001; if (vv>=100) vv=99.999999; }
     if (mode==='micromort'){ if (vv<=0) vv=0.0001; if (vv>=1e6) vv=999999.99; }
 
-    elS.value = String(S); elC.value = String(C); elV.value = String(vv);
+    
+const sHad = String(elS.value||'').trim() !== '';
+const cHad = String(elC.value||'').trim() !== '';
+const vHad = String(elV.value||'').trim() !== '';
 
-    miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
+if (sHad) elS.value = String(S);
+if (cHad) elC.value = String(C);
+if (vHad) elV.value = String(vv);
+miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
     miniMaster.X_user = miniNormalizeToX(mode, vv);
   }
 
@@ -1264,8 +1268,8 @@ function renderMiniQ6(intoEl, node){
 
     // --- FIX: if we have values, don't treat as pristine ---
     if (window.miniPristine) {
-      const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
-      if (!hasAny) {
+      const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
+      if (!hasAll) {
         verdict.textContent = 'Enter values to see if action should be considered.';
         verdict.classList.remove('ok','no');
         handle.setAttribute('visibility','hidden');
@@ -1445,8 +1449,8 @@ function renderMiniQ6(intoEl, node){
 
   // If fields already have values (e.g., returning from AB2), compute once
   requestAnimationFrame(() => {
-    const hasAny = [elS, elC, elV].some(el => el && String(el.value || '').trim() !== '');
-    if (hasAny) {
+    const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
+    if (hasAll) {
       window.miniPristine = false; // don't bail early in draw()
       snapInputs();                // clamp/normalize into miniMaster
       draw();                      // compute verdict + enable Continue
@@ -2694,7 +2698,8 @@ function renderNode(node) {
     width: 100%;
     max-width: none;
   }
-  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint { opacity: 1; pointer-events: none; }
+  #q7-entry input, #q7-entry select, #q7-entry button,
+  #q7-entry .hint { opacity: .6; pointer-events: none; }
   #q6-entry .muted { opacity: .6; }
   .mini-spacer { height: 6px; }
 </style>
@@ -2709,7 +2714,7 @@ function renderNode(node) {
   }
   function killStrays(root, stack) {
     // hide anything outside our stack to avoid leftover right-side fields
-    const kids = Array.from(root.querySelectorAll(':scope > .mini-field, :scope > .mini-fields'));
+    const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
     kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
   }
 
@@ -2983,30 +2988,11 @@ function renderNode(node) {
         if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
       } catch(_) {}
 
-      
-      // Place mirrored stack before the SVG and hide original input rows
-      (function(){
-        var wrap = root; // mini-wrap
-        var svg = wrap.querySelector('svg');
-        var stack = wrap.querySelector('#q7-entry');
-        if (svg && stack && stack !== svg.previousElementSibling) {
-          wrap.insertBefore(stack, svg);
-        }
-        // Hide original rows before svg (except our stack)
-        if (svg) {
-          var n = svg.previousElementSibling;
-          while (n) {
-            var prev = n.previousElementSibling;
-            if (n !== stack && (n.classList && (n.classList.contains('mini-field') || n.classList.contains('mini-fields')))) {
-              n.style.display = 'none';
-            }
-            n = prev;
-          }
-        }
-      })();
-    ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
-// Hide any leftover original rows too
-      const stack = root.querySelector('#q7-entry'); if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field, :scope > .mini-fields')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
+      ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
+      if (el.groupsWrap) el.groupsWrap.style.display = 'none';
+
+      // Hide any leftover original rows too
+      const stack = root.querySelector('#q7-entry'); if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
     };
   }
 
@@ -3140,8 +3126,10 @@ function renderNode(node) {
   function freezeQ7(scope){
     qa('.mini-field input, .mini-field select, .mini-field textarea, .mini-field button', scope).forEach(function(el){
       if (up(el,'svg')) return;
+      if (el.id === 'miniProbAddGroup') el.style.display='none';
       el.disabled = true; if (el.tagName==='INPUT') el.readOnly = true;
-      });
+      el.classList.add('mini-muted');
+    });
   }
 
   function applyQ6(){
