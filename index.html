@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Discernment: A Decision-Making Guide</title>
 
 <!-- 🔹 Preload the first-screen logo to avoid pop-in -->
@@ -515,6 +515,19 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
+<style>
+/* ===== Mini UX polish (dividers, focus, mobile) ===== */
+.mini-sep{margin:10px 0 8px;border-top:1px solid var(--border);opacity:.9}
+@media (max-width: 560px){
+  .mini-wrap{overflow:visible !important;}               /* let focus rings breathe */
+  .mini-field{padding:2px 1px;}                          /* avoid outline clipping */
+  .mini-field input[type="number"],
+  .mini-field input[type="text"],
+  .mini-field input[type="tel"],
+  .mini-field select,
+  .mini-field textarea{font-size:16px !important; outline-offset:2px; box-shadow:none;}
+}
+</style>
 </head>
 <body>
 <div class="container">
@@ -3302,5 +3315,165 @@ renderMiniQ6 = function (intoEl, node) {
 </script>
 
 
+
+<script>
+(function(){
+  /* ===== Title Case utility (keep small words lowercase when not first) ===== */
+  const SMALL_WORDS = new Set(['a','an','and','as','at','but','by','for','in','of','on','or','per','the','to','vs','via']);
+  function toTitleCase(s){
+    if(!s) return s;
+    return s.split(/\s+/).map((w,i)=>{
+      const lw=w.toLowerCase();
+      if(i>0 && SMALL_WORDS.has(lw)) return lw;
+      return w.charAt(0).toUpperCase()+w.slice(1);
+    }).join(' ');
+  }
+
+  /* ===== Probability UI config (includes Micromorts) ===== */
+  const PROB_UI = {
+    '1 in X': {
+      mainLabel: 'Enter X (for "1 in X")',
+      mainPlaceholder: 'e.g. 100,000',
+      groupPlaceholder: 'e.g. 100,000'
+    },
+    'Percentage (%)': {
+      mainLabel: 'Probability (%)',
+      mainPlaceholder: 'e.g. 0.5',
+      groupPlaceholder: 'e.g. 0.5'
+    },
+    'Micromorts': {
+      mainLabel: 'Probability (Micromorts)',
+      mainPlaceholder: 'e.g. 10',
+      groupPlaceholder: 'e.g. 10'
+    }
+  };
+
+  function q6Root(){
+    // Try common containers—kept permissive to survive markup tweaks
+    return document.querySelector('#q6-entry, #q6-entry-entry, [data-q="Q6"] .mini-wrap, [data-q="q6"] .mini-wrap, .mini-wrap');
+  }
+
+  function addDividers(root){
+    if(!root) return;
+    const names = ['Severity','Cost','Probability'];
+    const labels = [...root.querySelectorAll('.mini-field > label')];
+    const heads = labels.filter(l => names.includes((l.textContent||'').trim()));
+    heads.forEach((label,i)=>{
+      if(i===0) return; // Instances stays at top unseparated
+      const field = label.closest('.mini-field');
+      if(field && !field.previousElementSibling?.classList?.contains('mini-sep')){
+        const sep = document.createElement('div');
+        sep.className = 'mini-sep';
+        field.parentElement.insertBefore(sep, field);
+      }
+    });
+  }
+
+  function syncMainProbUI(root){
+    const labels = [...root.querySelectorAll('.mini-field > label')];
+    // Find "Probability Unit" select (case-insensitive)
+    const unitLabel = labels.find(l => (l.textContent||'').trim().toLowerCase() === 'probability unit');
+    const unitSel = unitLabel?.parentElement?.querySelector('select');
+    if(!unitSel) return;
+    const selVal = (unitSel.value||'').trim();
+    const cfg = PROB_UI[selVal] || PROB_UI['1 in X'];
+
+    // Main value label might currently be "Enter X ..." or "Probability (%)" etc
+    let valueLabel = labels.find(l => {
+      const t = (l.textContent||'').trim().toLowerCase();
+      return t.startsWith('enter x') || t.startsWith('probability (%)') || t.startsWith('probability (micromorts)');
+    });
+    if(valueLabel) valueLabel.textContent = cfg.mainLabel;
+
+    // Main value placeholder
+    const valueInput = valueLabel?.parentElement?.querySelector('input,textarea');
+    if(valueInput) valueInput.placeholder = cfg.mainPlaceholder;
+  }
+
+  function syncGroupProbUI(root){
+    // For each probability group, set placeholder to match its "Unit"
+    const groups = [...root.querySelectorAll('[data-prob-group], .mini-prob-group, .prob-group, [id^="miniProbGroup"], [class*="prob-group"]')];
+    groups.forEach(group => {
+      const labels = [...group.querySelectorAll('label')];
+      const unitLabel = labels.find(l => (l.textContent||'').trim().toLowerCase() === 'unit');
+      const unitSel = unitLabel?.parentElement?.querySelector('select');
+      const valueLabel = labels.find(l => (l.textContent||'').trim().toLowerCase() === 'value');
+      const valueInput = valueLabel?.parentElement?.querySelector('input,textarea');
+      const unit = (unitSel?.value||'1 in X').trim();
+      const cfg = PROB_UI[unit] || PROB_UI['1 in X'];
+      if(valueInput) valueInput.placeholder = cfg.groupPlaceholder;
+    });
+  }
+
+  function wireProbUI(root){
+    if(!root) return;
+    // main unit select
+    const labels = [...root.querySelectorAll('.mini-field > label')];
+    const unitLabel = labels.find(l => (l.textContent||'').trim().toLowerCase() === 'probability unit');
+    const unitSel = unitLabel?.parentElement?.querySelector('select');
+    if(unitSel){
+      unitSel.addEventListener('change', () => {
+        syncMainProbUI(root);
+      });
+    }
+    // delegated: per-group unit change
+    root.addEventListener('change', (e) => {
+      const t = e.target;
+      if(t && t.tagName === 'SELECT'){
+        const lbl = t.closest('.mini-field')?.querySelector('label');
+        if(lbl && (lbl.textContent||'').trim().toLowerCase() === 'unit'){
+          syncGroupProbUI(root);
+        }
+      }
+    });
+
+    // initial + observe for newly added groups
+    syncMainProbUI(root);
+    syncGroupProbUI(root);
+    const mo = new MutationObserver(() => syncGroupProbUI(root));
+    mo.observe(root, {childList:true, subtree:true});
+  }
+
+  function titleCaseQ6(root){
+    if(!root) return;
+    // Title-case buttons like "add probability group" -> "Add Probability Group"
+    const buttons = [...root.querySelectorAll('button')];
+    buttons.forEach(b => {
+      const txt = (b.textContent||'').trim();
+      if(!txt || txt.length <= 3) return; // skip short ones like Yes/No
+      if(/add|remove|group|probability|instances|severity|cost|probability unit|value|unit/i.test(txt)){
+        b.textContent = toTitleCase(txt);
+      }
+    });
+    // Title-case labels
+    const labels = [...root.querySelectorAll('.mini-field > label')];
+    labels.forEach(l => {
+      const t = (l.textContent||'').trim();
+      if(!t) return;
+      l.textContent = toTitleCase(t);
+    });
+  }
+
+  function enhanceQ6(){
+    const root = q6Root();
+    if(!root) return;
+    addDividers(root);
+    wireProbUI(root);
+    titleCaseQ6(root);
+  }
+
+  // Hook: apply when Q6 is navigated to
+  const _go = window.goToNode;
+  if(typeof _go === 'function'){
+    window.goToNode = function(id){
+      const r = _go.apply(this, arguments);
+      if(id === 'Q6' || id === 'q6') enhanceQ6();
+      return r;
+    };
+  }
+  // Also apply on initial render if Q6 is already visible
+  document.addEventListener('DOMContentLoaded', enhanceQ6);
+})();
+</script>
 </body>
 </html>
