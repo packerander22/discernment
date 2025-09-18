@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Discernment: A Decision-Making Guide</title>
 
 <!-- 🔹 Preload the first-screen logo to avoid pop-in -->
@@ -515,6 +515,12 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
+<style>.mini-sep{margin:6px 0 0;border-top:1px solid var(--border);opacity:.9}
+@media (max-width:560px){
+  .mini-wrap{overflow:visible !important; padding-right:4px;}
+  .mini-field{padding:4px 3px;}
+  .mini-field input,.mini-field select,.mini-field textarea{font-size:16px !important; outline-offset:2px; box-shadow:none;}
+}</style>
 </head>
 <body>
 <div class="container">
@@ -2806,7 +2812,7 @@ function buildOneColumn(root, opts) {
 
       const toggle = document.createElement('div');
       toggle.className = 'hint';
-      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
       stack.appendChild(toggle);
 
       stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
@@ -2837,12 +2843,15 @@ function buildOneColumn(root, opts) {
     }
 
     // Severity & Cost
+const __sepSev=document.createElement('div');__sepSev.className='mini-sep';stack.appendChild(__sepSev);
     const sev = makeSection('Severity',
       ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
       id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
+const __sepCost=document.createElement('div');__sepCost.className='mini-sep';stack.appendChild(__sepCost);
     const cost = makeSection('Cost',
       ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
       id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
+const __sepProb=document.createElement('div');__sepProb.className='mini-sep';stack.appendChild(__sepProb);
 
     // Probability
     const hP = document.createElement('div');
@@ -2852,7 +2861,7 @@ function buildOneColumn(root, opts) {
 
     const probToggle = document.createElement('div');
     probToggle.className = 'hint';
-    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
     stack.appendChild(probToggle);
 
     stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
@@ -2860,7 +2869,7 @@ function buildOneColumn(root, opts) {
     const modeRow = document.createElement('div');
     modeRow.className = 'mini-field';
     modeRow.id = id + 'ModeRow';
-    modeRow.innerHTML = '<label>Probability unit</label>';
+    modeRow.innerHTML = '<label>Probability Unit</label>';
     const modeSel = absorbOriginalRow(root, 'select[name="q6Units"]') ||
                     absorbOriginalRow(root, '#miniMode') ||
                     absorbOriginalRow(root, 'select[data-q="mode"]') ||
@@ -2885,7 +2894,7 @@ function buildOneColumn(root, opts) {
     groupsWrap.innerHTML =
       '<div id="' + id + 'Groups"></div>' +
       '<div class="mini-field" style="margin:0;padding:0">' +
-      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add probability group</button>' +
+      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add Probability Group</button>' +
       '</div>' +
       '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
     stack.appendChild(groupsWrap);
@@ -3099,6 +3108,20 @@ renderMiniQ6 = function (intoEl, node) {
             '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
             '<div class="mini-field"><button class="back" data-remove="'+i+'" type="button" style="width:100%">Remove</button></div>';
           el.groups.appendChild(wrap);
+    (function(){
+      var unitSel = wrap.querySelector('select[data-k="mode"]');
+      var valInput = wrap.querySelector('input[data-k="val"]') || wrap.querySelector('input[type="number"], input[type="text"]');
+      if (!unitSel || !valInput || unitSel.__phBound) return;
+      unitSel.__phBound = true;
+      function setPH(){
+        var v = unitSel.value || 'oneInX';
+        if (v === 'percent') valInput.placeholder = 'e.g. 0.5';
+        else if (v === 'micromort') valInput.placeholder = 'e.g. 10';
+        else valInput.placeholder = 'e.g. 100,000';
+      }
+      unitSel.addEventListener('change', setPH);
+      setPH();
+    })();
         });
         if (el.countMsg) el.countMsg.textContent='';
       }
@@ -3305,34 +3328,74 @@ renderMiniQ6 = function (intoEl, node) {
 
 <script>
 (function(){
-  if (typeof window.renderMiniQ7 === 'function' && !window.__q7Stripped) {
-    window.__q7Stripped = true;
-    const _orig7 = window.renderMiniQ7;
+  if (typeof window.renderMiniQ7 === 'function' && !window.__q7Strip){
+    window.__q7Strip = true;
+    const _q7 = window.renderMiniQ7;
     window.renderMiniQ7 = function(intoEl, node){
-      _orig7(intoEl, node);
+      _q7(intoEl, node);
       try{
         const root = (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) || intoEl || document;
         if (!root) return;
-
-        // Remove any row that has inputs/selects/textarea (labels + boxes)
+        // Remove rows that contain form fields
         Array.from(root.querySelectorAll('.mini-field')).forEach(row => {
           if (row.querySelector('input, select, textarea')) row.remove();
         });
-
-        // Remove addition/groups containers if present
-        const killSelectors = [
-          '[id$="GroupsWrap"]','[id$="-entry"]',
-          '#q7-entry-entry','#miniProbGroups',
-          '[data-prob-group]','.mini-prob-group','.prob-group'
-        ];
-        killSelectors.forEach(sel => {
-          root.querySelectorAll(sel).forEach(n => n.remove());
-        });
-
-        // Ensure any hints related to data entry are removed
+        // Remove groups/additions
+        ['[id$="GroupsWrap"]','[id$="-entry"]','#q7-entry-entry','#miniProbGroups','[data-prob-group]', '.mini-prob-group','.prob-group']
+          .forEach(sel => root.querySelectorAll(sel).forEach(n => n.remove()));
+        // Remove hints/helpers that reference entry
         root.querySelectorAll('.hint, .helper, .placeholder').forEach(n => {
           if (n.querySelector('input, select, textarea')) n.remove();
         });
+      }catch(e){}
+    };
+  }
+})();
+</script>
+
+<script>
+(function(){
+  if (typeof window.renderMiniQ6 === 'function' && !window.__q6Post){
+    window.__q6Post = true;
+    const _q6 = window.renderMiniQ6;
+    window.renderMiniQ6 = function(intoEl, node){
+      _q6(intoEl, node);
+      try{
+        const root = (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) || intoEl || document;
+        if (!root) return;
+        // Prevent old "disable Q6" behavior if present
+        // (We do not disable inputs or hide groups in Q6.)
+
+        // Main Probability unit/label/placeholder sync (supports oneInX/percent/micromort)
+        const unitSel = root.querySelector('select[data-k="pMode"]') || root.querySelector('select[name="pMode"]');
+        const valInput = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+        const valueLabel = valInput ? valInput.closest('.mini-field')?.querySelector('label') : null;
+        function setMainUI(){
+          const v = unitSel ? unitSel.value : 'oneInX';
+          if (!valueLabel) return;
+          if (v === 'percent'){ valueLabel.textContent='Probability (%)'; if (valInput) valInput.placeholder='e.g. 0.5'; }
+          else if (v === 'micromort'){ valueLabel.textContent='Probability (Micromorts)'; if (valInput) valInput.placeholder='e.g. 10'; }
+          else { valueLabel.textContent='Enter X (for "1 in X")'; if (valInput) valInput.placeholder='e.g. 100,000'; }
+        }
+        if (unitSel && !unitSel.__mainBound){ unitSel.addEventListener('change', setMainUI); unitSel.__mainBound=true; }
+        setMainUI();
+
+        // Title-case key labels (including Varies Across Instances) after render
+        const small = new Set(['a','an','and','as','at','but','by','for','in','of','on','or','per','the','to','vs','via']);
+        function toTitleCase(s){
+          if(!s) return s;
+          return String(s).split(/\s+/).map((w,i)=>{
+            const lw=w.toLowerCase();
+            if(i>0 && small.has(lw)) return lw;
+            return w.charAt(0).toUpperCase()+w.slice(1);
+          }).join(' ');
+        }
+        root.querySelectorAll('.mini-field > label').forEach(l=>{
+          const t=(l.textContent||'').trim();
+          if(!t) return;
+          l.textContent = toTitleCase(t);
+        });
+
       }catch(e){}
     };
   }
