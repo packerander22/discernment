@@ -2971,35 +2971,38 @@ function renderNode(node) {
   if (typeof renderMiniQ7 === 'function') {
     const _orig7 = renderMiniQ7;
     renderMiniQ7 = function (intoEl, node) {
+  // Build identical markup using Q6 renderer
   _orig7(intoEl, node);
   const root = intoEl.querySelector('.mini-wrap') || intoEl;
   if (!root) return;
 
-  // Build the single-column stack for Q7 (clone of Q6's addition)
-  const el = buildOneColumn(root, { id: 'q7' });
+  // Graph should be view-only
+  root.querySelectorAll('.mini-svg, .mini-handle, svg').forEach(el => { el.style.pointerEvents = 'none'; });
 
-  // Restore values from Q6 state if available
-  const state = window.__q6State || { groups: [] };
-  try {
-    if (el.N && state.N != null) el.N.value = state.N;
-    if (el.tgSev) el.tgSev.checked = !!state.tgSev;
-    if (el.tgCost) el.tgCost.checked = !!state.tgCost;
-    if (el.tgProb) el.tgProb.checked = !!state.tgProb;
-    if (el.sExtraVal && state.sExtraVal != null) el.sExtraVal.value = state.sExtraVal;
-    if (el.cExtraVal && state.cExtraVal != null) el.cExtraVal.value = state.cExtraVal;
-    if (el.pMode && state.pModeVal != null) el.pMode.value = state.pModeVal;
-    if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
-  } catch (_) {}
+  // Remove all entry rows (labels + inputs), hints, and addition stacks
+  Array.from(root.querySelectorAll('.mini-field, .hint')).forEach(row => {
+    if (row.querySelector('input, select, textarea')) row.remove();
+  });
+  ['[id$="GroupsWrap"]','[id$="-entry"]','#q7-entry-entry','#miniProbGroups'].forEach(sel => {
+    const n = root.querySelector(sel); if (n) n.remove();
+  });
 
-  // Freeze all inputs in Q7
-  ['N','tgSev','tgCost','tgProb','sExtraVal','cExtraVal','pMode','pVal'].forEach(k=>{ if (el[k]) el[k].disabled = true; });
-  if (el.groupsWrap) el.groupsWrap.style.display = 'none';
-
-  // Hide any leftover rows not contained in the stack
-  if (typeof killStrays === 'function' && el.stack) killStrays(root, el.stack);
+  // Replace footer with Yes/No only
+  const btns = document.getElementById('buttons');
+  if (btns){
+    btns.innerHTML = '';
+    function mk(label, cls, dest){
+      const b = document.createElement('button');
+      b.type='button'; b.className=cls; b.textContent=label;
+      b.onclick = function(){ if (dest) goToNode(dest); };
+      return b;
+    }
+    btns.appendChild(mk('Yes','yes', node.yes || null));
+    btns.appendChild(mk('No', 'no',  node.no  || null));
+  }
 };
-}
-  // AB2 untouched (leave original 'text')
+
+
 })();
 </script>
 
