@@ -2714,7 +2714,7 @@ function renderNode(node) {
       if (!root) return;
 
       // Graph should be view-only
-      root.querySelectorAll('.mini-svg, .mini-handle, svg').forEach(el => { el.style.pointerEvents = 'none'; });
+      // graph left interactive
 
       // Remove all entry rows (labels + inputs), hints, and addition stacks
       Array.from(root.querySelectorAll('.mini-field, .hint')).forEach(row => {
@@ -2731,7 +2731,30 @@ function renderNode(node) {
         function mk(label, cls, dest){
           const b = document.createElement('button');
           b.type='button'; b.className=cls; b.textContent=label;
-          b.onclick = function(){ if (dest) goToNode(dest); };
+          b.onclick = function(){ if (dest) goToNode(dest); 
+  // Q7 sandbox: snapshot miniMaster state and restore on navigation so Q6 values don't change
+  const __savedMini = window.miniMaster ? JSON.parse(JSON.stringify(window.miniMaster)) : null;
+  const __savedPristine = window.miniPristine;
+  function __restoreMini(){
+    try{
+      if (__savedMini) window.miniMaster = JSON.parse(JSON.stringify(__savedMini));
+      if (typeof __savedPristine !== 'undefined') window.miniPristine = __savedPristine;
+    }catch(_){}
+  }
+  // Wrap Yes/No buttons to restore before navigating
+  const buttonsEl = document.getElementById('buttons');
+  if (buttonsEl){
+    Array.from(buttonsEl.querySelectorAll('button')).forEach(b=>{
+      const dest = (b.textContent||'').toLowerCase();
+      b.addEventListener('click', __restoreMini, {capture:true});
+    });
+  }
+  // Also restore if user hits Back or AB2 link while on Q7
+  document.querySelectorAll('.back, a[href*="#AB2"]').forEach(a=>{
+    a.addEventListener('click', __restoreMini, {capture:true});
+  });
+
+};
           return b;
         }
         btns.appendChild(mk('Yes','yes', node.yes || null));
@@ -2743,6 +2766,374 @@ function renderNode(node) {
   // AB2 untouched (leave original 'text')
 })();
 </script>
+<script>
+(function(){
+function absorbOriginalRow(root, sel) {
+    const inp = root.querySelector(sel);
+    if (!inp) return null;
+    const row = inp.closest('.mini-field') || inp.parentElement;
+    if (row && row.parentElement) row.parentElement.removeChild(row);
+    return inp;
+  }
+
+function rootFor(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
+
+function buildOneColumn(root, opts) {
+    const id = opts.id;
+    let stack = root.querySelector('#' + id + '-entry');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = id + '-entry';
+      const anchor = root.querySelector('.mini-field');
+      if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(stack, anchor);
+      else root.prepend(stack);
+    } else {
+      stack.innerHTML = '';
+    }
+
+    // Instances
+    const nRow = document.createElement('div');
+    nRow.className = 'mini-field';
+    nRow.style.textAlign = 'left';
+    nRow.innerHTML = '<label>Total instances (N)</label><input id="' + id + 'N" type="number" min="1" step="1" value="1">';
+    stack.appendChild(nRow);
+
+    function makeSection(sectionTitle, selectors, baseId, placeholder, extraLabel, extraKind) {
+      const h = document.createElement('div');
+      h.className = 'mini-heading';
+      h.textContent = sectionTitle;
+      stack.appendChild(h);
+
+      const toggle = document.createElement('div');
+      toggle.className = 'hint';
+      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+      stack.appendChild(toggle);
+
+      stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+
+      const field = document.createElement('div');
+      field.className = 'mini-field';
+      field.innerHTML = '<label>' + extraLabel + '</label>';
+      // try a few selectors for Q6 and Q7 variants
+      const inputEl = absorbOriginalRow(root, selectors[0]) ||
+                      absorbOriginalRow(root, selectors[1]) ||
+                      absorbOriginalRow(root, selectors[2]) ||
+                      document.createElement('input');
+      if (!inputEl.type) inputEl.type = 'number';
+      inputEl.id = baseId;
+      inputEl.placeholder = placeholder;
+      field.appendChild(inputEl);
+      stack.appendChild(field);
+
+      const extra = document.createElement('div');
+      extra.className = 'mini-field';
+      extra.id = baseId + 'ExtraWrap';
+      extra.innerHTML =
+        '<div class="hint">Total extra ' + extraKind + ' across outliers (sum)</div>' +
+        '<input id="' + baseId + 'ExtraVal" type="number" step="any" placeholder="e.g. ' + (extraKind === 'severity' ? '3' : '2') + '">';
+      stack.appendChild(extra);
+
+      return { toggle, inputEl, extra };
+    }
+
+    // Severity & Cost
+    const sev = makeSection('Severity',
+      ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
+      id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
+    const cost = makeSection('Cost',
+      ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
+      id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
+
+    // Probability
+    const hP = document.createElement('div');
+    hP.className = 'mini-heading';
+    hP.textContent = 'Probability';
+    stack.appendChild(hP);
+
+    const probToggle = document.createElement('div');
+    probToggle.className = 'hint';
+    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+    stack.appendChild(probToggle);
+
+    stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+
+    const modeRow = document.createElement('div');
+    modeRow.className = 'mini-field';
+    modeRow.id = id + 'ModeRow';
+    modeRow.innerHTML = '<label>Probability unit</label>';
+    const modeSel = absorbOriginalRow(root, 'select[name="q6Units"]') ||
+                    absorbOriginalRow(root, '#miniMode') ||
+                    absorbOriginalRow(root, 'select[data-q="mode"]') ||
+                    document.createElement('select');
+    modeRow.appendChild(modeSel);
+    stack.appendChild(modeRow);
+
+    const pValRow = document.createElement('div');
+    pValRow.className = 'mini-field';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
+    const pVal = absorbOriginalRow(root, '#miniVal') ||
+                 absorbOriginalRow(root, 'input[name="probVal"]') ||
+                 absorbOriginalRow(root, 'input[data-q="pVal"]') ||
+                 document.createElement('input');
+    if (!pVal.type) pVal.type = 'number';
+    pValRow.appendChild(pVal);
+    stack.appendChild(pValRow);
+
+    const groupsWrap = document.createElement('div');
+    groupsWrap.id = id + 'GroupsWrap';
+    groupsWrap.className = 'mini-field';
+    groupsWrap.innerHTML =
+      '<div id="' + id + 'Groups"></div>' +
+      '<div class="mini-field" style="margin:0;padding:0">' +
+      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add probability group</button>' +
+      '</div>' +
+      '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
+    stack.appendChild(groupsWrap);
+
+    // hide any leftover original rows not moved
+    killStrays(root, stack);
+
+    return {
+      stack,
+      N: stack.querySelector('#' + id + 'N'),
+      tgSev: sev.toggle.querySelector('input'),
+      tgCost: cost.toggle.querySelector('input'),
+      tgProb: probToggle.querySelector('input'),
+      sExtraWrap: sev.extra,
+      cExtraWrap: cost.extra,
+      sExtraVal: sev.extra.querySelector('input'),
+      cExtraVal: cost.extra.querySelector('input'),
+      groupsWrap, groups: groupsWrap.querySelector('#' + id + 'Groups'),
+      addGroup: groupsWrap.querySelector('#' + id + 'AddGroup'),
+      countMsg: groupsWrap.querySelector('#' + id + 'CountMsg'),
+      pMode: modeSel, pVal: pVal,
+      modeRow: modeRow
+    };
+  }
+
+function dedupeVaries(scope){
+    ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(function(sel){
+      var all = qa(sel, scope);
+      for (var i=1;i<all.length;i++){ var w = up(all[i], '.mini-field'); if (w) w.remove(); }
+    });
+  }
+
+function keepBaseProbabilityVisible(scope){
+    var unit = q('#miniMode', scope), val  = q('#miniVal', scope);
+    var uw = unit && up(unit, '.mini-field'); var vw = val && up(val, '.mini-field');
+    if (uw) uw.style.display = ''; if (vw) vw.style.display = '';
+  }
+
+function wireProbabilityVaries(scope){
+    keepBaseProbabilityVisible(scope);
+    var cb    = q('#miniProbVaries', scope);
+    var mBox2 = q('#miniMode2', scope) && up(q('#miniMode2', scope), '.mini-field');
+    var vBox2 = q('#miniVal2',  scope) && up(q('#miniVal2',  scope), '.mini-field');
+    var gWrap = q('#miniProbGroups', scope) && up(q('#miniProbGroups', scope), '.mini-field');
+    function show(on){
+      if (mBox2) mBox2.style.display = on ? '' : 'none';
+      if (vBox2) vBox2.style.display = on ? '' : 'none';
+      if (gWrap) gWrap.style.display  = on ? '' : 'none';
+    }
+    if (cb){ cb.addEventListener('change', function(){ keepBaseProbabilityVisible(scope); show(cb.checked); }); show(!!cb.checked); }
+    else { show(false); }
+  }
+
+function blankUntilEdited(scope){
+    var root = scope || document;
+    var nums = qa('.mini-field input[type="number"]', root);
+    nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+
+    var s = q('#miniS', root);
+    var n = findInstancesInput(root);
+
+    function clearUntouched(){
+      qa('.mini-field input[type="number"]', root).forEach(function(inp){
+        if (inp === s) return;
+        if (n && inp === n) return;
+        if (!inp.dataset.touched) inp.value = '';
+      });
+    }
+
+    if (s){
+      ['input','change'].forEach(function(evt){
+        s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
+      });
+    }
+
+    if (n){
+      n.addEventListener('input', function(){
+        var digits = String(this.value||'').replace(/[^0-9]/g, '');
+        this.value = digits;
+      });
+      n.addEventListener('blur', function(){
+        if (this.value === '') return;
+        var v = parseInt(this.value,10); if (!isFinite(v) || v < 1) v = 1;
+        this.value = String(v);
+      });
+    }
+
+    var groups = q('#miniProbGroups', root);
+    if (groups){
+      groups.addEventListener('input', function(e){
+        var target = e.target;
+        if (!target || target.type !== 'number') return;
+        var maxN = n && n.value ? parseInt(n.value,10) : null;
+        if (!maxN) return;
+        var inputs = qa('input[type="number"]', groups);
+        var sum = 0;
+        for (var i=0;i<inputs.length;i++){
+          var v = parseInt(inputs[i].value||'0',10) || 0;
+          if (inputs[i] === target){
+            if (sum + v > maxN){ inputs[i].value = String(Math.max(0, maxN - sum)); }
+            v = parseInt(inputs[i].value||'0',10) || 0;
+          }
+          sum += v;
+        }
+      });
+    }
+  }
+
+function ensureFullWidth(scope){
+    try{
+      var root = scope || document;
+      qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
+        if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
+      });
+      var wrap = root.querySelector('.mini-wrap');
+      if (wrap && wrap.style){
+        wrap.style.width='100%';
+        wrap.style.maxWidth='100%';
+        wrap.style.overflowX='hidden';
+        wrap.style.overflowY='visible';
+      }
+      qa('svg', root).forEach(function(svg){
+        if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
+      });
+    }catch(e){}
+  }
+
+function killStrays(root, stack) {
+    // hide anything outside our stack to avoid leftover right-side fields
+    const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
+    kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
+  }
+
+const _orig6 = renderMiniQ6;
+renderMiniQ6 = function (intoEl, node) {
+      _orig6(intoEl, node);
+      const root = intoEl.querySelector('.mini-wrap') || intoEl;
+      if (!root) return;
+
+      const el = buildOneColumn(root, { id: 'q6' });
+      const state = window.__q6State || { groups: [] };
+
+      // restore
+      try {
+        if (el.N && state.N != null) el.N.value = state.N;
+        if (el.tgSev) el.tgSev.checked = !!state.tgSev;
+        if (el.tgCost) el.tgCost.checked = !!state.tgCost;
+        if (el.tgProb) el.tgProb.checked = !!state.tgProb;
+        if (el.sExtraVal && state.sExtraVal != null) el.sExtraVal.value = state.sExtraVal;
+        if (el.cExtraVal && state.cExtraVal != null) el.cExtraVal.value = state.cExtraVal;
+        if (el.pMode && state.pModeVal != null) el.pMode.value = state.pModeVal;
+        if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
+        if (state.groups && state.groups.length) setTimeout(()=>drawGroups(),0);
+      } catch(_) {}
+
+      function setHidden(e,on){ if(e){ e.style.display=on?'none':''; e.classList.toggle('hidden',on);} }
+      function setGrey(row,on){ if(row) row.classList.toggle('muted', on); }
+
+      function refreshVisibility(){
+        const N = Math.max(1, el.N ? (el.N.valueAsNumber || 1) : 1);
+        const dis = (N === 1);
+
+        [el.tgSev, el.tgCost, el.tgProb].forEach(cb=>{
+          if (!cb) return;
+          cb.disabled = dis;
+          setGrey(cb.parentElement, dis);
+          if (dis) cb.checked = false;
+        });
+
+        setHidden(el.sExtraWrap, dis || !el.tgSev || !el.tgSev.checked);
+        setHidden(el.cExtraWrap, dis || !el.tgCost || !el.tgCost.checked);
+
+        const hideGroups = dis || !el.tgProb || !el.tgProb.checked;
+        setHidden(el.groupsWrap, hideGroups);
+        if (el.addGroup) { el.addGroup.disabled = hideGroups; el.addGroup.classList.toggle('muted', hideGroups); }
+
+        // FIX: hide probability unit row ONLY when varies is checked; show otherwise
+        setHidden(el.modeRow, false);
+
+        if (dis || !(el.tgSev && el.tgSev.checked)) if (el.sExtraVal) el.sExtraVal.value='';
+        if (dis || !(el.tgCost && el.tgCost.checked)) if (el.cExtraVal) el.cExtraVal.value='';
+        if (dis || !(el.tgProb && el.tgProb.checked)) { state.groups=[]; if (el.groups) el.groups.innerHTML=''; if (el.countMsg) el.countMsg.textContent=''; }
+
+        // persist
+        window.__q6State = {
+          N: el.N ? el.N.value : 1,
+          tgSev: el.tgSev ? el.tgSev.checked : false,
+          tgCost: el.tgCost ? el.tgCost.checked : false,
+          tgProb: el.tgProb ? el.tgProb.checked : false,
+          sExtraVal: el.sExtraVal ? el.sExtraVal.value : null,
+          cExtraVal: el.cExtraVal ? el.cExtraVal.value : null,
+          pModeVal: el.pMode ? el.pMode.value : null,
+          pVal: el.pVal ? el.pVal.value : null,
+          groups: JSON.parse(JSON.stringify(state.groups || []))
+        };
+      }
+
+      function drawGroups(){
+        if (!el.groups) return;
+        el.groups.innerHTML='';
+        (state.groups || []).forEach((g,i)=>{
+          const wrap=document.createElement('div');
+          wrap.className='mini-fields';
+          wrap.innerHTML =
+            '<div class="mini-field"><label>Group '+(i+1)+' count</label><input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'"></div>'+
+            '<div class="mini-field"><label>Unit</label><select data-i="'+i+'" data-k="mode">'+
+            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>'+
+            '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>'+
+            '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>'+
+            '</select></div>'+
+            '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
+            '<div class="mini-field"><button class="back" data-remove="'+i+'" type="button" style="width:100%">Remove</button></div>';
+          el.groups.appendChild(wrap);
+        });
+        if (el.countMsg) el.countMsg.textContent='';
+      }
+
+      ['input','change'].forEach(evt=>{
+        [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal]
+          .forEach(x => x && x.addEventListener(evt, refreshVisibility));
+      });
+      if (el.addGroup) el.addGroup.addEventListener('click', ()=>{
+        (state.groups = state.groups || []).push({count:0, mode:(el.pMode && el.pMode.value) || 'oneInX', val:null});
+        drawGroups(); refreshVisibility();
+      });
+      if (el.groups) {
+        el.groups.addEventListener('input', e=>{
+          const t=e.target, i=+t.dataset.i; if(!Number.isFinite(i)) return;
+          const k=t.dataset.k;
+          if (k==='count') state.groups[i].count = t.value===''?0:(t.value|0);
+          if (k==='mode')  state.groups[i].mode  = t.value;
+          if (k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
+          const used = (state.groups||[]).reduce((s,g)=>s+(g.count|0),0);
+          if (el.countMsg && el.N) el.countMsg.textContent = used > (el.N.value|0) ? 'Group counts exceed N ('+used+'/'+el.N.value+').' : '';
+          refreshVisibility();
+        });
+        el.groups.addEventListener('click', e=>{
+          const idx = e.target.dataset.remove;
+          if (idx != null) { state.groups.splice(+idx,1); drawGroups(); refreshVisibility(); }
+        });
+      }
+
+      drawGroups();
+      refreshVisibility();
+    }
+})();
+</script>
+
 
 
 
