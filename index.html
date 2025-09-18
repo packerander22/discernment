@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Discernment: A Decision-Making Guide</title>
 
 <!-- 🔹 Preload the first-screen logo to avoid pop-in -->
@@ -515,7 +515,6 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style>.mini-sep{margin:6px 0 2px;border-top:1px solid var(--border);opacity:.9}</style>
 </head>
 <body>
 <div class="container">
@@ -2706,20 +2705,80 @@ function renderNode(node) {
 </style>
 <script>
 (function () {
-  function absorbOriginalRow(root, sel) {
+  // Q7 read-only mirror: strip all entry fields, keep graph/rule/verdict/link, replace footer with Yes/No
+  if (typeof renderMiniQ7 === 'function') {
+    const _orig7 = renderMiniQ7;
+    renderMiniQ7 = function (intoEl, node) {
+      _orig7(intoEl, node);
+      const root = intoEl.querySelector('.mini-wrap') || intoEl;
+      if (!root) return;
+
+      // Graph should be view-only
+      // graph left interactive
+
+      // Remove all entry rows (labels + inputs), hints, and addition stacks
+      Array.from(root.querySelectorAll('.mini-field, .hint')).forEach(row => {
+        if (row.querySelector('input, select, textarea')) row.remove();
+      });
+      ['[id$="GroupsWrap"]','[id$="-entry"]','#q7-entry-entry','#miniProbGroups'].forEach(sel => {
+        const n = root.querySelector(sel); if (n) n.remove();
+      });
+
+      // Replace footer with Yes/No only
+      const btns = document.getElementById('buttons');
+      if (btns){
+        btns.innerHTML = '';
+        function mk(label, cls, dest){
+          const b = document.createElement('button');
+          b.type='button'; b.className=cls; b.textContent=label;
+          b.onclick = function(){ if (dest) goToNode(dest); 
+  // Q7 sandbox: snapshot miniMaster state and restore on navigation so Q6 values don't change
+  const __savedMini = window.miniMaster ? JSON.parse(JSON.stringify(window.miniMaster)) : null;
+  const __savedPristine = window.miniPristine;
+  function __restoreMini(){
+    try{
+      if (__savedMini) window.miniMaster = JSON.parse(JSON.stringify(__savedMini));
+      if (typeof __savedPristine !== 'undefined') window.miniPristine = __savedPristine;
+    }catch(_){}
+  }
+  // Wrap Yes/No buttons to restore before navigating
+  const buttonsEl = document.getElementById('buttons');
+  if (buttonsEl){
+    Array.from(buttonsEl.querySelectorAll('button')).forEach(b=>{
+      const dest = (b.textContent||'').toLowerCase();
+      b.addEventListener('click', __restoreMini, {capture:true});
+    });
+  }
+  // Also restore if user hits Back or AB2 link while on Q7
+  document.querySelectorAll('.back, a[href*="#AB2"]').forEach(a=>{
+    a.addEventListener('click', __restoreMini, {capture:true});
+  });
+
+};
+          return b;
+        }
+        btns.appendChild(mk('Yes','yes', node.yes || null));
+        btns.appendChild(mk('No', 'no',  node.no  || null));
+      }
+    };
+  }
+
+  // AB2 untouched (leave original 'text')
+})();
+</script>
+<script>
+(function(){
+function absorbOriginalRow(root, sel) {
     const inp = root.querySelector(sel);
     if (!inp) return null;
     const row = inp.closest('.mini-field') || inp.parentElement;
     if (row && row.parentElement) row.parentElement.removeChild(row);
     return inp;
   }
-  function killStrays(root, stack) {
-    // hide anything outside our stack to avoid leftover right-side fields
-    const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
-    kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
-  }
 
-  function buildOneColumn(root, opts) {
+function rootFor(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
+
+function buildOneColumn(root, opts) {
     const id = opts.id;
     let stack = root.querySelector('#' + id + '-entry');
     if (!stack) {
@@ -2747,7 +2806,7 @@ function renderNode(node) {
 
       const toggle = document.createElement('div');
       toggle.className = 'hint';
-      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
       stack.appendChild(toggle);
 
       stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
@@ -2778,15 +2837,12 @@ function renderNode(node) {
     }
 
     // Severity & Cost
-const __sepSev=document.createElement('div');__sepSev.className='mini-sep';stack.appendChild(__sepSev);
     const sev = makeSection('Severity',
       ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
       id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
-const __sepCost=document.createElement('div');__sepCost.className='mini-sep';stack.appendChild(__sepCost);
     const cost = makeSection('Cost',
       ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
       id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
-const __sepProb=document.createElement('div');__sepProb.className='mini-sep';stack.appendChild(__sepProb);
 
     // Probability
     const hP = document.createElement('div');
@@ -2796,7 +2852,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const probToggle = document.createElement('div');
     probToggle.className = 'hint';
-    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
     stack.appendChild(probToggle);
 
     stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
@@ -2804,7 +2860,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
     const modeRow = document.createElement('div');
     modeRow.className = 'mini-field';
     modeRow.id = id + 'ModeRow';
-    modeRow.innerHTML = '<label>Probability Unit</label>';
+    modeRow.innerHTML = '<label>Probability unit</label>';
     const modeSel = absorbOriginalRow(root, 'select[name="q6Units"]') ||
                     absorbOriginalRow(root, '#miniMode') ||
                     absorbOriginalRow(root, 'select[data-q="mode"]') ||
@@ -2829,7 +2885,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
     groupsWrap.innerHTML =
       '<div id="' + id + 'Groups"></div>' +
       '<div class="mini-field" style="margin:0;padding:0">' +
-      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add Probability Group</button>' +
+      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add probability group</button>' +
       '</div>' +
       '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
     stack.appendChild(groupsWrap);
@@ -2855,10 +2911,116 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
     };
   }
 
-  // Q6
-  if (typeof renderMiniQ6 === 'function') {
-    const _orig6 = renderMiniQ6;
-    renderMiniQ6 = function (intoEl, node) {
+function dedupeVaries(scope){
+    ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(function(sel){
+      var all = qa(sel, scope);
+      for (var i=1;i<all.length;i++){ var w = up(all[i], '.mini-field'); if (w) w.remove(); }
+    });
+  }
+
+function keepBaseProbabilityVisible(scope){
+    var unit = q('#miniMode', scope), val  = q('#miniVal', scope);
+    var uw = unit && up(unit, '.mini-field'); var vw = val && up(val, '.mini-field');
+    if (uw) uw.style.display = ''; if (vw) vw.style.display = '';
+  }
+
+function wireProbabilityVaries(scope){
+    keepBaseProbabilityVisible(scope);
+    var cb    = q('#miniProbVaries', scope);
+    var mBox2 = q('#miniMode2', scope) && up(q('#miniMode2', scope), '.mini-field');
+    var vBox2 = q('#miniVal2',  scope) && up(q('#miniVal2',  scope), '.mini-field');
+    var gWrap = q('#miniProbGroups', scope) && up(q('#miniProbGroups', scope), '.mini-field');
+    function show(on){
+      if (mBox2) mBox2.style.display = on ? '' : 'none';
+      if (vBox2) vBox2.style.display = on ? '' : 'none';
+      if (gWrap) gWrap.style.display  = on ? '' : 'none';
+    }
+    if (cb){ cb.addEventListener('change', function(){ keepBaseProbabilityVisible(scope); show(cb.checked); }); show(!!cb.checked); }
+    else { show(false); }
+  }
+
+function blankUntilEdited(scope){
+    var root = scope || document;
+    var nums = qa('.mini-field input[type="number"]', root);
+    nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+
+    var s = q('#miniS', root);
+    var n = findInstancesInput(root);
+
+    function clearUntouched(){
+      qa('.mini-field input[type="number"]', root).forEach(function(inp){
+        if (inp === s) return;
+        if (n && inp === n) return;
+        if (!inp.dataset.touched) inp.value = '';
+      });
+    }
+
+    if (s){
+      ['input','change'].forEach(function(evt){
+        s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
+      });
+    }
+
+    if (n){
+      n.addEventListener('input', function(){
+        var digits = String(this.value||'').replace(/[^0-9]/g, '');
+        this.value = digits;
+      });
+      n.addEventListener('blur', function(){
+        if (this.value === '') return;
+        var v = parseInt(this.value,10); if (!isFinite(v) || v < 1) v = 1;
+        this.value = String(v);
+      });
+    }
+
+    var groups = q('#miniProbGroups', root);
+    if (groups){
+      groups.addEventListener('input', function(e){
+        var target = e.target;
+        if (!target || target.type !== 'number') return;
+        var maxN = n && n.value ? parseInt(n.value,10) : null;
+        if (!maxN) return;
+        var inputs = qa('input[type="number"]', groups);
+        var sum = 0;
+        for (var i=0;i<inputs.length;i++){
+          var v = parseInt(inputs[i].value||'0',10) || 0;
+          if (inputs[i] === target){
+            if (sum + v > maxN){ inputs[i].value = String(Math.max(0, maxN - sum)); }
+            v = parseInt(inputs[i].value||'0',10) || 0;
+          }
+          sum += v;
+        }
+      });
+    }
+  }
+
+function ensureFullWidth(scope){
+    try{
+      var root = scope || document;
+      qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
+        if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
+      });
+      var wrap = root.querySelector('.mini-wrap');
+      if (wrap && wrap.style){
+        wrap.style.width='100%';
+        wrap.style.maxWidth='100%';
+        wrap.style.overflowX='hidden';
+        wrap.style.overflowY='visible';
+      }
+      qa('svg', root).forEach(function(svg){
+        if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
+      });
+    }catch(e){}
+  }
+
+function killStrays(root, stack) {
+    // hide anything outside our stack to avoid leftover right-side fields
+    const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
+    kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
+  }
+
+const _orig6 = renderMiniQ6;
+renderMiniQ6 = function (intoEl, node) {
       _orig6(intoEl, node);
       const root = intoEl.querySelector('.mini-wrap') || intoEl;
       if (!root) return;
@@ -2878,56 +3040,6 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
         if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
         if (state.groups && state.groups.length) setTimeout(()=>drawGroups(),0);
       } catch(_) {}
-
-      // Sync main Probability label & placeholder (units: oneInX / percent / micromort)
-      (function(){
-        if (!el || el.__mainSyncBound) return;
-        el.__mainSyncBound = true;
-        const unitSel = el.pMode, valInput = el.pVal;
-        const label = valInput ? valInput.closest('.mini-field')?.querySelector('label') : null;
-        function setMainUI(){
-          const v = (unitSel && unitSel.value) ? unitSel.value : 'oneInX';
-          if (!label) return;
-          if (v === 'percent'){ label.textContent='Probability (%)'; if (valInput) valInput.placeholder='e.g. 0.5'; }
-          else if (v === 'micromort'){ label.textContent='Probability (Micromorts)'; if (valInput) valInput.placeholder='e.g. 10'; }
-          else { label.textContent='Enter X (for "1 in X")'; if (valInput) valInput.placeholder='e.g. 100,000'; }
-        }
-        if (unitSel && !unitSel.__bound){ unitSel.addEventListener('change', setMainUI); unitSel.__bound=true; }
-        setMainUI();
-      })();
-
-      // === Dividers before Severity / Cost / Probability ===
-      (function(){
-        const labels = Array.from(root.querySelectorAll('.mini-field > label'));
-        function insertBeforeLabel(text){
-          const lbl = labels.find(l => (l.textContent||'').trim() === text);
-          if (!lbl) return;
-          const field = lbl.closest('.mini-field');
-          if (field && (!field.previousElementSibling || !field.previousElementSibling.classList || !field.previousElementSibling.classList.contains('mini-sep'))){
-            const sep = document.createElement('div'); sep.className='mini-sep';
-            field.parentElement.insertBefore(sep, field);
-          }
-        }
-        insertBeforeLabel('Severity');
-        insertBeforeLabel('Cost');
-        insertBeforeLabel('Probability');
-      })();
-
-      // === Main Probability label & placeholder sync (oneInX / percent / micromort) ===
-      (function(){
-        const unitSel = el.pMode;
-        const valInput = el.pVal;
-        const valueLabel = valInput ? valInput.closest('.mini-field')?.querySelector('label') : null;
-        function setMainUI(){
-          const v = (unitSel && unitSel.value) ? unitSel.value : 'oneInX';
-          if (!valueLabel) return;
-          if (v === 'percent'){ valueLabel.textContent='Probability (%)'; if (valInput) valInput.placeholder='e.g. 0.5'; }
-          else if (v === 'micromort'){ valueLabel.textContent='Probability (Micromorts)'; if (valInput) valInput.placeholder='e.g. 10'; }
-          else { valueLabel.textContent='Enter X (for "1 in X")'; if (valInput) valInput.placeholder='e.g. 100,000'; }
-        }
-        if (unitSel && !unitSel.__mainBound){ unitSel.addEventListener('change', setMainUI); unitSel.__mainBound=true; }
-        setMainUI();
-      })();
 
       function setHidden(e,on){ if(e){ e.style.display=on?'none':''; e.classList.toggle('hidden',on);} }
       function setGrey(row,on){ if(row) row.classList.toggle('muted', on); }
@@ -2987,34 +3099,6 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
             '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
             '<div class="mini-field"><button class="back" data-remove="'+i+'" type="button" style="width:100%">Remove</button></div>';
           el.groups.appendChild(wrap);
-    (function(){
-      var unitSel = wrap.querySelector('select[data-k="mode"]');
-      var valInput = wrap.querySelector('input[data-k="val"]') || wrap.querySelector('input[type="number"], input[type="text"]');
-      if (!unitSel || !valInput || unitSel.__phBound) return;
-      unitSel.__phBound = true;
-      function setPH(){
-        var v = unitSel.value || 'oneInX';
-        if (v === 'percent') valInput.placeholder = 'e.g. 0.5';
-        else if (v === 'micromort') valInput.placeholder = 'e.g. 10';
-        else valInput.placeholder = 'e.g. 100,000';
-      }
-      unitSel.addEventListener('change', setPH);
-      setPH();
-    })();
-          // set group Value placeholder by its Unit
-          (function(){
-            var unitSel = wrap.querySelector('select[data-k="mode"]');
-            var valInput = wrap.querySelector('input[data-k="val"]') || wrap.querySelector('input[type="number"], input[type="text"]');
-            function setPH(){
-              var v = unitSel ? unitSel.value : 'oneInX';
-              if (!valInput) return;
-              if (v === 'percent') valInput.placeholder = 'e.g. 0.5';
-              else if (v === 'micromort') valInput.placeholder = 'e.g. 10';
-              else valInput.placeholder = 'e.g. 100,000';
-            }
-            if (unitSel && !unitSel.__phBound){ unitSel.addEventListener('change', setPH); unitSel.__phBound=true; }
-            setPH();
-          })();
         });
         if (el.countMsg) el.countMsg.textContent='';
       }
@@ -3046,39 +3130,10 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
       drawGroups();
       refreshVisibility();
-    };
-  }
-
-  // Q7 (read-only mirror; hide leftovers)
-  if (typeof renderMiniQ7 === 'function') {
-    const _orig7 = renderMiniQ7;
-    renderMiniQ7 = function (intoEl, node) {
-      _orig7(intoEl, node);
-      const root = intoEl.querySelector('.mini-wrap') || intoEl;
-      if (!root) return;
-      const el = buildOneColumn(root, { id: 'q7' });
-
-      const state = window.__q6State || { groups: [] };
-      try {
-        if (el.N && state.N != null) el.N.value = state.N;
-        if (el.tgSev) el.tgSev.checked = !!state.tgSev;
-        if (el.tgCost) el.tgCost.checked = !!state.tgCost;
-        if (el.tgProb) el.tgProb.checked = !!state.tgProb;
-        if (el.sExtraVal && state.sExtraVal != null) el.sExtraVal.value = state.sExtraVal;
-        if (el.cExtraVal && state.cExtraVal != null) el.cExtraVal.value = state.cExtraVal;
-        if (el.pMode && state.pModeVal != null) el.pMode.value = state.pModeVal;
-        if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
-      } catch(_) {}
-
-      /* Q6 editable; groups visible */
-
-      /* keep original rows for Q6 */if (stack) { const kids = Array.from(root.querySelectorAll(':scope > .mini-field')); kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });}
-    };
-  }
-
-  // AB2 untouched (leave original 'text')
+    }
 })();
 </script>
+
 
 
 
@@ -3247,5 +3302,41 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 </script>
 
 
+
+<script>
+(function(){
+  if (typeof window.renderMiniQ7 === 'function' && !window.__q7Stripped) {
+    window.__q7Stripped = true;
+    const _orig7 = window.renderMiniQ7;
+    window.renderMiniQ7 = function(intoEl, node){
+      _orig7(intoEl, node);
+      try{
+        const root = (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) || intoEl || document;
+        if (!root) return;
+
+        // Remove any row that has inputs/selects/textarea (labels + boxes)
+        Array.from(root.querySelectorAll('.mini-field')).forEach(row => {
+          if (row.querySelector('input, select, textarea')) row.remove();
+        });
+
+        // Remove addition/groups containers if present
+        const killSelectors = [
+          '[id$="GroupsWrap"]','[id$="-entry"]',
+          '#q7-entry-entry','#miniProbGroups',
+          '[data-prob-group]','.mini-prob-group','.prob-group'
+        ];
+        killSelectors.forEach(sel => {
+          root.querySelectorAll(sel).forEach(n => n.remove());
+        });
+
+        // Ensure any hints related to data entry are removed
+        root.querySelectorAll('.hint, .helper, .placeholder').forEach(n => {
+          if (n.querySelector('input, select, textarea')) n.remove();
+        });
+      }catch(e){}
+    };
+  }
+})();
+</script>
 </body>
 </html>
