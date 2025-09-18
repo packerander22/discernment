@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Discernment: A Decision-Making Guide</title>
 
 <!-- 🔹 Preload the first-screen logo to avoid pop-in -->
@@ -2747,7 +2747,7 @@ function renderNode(node) {
 
       const toggle = document.createElement('div');
       toggle.className = 'hint';
-      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
       stack.appendChild(toggle);
 
       stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
@@ -2778,12 +2778,15 @@ function renderNode(node) {
     }
 
     // Severity & Cost
+const __sepSev=document.createElement('div');__sepSev.className='mini-sep';stack.appendChild(__sepSev);
     const sev = makeSection('Severity',
       ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
       id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
+const __sepCost=document.createElement('div');__sepCost.className='mini-sep';stack.appendChild(__sepCost);
     const cost = makeSection('Cost',
       ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
       id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
+const __sepProb=document.createElement('div');__sepProb.className='mini-sep';stack.appendChild(__sepProb);
 
     // Probability
     const hP = document.createElement('div');
@@ -2793,7 +2796,7 @@ function renderNode(node) {
 
     const probToggle = document.createElement('div');
     probToggle.className = 'hint';
-    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies across instances</span>';
+    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
     stack.appendChild(probToggle);
 
     stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
@@ -2801,7 +2804,7 @@ function renderNode(node) {
     const modeRow = document.createElement('div');
     modeRow.className = 'mini-field';
     modeRow.id = id + 'ModeRow';
-    modeRow.innerHTML = '<label>Probability unit</label>';
+    modeRow.innerHTML = '<label>Probability Unit</label>';
     const modeSel = absorbOriginalRow(root, 'select[name="q6Units"]') ||
                     absorbOriginalRow(root, '#miniMode') ||
                     absorbOriginalRow(root, 'select[data-q="mode"]') ||
@@ -2826,7 +2829,7 @@ function renderNode(node) {
     groupsWrap.innerHTML =
       '<div id="' + id + 'Groups"></div>' +
       '<div class="mini-field" style="margin:0;padding:0">' +
-      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add probability group</button>' +
+      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add Probability Group</button>' +
       '</div>' +
       '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
     stack.appendChild(groupsWrap);
@@ -2875,6 +2878,23 @@ function renderNode(node) {
         if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
         if (state.groups && state.groups.length) setTimeout(()=>drawGroups(),0);
       } catch(_) {}
+
+      // Sync main Probability label & placeholder (units: oneInX / percent / micromort)
+      (function(){
+        if (!el || el.__mainSyncBound) return;
+        el.__mainSyncBound = true;
+        const unitSel = el.pMode, valInput = el.pVal;
+        const label = valInput ? valInput.closest('.mini-field')?.querySelector('label') : null;
+        function setMainUI(){
+          const v = (unitSel && unitSel.value) ? unitSel.value : 'oneInX';
+          if (!label) return;
+          if (v === 'percent'){ label.textContent='Probability (%)'; if (valInput) valInput.placeholder='e.g. 0.5'; }
+          else if (v === 'micromort'){ label.textContent='Probability (Micromorts)'; if (valInput) valInput.placeholder='e.g. 10'; }
+          else { label.textContent='Enter X (for "1 in X")'; if (valInput) valInput.placeholder='e.g. 100,000'; }
+        }
+        if (unitSel && !unitSel.__bound){ unitSel.addEventListener('change', setMainUI); unitSel.__bound=true; }
+        setMainUI();
+      })();
 
       // === Dividers before Severity / Cost / Probability ===
       (function(){
@@ -2967,6 +2987,20 @@ function renderNode(node) {
             '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
             '<div class="mini-field"><button class="back" data-remove="'+i+'" type="button" style="width:100%">Remove</button></div>';
           el.groups.appendChild(wrap);
+    (function(){
+      var unitSel = wrap.querySelector('select[data-k="mode"]');
+      var valInput = wrap.querySelector('input[data-k="val"]') || wrap.querySelector('input[type="number"], input[type="text"]');
+      if (!unitSel || !valInput || unitSel.__phBound) return;
+      unitSel.__phBound = true;
+      function setPH(){
+        var v = unitSel.value || 'oneInX';
+        if (v === 'percent') valInput.placeholder = 'e.g. 0.5';
+        else if (v === 'micromort') valInput.placeholder = 'e.g. 10';
+        else valInput.placeholder = 'e.g. 100,000';
+      }
+      unitSel.addEventListener('change', setPH);
+      setPH();
+    })();
           // set group Value placeholder by its Unit
           (function(){
             var unitSel = wrap.querySelector('select[data-k="mode"]');
