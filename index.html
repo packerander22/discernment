@@ -3416,20 +3416,34 @@ renderMiniQ6 = function (intoEl, node) {
     setPlaceholder();
   }
 
-  // Ensure <div class="mini-sep"> exists before Severity/Cost/Probability headings
+  // Ensure <div class="mini-sep"> exists exactly once before each section heading
   function ensureDividers(root){
-    const labels = root.querySelectorAll('.mini-field > label, .mini-heading, label');
-    ['severity','cost','probability'].forEach(name=>{
-      const h = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name);
-      if (!h) return;
+    if (!root) return;
+  
+    // Use the actual heading elements rather than matching by text
+    const headings = root.querySelectorAll('.mini-heading');
+    headings.forEach(h=>{
       const parent = h.parentElement;
       if (!parent) return;
-      const prev = parent.previousElementSibling;
-      if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
+  
+      // Walk *backward from the heading* collecting contiguous .mini-sep siblings
+      const toRemove = [];
+      let prev = h.previousElementSibling;
+      while (prev && prev.classList && prev.classList.contains('mini-sep')){
+        toRemove.push(prev);
+        prev = prev.previousElementSibling;
+      }
+  
+      if (toRemove.length === 0){
+        // No divider immediately before -> insert one
         const sep = document.createElement('div');
         sep.className = 'mini-sep';
         parent.insertBefore(sep, h);
+      } else if (toRemove.length > 1){
+        // More than one stacked -> keep the one closest to the heading, remove the rest
+        toRemove.slice(1).forEach(el => el.remove());
       }
+      // If exactly one exists right before, do nothing
     });
   }
 
