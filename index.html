@@ -515,37 +515,30 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style>.mini-sep { margin: 6px 0 0; border-top: 1px solid var(--border); opacity: .9; }
-@media (max-width:560px){
-  .mini-wrap{overflow:visible !important; padding-right:4px;}
-  .mini-field{padding:4px 3px;}
-  .mini-field input,.mini-field select,.mini-field textarea{font-size:16px !important; outline-offset:2px; box-shadow:none;}
-}</style>
-
 <style>
-/* === Discernment mini: divider + mobile polish (drop-in) === */
-.mini-sep { margin: 6px 0 0; border-top: 1px solid var(--border); opacity: .9; }
-.mini-sep + .mini-field > label{margin-top:2px !important;}
-@media (max-width:560px){
-  .mini-wrap{overflow:visible !important; padding-right:4px;}
-  .mini-field{padding:4px 3px;}
-  .mini-field input,.mini-field select,.mini-field textarea{font-size:16px !important; outline-offset:2px; box-shadow:none;}
-}
-</style>
-<style>
+  /* === mini separators & mobile trim (Q6/Q7) === */
+  .mini-sep { margin: 6px 0 0; border-top: 1px solid var(--border); opacity: .9; }
 
-/* === mini separators & mobile polish === */
-.mini-sep { margin:6px 0 0; border-top:1px solid var(--border); opacity:.9; }
-.mini-sep + .mini-field > label{margin-top:2px !important;}
-@media (max-width:560px){
-  .mini-wrap{overflow:visible !important; padding-right:4px;}
-  .mini-field{padding:4px 3px;}
-  .mini-field input,.mini-field select,.mini-field textarea{
-    font-size:16px !important; outline-offset:2px; box-shadow:none;
+  /* Trim the first heading immediately after a divider (even if there’s a wrapper) */
+  .mini-sep + .mini-field > label,
+  .mini-sep + * .mini-field:first-child > label { margin-top: 2px !important; }
+
+  /* Keep the section’s first row snug under the divider */
+  .mini-sep + .mini-field,
+  .mini-sep + * .mini-field:first-child { margin-top: 0 !important; padding-top: 2px !important; }
+
+  /* Mobile polish: avoid clipped focus + iOS zoom-on-focus */
+  @media (max-width:560px){
+    .mini-wrap { overflow: visible !important; padding-right: 4px; }
+    .mini-field { padding: 4px 3px; }
+    .mini-field input, .mini-field select, .mini-field textarea {
+      font-size: 16px !important; /* prevents iOS zoom */
+      outline-offset: 2px;
+      box-shadow: none;
+    }
   }
-}
-
 </style>
+
 </head>
 <body>
 <div class="container">
@@ -3426,196 +3419,101 @@ renderMiniQ6 = function (intoEl, node) {
   }
 })();
 
-
-// === Q6 unit label & placeholder sync (drop-in) ===
-
-) || null;
-  }
-
-  function setUI(){
-    const valueLbl = findProbValueLabel();
-    const mode = unitSel ? unitSel.value : 'oneInX';
-
-    if (valueLbl){
-      if (mode === 'percent')      valueLbl.textContent = 'Probability (%)';
-      else if (mode === 'micromort') valueLbl.textContent = 'Probability (Micromorts)';
-      else                          valueLbl.textContent = 'Enter X (for \"1 in X\")';
-    }
-    if (valInput){
-      valInput.placeholder =
-        mode === 'percent'   ? 'e.g. 0.5' :
-        mode === 'micromort' ? 'e.g. 10'  :
-                               'e.g. 100,000';
-    }
-  }
-
-  if (unitSel && !unitSel.__boundEcho2){
-    unitSel.addEventListener('change', setUI);
-    unitSel.__boundEcho2 = true;
-  }
-  setUI();
-}
-
-function setUI(){
-    const mode = unitSel ? unitSel.value : 'oneInX';
-    if (valueLbl){
-      if (mode === 'percent'){ valueLbl.textContent = 'Probability (%)'; }
-      else if (mode === 'micromort'){ valueLbl.textContent = 'Probability (Micromorts)'; }
-      else { valueLbl.textContent = 'Enter X (for "1 in X")'; }
-    }
-    if (unitEcho){
-      unitEcho.textContent =
-        mode === 'percent'   ? 'Unit: Percentage (%)' :
-        mode === 'micromort' ? 'Unit: Micromorts'     :
-                               'Unit: 1 in X';
-    }
-    if (valInput){
-      valInput.placeholder =
-        mode === 'percent'   ? 'e.g. 0.5' :
-        mode === 'micromort' ? 'e.g. 10'  :
-                               'e.g. 100,000';
-    }
-  }
-
-  if (unitSel && !unitSel.__boundEcho){
-    unitSel.addEventListener('change', setUI);
-    unitSel.__boundEcho = true;
-  }
-  setUI();
-}
-
-if (window.goToNode){
-  const _go = window.goToNode;
-  window.goToNode = function(id){
-    const r = _go.apply(this, arguments);
-    if (id === 'Q6' || id === 'q6') tryWireQ6();
-    return r;
-  };
-}
-document.addEventListener('DOMContentLoaded', tryWireQ6);
-
-
-/* === Q6 unit label & placeholder sync (robust IIFE) === */
+/* === Q6 unit label + placeholder sync + ensure dividers (brace-safe) === */
 (function(){
-  function wireQ6UnitLabels(root){
-    if (!root) return;
-    const unitSel  = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-    const valInput = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+  var wired = false;
 
-    function findProbValueLabel(){
-      const cands = Array.from(root.querySelectorAll('.mini-field > label, label'));
-      return cands.find(l => {
-        const t = (l.textContent || '').trim().toLowerCase();
-        return t.startsWith('enter x') || t.startsWith('probability (%)') || t.startsWith('probability (micromorts)');
-      }) || null;
+  function findQ6Root(){
+    return document.querySelector('[data-q="Q6"] .mini-wrap')
+        || document.querySelector('#q6-entry')
+        || document.querySelector('#q6-entry-entry')
+        || document.querySelector('[id*="q6"] .mini-wrap');
+  }
+
+  function labelForValue(root){
+    var val = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+    if (!val) return null;
+    var field = val.closest('.mini-field');
+    if (field){
+      var direct = field.querySelector('label');
+      if (direct) return direct;
     }
-
-    function setUI(){
-      const valueLbl = findProbValueLabel();
-      const mode = unitSel ? unitSel.value : 'oneInX';
-      if (valueLbl){
-        if (mode === 'percent')       { valueLbl.textContent = 'Probability (%)'; }
-        else if (mode === 'micromort'){ valueLbl.textContent = 'Probability (Micromorts)'; }
-        else                          { valueLbl.textContent = 'Enter X (for \"1 in X\")'; }
-      }
-      if (valInput){
-        valInput.placeholder =
-          mode === 'percent'   ? 'e.g. 0.5' :
-          mode === 'micromort' ? 'e.g. 10'  :
-                                 'e.g. 100,000';
-      }
-    }
-
-    if (unitSel && !unitSel.__boundEcho2){
-      unitSel.addEventListener('change', setUI);
-      unitSel.__boundEcho2 = true;
-    }
-    setUI();
+    // Fallback: any label that looks like the Probability/Enter-X label
+    return Array.from(root.querySelectorAll('.mini-field > label, label')).find(function(l){
+      var t = (l.textContent || '').trim().toLowerCase();
+      return t.startsWith('enter x') || t.startsWith('probability (%)') || t.startsWith('probability (micromorts)');
+    }) || null;
   }
 
-  function tryWireQ6(){
-    const root =
-      document.querySelector('[data-q=\"Q6\"] .mini-wrap') ||
-      document.querySelector('#q6-entry') ||
-      document.querySelector('#q6-entry-entry') ||
-      document.querySelector('[id*=\"q6\"] .mini-wrap');
-    if (root) wireQ6UnitLabels(root);
-  }
-
-  if (window.goToNode){
-    const _go = window.goToNode;
-    window.goToNode = function(id){
-      const r = _go.apply(this, arguments);
-      if (id === 'Q6' || id === 'q6') tryWireQ6();
-      return r;
-    };
-  }
-  document.addEventListener('DOMContentLoaded', tryWireQ6);
-})();
-</script>
-<script>
-
-/* === Q6 label/placeholder sync + ensure dividers === */
-(function(){
-  var wired=false;
-  function rootQ6(){
-    return document.querySelector('[data-q="Q6"] .mini-wrap') ||
-           document.querySelector('#q6-entry') ||
-           document.querySelector('[id*="q6"] .mini-wrap');
-  }
-  function setUI(root){
-    if (!root) return;
+  function setProbUI(root){
     var unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
     var val     = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
     if (!val) return;
-    var lbl = val.closest('.mini-field')?.querySelector('label');
+
+    var lbl  = labelForValue(root);
     var mode = unitSel ? unitSel.value : 'oneInX';
+
     if (lbl){
-      lbl.textContent = (mode==='percent') ? 'Probability (%)' :
-                        (mode==='micromort') ? 'Probability (Micromorts)' :
-                        'Enter X (for "1 in X")';
+      lbl.textContent =
+        (mode === 'percent')   ? 'Probability (%)' :
+        (mode === 'micromort') ? 'Probability (Micromorts)' :
+                                 'Enter X (for "1 in X")';
     }
-    val.placeholder = (mode==='percent') ? 'e.g. 0.5' :
-                      (mode==='micromort') ? 'e.g. 10' :
-                      'e.g. 100,000';
+    val.placeholder =
+      (mode === 'percent')   ? 'e.g. 0.5' :
+      (mode === 'micromort') ? 'e.g. 10'  :
+                               'e.g. 100,000';
   }
+
   function ensureDividers(root){
-    ['Severity','Cost','Probability'].forEach(function(t){
-      var lbl = Array.from(root.querySelectorAll('.mini-field > label')).find(l=>(l.textContent||'').trim().toLowerCase()===t.toLowerCase());
+    ['Severity','Cost','Probability'].forEach(function(text){
+      var lbl = Array.from(root.querySelectorAll('.mini-field > label')).find(function(l){
+        return (l.textContent || '').trim().toLowerCase() === text.toLowerCase();
+      });
       if (!lbl) return;
       var field = lbl.closest('.mini-field');
       if (!field) return;
+
       var prev = field.previousElementSibling;
       if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
-        var sep=document.createElement('div'); sep.className='mini-sep';
+        var sep = document.createElement('div');
+        sep.className = 'mini-sep';
         field.parentElement.insertBefore(sep, field);
       }
     });
   }
-  function wire(){
-    var root=rootQ6(); if(!root) return;
-    if(wired) return; wired=true;
-    var sel=root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-    if(sel && !sel.__bound){
-      sel.addEventListener('change', ()=>setUI(root));
-      sel.__bound=true;
+
+  function wireOnce(){
+    var root = findQ6Root();
+    if (!root || wired) return;
+    wired = true;
+
+    var unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
+    if (unitSel && !unitSel.__q6Bound){
+      unitSel.addEventListener('change', function(){ setProbUI(root); });
+      unitSel.__q6Bound = true;
     }
-    setUI(root);
+
+    setProbUI(root);
     ensureDividers(root);
   }
-  document.addEventListener('DOMContentLoaded', wire);
-  if(window.goToNode){
-    var _go=window.goToNode;
-    window.goToNode=function(id){
-      var r=_go.apply(this,arguments);
-      if(id==='Q6'||id==='q6'){ wired=false; wire(); }
-      return r;
+
+  // Run on load, on SPA nav, and on late render
+  document.addEventListener('DOMContentLoaded', wireOnce);
+
+  if (window.goToNode){
+    var _go = window.goToNode;
+    window.goToNode = function(id){
+      var res = _go.apply(this, arguments);
+      if (id === 'Q6' || id === 'q6'){ wired = false; wireOnce(); }
+      return res;
     };
   }
-  var mo=new MutationObserver(()=>{ if(!wired) wire(); });
-  mo.observe(document.documentElement,{childList:true,subtree:true});
-})();
 
+  var mo = new MutationObserver(function(){ if (!wired) wireOnce(); });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+})();
+  
 </script>
 </body>
 </html>
