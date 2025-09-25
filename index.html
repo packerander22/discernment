@@ -3405,7 +3405,7 @@ renderMiniQ6 = function (intoEl, node) {
       }catch(e){ gap = 0; }
 
       // Target visual space below = 8px  ⇒  margin-bottom = 8 - gap
-      const mb = clamp(8 - gap, -48, 8);
+      const mb = clamp(4 - gap, -48, 8);
       sep.style.marginBottom = mb + 'px';
 
       // Make sure the first row under the divider doesn't add its own top space
