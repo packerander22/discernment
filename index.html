@@ -533,6 +533,11 @@
     margin-top: 2px !important;
   }
 
+  /* Compensate grid gap so dividers look symmetric */
+  .mini-fields > .mini-sep {
+    margin: 8px 0 -4px !important;  /* 8px above, (-4 + 12px gap) = 8px below */
+  }
+
   /* Mobile focus: prevent clipped ring & iOS zoom-on-focus */
   @media (max-width:560px){
     .mini-wrap, .mini-field{ overflow: visible !important; }
@@ -2903,7 +2908,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
-    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter Value</label>';
     const pVal = absorbOriginalRow(root, '#miniVal') ||
                  absorbOriginalRow(root, 'input[name="probVal"]') ||
                  absorbOriginalRow(root, 'input[data-q="pVal"]') ||
