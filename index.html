@@ -515,57 +515,35 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style id="mini-focus-and-divider">
-  /* ===== Mobile focus ring: box-shadow instead of outline ===== */
-  .mini-field input,
-  .mini-field select,
-  .mini-field textarea{
-    outline: none !important;
-    font-size: 16px !important;      /* prevents iOS zoom */
-    border-radius: 10px;
-    position: relative;
-    z-index: 0;
-    background-clip: padding-box;
-    -webkit-tap-highlight-color: transparent;
+<style id="mini-q6-polish">
+  /* Divider line with equal visual space above & snug below */
+  .mini-sep{
+    margin: 8px 0 0 !important;        /* 8px ABOVE, 0 BELOW the line */
+    border-top: 1px solid var(--border);
+    opacity: .9;
+  }
+  /* First row under the divider should sit snug */
+  .mini-sep + .mini-field,
+  .mini-sep + * .mini-field:first-child{
+    margin-top: 0 !important;
+    padding-top: 4px !important;
+  }
+  .mini-sep + .mini-field > label,
+  .mini-sep + * .mini-field:first-child > label{
+    margin-top: 2px !important;
   }
 
-  .mini-field input:focus,
-  .mini-field select:focus,
-  .mini-field textarea:focus{
-    outline: none !important;
-    box-shadow:
-      0 0 0 3px color-mix(in oklab, var(--curve-color), transparent 70%),
-      0 0 0 1px var(--curve-color) inset;
-    border-color: var(--curve-color);
-    z-index: 2;
-    transform: translateZ(0);
-  }
-
-  .mini-wrap,
-  .mini-fields,
-  .mini-field{ overflow: visible !important; isolation: isolate; }
-
-  @supports(selector(:has(*))){
-    .mini-field:has(:focus){ overflow: visible !important; }
-  }
-
-  /* ===== Divider on section headings ===== */
-  .mini-sep-head{
-    position: relative;
-    display: inline-block;
-    width: 100%;
-    margin-top: 8px;
-    padding-top: 8px;
-  }
-  .mini-sep-head::before{
-    content:"";
-    position:absolute;
-    left:0; right:0; top:0;
-    border-top:1px solid var(--border);
-    opacity:.9;
-    pointer-events:none;
+  /* Mobile focus: prevent clipped ring & iOS zoom-on-focus */
+  @media (max-width:560px){
+    .mini-wrap, .mini-field{ overflow: visible !important; }
+    .mini-field input, .mini-field select, .mini-field textarea{
+      font-size: 16px !important;   /* stops iOS zoom */
+      outline-offset: 3px;          /* ring not clipped by edges */
+      box-shadow: none;
+    }
   }
 </style>
+
   
 </head>
 <body>
@@ -3437,6 +3415,58 @@ renderMiniQ6 = function (intoEl, node) {
   document.addEventListener('DOMContentLoaded', run);
   new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
 })();
+
+(function(){
+  if (!window.renderMiniQ6) return;
+
+  const _render = window.renderMiniQ6;
+  window.renderMiniQ6 = function(intoEl, node){
+    _render(intoEl, node);
+    try{
+      const root = (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) || intoEl || document;
+      if (!root) return;
+
+      // ---- Static "Enter Value" label on the second Probability box
+      const pValInput  = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+      const pValField  = pValInput ? pValInput.closest('.mini-field') : null;
+      if (pValField){
+        let label = pValField.querySelector('label');
+        if (!label){
+          label = document.createElement('label');
+          pValField.insertBefore(label, pValField.firstChild);
+        }
+        label.textContent = 'Enter Value';
+      }
+
+      // ---- Placeholder sync by unit (1 in X / % / micromorts)
+      const unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"], #miniMode, select[name="q6Units"]');
+      function setProbPlaceholder(){
+        if (!pValInput) return;
+        const mode = unitSel ? unitSel.value : 'oneInX';
+        pValInput.placeholder =
+          mode === 'percent'   ? 'e.g. 0.5' :
+          mode === 'micromort' ? 'e.g. 10'  :
+                                 'e.g. 100,000';
+      }
+      if (unitSel && !unitSel.__phBound){ unitSel.addEventListener('change', setProbPlaceholder); unitSel.__phBound = true; }
+      setProbPlaceholder();
+
+      // ---- Ensure a divider exists before each section heading
+      ['Severity','Cost','Probability'].forEach(txt=>{
+        const h = [...root.querySelectorAll('.mini-heading')]
+          .find(el => (el.textContent||'').trim().toLowerCase() === txt.toLowerCase());
+        if (!h) return;
+        const prev = h.previousElementSibling;
+        if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
+          const sep = document.createElement('div');
+          sep.className = 'mini-sep';
+          h.parentElement.insertBefore(sep, h);
+        }
+      });
+    }catch(e){}
+  };
+})();
+  
 </script>
 
 </body>
