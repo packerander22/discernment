@@ -135,6 +135,36 @@
   .risk-ticks { display:block; width:100%; }
 
   .error { color:#B00020; font-size:0.95em; }
+  
+  /* === Divider spacing === */
+  .mini-sep {
+    margin: 6px 0 0;                /* keep 6px above, 0px below */
+    border-top: 1px solid var(--border);
+    opacity: .9;
+  }
+  
+  /* Trim heading margin if it follows a divider */
+  .mini-sep + .mini-field > label {
+    margin-top: 2px !important;
+  }
+  
+  /* === Mobile polish === */
+  @media (max-width:560px){
+    .mini-wrap { 
+      overflow: visible !important; 
+      padding-right: 4px;           /* ensures focus glow has room */
+    }
+    .mini-field { 
+      padding: 4px 3px; 
+    }
+    .mini-field input,
+    .mini-field select,
+    .mini-field textarea {
+      font-size: 16px !important;   /* prevents iOS zoom */
+      outline-offset: 2px;          /* prevents clipping */
+      box-shadow: none;
+    }
+  }
 
   /* === Slider visual customization === */
   .slider-wrap {
@@ -3400,6 +3430,71 @@ renderMiniQ6 = function (intoEl, node) {
     };
   }
 })();
+
+// === Q6 unit label & placeholder sync ===
+function wireQ6UnitLabels(root){
+  if (!root) return;
+  const unitSel  = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
+  const valInput = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+  const valueLbl = valInput ? valInput.closest('.mini-field')?.querySelector('label') : null;
+
+  // Small echo element beneath the dropdown/value
+  let unitEcho = root.querySelector('[data-ui="prob-unit-echo"]');
+  if (!unitEcho && valInput){
+    unitEcho = document.createElement('div');
+    unitEcho.setAttribute('data-ui','prob-unit-echo');
+    unitEcho.style.fontSize = '12px';
+    unitEcho.style.opacity  = '0.75';
+    unitEcho.style.marginTop = '4px';
+    valInput.closest('.mini-field').appendChild(unitEcho);
+  }
+
+  function setUI(){
+    const mode = unitSel ? unitSel.value : 'oneInX';
+    if (valueLbl){
+      if (mode === 'percent'){ valueLbl.textContent = 'Probability (%)'; }
+      else if (mode === 'micromort'){ valueLbl.textContent = 'Probability (Micromorts)'; }
+      else { valueLbl.textContent = 'Enter X (for "1 in X")'; }
+    }
+    if (unitEcho){
+      unitEcho.textContent =
+        mode === 'percent'   ? 'Unit: Percentage (%)' :
+        mode === 'micromort' ? 'Unit: Micromorts'     :
+                               'Unit: 1 in X';
+    }
+    if (valInput){
+      valInput.placeholder =
+        mode === 'percent'   ? 'e.g. 0.5' :
+        mode === 'micromort' ? 'e.g. 10'  :
+                               'e.g. 100,000';
+    }
+  }
+
+  if (unitSel && !unitSel.__boundEcho){
+    unitSel.addEventListener('change', setUI);
+    unitSel.__boundEcho = true;
+  }
+  setUI();
+}
+
+function tryWireQ6(){
+  const root = document.querySelector('[data-q="Q6"] .mini-wrap, #q6-entry, #q6-entry-entry');
+  if (root) wireQ6UnitLabels(root);
+}
+
+// Hook into your navigation if available
+if (window.goToNode){
+  const _go = window.goToNode;
+  window.goToNode = function(id){
+    const r = _go.apply(this, arguments);
+    if (id === 'Q6' || id === 'q6') tryWireQ6();
+    return r;
+  };
+}
+
+// Also run once on page load
+document.addEventListener('DOMContentLoaded', tryWireQ6);
+
 </script>
 </body>
 </html>
