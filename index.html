@@ -523,6 +523,23 @@
   }
 </style>
 
+<style id="mini-label-overrides">
+  /* Bigger font for section headers (the labels right after a divider) */
+  .mini-sep + .mini-field > label,
+  .mini-sep + * .mini-field:first-child > label {
+    font-size: 1.15rem;   /* adjust size as desired */
+    font-weight: 700;     /* bold for emphasis */
+  }
+
+  /* Smaller font for "Varies Across Instances" checkboxes */
+  .mini-field label:has(input[type="checkbox"]) {
+    font-size: 0.85rem;   /* smaller than normal */
+    font-weight: 400;     /* lighter weight */
+    opacity: 0.9;         /* optional, makes it look secondary */
+  }
+</style>
+
+  
 </head>
 <body>
 <div class="container">
