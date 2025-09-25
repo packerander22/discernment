@@ -516,26 +516,31 @@
 </style>
 
 <style id="mini-q6-polish">
-  /* Divider line with equal visual space above & snug below */
+  /* Base divider line */
   .mini-sep{
-    margin: 8px 0 0 !important;        /* 8px ABOVE, 0 BELOW the line */
+    margin: 8px 0 0 !important;     /* 8px ABOVE, 0 BELOW on the element itself */
     border-top: 1px solid var(--border);
     opacity: .9;
   }
-  /* First row under the divider should sit snug */
+
+  /* Make the grid gap symmetric under the divider */
+  /* Set this to your actual row gap (you had 14px in your CSS). Update if you change the gap later. */
+  .mini-fields{ --row-gap: 14px; }
+
+  /* Net space BELOW the line = gap + bottom-margin = 8px */
+  .mini-fields > .mini-sep{
+    margin: 8px 0 calc(8px - var(--row-gap)) !important;
+  }
+
+  /* First row under the divider should sit snug (no extra self margins) */
   .mini-sep + .mini-field,
   .mini-sep + * .mini-field:first-child{
     margin-top: 0 !important;
-    padding-top: 4px !important;
+    padding-top: 0 !important;   /* was 4px — remove to keep symmetry */
   }
   .mini-sep + .mini-field > label,
   .mini-sep + * .mini-field:first-child > label{
-    margin-top: 2px !important;
-  }
-
-  /* Compensate grid gap so dividers look symmetric */
-  .mini-fields > .mini-sep {
-    margin: 8px 0 -8px !important;  /* 8px above, (-4 + 12px gap) = 8px below */
+    margin-top: 0 !important;    /* was 2px — remove to keep symmetry */
   }
 
   /* Mobile focus: prevent clipped ring & iOS zoom-on-focus */
@@ -543,7 +548,7 @@
     .mini-wrap, .mini-field{ overflow: visible !important; }
     .mini-field input, .mini-field select, .mini-field textarea{
       font-size: 16px !important;   /* stops iOS zoom */
-      outline-offset: 3px;          /* ring not clipped by edges */
+      outline-offset: 3px;
       box-shadow: none;
     }
   }
