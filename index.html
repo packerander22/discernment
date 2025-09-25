@@ -135,36 +135,6 @@
   .risk-ticks { display:block; width:100%; }
 
   .error { color:#B00020; font-size:0.95em; }
-  
-  /* === Divider spacing === */
-  .mini-sep {
-    margin: 6px 0 0;                /* keep 6px above, 0px below */
-    border-top: 1px solid var(--border);
-    opacity: .9;
-  }
-  
-  /* Trim heading margin if it follows a divider */
-  .mini-sep + .mini-field > label {
-    margin-top: 2px !important;
-  }
-  
-  /* === Mobile polish === */
-  @media (max-width:560px){
-    .mini-wrap { 
-      overflow: visible !important; 
-      padding-right: 4px;           /* ensures focus glow has room */
-    }
-    .mini-field { 
-      padding: 4px 3px; 
-    }
-    .mini-field input,
-    .mini-field select,
-    .mini-field textarea {
-      font-size: 16px !important;   /* prevents iOS zoom */
-      outline-offset: 2px;          /* prevents clipping */
-      box-shadow: none;
-    }
-  }
 
   /* === Slider visual customization === */
   .slider-wrap {
@@ -551,6 +521,17 @@
   .mini-field{padding:4px 3px;}
   .mini-field input,.mini-field select,.mini-field textarea{font-size:16px !important; outline-offset:2px; box-shadow:none;}
 }</style>
+
+<style>
+/* === Discernment mini: divider + mobile polish (drop-in) === */
+.mini-sep{margin:6px 0 0;border-top:1px solid var(--border);opacity:.9}
+.mini-sep + .mini-field > label{margin-top:2px !important;}
+@media (max-width:560px){
+  .mini-wrap{overflow:visible !important; padding-right:4px;}
+  .mini-field{padding:4px 3px;}
+  .mini-field input,.mini-field select,.mini-field textarea{font-size:16px !important; outline-offset:2px; box-shadow:none;}
+}
+</style>
 </head>
 <body>
 <div class="container">
@@ -3431,14 +3412,14 @@ renderMiniQ6 = function (intoEl, node) {
   }
 })();
 
-// === Q6 unit label & placeholder sync ===
+
+// === Q6 unit label & placeholder sync (drop-in) ===
 function wireQ6UnitLabels(root){
   if (!root) return;
   const unitSel  = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
   const valInput = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
   const valueLbl = valInput ? valInput.closest('.mini-field')?.querySelector('label') : null;
 
-  // Small echo element beneath the dropdown/value
   let unitEcho = root.querySelector('[data-ui="prob-unit-echo"]');
   if (!unitEcho && valInput){
     unitEcho = document.createElement('div');
@@ -3478,11 +3459,10 @@ function wireQ6UnitLabels(root){
 }
 
 function tryWireQ6(){
-  const root = document.querySelector('[data-q="Q6"] .mini-wrap, #q6-entry, #q6-entry-entry');
+  const root = document.querySelector('[data-q="Q6"] .mini-wrap, #q6-entry, #q6-entry-entry, [id*="q6"] .mini-wrap');
   if (root) wireQ6UnitLabels(root);
 }
 
-// Hook into your navigation if available
 if (window.goToNode){
   const _go = window.goToNode;
   window.goToNode = function(id){
@@ -3491,10 +3471,7 @@ if (window.goToNode){
     return r;
   };
 }
-
-// Also run once on page load
 document.addEventListener('DOMContentLoaded', tryWireQ6);
-
 </script>
 </body>
 </html>
