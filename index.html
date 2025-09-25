@@ -518,7 +518,7 @@
 <style>
   /* === Mini separators & mobile polish (Q6/Q7) === */
 
-  /* Tight divider: little-to-no space below the line */
+  /* Dividers with minimal space below */
   .mini-sep{
     margin: 8px 0 0 !important;   /* 8px above, 0 below */
     border-top: 1px solid var(--border);
@@ -530,7 +530,7 @@
     margin-top: 0 !important;
     padding-top: 4px !important;
   }
-  /* If the first row contains a heading label, trim its top margin too */
+  /* If the first row contains a heading label, trim it too */
   .mini-sep + .mini-field > label,
   .mini-sep + * .mini-field:first-child > label{
     margin-top: 2px !important;
@@ -3396,38 +3396,63 @@ renderMiniQ6 = function (intoEl, node) {
 
   function ensureDividerBeforeField(field){
     if (!field || !field.parentElement) return;
+    var parent = field.parentElement;
+  
+    // If there's already a divider somewhere earlier in this section, move it
+    var prevSep = parent.querySelector('.mini-sep');
+    if (prevSep && prevSep.nextElementSibling !== field){
+      parent.insertBefore(prevSep, field);
+      return;
+    }
+  
+    // Otherwise insert a new one right before the field
     var prev = field.previousElementSibling;
     if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
       var sep = document.createElement('div');
       sep.className = 'mini-sep';
-      field.parentElement.insertBefore(sep, field);
+      parent.insertBefore(sep, field);
     }
   }
-
+  
   function insertSectionDividers(root){
-    // Reliable anchors for the first row of each section
-    var severityAnchor = root.querySelector('[data-k="sVaries"], [name="sVaries"], input[name="severity"], input[data-k="sVal"]');
-    var costAnchor     = root.querySelector('[data-k="cVaries"], [name="cVaries"], input[name="cost"], input[data-k="cVal"]');
-    var probAnchor     = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-
+    // Anchors: first row of each section
+    var severityAnchor = root.querySelector('[data-k="sVaries"], [name="sVaries"], input[data-k="sVal"], input[name="severity"]');
+    var costAnchor     = root.querySelector('[data-k="cVaries"], [name="cVaries"], input[data-k="cVal"], input[name="cost"]');
+    var probAnchor     = root.querySelector('select[data-k="pMode"], select[name="pMode"]'); // the Unit dropdown row
+  
     [severityAnchor, costAnchor, probAnchor].forEach(function(a){
-      var f = firstField(a);
-      ensureDividerBeforeField(f);
+      var field = a && (a.closest && a.closest('.mini-field'));
+      if (field) ensureDividerBeforeField(field);
     });
   }
 
+
   function ensureStaticValueLabel(root){
+    // Find the main probability value input (second box)
     var val = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
     if (!val) return;
-    var field = firstField(val);
+  
+    // Find the correct .mini-field container even if nested
+    var field = val.closest('.mini-field') || (val.parentElement && val.parentElement.closest && val.parentElement.closest('.mini-field')) || val.parentElement;
     if (!field) return;
-
-    var lbl = field.querySelector('label');
+  
+    // Ensure the input has an id, so the label can reference it
+    if (!val.id) { val.id = 'q6-pVal'; }
+  
+    // Find/create the label as the FIRST child inside the field
+    var lbl = field.querySelector('label.mini-prob-value-label');
     if (!lbl){
       lbl = document.createElement('label');
+      lbl.className = 'mini-prob-value-label';
+      lbl.setAttribute('for', val.id);
+      // Prepend to guarantee correct position
       field.insertBefore(lbl, field.firstChild);
+    } else {
+      lbl.setAttribute('for', val.id);
     }
-    // Static label as requested:
+  
+    // Lock and set text
+    lbl.dataset.lock = 'static';
     lbl.textContent = 'Enter Value';
   }
 
