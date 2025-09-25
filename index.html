@@ -515,48 +515,48 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style>
-  /* ===== Mini separators: symmetric spacing (works with grid gap) ===== */
-  .mini-sep{
-    margin: 8px 0 !important;              /* 8px above, 0 below */
+<style id="mini-mobile-and-divider-anchor">
+  /* ===== Mobile focus ring: prevent clipping & iOS zoom ===== */
+  .mini-wrap,
+  .mini-fields,
+  .mini-field { overflow: visible !important; }
+
+  .mini-field input,
+  .mini-field select,
+  .mini-field textarea{
+    font-size: 16px !important;   /* stops iOS zoom-on-focus */
+    outline-offset: 4px !important; /* pulls ring away from rounded edges */
+    border-radius: 10px;           /* match your inputs */
+    box-shadow: none;
+  }
+
+  @supports(selector(:has(*))){
+    .mini-field:has(input:focus),
+    .mini-field:has(select:focus),
+    .mini-field:has(textarea:focus){ overflow: visible !important; }
+  }
+
+  /* ===== Divider via anchor (true symmetry; ignores grid gap) ===== */
+
+  /* Hide any legacy .mini-sep nodes we may still insert by old code */
+  .mini-fields > .mini-sep { display: none !important; }
+
+  /* Draw the line on the FIRST row of a section */
+  .mini-sep-anchor{
+    position: relative;
+    margin-top: 8px;   /* space ABOVE the line */
+    padding-top: 8px;  /* space BELOW the line */
+  }
+  .mini-sep-anchor::before{
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
     border-top: 1px solid var(--border);
     opacity: .9;
-  }
-  /* First row under the divider: remove extra self gap */
-  .mini-sep + .mini-field{ margin-top:0 !important; padding-top:0 !important; }
-  .mini-sep + .mini-field > label{ margin-top:0 !important; }
-  
-  /* Grid compensation: let the 12px gap provide the bottom spacing */
-  .mini-fields > .mini-sep { margin: 8px 0 0 !important; }
-  
-  /* If the first field is wrapped one level */
-  .mini-sep + * .mini-field:first-child{ margin-top:0 !important; padding-top:0 !important; }
-  .mini-sep + * .mini-field:first-child > label{ margin-top:0 !important; }
-
-
-  /* ===== Mobile focus ring: prevent clipping & iOS zoom-on-focus ===== */
-  @media (max-width:560px){
-    .mini-wrap,
-    .mini-fields,            /* ensure the grid container doesn't clip */
-    .mini-field{ overflow: visible !important; }
-
-    .mini-field input,
-    .mini-field select,
-    .mini-field textarea{
-      font-size:16px !important;            /* stops iOS zoom */
-      outline-offset:3px;                    /* keeps focus ring away from edges */
-      box-shadow:none;
-    }
-
-    /* Extra safety: force visible overflow while focused (modern iOS supports :has) */
-    @supports(selector(:has(*))){
-      .mini-fields:has(input:focus),
-      .mini-fields:has(select:focus),
-      .mini-fields:has(textarea:focus){ overflow: visible !important; }
-    }
+    pointer-events: none;
   }
 </style>
-  
+
 </head>
 <body>
 <div class="container">
@@ -2915,7 +2915,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
-    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter Value</label>';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
     const pVal = absorbOriginalRow(root, '#miniVal') ||
                  absorbOriginalRow(root, 'input[name="probVal"]') ||
                  absorbOriginalRow(root, 'input[data-q="pVal"]') ||
@@ -3358,7 +3358,11 @@ renderMiniQ6 = function (intoEl, node) {
     }
   }).observe(document.body, {childList:true, subtree:true});
 })();
+</script>
 
+
+
+<script>
 (function(){
   if (typeof window.renderMiniQ7 === 'function' && !window.__q7Strip){
     window.__q7Strip = true;
@@ -3383,93 +3387,61 @@ renderMiniQ6 = function (intoEl, node) {
     };
   }
 })();
+</script>
 
-/* === Q6 post-render patch: static "Enter Value" label + unit placeholder + correct dividers === */
+<script id="mini-divider-anchor-js">
+/* === Divider anchor patch: mark first row of each section and draw line via CSS === */
 (function(){
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__q6Patched){
-    const _render = window.renderMiniQ6;
-
-    window.renderMiniQ6 = function(intoEl, node){
-      const ret = _render.apply(this, arguments);
-      try {
-        const root = (intoEl && intoEl.querySelector)
-          ? (intoEl.querySelector('.mini-wrap') || intoEl)
-          : document;
-
-        // Run our fixes after each render (we win the race)
-        q6_fix_dividers(root);
-        q6_fix_static_label(root);
-        q6_sync_placeholder(root);
-
-        // Wire unit change (placeholder only; label stays static)
-        const sel = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-        if (sel && !sel.__q6Bound){
-          sel.addEventListener('change', () => q6_sync_placeholder(root));
-          sel.__q6Bound = true;
-        }
-      } catch(e) {}
-      return ret;
-    };
-    window.renderMiniQ6.__q6Patched = true;
-  }
-
   function q6_first_field(el){ return el && el.closest ? el.closest('.mini-field') : null; }
 
-  function q6_ensure_divider_before(field){
-    if (!field || !field.parentElement) return;
-    const parent = field.parentElement;
-    const existing = parent.querySelector('.mini-sep');
-    if (existing && existing.nextElementSibling !== field){
-      parent.insertBefore(existing, field);
-      return;
-    }
+  function q6_mark_anchor(field){
+    if (!field) return;
+
+    // Remove any legacy <div class="mini-sep"> inserted before this row
     const prev = field.previousElementSibling;
-    if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
-      const sep = document.createElement('div');
-      sep.className = 'mini-sep';
-      parent.insertBefore(sep, field);
-    }
+    if (prev && prev.classList && prev.classList.contains('mini-sep')) prev.remove();
+
+    // Ensure the anchor class is present
+    field.classList.add('mini-sep-anchor');
   }
 
   function q6_fix_dividers(root){
+    // Anchors = first control row of each section
     const severityA = root.querySelector('[data-k="sVaries"], [name="sVaries"], input[data-k="sVal"], input[name="severity"]');
     const costA     = root.querySelector('[data-k="cVaries"], [name="cVaries"], input[data-k="cVal"], input[name="cost"]');
     const probA     = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-    [severityA, costA, probA].forEach(a => {
-      const field = q6_first_field(a);
-      if (field) q6_ensure_divider_before(field);
-    });
+
+    [severityA, costA, probA].forEach(a => q6_mark_anchor(q6_first_field(a)));
   }
 
-  function q6_fix_static_label(root){
-    const val = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
-    if (!val) return;
-    const field = q6_first_field(val) || val.parentElement;
-    if (!field) return;
-    if (!val.id) val.id = 'q6-pVal';
-    let lbl = field.querySelector('label.mini-prob-value-label');
-    if (!lbl){
-      lbl = document.createElement('label');
-      lbl.className = 'mini-prob-value-label';
-      field.insertBefore(lbl, field.firstChild);
+  // Patch renderMiniQ6 so we run AFTER each render
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniSepAnchorPatched){
+    const _render = window.renderMiniQ6;
+    window.renderMiniQ6 = function(intoEl, node){
+      const ret = _render.apply(this, arguments);
+      try{
+        const root = (intoEl && intoEl.querySelector)
+          ? (intoEl.querySelector('.mini-wrap') || intoEl)
+          : document;
+        q6_fix_dividers(root);
+      }catch(e){}
+      return ret;
+    };
+    window.renderMiniQ6.__miniSepAnchorPatched = true;
+  } else {
+    // Fallback for non-wrapped flows
+    function run(){
+      const root = document.querySelector('[data-q="Q6"] .mini-wrap')
+                || document.querySelector('#q6-entry')
+                || document.querySelector('[id*="q6"] .mini-wrap')
+                || document;
+      q6_fix_dividers(root);
     }
-    lbl.setAttribute('for', val.id);
-    lbl.dataset.lock = 'static';
-    lbl.textContent = 'Enter Value';
-  }
-
-  function q6_sync_placeholder(root){
-    const sel = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-    const val = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
-    if (!val) return;
-    const mode = sel ? sel.value : 'oneInX';
-    val.placeholder =
-      (mode === 'percent')   ? 'e.g. 0.5' :
-      (mode === 'micromort') ? 'e.g. 10'  :
-                               'e.g. 100,000';
+    document.addEventListener('DOMContentLoaded', run);
+    new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
   }
 })();
-
 </script>
+
 </body>
 </html>
