@@ -522,18 +522,23 @@
   }
 </style>
 
-<style id="mini-label-overrides">
-  /* Bigger font for section headers under dividers */
+<style id="mini-typography-tweak">
+  /* Bigger mini section headings ("Severity", "Cost", "Probability") */
+  /* Works whether the tagger added .section-header or it's just .mini-heading */
+  .mini-heading,
   .section-header{
-    font-size: 1.15rem !important;
+    font-size: 1.20rem !important;   /* adjust number to taste */
     font-weight: 700 !important;
+    line-height: 1.3 !important;
   }
 
-  /* Smaller font for "Varies Across Instances" checkbox labels */
-  .varies-label{
-    font-size: 0.85rem !important;
+  /* Smaller "Varies Across Instances" checkbox label */
+  /* Prefer the class from your tagger; fall back to :has for safety */
+  .varies-label,
+  .mini-field label:has(input[type="checkbox"]){
+    font-size: 0.85rem !important;   /* adjust number to taste */
     font-weight: 400 !important;
-    opacity: 0.9;
+    opacity: .9;
   }
 </style>
   
