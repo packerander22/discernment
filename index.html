@@ -3385,19 +3385,38 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-<script id="mini-divider-by-heading-js">
+<script>
+/* === Q6 divider balancing (gap-aware) === */
 (function(){
-  function addHeadingDividers(root){
-    const labels = root.querySelectorAll('.mini-field > label, label');
-    labels.forEach(l=>{
-      const txt = (l.textContent || '').trim().toLowerCase();
-      if (txt === 'severity' || txt === 'cost' || txt === 'probability'){
-        const field = l.closest('.mini-field') || l.parentElement;
-        if (field){
-          const prev = field.previousElementSibling;
-          if (prev && prev.classList && prev.classList.contains('mini-sep')) prev.remove();
-        }
-        l.classList.add('mini-sep-head');
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function balanceDividers(root){
+    if (!root) return;
+    const seps = root.querySelectorAll('.mini-sep');
+    seps.forEach(sep=>{
+      // Find the nearest grid that actually spaces the rows
+      const grid = sep.closest('.mini-fields, .fields, [style*="display: grid"]') || sep.parentElement;
+      let gap = 0;
+      try{
+        const cs = grid ? getComputedStyle(grid) : null;
+        // Prefer rowGap, fall back to gap if rowGap isn't explicit
+        const raw = cs ? (cs.rowGap || cs.gap || '0') : '0';
+        gap = parseFloat(raw) || 0;
+      }catch(e){ gap = 0; }
+
+      // Target visual space below = 8px  ⇒  margin-bottom = 8 - gap
+      const mb = clamp(8 - gap, -48, 8);
+      sep.style.marginBottom = mb + 'px';
+
+      // Make sure the first row under the divider doesn't add its own top space
+      const firstField = sep.nextElementSibling?.classList?.contains('mini-field')
+        ? sep.nextElementSibling
+        : sep.nextElementSibling?.querySelector?.('.mini-field:first-child');
+      if (firstField){
+        firstField.style.marginTop  = '0px';
+        firstField.style.paddingTop = '0px';
+        const firstLabel = firstField.querySelector(':scope > label');
+        if (firstLabel){ firstLabel.style.marginTop = '0px'; }
       }
     });
   }
@@ -3411,72 +3430,22 @@ renderMiniQ6 = function (intoEl, node) {
           || document);
   }
 
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__dividersOnHeading){
-    const _r = window.renderMiniQ6;
+  // Run after each render of Q6 (augment existing wrapper; no conflict)
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__sepBalance){
+    const _render = window.renderMiniQ6;
     window.renderMiniQ6 = function(intoEl, node){
-      const out = _r.apply(this, arguments);
-      try { addHeadingDividers(getRoot(intoEl)); } catch(e){}
+      const out = _render.apply(this, arguments);
+      try { balanceDividers(getRoot(intoEl)); } catch(e){}
       return out;
     };
-    window.renderMiniQ6.__dividersOnHeading = true;
+    window.renderMiniQ6.__sepBalance = true;
   }
 
-  const run = () => { try { addHeadingDividers(getRoot()); } catch(e){} };
+  // Initial load + SPA fallback
+  const run = () => { try { balanceDividers(getRoot()); } catch(e){} };
   document.addEventListener('DOMContentLoaded', run);
   new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
 })();
-
-(function(){
-  if (!window.renderMiniQ6) return;
-
-  const _render = window.renderMiniQ6;
-  window.renderMiniQ6 = function(intoEl, node){
-    _render(intoEl, node);
-    try{
-      const root = (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) || intoEl || document;
-      if (!root) return;
-
-      // ---- Static "Enter Value" label on the second Probability box
-      const pValInput  = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
-      const pValField  = pValInput ? pValInput.closest('.mini-field') : null;
-      if (pValField){
-        let label = pValField.querySelector('label');
-        if (!label){
-          label = document.createElement('label');
-          pValField.insertBefore(label, pValField.firstChild);
-        }
-        label.textContent = 'Enter Value';
-      }
-
-      // ---- Placeholder sync by unit (1 in X / % / micromorts)
-      const unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"], #miniMode, select[name="q6Units"]');
-      function setProbPlaceholder(){
-        if (!pValInput) return;
-        const mode = unitSel ? unitSel.value : 'oneInX';
-        pValInput.placeholder =
-          mode === 'percent'   ? 'e.g. 0.5' :
-          mode === 'micromort' ? 'e.g. 10'  :
-                                 'e.g. 100,000';
-      }
-      if (unitSel && !unitSel.__phBound){ unitSel.addEventListener('change', setProbPlaceholder); unitSel.__phBound = true; }
-      setProbPlaceholder();
-
-      // ---- Ensure a divider exists before each section heading
-      ['Severity','Cost','Probability'].forEach(txt=>{
-        const h = [...root.querySelectorAll('.mini-heading')]
-          .find(el => (el.textContent||'').trim().toLowerCase() === txt.toLowerCase());
-        if (!h) return;
-        const prev = h.previousElementSibling;
-        if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
-          const sep = document.createElement('div');
-          sep.className = 'mini-sep';
-          h.parentElement.insertBefore(sep, h);
-        }
-      });
-    }catch(e){}
-  };
-})();
-  
 </script>
 
 </body>
