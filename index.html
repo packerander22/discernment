@@ -515,46 +515,14 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style id="mini-q6-polish">
-  /* Base divider line */
+<style id="mini-sep-base">
   .mini-sep{
-    margin: 8px 0 0 !important;     /* 8px ABOVE, 0 BELOW on the element itself */
+    margin: 8px 0 0;                 /* 8px above; JS will set bottom dynamically */
     border-top: 1px solid var(--border);
     opacity: .9;
   }
-
-  /* Make the grid gap symmetric under the divider */
-  /* Set this to your actual row gap (you had 14px in your CSS). Update if you change the gap later. */
-  .mini-fields{ --row-gap: 14px; }
-
-  /* Net space BELOW the line = gap + bottom-margin = 8px */
-  .mini-fields > .mini-sep{
-    margin: 8px 0 calc(8px - var(--row-gap)) !important;
-  }
-
-  /* First row under the divider should sit snug (no extra self margins) */
-  .mini-sep + .mini-field,
-  .mini-sep + * .mini-field:first-child{
-    margin-top: 0 !important;
-    padding-top: 0 !important;   /* was 4px — remove to keep symmetry */
-  }
-  .mini-sep + .mini-field > label,
-  .mini-sep + * .mini-field:first-child > label{
-    margin-top: 0 !important;    /* was 2px — remove to keep symmetry */
-  }
-
-  /* Mobile focus: prevent clipped ring & iOS zoom-on-focus */
-  @media (max-width:560px){
-    .mini-wrap, .mini-field{ overflow: visible !important; }
-    .mini-field input, .mini-field select, .mini-field textarea{
-      font-size: 16px !important;   /* stops iOS zoom */
-      outline-offset: 3px;
-      box-shadow: none;
-    }
-  }
 </style>
 
-  
 </head>
 <body>
 <div class="container">
@@ -2913,7 +2881,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
-    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter Value</label>';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
     const pVal = absorbOriginalRow(root, '#miniVal') ||
                  absorbOriginalRow(root, 'input[name="probVal"]') ||
                  absorbOriginalRow(root, 'input[data-q="pVal"]') ||
@@ -3358,6 +3326,8 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
+
+
 <script>
 (function(){
   if (typeof window.renderMiniQ7 === 'function' && !window.__q7Strip){
@@ -3385,41 +3355,10 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-<script>
-/* === Q6 divider balancing (gap-aware) === */
+<script id="mini-q6-unified">
 (function(){
-  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
-
-  function balanceDividers(root){
-    if (!root) return;
-    const seps = root.querySelectorAll('.mini-sep');
-    seps.forEach(sep=>{
-      // Find the nearest grid that actually spaces the rows
-      const grid = sep.closest('.mini-fields, .fields, [style*="display: grid"]') || sep.parentElement;
-      let gap = 0;
-      try{
-        const cs = grid ? getComputedStyle(grid) : null;
-        // Prefer rowGap, fall back to gap if rowGap isn't explicit
-        const raw = cs ? (cs.rowGap || cs.gap || '0') : '0';
-        gap = parseFloat(raw) || 0;
-      }catch(e){ gap = 0; }
-
-      // Target visual space below = 8px  ⇒  margin-bottom = 8 - gap
-      const mb = clamp(4 - gap, -48, 8);
-      sep.style.marginBottom = mb + 'px';
-
-      // Make sure the first row under the divider doesn't add its own top space
-      const firstField = sep.nextElementSibling?.classList?.contains('mini-field')
-        ? sep.nextElementSibling
-        : sep.nextElementSibling?.querySelector?.('.mini-field:first-child');
-      if (firstField){
-        firstField.style.marginTop  = '0px';
-        firstField.style.paddingTop = '0px';
-        const firstLabel = firstField.querySelector(':scope > label');
-        if (firstLabel){ firstLabel.style.marginTop = '0px'; }
-      }
-    });
-  }
+  // ---- helpers ----
+  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
   function getRoot(intoEl){
     return (intoEl && intoEl.querySelector)
@@ -3430,19 +3369,103 @@ renderMiniQ6 = function (intoEl, node) {
           || document);
   }
 
-  // Run after each render of Q6 (augment existing wrapper; no conflict)
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__sepBalance){
+  // Static label + placeholder sync
+  function patchProbValueUI(root){
+    const pValInput  = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+    const pValField  = pValInput ? pValInput.closest('.mini-field') : null;
+    if (pValField){
+      let label = pValField.querySelector('label.mini-prob-value-label') || pValField.querySelector('label');
+      if (!label){
+        label = document.createElement('label');
+        pValField.insertBefore(label, pValField.firstChild);
+      }
+      label.classList.add('mini-prob-value-label');
+      label.textContent = 'Enter Value'; // static
+    }
+
+    const unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"], #miniMode, select[name="q6Units"]');
+    function setPlaceholder(){
+      if (!pValInput) return;
+      const mode = unitSel ? unitSel.value : 'oneInX';
+      pValInput.placeholder =
+        mode === 'percent'   ? 'e.g. 0.5' :
+        mode === 'micromort' ? 'e.g. 10'  :
+                               'e.g. 100,000';
+    }
+    if (unitSel && !unitSel.__q6PH){
+      unitSel.addEventListener('change', setPlaceholder);
+      unitSel.__q6PH = true;
+    }
+    setPlaceholder();
+  }
+
+  // Ensure a <div class="mini-sep"> exists before Severity/Cost/Probability headings
+  function ensureDividers(root){
+    const labels = root.querySelectorAll('.mini-field > label, .mini-heading, label');
+    ['severity','cost','probability'].forEach(name=>{
+      const h = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name);
+      if (!h) return;
+      const parent = h.parentElement;
+      if (!parent) return;
+      const prev = parent.previousElementSibling;
+      if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
+        const sep = document.createElement('div');
+        sep.className = 'mini-sep';
+        parent.insertBefore(sep, h);
+      }
+    });
+  }
+
+  // Balance each divider vs the *actual* grid row-gap near it
+  function balanceDividers(root, targetPx){
+    const seps = root.querySelectorAll('.mini-sep');
+    seps.forEach(sep=>{
+      const grid = sep.closest('.mini-fields, .fields, [style*="display: grid"]') || sep.parentElement;
+      let gap = 0;
+      try{
+        const cs = grid ? getComputedStyle(grid) : null;
+        const raw = cs ? (cs.rowGap || cs.gap || '0') : '0';
+        gap = parseFloat(raw) || 0;
+      }catch(e){ gap = 0; }
+
+      // We want: (visual below) = targetPx  =>  gap + margin-bottom = targetPx
+      const mb = clamp((targetPx|0) - gap, -64, targetPx|0);
+      sep.style.setProperty('margin-bottom', mb + 'px', 'important');
+
+      // Make sure the first row under the divider adds no extra top space
+      const firstRow = sep.nextElementSibling && sep.nextElementSibling.classList?.contains('mini-field')
+        ? sep.nextElementSibling
+        : (sep.nextElementSibling && sep.nextElementSibling.querySelector?.('.mini-field:first-child'));
+      if (firstRow){
+        firstRow.style.setProperty('margin-top',  '0px', 'important');
+        firstRow.style.setProperty('padding-top', '0px', 'important');
+        const firstLabel = firstRow.querySelector(':scope > label');
+        if (firstLabel) firstLabel.style.setProperty('margin-top', '0px', 'important');
+      }
+    });
+  }
+
+  function afterRender(intoEl){
+    const root = getRoot(intoEl);
+    if (!root) return;
+    ensureDividers(root);
+    patchProbValueUI(root);
+    balanceDividers(root, 8); // desired visual space BELOW each line; change to 6/10 if you prefer
+  }
+
+  // Hook renderMiniQ6 once
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniUnified){
     const _render = window.renderMiniQ6;
     window.renderMiniQ6 = function(intoEl, node){
       const out = _render.apply(this, arguments);
-      try { balanceDividers(getRoot(intoEl)); } catch(e){}
+      try { afterRender(intoEl); } catch(e){}
       return out;
     };
-    window.renderMiniQ6.__sepBalance = true;
+    window.renderMiniQ6.__miniUnified = true;
   }
 
   // Initial load + SPA fallback
-  const run = () => { try { balanceDividers(getRoot()); } catch(e){} };
+  const run = () => { try { afterRender(null); } catch(e){} };
   document.addEventListener('DOMContentLoaded', run);
   new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
 })();
