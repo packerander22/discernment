@@ -515,42 +515,44 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style>.mini-sep{margin:6px 0 0;border-top:1px solid var(--border);opacity:.9}
-@media (max-width:560px){
-  .mini-wrap{overflow:visible !important; padding-right:4px;}
-  .mini-field{padding:4px 3px;}
-  .mini-field input,.mini-field select,.mini-field textarea{font-size:16px !important; outline-offset:2px; box-shadow:none;}
-}</style>
-
 <style>
-  /* === Mini separators & mobile polish (single source of truth) === */
+  /* ===== Mini separators: symmetric spacing (works with grid gap) ===== */
   .mini-sep{
-    margin: 8px 0 0 !important;   /* 8px above, ~0 below */
+    margin: 8px 0 !important;              /* 8px above & 8px below */
     border-top: 1px solid var(--border);
     opacity: .9;
   }
-  /* First row under the divider sits snug */
-  .mini-sep + .mini-field,
-  .mini-sep + * .mini-field:first-child{
-    margin-top: 0 !important;
-    padding-top: 4px !important;
-  }
-  /* If the first row contains a heading label, trim its top margin too */
-  .mini-sep + .mini-field > label,
-  .mini-sep + * .mini-field:first-child > label{
-    margin-top: 2px !important;
-  }
+  /* First row under the divider: remove extra self gap */
+  .mini-sep + .mini-field{ margin-top:0 !important; padding-top:0 !important; }
+  .mini-sep + .mini-field > label{ margin-top:0 !important; }
 
-  /* Mobile polish: avoid clipped focus & iOS zoom-on-focus */
+  /* Grid compensation: gap:12px would add extra space under the divider.
+     Bottom margin -4px + grid row-gap 12px = net 8px to match the top. */
+  .mini-fields > .mini-sep { margin: 8px 0 -4px !important; }
+
+  /* If the first field is wrapped one level */
+  .mini-sep + * .mini-field:first-child{ margin-top:0 !important; padding-top:0 !important; }
+  .mini-sep + * .mini-field:first-child > label{ margin-top:0 !important; }
+
+  /* ===== Mobile focus ring: prevent clipping & iOS zoom-on-focus ===== */
   @media (max-width:560px){
-    .mini-wrap { overflow: visible !important; padding-right: 4px; }
-    .mini-field { padding: 4px 3px; }
+    .mini-wrap,
+    .mini-fields,            /* ensure the grid container doesn't clip */
+    .mini-field{ overflow: visible !important; }
+
     .mini-field input,
     .mini-field select,
-    .mini-field textarea {
-      font-size: 16px !important;  /* prevents iOS zoom */
-      outline-offset: 2px;          /* prevents focus ring clipping */
-      box-shadow: none;
+    .mini-field textarea{
+      font-size:16px !important;            /* stops iOS zoom */
+      outline-offset:3px;                    /* keeps focus ring away from edges */
+      box-shadow:none;
+    }
+
+    /* Extra safety: force visible overflow while focused (modern iOS supports :has) */
+    @supports(selector(:has(*))){
+      .mini-fields:has(input:focus),
+      .mini-fields:has(select:focus),
+      .mini-fields:has(textarea:focus){ overflow: visible !important; }
     }
   }
 </style>
