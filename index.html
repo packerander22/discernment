@@ -523,26 +523,24 @@
 </style>
 
 <style id="mini-typography-tweak">
-  /* Bigger mini section headings (covers both .mini-heading and label-based headings) */
+  /* Bigger section headers */
   .mini-heading,
   .section-header,
-  /* Fallback: first label after a divider behaves like a heading */
   .mini-sep + .mini-field > label,
   .mini-sep + * .mini-field:first-child > label {
-    font-size: 1.20rem !important;
+    font-size: 1.25rem !important;
     font-weight: 700 !important;
-    line-height: 1.3 !important;
+    line-height: 1.35 !important;
   }
 
-  /* Smaller "Varies Across Instances" checkbox label (robust selectors) */
-  .varies-label,                                             /* class we’ll add in JS */
-  .mini-field label:has(input[type="checkbox"]),             /* modern browsers */
-  .mini-field label input[type="checkbox"] + *,              /* span/text node after the checkbox */
-  .mini-field label input[type="checkbox"] ~ *               /* any text container in the label */
-  {
-    font-size: 0.85rem !important;
+  /* Smaller "Varies Across Instances" */
+  .mini-field label.varies-label,
+  .mini-field label:has(input[type="checkbox"]),
+  .mini-field label input[type="checkbox"] + *,
+  .mini-field label input[type="checkbox"] ~ * {
+    font-size: 0.8rem !important;
     font-weight: 400 !important;
-    opacity: 0.9;
+    opacity: 0.9 !important;
   }
 </style>
   
