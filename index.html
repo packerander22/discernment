@@ -515,10 +515,17 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
+<style>.mini-sep{margin:6px 0 0;border-top:1px solid var(--border);opacity:.9}
+@media (max-width:560px){
+  .mini-wrap{overflow:visible !important; padding-right:4px;}
+  .mini-field{padding:4px 3px;}
+  .mini-field input,.mini-field select,.mini-field textarea{font-size:16px !important; outline-offset:2px; box-shadow:none;}
+}</style>
+
 <style>
-  /* Tight divider: little-to-no space below the line */
+  /* === Mini separators & mobile polish (single source of truth) === */
   .mini-sep{
-    margin: 8px 0 0 !important;   /* 8px above, 0 below */
+    margin: 8px 0 0 !important;   /* 8px above, ~0 below */
     border-top: 1px solid var(--border);
     opacity: .9;
   }
@@ -547,7 +554,7 @@
     }
   }
 </style>
-
+  
 </head>
 <body>
 <div class="container">
@@ -2906,7 +2913,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
-    pValRow.innerHTML = '<label id="' + id + 'ProbLabel"></label>';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
     const pVal = absorbOriginalRow(root, '#miniVal') ||
                  absorbOriginalRow(root, 'input[name="probVal"]') ||
                  absorbOriginalRow(root, 'input[data-q="pVal"]') ||
@@ -3349,11 +3356,7 @@ renderMiniQ6 = function (intoEl, node) {
     }
   }).observe(document.body, {childList:true, subtree:true});
 })();
-</script>
 
-
-
-<script>
 (function(){
   if (typeof window.renderMiniQ7 === 'function' && !window.__q7Strip){
     window.__q7Strip = true;
@@ -3379,190 +3382,92 @@ renderMiniQ6 = function (intoEl, node) {
   }
 })();
 
-/* === Q6: correct dividers + static "Enter Value" label; keep placeholder dynamic === */
+/* === Q6 post-render patch: static "Enter Value" label + unit placeholder + correct dividers === */
 (function(){
-  var wired = false;
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__q6Patched){
+    const _render = window.renderMiniQ6;
 
-  function findQ6Root(){
-    return document.querySelector('[data-q="Q6"] .mini-wrap')
-        || document.querySelector('#q6-entry')
-        || document.querySelector('#q6-entry-entry')
-        || document.querySelector('[id*="q6"] .mini-wrap');
+    window.renderMiniQ6 = function(intoEl, node){
+      const ret = _render.apply(this, arguments);
+      try {
+        const root = (intoEl && intoEl.querySelector)
+          ? (intoEl.querySelector('.mini-wrap') || intoEl)
+          : document;
+
+        // Run our fixes after each render (we win the race)
+        q6_fix_dividers(root);
+        q6_fix_static_label(root);
+        q6_sync_placeholder(root);
+
+        // Wire unit change (placeholder only; label stays static)
+        const sel = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
+        if (sel && !sel.__q6Bound){
+          sel.addEventListener('change', () => q6_sync_placeholder(root));
+          sel.__q6Bound = true;
+        }
+      } catch(e) {}
+      return ret;
+    };
+    window.renderMiniQ6.__q6Patched = true;
   }
 
-  function firstField(el){ return el && el.closest ? el.closest('.mini-field') : null; }
+  function q6_first_field(el){ return el && el.closest ? el.closest('.mini-field') : null; }
 
-  function ensureDividerBeforeField(field){
+  function q6_ensure_divider_before(field){
     if (!field || !field.parentElement) return;
-    var parent = field.parentElement;
-  
-    // If there's already a divider somewhere earlier in this section, move it
-    var prevSep = parent.querySelector('.mini-sep');
-    if (prevSep && prevSep.nextElementSibling !== field){
-      parent.insertBefore(prevSep, field);
+    const parent = field.parentElement;
+    const existing = parent.querySelector('.mini-sep');
+    if (existing && existing.nextElementSibling !== field){
+      parent.insertBefore(existing, field);
       return;
     }
-  
-    // Otherwise insert a new one right before the field
-    var prev = field.previousElementSibling;
+    const prev = field.previousElementSibling;
     if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
-      var sep = document.createElement('div');
+      const sep = document.createElement('div');
       sep.className = 'mini-sep';
       parent.insertBefore(sep, field);
     }
   }
-  
-  function insertSectionDividers(root){
-    // Anchors: first row of each section
-    var severityAnchor = root.querySelector('[data-k="sVaries"], [name="sVaries"], input[data-k="sVal"], input[name="severity"]');
-    var costAnchor     = root.querySelector('[data-k="cVaries"], [name="cVaries"], input[data-k="cVal"], input[name="cost"]');
-    var probAnchor     = root.querySelector('select[data-k="pMode"], select[name="pMode"]'); // the Unit dropdown row
-  
-    [severityAnchor, costAnchor, probAnchor].forEach(function(a){
-      var field = a && (a.closest && a.closest('.mini-field'));
-      if (field) ensureDividerBeforeField(field);
+
+  function q6_fix_dividers(root){
+    const severityA = root.querySelector('[data-k="sVaries"], [name="sVaries"], input[data-k="sVal"], input[name="severity"]');
+    const costA     = root.querySelector('[data-k="cVaries"], [name="cVaries"], input[data-k="cVal"], input[name="cost"]');
+    const probA     = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
+    [severityA, costA, probA].forEach(a => {
+      const field = q6_first_field(a);
+      if (field) q6_ensure_divider_before(field);
     });
   }
 
-
-  function ensureStaticValueLabel(root){
-    // Find the main probability value input (second box)
-    var val = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+  function q6_fix_static_label(root){
+    const val = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
     if (!val) return;
-  
-    // Find the correct .mini-field container even if nested
-    var field = val.closest('.mini-field') || (val.parentElement && val.parentElement.closest && val.parentElement.closest('.mini-field')) || val.parentElement;
+    const field = q6_first_field(val) || val.parentElement;
     if (!field) return;
-  
-    // Ensure the input has an id, so the label can reference it
-    if (!val.id) { val.id = 'q6-pVal'; }
-  
-    // Find/create the label as the FIRST child inside the field
-    var lbl = field.querySelector('label.mini-prob-value-label');
+    if (!val.id) val.id = 'q6-pVal';
+    let lbl = field.querySelector('label.mini-prob-value-label');
     if (!lbl){
       lbl = document.createElement('label');
       lbl.className = 'mini-prob-value-label';
-      lbl.setAttribute('for', val.id);
-      // Prepend to guarantee correct position
       field.insertBefore(lbl, field.firstChild);
-    } else {
-      lbl.setAttribute('for', val.id);
     }
-  
-    // Lock and set text
+    lbl.setAttribute('for', val.id);
     lbl.dataset.lock = 'static';
     lbl.textContent = 'Enter Value';
   }
 
-  function setPlaceholderByUnit(root){
-    var unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-    var val     = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+  function q6_sync_placeholder(root){
+    const sel = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
+    const val = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
     if (!val) return;
-    var mode = unitSel ? unitSel.value : 'oneInX';
+    const mode = sel ? sel.value : 'oneInX';
     val.placeholder =
       (mode === 'percent')   ? 'e.g. 0.5' :
       (mode === 'micromort') ? 'e.g. 10'  :
                                'e.g. 100,000';
   }
-
-  function wireOnce(){
-    var root = findQ6Root();
-    if (!root || wired) return;
-    wired = true;
-
-    insertSectionDividers(root);
-    ensureStaticValueLabel(root);
-    setPlaceholderByUnit(root);
-
-    var unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-    if (unitSel && !unitSel.__q6BoundStaticLabel){
-      unitSel.addEventListener('change', function(){
-        // Only the placeholder changes; label stays "Enter Value"
-        setPlaceholderByUnit(root);
-      });
-      unitSel.__q6BoundStaticLabel = true;
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', wireOnce);
-
-  if (window.goToNode){
-    var _go = window.goToNode;
-    window.goToNode = function(id){
-      var res = _go.apply(this, arguments);
-      if (id === 'Q6' || id === 'q6'){ wired = false; wireOnce(); }
-      return res;
-    };
-  }
-
-  // In case Q6 renders async
-  var mo = new MutationObserver(function(){ if (!wired) wireOnce(); });
-  mo.observe(document.documentElement, { childList: true, subtree: true });
 })();
 
-(function(){
-  // RE-RUN helpers whenever Q6 subtree changes after first render
-  function onQ6Mutations(root){
-    try{
-      // Your existing helpers:
-      if (typeof insertSectionDividers === 'function') insertSectionDividers(root);
-      if (typeof ensureStaticValueLabel === 'function') ensureStaticValueLabel(root);
-      if (typeof setPlaceholderByUnit === 'function') setPlaceholderByUnit(root);
-    }catch(e){}
-  }
-
-  // After your existing wireOnce() runs, attach a fine-grained observer to Q6:
-  (function attachQ6Observer(){
-    var q6 = (document.querySelector('[data-q="Q6"] .mini-wrap')
-          || document.querySelector('#q6-entry')
-          || document.querySelector('[id*="q6"] .mini-wrap'));
-    if (!q6) return; // Q6 not in DOM yet; a global MO below will catch it.
-
-    if (!q6.__miniPatchObserved){
-      q6.__miniPatchObserved = true;
-      var mo = new MutationObserver(function(){
-        // re-assert label/placeholder/dividers whenever Q6 subtree changes
-        onQ6Mutations(q6);
-      });
-      mo.observe(q6, { childList: true, subtree: true });
-      // do an initial pass too
-      onQ6Mutations(q6);
-    }
-  })();
-
-  // Global observer in case Q6 mounts later (SPA nav)
-  if (!window.__miniPatchGlobalMO){
-    window.__miniPatchGlobalMO = new MutationObserver(function(){
-      var q6 = document.querySelector('[data-q="Q6"] .mini-wrap')
-            || document.querySelector('#q6-entry')
-            || document.querySelector('[id*="q6"] .mini-wrap');
-      if (q6 && !q6.__miniPatchObserved){
-        // Attach the local observer now that Q6 exists
-        var ev = document.createEvent('Event');
-        ev.initEvent('miniPatchAttachQ6Observer', true, true);
-        document.dispatchEvent(ev);
-      }
-    });
-    window.__miniPatchGlobalMO.observe(document.documentElement, { childList: true, subtree: true });
-
-    // little bridge so we can re-run the IIFE attach when Q6 appears
-    document.addEventListener('miniPatchAttachQ6Observer', function(){
-      (function attachQ6Observer(){
-        var q6 = (document.querySelector('[data-q="Q6"] .mini-wrap')
-              || document.querySelector('#q6-entry')
-              || document.querySelector('[id*="q6"] .mini-wrap'));
-        if (!q6) return;
-        if (!q6.__miniPatchObserved){
-          q6.__miniPatchObserved = true;
-          var mo = new MutationObserver(function(){ onQ6Mutations(q6); });
-          mo.observe(q6, { childList: true, subtree: true });
-          onQ6Mutations(q6);
-        }
-      })();
-    });
-  }
-})();
-  
 </script>
 </body>
 </html>
