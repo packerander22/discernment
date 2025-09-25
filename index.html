@@ -2897,7 +2897,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
-    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel"></label>';
     const pVal = absorbOriginalRow(root, '#miniVal') ||
                  absorbOriginalRow(root, 'input[name="probVal"]') ||
                  absorbOriginalRow(root, 'input[data-q="pVal"]') ||
@@ -3369,57 +3369,8 @@ renderMiniQ6 = function (intoEl, node) {
     };
   }
 })();
-</script>
 
-<script>
-(function(){
-  if (typeof window.renderMiniQ6 === 'function' && !window.__q6Post){
-    window.__q6Post = true;
-    const _q6 = window.renderMiniQ6;
-    window.renderMiniQ6 = function(intoEl, node){
-      _q6(intoEl, node);
-      try{
-        const root = (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) || intoEl || document;
-        if (!root) return;
-        // Prevent old "disable Q6" behavior if present
-        // (We do not disable inputs or hide groups in Q6.)
-
-        // Main Probability unit/label/placeholder sync (supports oneInX/percent/micromort)
-        const unitSel = root.querySelector('select[data-k="pMode"]') || root.querySelector('select[name="pMode"]');
-        const valInput = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
-        const valueLabel = valInput ? valInput.closest('.mini-field')?.querySelector('label') : null;
-        function setMainUI(){
-          const v = unitSel ? unitSel.value : 'oneInX';
-          if (!valueLabel) return;
-          if (v === 'percent'){ valueLabel.textContent='Probability (%)'; if (valInput) valInput.placeholder='e.g. 0.5'; }
-          else if (v === 'micromort'){ valueLabel.textContent='Probability (Micromorts)'; if (valInput) valInput.placeholder='e.g. 10'; }
-          else { valueLabel.textContent='Enter X (for "1 in X")'; if (valInput) valInput.placeholder='e.g. 100,000'; }
-        }
-        if (unitSel && !unitSel.__mainBound){ unitSel.addEventListener('change', setMainUI); unitSel.__mainBound=true; }
-        setMainUI();
-
-        // Title-case key labels (including Varies Across Instances) after render
-        const small = new Set(['a','an','and','as','at','but','by','for','in','of','on','or','per','the','to','vs','via']);
-        function toTitleCase(s){
-          if(!s) return s;
-          return String(s).split(/\s+/).map((w,i)=>{
-            const lw=w.toLowerCase();
-            if(i>0 && small.has(lw)) return lw;
-            return w.charAt(0).toUpperCase()+w.slice(1);
-          }).join(' ');
-        }
-        root.querySelectorAll('.mini-field > label').forEach(l=>{
-          const t=(l.textContent||'').trim();
-          if(!t) return;
-          l.textContent = toTitleCase(t);
-        });
-
-      }catch(e){}
-    };
-  }
-})();
-
-/* === Q6 unit label + placeholder sync + ensure dividers (brace-safe) === */
+/* === Q6 unit label + placeholder sync + ensure dividers (robust) === */
 (function(){
   var wired = false;
 
@@ -3438,10 +3389,10 @@ renderMiniQ6 = function (intoEl, node) {
       var direct = field.querySelector('label');
       if (direct) return direct;
     }
-    // Fallback: any label that looks like the Probability/Enter-X label
+    // Fallback: find a label that looks like the probability/value label
     return Array.from(root.querySelectorAll('.mini-field > label, label')).find(function(l){
       var t = (l.textContent || '').trim().toLowerCase();
-      return t.startsWith('enter x') || t.startsWith('probability (%)') || t.startsWith('probability (micromorts)');
+      return t.startsWith('enter x') || t.startsWith('probability (');
     }) || null;
   }
 
@@ -3450,7 +3401,7 @@ renderMiniQ6 = function (intoEl, node) {
     var val     = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
     if (!val) return;
 
-    var lbl  = labelForValue(root);
+    var lbl  = labelForValue(root);            // <— re-find label every time
     var mode = unitSel ? unitSel.value : 'oneInX';
 
     if (lbl){
@@ -3466,14 +3417,14 @@ renderMiniQ6 = function (intoEl, node) {
   }
 
   function ensureDividers(root){
-    ['Severity','Cost','Probability'].forEach(function(text){
+    ['severity','cost','probability'].forEach(function(prefix){
       var lbl = Array.from(root.querySelectorAll('.mini-field > label')).find(function(l){
-        return (l.textContent || '').trim().toLowerCase() === text.toLowerCase();
+        var t = (l.textContent || '').trim().toLowerCase();
+        return t.startsWith(prefix);           // <— startsWith instead of strict equality
       });
       if (!lbl) return;
       var field = lbl.closest('.mini-field');
       if (!field) return;
-
       var prev = field.previousElementSibling;
       if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
         var sep = document.createElement('div');
@@ -3498,7 +3449,6 @@ renderMiniQ6 = function (intoEl, node) {
     ensureDividers(root);
   }
 
-  // Run on load, on SPA nav, and on late render
   document.addEventListener('DOMContentLoaded', wireOnce);
 
   if (window.goToNode){
