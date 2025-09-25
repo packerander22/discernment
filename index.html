@@ -515,35 +515,49 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style id="mini-divider-anchor-and-mobile">
-  /* ===== Mobile focus ring: prevent clipping & iOS zoom ===== */
-  .mini-wrap,
-  .mini-fields,
-  .mini-field { overflow: visible !important; }
-
+<style id="mini-focus-and-divider">
+  /* ===== Mobile focus ring: box-shadow instead of outline ===== */
   .mini-field input,
   .mini-field select,
   .mini-field textarea{
-    font-size: 16px !important;   /* stops iOS zoom-on-focus */
-    outline-offset: 4px !important; /* pulls ring away from rounded edges */
-    border-radius: 10px;           /* match your inputs */
-    box-shadow: none;
+    outline: none !important;
+    font-size: 16px !important;      /* prevents iOS zoom */
+    border-radius: 10px;
+    position: relative;
+    z-index: 0;
+    background-clip: padding-box;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  .mini-field input:focus,
+  .mini-field select:focus,
+  .mini-field textarea:focus{
+    outline: none !important;
+    box-shadow:
+      0 0 0 3px color-mix(in oklab, var(--curve-color), transparent 70%),
+      0 0 0 1px var(--curve-color) inset;
+    border-color: var(--curve-color);
+    z-index: 2;
+    transform: translateZ(0);
+  }
+
+  .mini-wrap,
+  .mini-fields,
+  .mini-field{ overflow: visible !important; isolation: isolate; }
 
   @supports(selector(:has(*))){
-    .mini-field:has(input:focus),
-    .mini-field:has(select:focus),
-    .mini-field:has(textarea:focus){ overflow: visible !important; }
+    .mini-field:has(:focus){ overflow: visible !important; }
   }
 
-  /* ===== Divider via anchor (true symmetry; ignores grid gap) ===== */
-  /* Draw the line on the first field of the section instead of inserting an element */
-  .mini-sep-anchor{
+  /* ===== Divider on section headings ===== */
+  .mini-sep-head{
     position: relative;
-    margin-top: 8px;   /* space ABOVE the line */
-    padding-top: 8px;  /* space BELOW the line */
+    display: inline-block;
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 8px;
   }
-  .mini-sep-anchor::before{
+  .mini-sep-head::before{
     content:"";
     position:absolute;
     left:0; right:0; top:0;
@@ -552,7 +566,6 @@
     pointer-events:none;
   }
 </style>
-
   
 </head>
 <body>
@@ -3384,23 +3397,19 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-<script id="mini-divider-anchor-js">
+<script id="mini-divider-by-heading-js">
 (function(){
-  function addAnchors(root){
-    // Find section headings by label text (robust to attribute differences)
-    const labels = root.querySelectorAll('.mini-field > label');
+  function addHeadingDividers(root){
+    const labels = root.querySelectorAll('.mini-field > label, label');
     labels.forEach(l=>{
-      const t = (l.textContent || '').trim().toLowerCase();
-      if (t.startsWith('severity') || t.startsWith('cost') || t.startsWith('probability')){
-        const field = l.closest('.mini-field');
-        if (!field) return;
-
-        // Remove a legacy <div class="mini-sep"> directly before this row (avoid double line)
-        const prev = field.previousElementSibling;
-        if (prev && prev.classList && prev.classList.contains('mini-sep')) prev.remove();
-
-        // Mark this row as the divider anchor
-        field.classList.add('mini-sep-anchor');
+      const txt = (l.textContent || '').trim().toLowerCase();
+      if (txt === 'severity' || txt === 'cost' || txt === 'probability'){
+        const field = l.closest('.mini-field') || l.parentElement;
+        if (field){
+          const prev = field.previousElementSibling;
+          if (prev && prev.classList && prev.classList.contains('mini-sep')) prev.remove();
+        }
+        l.classList.add('mini-sep-head');
       }
     });
   }
@@ -3414,19 +3423,17 @@ renderMiniQ6 = function (intoEl, node) {
           || document);
   }
 
-  // Patch renderMiniQ6 so we run AFTER each render
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__anchorsByHeading){
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__dividersOnHeading){
     const _r = window.renderMiniQ6;
     window.renderMiniQ6 = function(intoEl, node){
       const out = _r.apply(this, arguments);
-      try { addAnchors(getRoot(intoEl)); } catch(e){}
+      try { addHeadingDividers(getRoot(intoEl)); } catch(e){}
       return out;
     };
-    window.renderMiniQ6.__anchorsByHeading = true;
+    window.renderMiniQ6.__dividersOnHeading = true;
   }
 
-  // Initial load + SPA fallback
-  const run = () => { try { addAnchors(getRoot()); } catch(e){} };
+  const run = () => { try { addHeadingDividers(getRoot()); } catch(e){} };
   document.addEventListener('DOMContentLoaded', run);
   new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
 })();
