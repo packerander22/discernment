@@ -515,6 +515,15 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
+
+<style>
+/* === mini separators & heading trim === */
+.mini-sep { margin: 6px 0 0; border-top: 1px solid var(--border); opacity: .9; }
+.mini-sep + .mini-field > label,
+.mini-sep + * .mini-field:first-child > label { margin-top: 2px !important; }
+.mini-sep + .mini-field,
+.mini-sep + * .mini-field:first-child { margin-top: 0 !important; padding-top: 2px !important; }
+</style>
 </head>
 <body>
 <div class="container">
@@ -3304,62 +3313,87 @@ renderMiniQ6 = function (intoEl, node) {
 
 
 <script>
-/* === Q6 unit label & placeholder sync (robust IIFE, clean tail) === */
+/* === Q6 label/placeholder sync + ensure dividers (brace-safe IIFE) === */
 (function(){
-  function wireQ6UnitLabels(root){
-    if (!root) return;
-    const unitSel  = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-    const valInput = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
-
-    function findProbValueLabel(){
-      const cands = Array.from(root.querySelectorAll('.mini-field > label, label'));
-      return cands.find(l => {
-        const t = (l.textContent || '').trim().toLowerCase();
-        return t.startsWith('enter x') || t.startsWith('probability (%)') || t.startsWith('probability (micromorts)');
-      }) || null;
-    }
-
-    function setUI(){
-      const valueLbl = findProbValueLabel();
-      const mode = unitSel ? unitSel.value : 'oneInX';
-      if (valueLbl){
-        if (mode === 'percent')        { valueLbl.textContent = 'Probability (%)'; }
-        else if (mode === 'micromort') { valueLbl.textContent = 'Probability (Micromorts)'; }
-        else                           { valueLbl.textContent = 'Enter X (for "1 in X")'; }
+  function insertDividers(root){
+    var titles = ['Severity','Cost','Probability'];
+    titles.forEach(function(t){
+      var lbl = Array.from(root.querySelectorAll('.mini-field > label')).find(function(l){
+        return (l.textContent||'').trim().toLowerCase() === t.toLowerCase();
+      });
+      if (!lbl) return;
+      var field = lbl.closest('.mini-field');
+      if (!field) return;
+      var prev = field.previousElementSibling;
+      if (!prev || !prev.classList || !prev.classList.contains('mini-sep')){
+        var sep = document.createElement('div');
+        sep.className = 'mini-sep';
+        field.parentElement.insertBefore(sep, field);
       }
-      if (valInput){
-        valInput.placeholder =
-          mode === 'percent'   ? 'e.g. 0.5' :
-          mode === 'micromort' ? 'e.g. 10'  :
-                                 'e.g. 100,000';
-      }
-    }
-
-    if (unitSel && !unitSel.__boundEcho2){
-      unitSel.addEventListener('change', setUI);
-      unitSel.__boundEcho2 = true;
-    }
-    setUI();
+    });
   }
 
-  function tryWireQ6(){
-    const root =
-      document.querySelector('[data-q="Q6"] .mini-wrap') ||
-      document.querySelector('#q6-entry') ||
-      document.querySelector('#q6-entry-entry') ||
-      document.querySelector('[id*="q6"] .mini-wrap');
-    if (root) wireQ6UnitLabels(root);
+  function wireQ6(root){
+    if (!root) return;
+    var unitSel  = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
+    var valInput = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+    if (!valInput) return;
+
+    function collectCandidateLabels(){
+      var set = new Set();
+      var mf = valInput.closest('.mini-field');
+      if (mf){
+        var l = mf.querySelector('label');
+        if (l) set.add(l);
+        if (mf.previousElementSibling && mf.previousElementSibling.tagName === 'LABEL') set.add(mf.previousElementSibling);
+      }
+      root.querySelectorAll('.mini-field > label, label').forEach(function(l){
+        var t = (l.textContent||'').toLowerCase();
+        if (t.includes('enter x') || t.includes('probability (%)') || t.includes('probability (micromorts)')) set.add(l);
+      });
+      return Array.from(set);
+    }
+
+    var targets = collectCandidateLabels();
+
+    function setUI(){
+      var mode = unitSel ? unitSel.value : 'oneInX';
+      var txt  = (mode === 'percent') ? 'Probability (%)' :
+                 (mode === 'micromort') ? 'Probability (Micromorts)' :
+                 'Enter X (for \"1 in X\")';
+      targets.forEach(function(l){ l.textContent = txt; });
+      if (valInput){
+        valInput.placeholder = (mode === 'percent') ? 'e.g. 0.5' :
+                               (mode === 'micromort') ? 'e.g. 10' :
+                               'e.g. 100,000';
+      }
+    }
+
+    if (unitSel && !unitSel.__q6Bound){
+      unitSel.addEventListener('change', setUI);
+      unitSel.__q6Bound = true;
+    }
+    setUI();
+    insertDividers(root);
+  }
+
+  function run(){
+    var root = document.querySelector('[data-q=\"Q6\"] .mini-wrap') ||
+               document.querySelector('#q6-entry') ||
+               document.querySelector('#q6-entry-entry') ||
+               document.querySelector('[id*=\"q6\"] .mini-wrap');
+    if (root) wireQ6(root);
   }
 
   if (window.goToNode){
-    const _go = window.goToNode;
+    var _go = window.goToNode;
     window.goToNode = function(id){
-      const r = _go.apply(this, arguments);
-      if (id === 'Q6' || id === 'q6') tryWireQ6();
+      var r = _go.apply(this, arguments);
+      if (id === 'Q6' || id === 'q6') run();
       return r;
     };
   }
-  document.addEventListener('DOMContentLoaded', tryWireQ6);
+  document.addEventListener('DOMContentLoaded', run);
 })();
 </script>
 </body>
