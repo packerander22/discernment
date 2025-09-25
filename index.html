@@ -518,21 +518,21 @@
 <style>
   /* ===== Mini separators: symmetric spacing (works with grid gap) ===== */
   .mini-sep{
-    margin: 8px 0 !important;              /* 8px above & 8px below */
+    margin: 8px 0 !important;              /* 8px above, 0 below */
     border-top: 1px solid var(--border);
     opacity: .9;
   }
   /* First row under the divider: remove extra self gap */
   .mini-sep + .mini-field{ margin-top:0 !important; padding-top:0 !important; }
   .mini-sep + .mini-field > label{ margin-top:0 !important; }
-
-  /* Grid compensation: gap:12px would add extra space under the divider.
-     Bottom margin -4px + grid row-gap 12px = net 8px to match the top. */
-  .mini-fields > .mini-sep { margin: 8px 0 -4px !important; }
-
+  
+  /* Grid compensation: let the 12px gap provide the bottom spacing */
+  .mini-fields > .mini-sep { margin: 8px 0 0 !important; }
+  
   /* If the first field is wrapped one level */
   .mini-sep + * .mini-field:first-child{ margin-top:0 !important; padding-top:0 !important; }
   .mini-sep + * .mini-field:first-child > label{ margin-top:0 !important; }
+
 
   /* ===== Mobile focus ring: prevent clipping & iOS zoom-on-focus ===== */
   @media (max-width:560px){
