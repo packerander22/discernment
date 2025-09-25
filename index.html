@@ -515,7 +515,7 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style id="mini-mobile-and-divider-anchor">
+<style id="mini-divider-anchor-and-mobile">
   /* ===== Mobile focus ring: prevent clipping & iOS zoom ===== */
   .mini-wrap,
   .mini-fields,
@@ -537,26 +537,23 @@
   }
 
   /* ===== Divider via anchor (true symmetry; ignores grid gap) ===== */
-
-  /* Hide any legacy .mini-sep nodes we may still insert by old code */
-  .mini-fields > .mini-sep { display: none !important; }
-
-  /* Draw the line on the FIRST row of a section */
+  /* Draw the line on the first field of the section instead of inserting an element */
   .mini-sep-anchor{
     position: relative;
     margin-top: 8px;   /* space ABOVE the line */
     padding-top: 8px;  /* space BELOW the line */
   }
   .mini-sep-anchor::before{
-    content: "";
-    position: absolute;
-    left: 0; right: 0; top: 0;
-    border-top: 1px solid var(--border);
-    opacity: .9;
-    pointer-events: none;
+    content:"";
+    position:absolute;
+    left:0; right:0; top:0;
+    border-top:1px solid var(--border);
+    opacity:.9;
+    pointer-events:none;
   }
 </style>
 
+  
 </head>
 <body>
 <div class="container">
@@ -3360,8 +3357,6 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-
-
 <script>
 (function(){
   if (typeof window.renderMiniQ7 === 'function' && !window.__q7Strip){
@@ -3390,56 +3385,50 @@ renderMiniQ6 = function (intoEl, node) {
 </script>
 
 <script id="mini-divider-anchor-js">
-/* === Divider anchor patch: mark first row of each section and draw line via CSS === */
 (function(){
-  function q6_first_field(el){ return el && el.closest ? el.closest('.mini-field') : null; }
+  function addAnchors(root){
+    // Find section headings by label text (robust to attribute differences)
+    const labels = root.querySelectorAll('.mini-field > label');
+    labels.forEach(l=>{
+      const t = (l.textContent || '').trim().toLowerCase();
+      if (t.startsWith('severity') || t.startsWith('cost') || t.startsWith('probability')){
+        const field = l.closest('.mini-field');
+        if (!field) return;
 
-  function q6_mark_anchor(field){
-    if (!field) return;
+        // Remove a legacy <div class="mini-sep"> directly before this row (avoid double line)
+        const prev = field.previousElementSibling;
+        if (prev && prev.classList && prev.classList.contains('mini-sep')) prev.remove();
 
-    // Remove any legacy <div class="mini-sep"> inserted before this row
-    const prev = field.previousElementSibling;
-    if (prev && prev.classList && prev.classList.contains('mini-sep')) prev.remove();
-
-    // Ensure the anchor class is present
-    field.classList.add('mini-sep-anchor');
+        // Mark this row as the divider anchor
+        field.classList.add('mini-sep-anchor');
+      }
+    });
   }
 
-  function q6_fix_dividers(root){
-    // Anchors = first control row of each section
-    const severityA = root.querySelector('[data-k="sVaries"], [name="sVaries"], input[data-k="sVal"], input[name="severity"]');
-    const costA     = root.querySelector('[data-k="cVaries"], [name="cVaries"], input[data-k="cVal"], input[name="cost"]');
-    const probA     = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
-
-    [severityA, costA, probA].forEach(a => q6_mark_anchor(q6_first_field(a)));
+  function getRoot(intoEl){
+    return (intoEl && intoEl.querySelector)
+      ? (intoEl.querySelector('.mini-wrap') || intoEl)
+      : (document.querySelector('[data-q="Q6"] .mini-wrap')
+          || document.querySelector('#q6-entry')
+          || document.querySelector('[id*="q6"] .mini-wrap')
+          || document);
   }
 
   // Patch renderMiniQ6 so we run AFTER each render
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniSepAnchorPatched){
-    const _render = window.renderMiniQ6;
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__anchorsByHeading){
+    const _r = window.renderMiniQ6;
     window.renderMiniQ6 = function(intoEl, node){
-      const ret = _render.apply(this, arguments);
-      try{
-        const root = (intoEl && intoEl.querySelector)
-          ? (intoEl.querySelector('.mini-wrap') || intoEl)
-          : document;
-        q6_fix_dividers(root);
-      }catch(e){}
-      return ret;
+      const out = _r.apply(this, arguments);
+      try { addAnchors(getRoot(intoEl)); } catch(e){}
+      return out;
     };
-    window.renderMiniQ6.__miniSepAnchorPatched = true;
-  } else {
-    // Fallback for non-wrapped flows
-    function run(){
-      const root = document.querySelector('[data-q="Q6"] .mini-wrap')
-                || document.querySelector('#q6-entry')
-                || document.querySelector('[id*="q6"] .mini-wrap')
-                || document;
-      q6_fix_dividers(root);
-    }
-    document.addEventListener('DOMContentLoaded', run);
-    new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
+    window.renderMiniQ6.__anchorsByHeading = true;
   }
+
+  // Initial load + SPA fallback
+  const run = () => { try { addAnchors(getRoot()); } catch(e){} };
+  document.addEventListener('DOMContentLoaded', run);
+  new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
 })();
 </script>
 
