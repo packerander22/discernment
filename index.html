@@ -515,7 +515,7 @@
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
 </style>
 
-<style>.mini-sep{margin:6px 0 0;border-top:1px solid var(--border);opacity:.9}
+<style>.mini-sep { margin: 6px 0 0; border-top: 1px solid var(--border); opacity: .9; }
 @media (max-width:560px){
   .mini-wrap{overflow:visible !important; padding-right:4px;}
   .mini-field{padding:4px 3px;}
@@ -524,7 +524,7 @@
 
 <style>
 /* === Discernment mini: divider + mobile polish (drop-in) === */
-.mini-sep{margin:6px 0 0;border-top:1px solid var(--border);opacity:.9}
+.mini-sep { margin: 6px 0 0; border-top: 1px solid var(--border); opacity: .9; }
 .mini-sep + .mini-field > label{margin-top:2px !important;}
 @media (max-width:560px){
   .mini-wrap{overflow:visible !important; padding-right:4px;}
@@ -3414,23 +3414,46 @@ renderMiniQ6 = function (intoEl, node) {
 
 
 // === Q6 unit label & placeholder sync (drop-in) ===
+
 function wireQ6UnitLabels(root){
   if (!root) return;
+
   const unitSel  = root.querySelector('select[data-k="pMode"], select[name="pMode"]');
   const valInput = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
-  const valueLbl = valInput ? valInput.closest('.mini-field')?.querySelector('label') : null;
 
-  let unitEcho = root.querySelector('[data-ui="prob-unit-echo"]');
-  if (!unitEcho && valInput){
-    unitEcho = document.createElement('div');
-    unitEcho.setAttribute('data-ui','prob-unit-echo');
-    unitEcho.style.fontSize = '12px';
-    unitEcho.style.opacity  = '0.75';
-    unitEcho.style.marginTop = '4px';
-    valInput.closest('.mini-field').appendChild(unitEcho);
+  function findProbValueLabel(){
+    const cands = Array.from(root.querySelectorAll('.mini-field > label, label'));
+    return cands.find(l => {
+      const t = (l.textContent || '').trim().toLowerCase();
+      return t.startsWith('enter x') || t.startsWith('probability (%)') || t.startsWith('probability (micromorts)');
+    }) || null;
   }
 
   function setUI(){
+    const valueLbl = findProbValueLabel();
+    const mode = unitSel ? unitSel.value : 'oneInX';
+
+    if (valueLbl){
+      if (mode === 'percent')      valueLbl.textContent = 'Probability (%)';
+      else if (mode === 'micromort') valueLbl.textContent = 'Probability (Micromorts)';
+      else                          valueLbl.textContent = 'Enter X (for \"1 in X\")';
+    }
+    if (valInput){
+      valInput.placeholder =
+        mode === 'percent'   ? 'e.g. 0.5' :
+        mode === 'micromort' ? 'e.g. 10'  :
+                               'e.g. 100,000';
+    }
+  }
+
+  if (unitSel && !unitSel.__boundEcho2){
+    unitSel.addEventListener('change', setUI);
+    unitSel.__boundEcho2 = true;
+  }
+  setUI();
+}
+
+function setUI(){
     const mode = unitSel ? unitSel.value : 'oneInX';
     if (valueLbl){
       if (mode === 'percent'){ valueLbl.textContent = 'Probability (%)'; }
