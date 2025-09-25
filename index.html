@@ -524,21 +524,19 @@
 </style>
 
 <style id="mini-label-overrides">
-  /* Bigger font for section headers (the labels right after a divider) */
-  .mini-sep + .mini-field > label,
-  .mini-sep + * .mini-field:first-child > label {
-    font-size: 1.15rem;   /* adjust size as desired */
-    font-weight: 700;     /* bold for emphasis */
+  /* Bigger font for section headers under dividers */
+  .section-header{
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
   }
 
-  /* Smaller font for "Varies Across Instances" checkboxes */
-  .mini-field label:has(input[type="checkbox"]) {
-    font-size: 0.85rem;   /* smaller than normal */
-    font-weight: 400;     /* lighter weight */
-    opacity: 0.9;         /* optional, makes it look secondary */
+  /* Smaller font for "Varies Across Instances" checkbox labels */
+  .varies-label{
+    font-size: 0.85rem !important;
+    font-weight: 400 !important;
+    opacity: 0.9;
   }
 </style>
-
   
 </head>
 <body>
@@ -3559,6 +3557,60 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
+<script id="mini-label-tags">
+(function(){
+  function tagQ6Labels(root){
+    if (!root) return;
+
+    // 1) Tag section headers directly under each divider
+    //    (supports either .mini-heading element or a label as first child)
+    const seps = root.querySelectorAll('.mini-sep');
+    seps.forEach(sep=>{
+      // Case A: a .mini-heading immediately after the divider
+      const nxt = sep.nextElementSibling;
+      const heading =
+        (nxt && nxt.classList && nxt.classList.contains('mini-heading')) ? nxt :
+        (nxt && nxt.classList && nxt.classList.contains('mini-field') ? nxt.querySelector(':scope > label, .mini-heading') : null);
+      if (heading) heading.classList.add('section-header');
+    });
+
+    // 2) Tag "Varies Across Instances" checkbox labels
+    root.querySelectorAll('.mini-field label').forEach(l=>{
+      if (l.querySelector('input[type="checkbox"]')) {
+        l.classList.add('varies-label');
+      }
+    });
+  }
+
+  function getQ6Root(intoEl){
+    if (intoEl && intoEl.querySelector){
+      const r = intoEl.querySelector('.mini-wrap');
+      if (r) return r;
+    }
+    return document.querySelector('[data-q="Q6"] .mini-wrap')
+        || document.querySelector('#q6-entry .mini-wrap')
+        || document.querySelector('#q6-entry')
+        || document.querySelector('[id*="q6"] .mini-wrap')
+        || null;
+  }
+
+  // Run after each render (if you have renderMiniQ6)
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__labelTags){
+    const _r = window.renderMiniQ6;
+    window.renderMiniQ6 = function(intoEl,node){
+      const out = _r.apply(this, arguments);
+      try { tagQ6Labels(getQ6Root(intoEl)); } catch(e){}
+      return out;
+    };
+    window.renderMiniQ6.__labelTags = true;
+  }
+
+  // Initial load + SPA fallback
+  const run = () => { try { tagQ6Labels(getQ6Root()); } catch(e){} };
+  document.addEventListener('DOMContentLoaded', run);
+  new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
+})();
+</script>
 
 </body>
 </html>
