@@ -3355,18 +3355,21 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-<script id="mini-q6-unified">
+<script id="mini-q6-unified-v2">
 (function(){
-  // ---- helpers ----
-  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+  // ------- helpers -------
+  function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
 
-  function getRoot(intoEl){
-    return (intoEl && intoEl.querySelector)
-      ? (intoEl.querySelector('.mini-wrap') || intoEl)
-      : (document.querySelector('[data-q="Q6"] .mini-wrap')
-          || document.querySelector('#q6-entry')
-          || document.querySelector('[id*="q6"] .mini-wrap')
-          || document);
+  function findQ6Root(intoEl){
+    if (intoEl && intoEl.querySelector){
+      const r = intoEl.querySelector('.mini-wrap');
+      if (r) return r;
+    }
+    return document.querySelector('[data-q="Q6"] .mini-wrap')
+        || document.querySelector('#q6-entry .mini-wrap')
+        || document.querySelector('#q6-entry')
+        || document.querySelector('[id*="q6"] .mini-wrap')
+        || null;   // <— IMPORTANT: never return document
   }
 
   // Static label + placeholder sync
@@ -3399,7 +3402,7 @@ renderMiniQ6 = function (intoEl, node) {
     setPlaceholder();
   }
 
-  // Ensure a <div class="mini-sep"> exists before Severity/Cost/Probability headings
+  // Ensure <div class="mini-sep"> exists before Severity/Cost/Probability headings
   function ensureDividers(root){
     const labels = root.querySelectorAll('.mini-field > label, .mini-heading, label');
     ['severity','cost','probability'].forEach(name=>{
@@ -3416,7 +3419,7 @@ renderMiniQ6 = function (intoEl, node) {
     });
   }
 
-  // Balance each divider vs the *actual* grid row-gap near it
+  // Balance each divider vs the actual grid row-gap near it (with !important)
   function balanceDividers(root, targetPx){
     const seps = root.querySelectorAll('.mini-sep');
     seps.forEach(sep=>{
@@ -3428,11 +3431,9 @@ renderMiniQ6 = function (intoEl, node) {
         gap = parseFloat(raw) || 0;
       }catch(e){ gap = 0; }
 
-      // We want: (visual below) = targetPx  =>  gap + margin-bottom = targetPx
       const mb = clamp((targetPx|0) - gap, -64, targetPx|0);
       sep.style.setProperty('margin-bottom', mb + 'px', 'important');
 
-      // Make sure the first row under the divider adds no extra top space
       const firstRow = sep.nextElementSibling && sep.nextElementSibling.classList?.contains('mini-field')
         ? sep.nextElementSibling
         : (sep.nextElementSibling && sep.nextElementSibling.querySelector?.('.mini-field:first-child'));
@@ -3446,30 +3447,54 @@ renderMiniQ6 = function (intoEl, node) {
   }
 
   function afterRender(intoEl){
-    const root = getRoot(intoEl);
+    const root = findQ6Root(intoEl);
     if (!root) return;
     ensureDividers(root);
     patchProbValueUI(root);
-    balanceDividers(root, 8); // desired visual space BELOW each line; change to 6/10 if you prefer
+    balanceDividers(root, 8);
   }
 
-  // Hook renderMiniQ6 once
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniUnified){
+  // ------- render hook (only once) -------
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniUnifiedV2){
     const _render = window.renderMiniQ6;
     window.renderMiniQ6 = function(intoEl, node){
       const out = _render.apply(this, arguments);
       try { afterRender(intoEl); } catch(e){}
       return out;
     };
-    window.renderMiniQ6.__miniUnified = true;
+    window.renderMiniQ6.__miniUnifiedV2 = true;
   }
 
-  // Initial load + SPA fallback
-  const run = () => { try { afterRender(null); } catch(e){} };
-  document.addEventListener('DOMContentLoaded', run);
-  new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
+  // ------- observers (scoped & throttled) -------
+  // Attach a local observer ONLY to Q6 root when it appears.
+  let q6Root = null, mo = null, pending = false;
+  function attachLocalObserver(){
+    const root = findQ6Root(null);
+    if (!root || root === q6Root) return;
+    q6Root = root;
+    if (mo) { mo.disconnect(); mo = null; }
+    mo = new MutationObserver(() => {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        pending = false;
+        afterRender(q6Root);
+      });
+    });
+    mo.observe(q6Root, { childList:true, subtree:true });
+    // initial pass
+    afterRender(q6Root);
+  }
+
+  // Tiny global observer just to detect when Q6 mounts; does NOT call afterRender directly.
+  const mountMO = new MutationObserver(attachLocalObserver);
+  mountMO.observe(document.documentElement, { childList:true, subtree:true });
+
+  // Also run once on DOM ready
+  document.addEventListener('DOMContentLoaded', attachLocalObserver);
 })();
 </script>
+
 
 </body>
 </html>
