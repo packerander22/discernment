@@ -516,9 +516,7 @@
 </style>
 
 <style>
-  /* === Mini separators & mobile polish (Q6/Q7) === */
-
-  /* Dividers with minimal space below */
+  /* Tight divider: little-to-no space below the line */
   .mini-sep{
     margin: 8px 0 0 !important;   /* 8px above, 0 below */
     border-top: 1px solid var(--border);
@@ -530,7 +528,7 @@
     margin-top: 0 !important;
     padding-top: 4px !important;
   }
-  /* If the first row contains a heading label, trim it too */
+  /* If the first row contains a heading label, trim its top margin too */
   .mini-sep + .mini-field > label,
   .mini-sep + * .mini-field:first-child > label{
     margin-top: 2px !important;
@@ -3500,6 +3498,69 @@ renderMiniQ6 = function (intoEl, node) {
   // In case Q6 renders async
   var mo = new MutationObserver(function(){ if (!wired) wireOnce(); });
   mo.observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+(function(){
+  // RE-RUN helpers whenever Q6 subtree changes after first render
+  function onQ6Mutations(root){
+    try{
+      // Your existing helpers:
+      if (typeof insertSectionDividers === 'function') insertSectionDividers(root);
+      if (typeof ensureStaticValueLabel === 'function') ensureStaticValueLabel(root);
+      if (typeof setPlaceholderByUnit === 'function') setPlaceholderByUnit(root);
+    }catch(e){}
+  }
+
+  // After your existing wireOnce() runs, attach a fine-grained observer to Q6:
+  (function attachQ6Observer(){
+    var q6 = (document.querySelector('[data-q="Q6"] .mini-wrap')
+          || document.querySelector('#q6-entry')
+          || document.querySelector('[id*="q6"] .mini-wrap'));
+    if (!q6) return; // Q6 not in DOM yet; a global MO below will catch it.
+
+    if (!q6.__miniPatchObserved){
+      q6.__miniPatchObserved = true;
+      var mo = new MutationObserver(function(){
+        // re-assert label/placeholder/dividers whenever Q6 subtree changes
+        onQ6Mutations(q6);
+      });
+      mo.observe(q6, { childList: true, subtree: true });
+      // do an initial pass too
+      onQ6Mutations(q6);
+    }
+  })();
+
+  // Global observer in case Q6 mounts later (SPA nav)
+  if (!window.__miniPatchGlobalMO){
+    window.__miniPatchGlobalMO = new MutationObserver(function(){
+      var q6 = document.querySelector('[data-q="Q6"] .mini-wrap')
+            || document.querySelector('#q6-entry')
+            || document.querySelector('[id*="q6"] .mini-wrap');
+      if (q6 && !q6.__miniPatchObserved){
+        // Attach the local observer now that Q6 exists
+        var ev = document.createEvent('Event');
+        ev.initEvent('miniPatchAttachQ6Observer', true, true);
+        document.dispatchEvent(ev);
+      }
+    });
+    window.__miniPatchGlobalMO.observe(document.documentElement, { childList: true, subtree: true });
+
+    // little bridge so we can re-run the IIFE attach when Q6 appears
+    document.addEventListener('miniPatchAttachQ6Observer', function(){
+      (function attachQ6Observer(){
+        var q6 = (document.querySelector('[data-q="Q6"] .mini-wrap')
+              || document.querySelector('#q6-entry')
+              || document.querySelector('[id*="q6"] .mini-wrap'));
+        if (!q6) return;
+        if (!q6.__miniPatchObserved){
+          q6.__miniPatchObserved = true;
+          var mo = new MutationObserver(function(){ onQ6Mutations(q6); });
+          mo.observe(q6, { childList: true, subtree: true });
+          onQ6Mutations(q6);
+        }
+      })();
+    });
+  }
 })();
   
 </script>
