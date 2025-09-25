@@ -523,22 +523,26 @@
 </style>
 
 <style id="mini-typography-tweak">
-  /* Bigger mini section headings ("Severity", "Cost", "Probability") */
-  /* Works whether the tagger added .section-header or it's just .mini-heading */
+  /* Bigger mini section headings (covers both .mini-heading and label-based headings) */
   .mini-heading,
-  .section-header{
-    font-size: 1.20rem !important;   /* adjust number to taste */
+  .section-header,
+  /* Fallback: first label after a divider behaves like a heading */
+  .mini-sep + .mini-field > label,
+  .mini-sep + * .mini-field:first-child > label {
+    font-size: 1.20rem !important;
     font-weight: 700 !important;
     line-height: 1.3 !important;
   }
 
-  /* Smaller "Varies Across Instances" checkbox label */
-  /* Prefer the class from your tagger; fall back to :has for safety */
-  .varies-label,
-  .mini-field label:has(input[type="checkbox"]){
-    font-size: 0.85rem !important;   /* adjust number to taste */
+  /* Smaller "Varies Across Instances" checkbox label (robust selectors) */
+  .varies-label,                                             /* class we’ll add in JS */
+  .mini-field label:has(input[type="checkbox"]),             /* modern browsers */
+  .mini-field label input[type="checkbox"] + *,              /* span/text node after the checkbox */
+  .mini-field label input[type="checkbox"] ~ *               /* any text container in the label */
+  {
+    font-size: 0.85rem !important;
     font-weight: 400 !important;
-    opacity: .9;
+    opacity: 0.9;
   }
 </style>
   
@@ -3583,5 +3587,51 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
+<script id="mini-label-class-patcher">
+(function(){
+  function tagQ6Labels(root){
+    if (!root) return;
+
+    // Tag section headings (whatever form they take) so CSS can hit them
+    root.querySelectorAll('.mini-heading').forEach(h => h.classList.add('section-header'));
+    root.querySelectorAll('.mini-sep + .mini-field > label, .mini-sep + * .mini-field:first-child > label')
+        .forEach(l => l.classList.add('section-header'));
+
+    // Tag "Varies Across Instances" checkbox labels
+    root.querySelectorAll('.mini-field label').forEach(l=>{
+      if (l.querySelector('input[type="checkbox"]')) l.classList.add('varies-label');
+    });
+  }
+
+  function getQ6Root(intoEl){
+    if (intoEl && intoEl.querySelector){
+      const r = intoEl.querySelector('.mini-wrap');
+      if (r) return r;
+    }
+    return document.querySelector('[data-q="Q6"] .mini-wrap')
+        || document.querySelector('#q6-entry .mini-wrap')
+        || document.querySelector('#q6-entry')
+        || document.querySelector('[id*="q6"] .mini-wrap')
+        || null;
+  }
+
+  // Hook renderMiniQ6 (if present)
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniLabelPatch){
+    const _r = window.renderMiniQ6;
+    window.renderMiniQ6 = function(intoEl, node){
+      const out = _r.apply(this, arguments);
+      try { tagQ6Labels(getQ6Root(intoEl)); } catch(e){}
+      return out;
+    };
+    window.renderMiniQ6.__miniLabelPatch = true;
+  }
+
+  // First pass + SPA fallback
+  const run = () => { try { tagQ6Labels(getQ6Root()); } catch(e){} };
+  document.addEventListener('DOMContentLoaded', run);
+  new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
+})();
+</script>
+  
 </body>
 </html>
