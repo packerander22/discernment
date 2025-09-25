@@ -505,7 +505,6 @@
   /* Graph scales without pushing layout */
   .mini-wrap svg { width:100%; max-width:100%; height:auto; }
   /* Make "Varies across instances" labels match input labels */
-  .mini-field label { font-size: 0.95rem; line-height: 1.35; }
   .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
 </style>
 
@@ -3507,53 +3506,6 @@ renderMiniQ6 = function (intoEl, node) {
 
   // Also run once on DOM ready
   document.addEventListener('DOMContentLoaded', attachLocalObserver);
-})();
-</script>
-
-<script>
-(function(){
-  function ensureSingleSepBefore(h){
-    if (!h || !h.parentElement) return;
-    const parent = h.parentElement;
-
-    // Collect any contiguous .mini-sep before this heading
-    const toRemove = [];
-    let prev = h.previousElementSibling;
-    while (prev && prev.classList && prev.classList.contains('mini-sep')){
-      toRemove.push(prev);
-      prev = prev.previousElementSibling;
-    }
-
-    if (toRemove.length === 0){
-      const sep = document.createElement('div');
-      sep.className = 'mini-sep';
-      parent.insertBefore(sep, h);
-    } else if (toRemove.length > 1){
-      // keep the one closest to the heading
-      toRemove.slice(1).forEach(el => el.remove());
-    }
-  }
-
-  function fixDividers(root){
-    if (!root) return;
-    const labels = root.querySelectorAll('.mini-field > label, .mini-heading, label');
-    ['severity','cost','probability'].forEach(name=>{
-      const h = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name);
-      if (h) ensureSingleSepBefore(h);
-    });
-  }
-
-  function run(){
-    const root = document.querySelector('[data-q="Q6"] .mini-wrap')
-             || document.querySelector('#q6-entry .mini-wrap')
-             || document.querySelector('#q6-entry')
-             || document.querySelector('[id*="q6"] .mini-wrap');
-    if (root) fixDividers(root);
-  }
-
-  document.addEventListener('DOMContentLoaded', run);
-  const mountObs = new MutationObserver(run);
-  mountObs.observe(document.documentElement, {childList:true, subtree:true});
 })();
 </script>
 
