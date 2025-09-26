@@ -505,6 +505,7 @@
   /* Graph scales without pushing layout */
   .mini-wrap svg { width:100%; max-width:100%; height:auto; }
   /* Make "Varies across instances" labels match input labels */
+  .mini-field label { font-size: 0.95rem; line-height: 1.35; }
   .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
 </style>
 
@@ -516,34 +517,71 @@
 
 <style id="mini-sep-base">
   .mini-sep{
-    margin: 8px 0 0;                 /* 8px above; JS will set bottom dynamically */
+    margin: 8px 0 0;                 /* 8px above; JS sets bottom dynamically */
     border-top: 1px solid var(--border);
     opacity: .9;
   }
 </style>
 
-<style id="mini-typography-tweak">
-  /* Bigger section headers */
-  .mini-heading,
-  .section-header,
-  .mini-sep + .mini-field > label,
-  .mini-sep + * .mini-field:first-child > label {
-    font-size: 1.25rem !important;
-    font-weight: 700 !important;
-    line-height: 1.35 !important;
+<!-- === Q6/Q7 single-column upgrade (clean, with font sizes) === -->
+<style id="q67-single-col">
+  /* Stretch like the rest of the site */
+  .mini-wrap, #q6-entry, #q7-entry { width: 100%; }
+
+  /* One-column layout inside Q6/Q7 containers */
+  #q6-entry, #q7-entry {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    max-width: none;
   }
 
-  /* Smaller "Varies Across Instances" */
-  .mini-field label.varies-label,
-  .mini-field label:has(input[type="checkbox"]),
-  .mini-field label input[type="checkbox"] + *,
-  .mini-field label input[type="checkbox"] ~ * {
-    font-size: 0.7rem !important;
-    font-weight: 400 !important;
-    opacity: 0.9 !important;
+  /* Larger mini section headings (Severity / Cost / Probability) */
+  #q6-entry .mini-heading,
+  #q7-entry .mini-heading {
+    font-weight: 700;
+    font-size: 1.20rem;
+    line-height: 1.3;
+    margin-top: 10px;
   }
+  /* If a build uses a label as the first row under a divider, treat it like a heading */
+  #q6-entry .mini-sep + .mini-field > label,
+  #q7-entry .mini-sep + .mini-field > label {
+    font-weight: 700;
+    font-size: 1.20rem;
+    line-height: 1.3;
+  }
+
+  /* Default label size for everything else */
+  #q6-entry label,
+  #q7-entry label {
+    font-size: 0.95rem;
+    font-weight: 400;
+    line-height: 1.35;
+  }
+
+  /* Smaller “Varies Across Instances” labels (those containing a checkbox) */
+  #q6-entry label:has(input[type="checkbox"]),
+  #q7-entry label:has(input[type="checkbox"]) {
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: .9;
+  }
+  /* If you use a span for the checkbox text, inherit the smaller size */
+  #q6-entry label:has(input[type="checkbox"]) .toggle-label,
+  #q7-entry label:has(input[type="checkbox"]) .toggle-label { font-size: inherit; }
+
+  /* Inputs full width */
+  #q6-entry .mini-field input, #q6-entry .mini-field select,
+  #q7-entry .mini-field input, #q7-entry .mini-field select { width: 100%; max-width: none; }
+
+  /* Q7 “grayed out” feel */
+  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint { opacity: .6; pointer-events: none; }
+  #q6-entry .muted { opacity: .6; }
+
+  .mini-spacer { height: 6px; }
 </style>
-  
+
 </head>
 <body>
 <div class="container">
@@ -2902,7 +2940,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
-    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter Value</label>';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
     const pVal = absorbOriginalRow(root, '#miniVal') ||
                  absorbOriginalRow(root, 'input[name="probVal"]') ||
                  absorbOriginalRow(root, 'input[data-q="pVal"]') ||
@@ -3347,8 +3385,6 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-
-
 <script>
 (function(){
   if (typeof window.renderMiniQ7 === 'function' && !window.__q7Strip){
@@ -3376,9 +3412,49 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-<script id="mini-q6-unified-v2">
+<script id="q6-placeholder-only">
 (function(){
-  // ------- helpers -------
+  if (typeof window.renderMiniQ6 !== 'function' || window.renderMiniQ6.__q6PHOnly) return;
+
+  const _render = window.renderMiniQ6;
+  window.renderMiniQ6 = function(intoEl, node){
+    const out = _render.apply(this, arguments);
+    try {
+      const root =
+        (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) ||
+        document.querySelector('[data-q="Q6"] .mini-wrap') ||
+        document.querySelector('#q6-entry .mini-wrap') ||
+        document.querySelector('#q6-entry') ||
+        document.querySelector('[id*="q6"] .mini-wrap');
+
+      if (!root) return out;
+
+      // Only change the placeholder on the "Enter Value" input based on unit
+      const unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"], #miniMode, select[name="q6Units"]');
+      const pVal    = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
+      const setPH = () => {
+        if (!pVal) return;
+        const mode = unitSel ? unitSel.value : 'oneInX';
+        pVal.placeholder =
+          mode === 'percent'   ? 'e.g. 0.5' :
+          mode === 'micromort' ? 'e.g. 10'  :
+                                 'e.g. 100,000';
+      };
+      if (unitSel && !unitSel.__q6PHOnlyBound){
+        unitSel.addEventListener('change', setPH);
+        unitSel.__q6PHOnlyBound = true;
+      }
+      setPH();
+    } catch(e){}
+    return out;
+  };
+
+  window.renderMiniQ6.__q6PHOnly = true;
+})();
+</script>
+
+<script id="mini-q6-divider-fix">
+(function(){
   function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
 
   function findQ6Root(intoEl){
@@ -3390,71 +3466,34 @@ renderMiniQ6 = function (intoEl, node) {
         || document.querySelector('#q6-entry .mini-wrap')
         || document.querySelector('#q6-entry')
         || document.querySelector('[id*="q6"] .mini-wrap')
-        || null;   // <— IMPORTANT: never return document
+        || null;
   }
 
-  // Static label + placeholder sync
-  function patchProbValueUI(root){
-    const pValInput  = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
-    const pValField  = pValInput ? pValInput.closest('.mini-field') : null;
-    if (pValField){
-      let label = pValField.querySelector('label.mini-prob-value-label') || pValField.querySelector('label');
-      if (!label){
-        label = document.createElement('label');
-        pValField.insertBefore(label, pValField.firstChild);
-      }
-      label.classList.add('mini-prob-value-label');
-      label.textContent = 'Enter Value'; // static
-    }
-
-    const unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"], #miniMode, select[name="q6Units"]');
-    function setPlaceholder(){
-      if (!pValInput) return;
-      const mode = unitSel ? unitSel.value : 'oneInX';
-      pValInput.placeholder =
-        mode === 'percent'   ? 'e.g. 0.5' :
-        mode === 'micromort' ? 'e.g. 10'  :
-                               'e.g. 100,000';
-    }
-    if (unitSel && !unitSel.__q6PH){
-      unitSel.addEventListener('change', setPlaceholder);
-      unitSel.__q6PH = true;
-    }
-    setPlaceholder();
-  }
-
-  // Ensure <div class="mini-sep"> exists exactly once before each section heading
+  // Ensure exactly one <div class="mini-sep"> immediately before each .mini-heading
   function ensureDividers(root){
-    if (!root) return;
-  
-    // Use the actual heading elements rather than matching by text
     const headings = root.querySelectorAll('.mini-heading');
     headings.forEach(h=>{
       const parent = h.parentElement;
       if (!parent) return;
-  
-      // Walk *backward from the heading* collecting contiguous .mini-sep siblings
+
+      // collect contiguous .mini-sep just before the heading
       const toRemove = [];
       let prev = h.previousElementSibling;
       while (prev && prev.classList && prev.classList.contains('mini-sep')){
         toRemove.push(prev);
         prev = prev.previousElementSibling;
       }
-  
       if (toRemove.length === 0){
-        // No divider immediately before -> insert one
         const sep = document.createElement('div');
         sep.className = 'mini-sep';
         parent.insertBefore(sep, h);
       } else if (toRemove.length > 1){
-        // More than one stacked -> keep the one closest to the heading, remove the rest
-        toRemove.slice(1).forEach(el => el.remove());
+        toRemove.slice(1).forEach(el => el.remove()); // keep only the one closest to the heading
       }
-      // If exactly one exists right before, do nothing
     });
   }
 
-  // Balance each divider vs the actual grid row-gap near it (with !important)
+  // Make the visual space BELOW each divider equal to targetPx (compensates grid row-gap)
   function balanceDividers(root, targetPx){
     const seps = root.querySelectorAll('.mini-sep');
     seps.forEach(sep=>{
@@ -3462,21 +3501,20 @@ renderMiniQ6 = function (intoEl, node) {
       let gap = 0;
       try{
         const cs = grid ? getComputedStyle(grid) : null;
-        const raw = cs ? (cs.rowGap || cs.gap || '0') : '0';
-        gap = parseFloat(raw) || 0;
+        gap = parseFloat(cs ? (cs.rowGap || cs.gap || '0') : '0') || 0;
       }catch(e){ gap = 0; }
-
-      const mb = clamp((targetPx|0) - gap, -64, targetPx|0);
+      const mb = clamp((targetPx|0) - gap, -64, targetPx|0); // margin-bottom so gap+mb = targetPx
       sep.style.setProperty('margin-bottom', mb + 'px', 'important');
 
-      const firstRow = sep.nextElementSibling && sep.nextElementSibling.classList?.contains('mini-field')
+      // First row under divider shouldn’t add its own top space
+      const firstRow = sep.nextElementSibling?.classList?.contains('mini-field')
         ? sep.nextElementSibling
-        : (sep.nextElementSibling && sep.nextElementSibling.querySelector?.('.mini-field:first-child'));
+        : sep.nextElementSibling?.querySelector?.('.mini-field:first-child');
       if (firstRow){
-        firstRow.style.setProperty('margin-top',  '0px', 'important');
-        firstRow.style.setProperty('padding-top', '0px', 'important');
-        const firstLabel = firstRow.querySelector(':scope > label');
-        if (firstLabel) firstLabel.style.setProperty('margin-top', '0px', 'important');
+        firstRow.style.setProperty('margin-top','0','important');
+        firstRow.style.setProperty('padding-top','0','important');
+        const lbl = firstRow.querySelector(':scope > label');
+        if (lbl) lbl.style.setProperty('margin-top','0','important');
       }
     });
   }
@@ -3485,151 +3523,27 @@ renderMiniQ6 = function (intoEl, node) {
     const root = findQ6Root(intoEl);
     if (!root) return;
     ensureDividers(root);
-    patchProbValueUI(root);
-    balanceDividers(root, 8);
+    balanceDividers(root, 8); // change to 6 if you prefer tighter below-the-line space
   }
 
-  // ------- render hook (only once) -------
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniUnifiedV2){
-    const _render = window.renderMiniQ6;
+  // Hook renderMiniQ6 once if present
+  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniDividerFix){
+    const _r = window.renderMiniQ6;
     window.renderMiniQ6 = function(intoEl, node){
-      const out = _render.apply(this, arguments);
+      const out = _r.apply(this, arguments);
       try { afterRender(intoEl); } catch(e){}
       return out;
     };
-    window.renderMiniQ6.__miniUnifiedV2 = true;
+    window.renderMiniQ6.__miniDividerFix = true;
   }
 
-  // ------- observers (scoped & throttled) -------
-  // Attach a local observer ONLY to Q6 root when it appears.
-  let q6Root = null, mo = null, pending = false;
-  function attachLocalObserver(){
-    const root = findQ6Root(null);
-    if (!root || root === q6Root) return;
-    q6Root = root;
-    if (mo) { mo.disconnect(); mo = null; }
-    mo = new MutationObserver(() => {
-      if (pending) return;
-      pending = true;
-      requestAnimationFrame(() => {
-        pending = false;
-        afterRender(q6Root);
-      });
-    });
-    mo.observe(q6Root, { childList:true, subtree:true });
-    // initial pass
-    afterRender(q6Root);
-  }
-
-  // Tiny global observer just to detect when Q6 mounts; does NOT call afterRender directly.
-  const mountMO = new MutationObserver(attachLocalObserver);
+  // Initial pass + SPA mount watcher (scoped; no global loops)
+  const run = () => { try { afterRender(null); } catch(e){} };
+  document.addEventListener('DOMContentLoaded', run);
+  const mountMO = new MutationObserver(run);
   mountMO.observe(document.documentElement, { childList:true, subtree:true });
-
-  // Also run once on DOM ready
-  document.addEventListener('DOMContentLoaded', attachLocalObserver);
 })();
 </script>
 
-<script id="mini-label-tags">
-(function(){
-  function tagQ6Labels(root){
-    if (!root) return;
-
-    // 1) Tag section headers directly under each divider
-    //    (supports either .mini-heading element or a label as first child)
-    const seps = root.querySelectorAll('.mini-sep');
-    seps.forEach(sep=>{
-      // Case A: a .mini-heading immediately after the divider
-      const nxt = sep.nextElementSibling;
-      const heading =
-        (nxt && nxt.classList && nxt.classList.contains('mini-heading')) ? nxt :
-        (nxt && nxt.classList && nxt.classList.contains('mini-field') ? nxt.querySelector(':scope > label, .mini-heading') : null);
-      if (heading) heading.classList.add('section-header');
-    });
-
-    // 2) Tag "Varies Across Instances" checkbox labels
-    root.querySelectorAll('.mini-field label').forEach(l=>{
-      if (l.querySelector('input[type="checkbox"]')) {
-        l.classList.add('varies-label');
-      }
-    });
-  }
-
-  function getQ6Root(intoEl){
-    if (intoEl && intoEl.querySelector){
-      const r = intoEl.querySelector('.mini-wrap');
-      if (r) return r;
-    }
-    return document.querySelector('[data-q="Q6"] .mini-wrap')
-        || document.querySelector('#q6-entry .mini-wrap')
-        || document.querySelector('#q6-entry')
-        || document.querySelector('[id*="q6"] .mini-wrap')
-        || null;
-  }
-
-  // Run after each render (if you have renderMiniQ6)
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__labelTags){
-    const _r = window.renderMiniQ6;
-    window.renderMiniQ6 = function(intoEl,node){
-      const out = _r.apply(this, arguments);
-      try { tagQ6Labels(getQ6Root(intoEl)); } catch(e){}
-      return out;
-    };
-    window.renderMiniQ6.__labelTags = true;
-  }
-
-  // Initial load + SPA fallback
-  const run = () => { try { tagQ6Labels(getQ6Root()); } catch(e){} };
-  document.addEventListener('DOMContentLoaded', run);
-  new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
-})();
-</script>
-
-<script id="mini-label-class-patcher">
-(function(){
-  function tagQ6Labels(root){
-    if (!root) return;
-
-    // Tag section headings (whatever form they take) so CSS can hit them
-    root.querySelectorAll('.mini-heading').forEach(h => h.classList.add('section-header'));
-    root.querySelectorAll('.mini-sep + .mini-field > label, .mini-sep + * .mini-field:first-child > label')
-        .forEach(l => l.classList.add('section-header'));
-
-    // Tag "Varies Across Instances" checkbox labels
-    root.querySelectorAll('.mini-field label').forEach(l=>{
-      if (l.querySelector('input[type="checkbox"]')) l.classList.add('varies-label');
-    });
-  }
-
-  function getQ6Root(intoEl){
-    if (intoEl && intoEl.querySelector){
-      const r = intoEl.querySelector('.mini-wrap');
-      if (r) return r;
-    }
-    return document.querySelector('[data-q="Q6"] .mini-wrap')
-        || document.querySelector('#q6-entry .mini-wrap')
-        || document.querySelector('#q6-entry')
-        || document.querySelector('[id*="q6"] .mini-wrap')
-        || null;
-  }
-
-  // Hook renderMiniQ6 (if present)
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniLabelPatch){
-    const _r = window.renderMiniQ6;
-    window.renderMiniQ6 = function(intoEl, node){
-      const out = _r.apply(this, arguments);
-      try { tagQ6Labels(getQ6Root(intoEl)); } catch(e){}
-      return out;
-    };
-    window.renderMiniQ6.__miniLabelPatch = true;
-  }
-
-  // First pass + SPA fallback
-  const run = () => { try { tagQ6Labels(getQ6Root()); } catch(e){} };
-  document.addEventListener('DOMContentLoaded', run);
-  new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
-})();
-</script>
-  
 </body>
 </html>
