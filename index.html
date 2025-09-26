@@ -2739,8 +2739,6 @@ function renderNode(node) {
 </script>
 
 
-
-
 <!-- === Q6/Q7 single-column upgrade (full-width fix, cleanup, toggle fix) === -->
 <style>
   /* Make the mini area stretch like the rest of the site */
@@ -2753,8 +2751,8 @@ function renderNode(node) {
   }
   #q6-entry .mini-heading, #q7-entry .mini-heading {
     font-weight: 700;
-    font-size: 1.2rem;
-    margin-top: 10px;
+    font-size: 1.5rem;
+    margin-top: 1px;
   }
   #q6-entry label, #q7-entry label {
     font-size: 0.95rem;
@@ -2940,7 +2938,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
-    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter Value</label>';
     const pVal = absorbOriginalRow(root, '#miniVal') ||
                  absorbOriginalRow(root, 'input[name="probVal"]') ||
                  absorbOriginalRow(root, 'input[data-q="pVal"]') ||
