@@ -509,77 +509,9 @@
   .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
 </style>
 
-
 <style id="mini-fix-css-ovr">
   #q6-entry, #q7-entry { max-width:100%; overflow-x:hidden; }
   .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
-</style>
-
-<style id="mini-sep-base">
-  .mini-sep{
-    margin: 8px 0 0;                 /* 8px above; JS sets bottom dynamically */
-    border-top: 1px solid var(--border);
-    opacity: .9;
-  }
-</style>
-
-<!-- === Q6/Q7 single-column upgrade (clean, with font sizes) === -->
-<style id="q67-single-col">
-  /* Stretch like the rest of the site */
-  .mini-wrap, #q6-entry, #q7-entry { width: 100%; }
-
-  /* One-column layout inside Q6/Q7 containers */
-  #q6-entry, #q7-entry {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    max-width: none;
-  }
-
-  /* Larger mini section headings (Severity / Cost / Probability) */
-  #q6-entry .mini-heading,
-  #q7-entry .mini-heading {
-    font-weight: 700;
-    font-size: 1.20rem;
-    line-height: 1.3;
-    margin-top: 10px;
-  }
-  /* If a build uses a label as the first row under a divider, treat it like a heading */
-  #q6-entry .mini-sep + .mini-field > label,
-  #q7-entry .mini-sep + .mini-field > label {
-    font-weight: 700;
-    font-size: 1.20rem;
-    line-height: 1.3;
-  }
-
-  /* Default label size for everything else */
-  #q6-entry label,
-  #q7-entry label {
-    font-size: 0.95rem;
-    font-weight: 400;
-    line-height: 1.35;
-  }
-
-  /* Smaller “Varies Across Instances” labels (those containing a checkbox) */
-  #q6-entry label:has(input[type="checkbox"]),
-  #q7-entry label:has(input[type="checkbox"]) {
-    font-size: 0.75rem;
-    font-weight: 400;
-    opacity: .9;
-  }
-  /* If you use a span for the checkbox text, inherit the smaller size */
-  #q6-entry label:has(input[type="checkbox"]) .toggle-label,
-  #q7-entry label:has(input[type="checkbox"]) .toggle-label { font-size: inherit; }
-
-  /* Inputs full width */
-  #q6-entry .mini-field input, #q6-entry .mini-field select,
-  #q7-entry .mini-field input, #q7-entry .mini-field select { width: 100%; max-width: none; }
-
-  /* Q7 “grayed out” feel */
-  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint { opacity: .6; pointer-events: none; }
-  #q6-entry .muted { opacity: .6; }
-
-  .mini-spacer { height: 6px; }
 </style>
 
 </head>
@@ -1126,7 +1058,7 @@ function renderMiniQ6(intoEl, node){
       <option value="micromort">Micromorts</option>\
     </select>';
   const vBox = document.createElement('div'); vBox.className='mini-field';
-  vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000,000">';
+  vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000">';
   pRow.appendChild(mBox); pRow.appendChild(vBox);
 
   wrap.appendChild(fields); wrap.appendChild(pRow);
@@ -1186,8 +1118,8 @@ function renderMiniQ6(intoEl, node){
   elM.value = miniMaster.mode;
   probName.textContent = miniProbSymbol(miniMaster.mode);
   function updateProbLabelForMode(mode){
-    if (mode==='oneInX'){ labV.textContent='Enter X (for “1 in X”)'; elV.placeholder='e.g. 1,000,000'; }
-    else if (mode==='percent'){ labV.textContent='Enter percentage (%)'; elV.placeholder='e.g. 0.01'; }
+    if (mode==='oneInX'){ labV.textContent='Enter X (for “1 in X”)'; elV.placeholder='e.g. 1,000'; }
+    else if (mode==='percent'){ labV.textContent='Enter percentage (%)'; elV.placeholder='e.g. 1'; }
     else { labV.textContent='Enter micromorts (µm)'; elV.placeholder='e.g. 1'; }
     probName.textContent = miniProbSymbol(mode);
   }
@@ -2738,7 +2670,6 @@ function renderNode(node) {
 
 </script>
 
-
 <!-- === Q6/Q7 single-column upgrade (full-width fix, cleanup, toggle fix) === -->
 <style>
   /* Make the mini area stretch like the rest of the site */
@@ -2752,7 +2683,7 @@ function renderNode(node) {
   #q6-entry .mini-heading, #q7-entry .mini-heading {
     font-weight: 700;
     font-size: 1.5rem;
-    margin-top: 1px;
+    margin-top: 2px;
   }
   #q6-entry label, #q7-entry label {
     font-size: 0.95rem;
@@ -2768,6 +2699,7 @@ function renderNode(node) {
   #q6-entry .muted { opacity: .6; }
   .mini-spacer { height: 6px; }
 </style>
+  
 <script>
 (function () {
   // Q7 read-only mirror: strip all entry fields, keep graph/rule/verdict/link, replace footer with Yes/No
@@ -2938,7 +2870,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
 
     const pValRow = document.createElement('div');
     pValRow.className = 'mini-field';
-    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter Value</label>';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
     const pVal = absorbOriginalRow(root, '#miniVal') ||
                  absorbOriginalRow(root, 'input[name="probVal"]') ||
                  absorbOriginalRow(root, 'input[data-q="pVal"]') ||
@@ -3216,9 +3148,6 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-
-
-
 <script id="mini-runtime-fixes">
 (function(){
   function q(sel, r){ return (r||document).querySelector(sel); }
@@ -3383,6 +3312,8 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
+
+
 <script>
 (function(){
   if (typeof window.renderMiniQ7 === 'function' && !window.__q7Strip){
@@ -3407,139 +3338,6 @@ renderMiniQ6 = function (intoEl, node) {
       }catch(e){}
     };
   }
-})();
-</script>
-
-<script id="q6-placeholder-only">
-(function(){
-  if (typeof window.renderMiniQ6 !== 'function' || window.renderMiniQ6.__q6PHOnly) return;
-
-  const _render = window.renderMiniQ6;
-  window.renderMiniQ6 = function(intoEl, node){
-    const out = _render.apply(this, arguments);
-    try {
-      const root =
-        (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) ||
-        document.querySelector('[data-q="Q6"] .mini-wrap') ||
-        document.querySelector('#q6-entry .mini-wrap') ||
-        document.querySelector('#q6-entry') ||
-        document.querySelector('[id*="q6"] .mini-wrap');
-
-      if (!root) return out;
-
-      // Only change the placeholder on the "Enter Value" input based on unit
-      const unitSel = root.querySelector('select[data-k="pMode"], select[name="pMode"], #miniMode, select[name="q6Units"]');
-      const pVal    = root.querySelector('input[data-k="pVal"], input[name="pVal"]');
-      const setPH = () => {
-        if (!pVal) return;
-        const mode = unitSel ? unitSel.value : 'oneInX';
-        pVal.placeholder =
-          mode === 'percent'   ? 'e.g. 0.5' :
-          mode === 'micromort' ? 'e.g. 10'  :
-                                 'e.g. 100,000';
-      };
-      if (unitSel && !unitSel.__q6PHOnlyBound){
-        unitSel.addEventListener('change', setPH);
-        unitSel.__q6PHOnlyBound = true;
-      }
-      setPH();
-    } catch(e){}
-    return out;
-  };
-
-  window.renderMiniQ6.__q6PHOnly = true;
-})();
-</script>
-
-<script id="mini-q6-divider-fix">
-(function(){
-  function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
-
-  function findQ6Root(intoEl){
-    if (intoEl && intoEl.querySelector){
-      const r = intoEl.querySelector('.mini-wrap');
-      if (r) return r;
-    }
-    return document.querySelector('[data-q="Q6"] .mini-wrap')
-        || document.querySelector('#q6-entry .mini-wrap')
-        || document.querySelector('#q6-entry')
-        || document.querySelector('[id*="q6"] .mini-wrap')
-        || null;
-  }
-
-  // Ensure exactly one <div class="mini-sep"> immediately before each .mini-heading
-  function ensureDividers(root){
-    const headings = root.querySelectorAll('.mini-heading');
-    headings.forEach(h=>{
-      const parent = h.parentElement;
-      if (!parent) return;
-
-      // collect contiguous .mini-sep just before the heading
-      const toRemove = [];
-      let prev = h.previousElementSibling;
-      while (prev && prev.classList && prev.classList.contains('mini-sep')){
-        toRemove.push(prev);
-        prev = prev.previousElementSibling;
-      }
-      if (toRemove.length === 0){
-        const sep = document.createElement('div');
-        sep.className = 'mini-sep';
-        parent.insertBefore(sep, h);
-      } else if (toRemove.length > 1){
-        toRemove.slice(1).forEach(el => el.remove()); // keep only the one closest to the heading
-      }
-    });
-  }
-
-  // Make the visual space BELOW each divider equal to targetPx (compensates grid row-gap)
-  function balanceDividers(root, targetPx){
-    const seps = root.querySelectorAll('.mini-sep');
-    seps.forEach(sep=>{
-      const grid = sep.closest('.mini-fields, .fields, [style*="display: grid"]') || sep.parentElement;
-      let gap = 0;
-      try{
-        const cs = grid ? getComputedStyle(grid) : null;
-        gap = parseFloat(cs ? (cs.rowGap || cs.gap || '0') : '0') || 0;
-      }catch(e){ gap = 0; }
-      const mb = clamp((targetPx|0) - gap, -64, targetPx|0); // margin-bottom so gap+mb = targetPx
-      sep.style.setProperty('margin-bottom', mb + 'px', 'important');
-
-      // First row under divider shouldn’t add its own top space
-      const firstRow = sep.nextElementSibling?.classList?.contains('mini-field')
-        ? sep.nextElementSibling
-        : sep.nextElementSibling?.querySelector?.('.mini-field:first-child');
-      if (firstRow){
-        firstRow.style.setProperty('margin-top','0','important');
-        firstRow.style.setProperty('padding-top','0','important');
-        const lbl = firstRow.querySelector(':scope > label');
-        if (lbl) lbl.style.setProperty('margin-top','0','important');
-      }
-    });
-  }
-
-  function afterRender(intoEl){
-    const root = findQ6Root(intoEl);
-    if (!root) return;
-    ensureDividers(root);
-    balanceDividers(root, 8); // change to 6 if you prefer tighter below-the-line space
-  }
-
-  // Hook renderMiniQ6 once if present
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__miniDividerFix){
-    const _r = window.renderMiniQ6;
-    window.renderMiniQ6 = function(intoEl, node){
-      const out = _r.apply(this, arguments);
-      try { afterRender(intoEl); } catch(e){}
-      return out;
-    };
-    window.renderMiniQ6.__miniDividerFix = true;
-  }
-
-  // Initial pass + SPA mount watcher (scoped; no global loops)
-  const run = () => { try { afterRender(null); } catch(e){} };
-  document.addEventListener('DOMContentLoaded', run);
-  const mountMO = new MutationObserver(run);
-  mountMO.observe(document.documentElement, { childList:true, subtree:true });
 })();
 </script>
 
