@@ -2698,7 +2698,23 @@ function renderNode(node) {
   
 <script>
 (function(){
-function absorbOriginalRow(root, sel) {
+  /* === tiny helpers used below === */
+  function q(sel, r){ return (r||document).querySelector(sel); }
+  function qa(sel, r){ return Array.prototype.slice.call((r||document).querySelectorAll(sel)); }
+  function up(el, sel){ while (el && el.nodeType===1){ if (el.matches(sel)) return el; el = el.parentElement; } return null; }
+  function findInstancesInput(scope){
+    var root = scope || document;
+    var lbls = qa('.mini-field label', root);
+    for (var i=0;i<lbls.length;i++){
+      if (/total\s+instances/i.test((lbls[i].textContent||''))){
+        var inp = lbls[i].parentElement && lbls[i].parentElement.querySelector('input[type="number"]');
+        if (inp) return inp;
+      }
+    }
+    return q('input[type="number"]', root);
+  }
+
+  function absorbOriginalRow(root, sel) {
     const inp = root.querySelector(sel);
     if (!inp) return null;
     const row = inp.closest('.mini-field') || inp.parentElement;
@@ -2706,9 +2722,9 @@ function absorbOriginalRow(root, sel) {
     return inp;
   }
 
-function rootFor(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
+  function rootFor(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
 
-function buildOneColumn(root, opts) {
+  function buildOneColumn(root, opts) {
     const id = opts.id;
     let stack = root.querySelector('#' + id + '-entry');
     if (!stack) {
@@ -2744,7 +2760,6 @@ function buildOneColumn(root, opts) {
       const field = document.createElement('div');
       field.className = 'mini-field';
       field.innerHTML = '<label>' + extraLabel + '</label>';
-      // try a few selectors for Q6 and Q7 variants
       const inputEl = absorbOriginalRow(root, selectors[0]) ||
                       absorbOriginalRow(root, selectors[1]) ||
                       absorbOriginalRow(root, selectors[2]) ||
@@ -2767,15 +2782,17 @@ function buildOneColumn(root, opts) {
     }
 
     // Severity & Cost
-const __sepSev=document.createElement('div');__sepSev.className='mini-sep';stack.appendChild(__sepSev);
+    const __sepSev = document.createElement('div'); __sepSev.className='mini-sep'; stack.appendChild(__sepSev);
     const sev = makeSection('Severity',
       ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
       id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
-const __sepCost=document.createElement('div');__sepCost.className='mini-sep';stack.appendChild(__sepCost);
+
+    const __sepCost = document.createElement('div'); __sepCost.className='mini-sep'; stack.appendChild(__sepCost);
     const cost = makeSection('Cost',
       ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
       id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
-const __sepProb=document.createElement('div');__sepProb.className='mini-sep';stack.appendChild(__sepProb);
+
+    const __sepProb = document.createElement('div'); __sepProb.className='mini-sep'; stack.appendChild(__sepProb);
 
     // Probability
     const hP = document.createElement('div');
@@ -2844,20 +2861,20 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
     };
   }
 
-function dedupeVaries(scope){
+  function dedupeVaries(scope){
     ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(function(sel){
       var all = qa(sel, scope);
       for (var i=1;i<all.length;i++){ var w = up(all[i], '.mini-field'); if (w) w.remove(); }
     });
   }
 
-function keepBaseProbabilityVisible(scope){
+  function keepBaseProbabilityVisible(scope){
     var unit = q('#miniMode', scope), val  = q('#miniVal', scope);
     var uw = unit && up(unit, '.mini-field'); var vw = val && up(val, '.mini-field');
     if (uw) uw.style.display = ''; if (vw) vw.style.display = '';
   }
 
-function wireProbabilityVaries(scope){
+  function wireProbabilityVaries(scope){
     keepBaseProbabilityVisible(scope);
     var cb    = q('#miniProbVaries', scope);
     var mBox2 = q('#miniMode2', scope) && up(q('#miniMode2', scope), '.mini-field');
@@ -2872,7 +2889,7 @@ function wireProbabilityVaries(scope){
     else { show(false); }
   }
 
-function blankUntilEdited(scope){
+  function blankUntilEdited(scope){
     var root = scope || document;
     var nums = qa('.mini-field input[type="number"]', root);
     nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
@@ -2927,7 +2944,7 @@ function blankUntilEdited(scope){
     }
   }
 
-function ensureFullWidth(scope){
+  function ensureFullWidth(scope){
     try{
       var root = scope || document;
       qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
@@ -2946,11 +2963,12 @@ function ensureFullWidth(scope){
     }catch(e){}
   }
 
-function killStrays(root, stack) {
+  function killStrays(root, stack) {
     // hide anything outside our stack to avoid leftover right-side fields
     const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
     kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
   }
+})();  /* <— CLOSE the IIFE */
 </script>
 
 </body>
