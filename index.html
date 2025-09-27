@@ -1086,7 +1086,13 @@ function renderMiniQ6(intoEl, node){
   sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
   const cBox = document.createElement('div'); cBox.className='mini-field';
   cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
-  fields.appendChild(sBox); fields.appendChild(cBox);
+
+  // Divider BETWEEN Severity and Cost (inside the grid)
+  const sepSC = document.createElement('div');
+  sepSC.className = 'mini-sep';
+  fields.appendChild(sBox);
+  fields.appendChild(sepSC);
+  fields.appendChild(cBox);
 
   // Probability mode + value
   const pRow = document.createElement('div'); pRow.className='mini-fields';
@@ -1099,9 +1105,16 @@ function renderMiniQ6(intoEl, node){
     </select>';
   const vBox = document.createElement('div'); vBox.className='mini-field';
   vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000">';
-  pRow.appendChild(mBox); pRow.appendChild(vBox);
+
+  pRow.appendChild(mBox);
+  pRow.appendChild(vBox);
+
+  // Divider BEFORE Probability row (between the grid rows)
+  const sepProb = document.createElement('div');
+  sepProb.className = 'mini-sep';
 
   wrap.appendChild(fields);
+  wrap.appendChild(sepProb);
   wrap.appendChild(pRow);
 
   // SVG
@@ -1134,34 +1147,6 @@ function renderMiniQ6(intoEl, node){
 
   // Attach wrapper to DOM
   intoEl.appendChild(wrap);
-
-  // --- ensure one .mini-sep before each section heading (inline; no observers) ---
-  (function ensureDividers(root){
-    if (!root) return;
-    const names = ['Severity','Cost','Probability'];
-    const labels = root.querySelectorAll('.mini-heading, .mini-field > label, label');
-    names.forEach(name=>{
-      const heading = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name.toLowerCase());
-      if (!heading || !heading.parentElement) return;
-      const parent = heading.parentElement;
-
-      // remove extra .mini-sep immediately before heading
-      const toRemove = [];
-      let prev = heading.previousElementSibling;
-      while (prev && prev.classList && prev.classList.contains('mini-sep')){
-        toRemove.push(prev);
-        prev = prev.previousElementSibling;
-      }
-      if (toRemove.length > 1) toRemove.slice(1).forEach(el=>el.remove());
-
-      // ensure exactly one exists directly before
-      if (toRemove.length === 0){
-        const sep = document.createElement('div');
-        sep.className = 'mini-sep';
-        parent.insertBefore(sep, heading);
-      }
-    });
-  })(wrap);
 
   // Inputs
   const elS  = wrap.querySelector('#miniS');
@@ -1247,6 +1232,7 @@ function renderMiniQ6(intoEl, node){
 
   function drawAxes(mode){
     axesG.innerHTML='';
+
     // x grid + ticks
     for (let r=1;r<=10;r++){
       const x = rToPx(r);
@@ -1258,7 +1244,8 @@ function renderMiniQ6(intoEl, node){
       t.setAttribute('dominant-baseline','hanging'); t.setAttribute('text-anchor','middle'); t.textContent=r;
       axesG.appendChild(t);
     }
-    // y grid + ticks — use 'range' (fixes previous 'yr' redeclare)
+
+    // y grid + ticks
     const range = yRange(mode);
     range.ticks.forEach(yv=>{
       const y = yToPx(yv, range.yMin, range.yMax);
@@ -1271,6 +1258,7 @@ function renderMiniQ6(intoEl, node){
       yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
       axesG.appendChild(yt);
     });
+
     // labels
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
