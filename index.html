@@ -522,19 +522,36 @@
   }
 </style>
 
-<style id="q6-mobile-focus-soft">
+<style id="q6-mobile-focus-visible">
   @media (max-width: 560px){
-    .mini-field { overflow: visible !important; }
+    /* make sure nothing clips the ring */
+    .mini-wrap, .mini-field { overflow: visible !important; }
+
+    /* base input sizing to avoid iOS zoom */
     .mini-field input,
     .mini-field select,
     .mini-field textarea{
-      font-size: 16px !important;     /* prevents iOS zoom */
-      outline: 0 !important;
-      box-shadow: 0 0 0 2px rgba(0,0,0,.12) inset !important; /* soft inner ring */
-      border-radius: 10px;             /* keep ring inside rounded corners */
+      font-size: 16px !important;       /* prevents iOS zoom */
+      border-radius: 10px;               /* keep ring inside the corners */
+      outline: 0 !important;             /* hide default outline */
+      box-shadow: 0 0 0 1px var(--border) inset !important; /* subtle base edge */
+    }
+
+    /* focused look: clear + visible */
+    .mini-field input:focus,
+    .mini-field select:focus,
+    .mini-field textarea:focus,
+    .mini-field input:focus-visible,
+    .mini-field select:focus-visible,
+    .mini-field textarea:focus-visible{
+      box-shadow:
+        0 0 0 3px rgba(31, 76, 255, .35) inset,   /* soft inner glow */
+        0 0 0 1px rgba(31, 76, 255, .70) inset     /* crisp inner edge */
+        !important;
     }
   }
 </style>
+
 
 </head>
 <body>
