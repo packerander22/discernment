@@ -3249,35 +3249,6 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-
-
-<script>
-(function(){
-  if (typeof window.renderMiniQ7 === 'function' && !window.__q7Strip){
-    window.__q7Strip = true;
-    const _q7 = window.renderMiniQ7;
-    window.renderMiniQ7 = function(intoEl, node){
-      _q7(intoEl, node);
-      try{
-        const root = (intoEl && intoEl.querySelector && intoEl.querySelector('.mini-wrap')) || intoEl || document;
-        if (!root) return;
-        // Remove rows that contain form fields
-        Array.from(root.querySelectorAll('.mini-field')).forEach(row => {
-          if (row.querySelector('input, select, textarea')) row.remove();
-        });
-        // Remove groups/additions
-        ['[id$="GroupsWrap"]','[id$="-entry"]','#q7-entry-entry','#miniProbGroups','[data-prob-group]', '.mini-prob-group','.prob-group']
-          .forEach(sel => root.querySelectorAll(sel).forEach(n => n.remove()));
-        // Remove hints/helpers that reference entry
-        root.querySelectorAll('.hint, .helper, .placeholder').forEach(n => {
-          if (n.querySelector('input, select, textarea')) n.remove();
-        });
-      }catch(e){}
-    };
-  }
-})();
-</script>
-
 <script id="q6-insert-dividers-only">
 (function(){
   function q6Root(intoEl){
