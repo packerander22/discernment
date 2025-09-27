@@ -1065,7 +1065,6 @@ function jumpToConcept(conceptId, backQId){
    Q6 — interactive: inputs + 2D drag + snap + correct shading
 =========================================================== */
 function renderMiniQ6(intoEl, node){
-  // first-visit flag (keeps user values if they come back later)
   if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
   let cont;
 
@@ -1086,13 +1085,7 @@ function renderMiniQ6(intoEl, node){
   sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
   const cBox = document.createElement('div'); cBox.className='mini-field';
   cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
-
-  // Divider BETWEEN Severity and Cost (inside the grid)
-  const sepSC = document.createElement('div');
-  sepSC.className = 'mini-sep';
-  fields.appendChild(sBox);
-  fields.appendChild(sepSC);
-  fields.appendChild(cBox);
+  fields.appendChild(sBox); fields.appendChild(cBox);
 
   // Probability mode + value
   const pRow = document.createElement('div'); pRow.className='mini-fields';
@@ -1105,17 +1098,38 @@ function renderMiniQ6(intoEl, node){
     </select>';
   const vBox = document.createElement('div'); vBox.className='mini-field';
   vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000">';
-
-  pRow.appendChild(mBox);
-  pRow.appendChild(vBox);
-
-  // Divider BEFORE Probability row (between the grid rows)
-  const sepProb = document.createElement('div');
-  sepProb.className = 'mini-sep';
+  pRow.appendChild(mBox); pRow.appendChild(vBox);
 
   wrap.appendChild(fields);
-  wrap.appendChild(sepProb);
   wrap.appendChild(pRow);
+
+  // Insert one divider before each section header (Severity, Cost, Probability)
+  (function ensureDividers(root){
+    if (!root) return;
+    const names = ['severity','cost','probability'];
+    const labels = root.querySelectorAll('.mini-heading, .mini-field > label, label');
+    names.forEach(name=>{
+      const heading = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name);
+      if (!heading || !heading.parentElement) return;
+      const parent = heading.parentElement;
+
+      // remove extra .mini-sep immediately before the heading
+      const toRemove = [];
+      let prev = heading.previousElementSibling;
+      while (prev && prev.classList && prev.classList.contains('mini-sep')) {
+        toRemove.push(prev);
+        prev = prev.previousElementSibling;
+      }
+      if (toRemove.length > 1) toRemove.slice(1).forEach(el=>el.remove());
+
+      // ensure exactly one
+      if (toRemove.length === 0){
+        const sep = document.createElement('div');
+        sep.className = 'mini-sep';
+        parent.insertBefore(sep, heading);
+      }
+    });
+  })(wrap);
 
   // SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -1141,7 +1155,7 @@ function renderMiniQ6(intoEl, node){
     e.preventDefault();
     const target = 'concept-prob-sev-cost';
     history.replaceState(null, '', `#${target}`);
-    if (typeof jumpToConcept === 'function') jumpToConcept(target, /* back */ node.id);
+    if (typeof jumpToConcept === 'function') jumpToConcept(target, node.id);
   });
   wrap.appendChild(link);
 
@@ -1158,7 +1172,7 @@ function renderMiniQ6(intoEl, node){
 
   // ===== Persistence (restore first) =====
   const q6Root  = intoEl;
-  const savedQ6 = loadNodeState('Q6');
+  const savedQ6 = loadNodeState && loadNodeState('Q6');
   if (savedQ6) applyFormValues(q6Root, savedQ6);
 
   // helpers
@@ -1169,13 +1183,13 @@ function renderMiniQ6(intoEl, node){
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
 
-  // Set initial mode on the select + symbol
+  // Set initial mode + symbol
   elM.value = miniMaster.mode;
   if (typeof miniProbSymbol === 'function' && probName){
     probName.textContent = miniProbSymbol(miniMaster.mode);
   }
 
-  // Resolve/create the label robustly
+  // ensure we actually have a label node
   if (!labV){
     const vField = elV && elV.closest('.mini-field');
     labV = vField ? (vField.querySelector('label') || (()=>{ 
@@ -1186,26 +1200,19 @@ function renderMiniQ6(intoEl, node){
     })()) : null;
   }
 
-  // Drive VALUE label + placeholder off the mode
+  // label + placeholder by mode
   function updateProbLabelForMode(mode){
     if (!labV || !elV) return;
-    if (mode === 'oneInX'){
-      labV.textContent = 'Enter X (for “1 in X”)';
-      elV.placeholder  = 'e.g. 1,000';
-    } else if (mode === 'percent'){
-      labV.textContent = 'Enter percentage (%)';
-      elV.placeholder  = 'e.g. 1';
-    } else { // micromort
-      labV.textContent = 'Enter micromorts (µm)';
-      elV.placeholder  = 'e.g. 1';
-    }
+    if (mode === 'oneInX'){ labV.textContent = 'Enter X (for “1 in X”)'; elV.placeholder = 'e.g. 1,000'; }
+    else if (mode === 'percent'){ labV.textContent = 'Enter percentage (%)'; elV.placeholder = 'e.g. 1'; }
+    else { labV.textContent = 'Enter micromorts (µm)'; elV.placeholder = 'e.g. 1'; }
     if (typeof miniProbSymbol === 'function' && probName){
       probName.textContent = miniProbSymbol(mode);
     }
   }
   updateProbLabelForMode(elM ? elM.value : 'oneInX');
   if (elM && !elM.__boundUpdateProbLabel){
-    elM.addEventListener('change', (e)=> updateProbLabelForMode(e.target.value));
+    elM.addEventListener('change', e => updateProbLabelForMode(e.target.value));
     elM.__boundUpdateProbLabel = true;
   }
 
@@ -1232,7 +1239,6 @@ function renderMiniQ6(intoEl, node){
 
   function drawAxes(mode){
     axesG.innerHTML='';
-
     // x grid + ticks
     for (let r=1;r<=10;r++){
       const x = rToPx(r);
@@ -1244,7 +1250,6 @@ function renderMiniQ6(intoEl, node){
       t.setAttribute('dominant-baseline','hanging'); t.setAttribute('text-anchor','middle'); t.textContent=r;
       axesG.appendChild(t);
     }
-
     // y grid + ticks
     const range = yRange(mode);
     range.ticks.forEach(yv=>{
@@ -1258,7 +1263,6 @@ function renderMiniQ6(intoEl, node){
       yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
       axesG.appendChild(yt);
     });
-
     // labels
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
@@ -1411,7 +1415,7 @@ function renderMiniQ6(intoEl, node){
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
 
-    // vary C to follow r = S/C, keep within bounds
+    // vary C to follow r = S/C
     let S = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
     let C = S / r;
     if (C <= MINI_EPS || C > MINI_MAX){
@@ -1454,15 +1458,12 @@ function renderMiniQ6(intoEl, node){
   svg.addEventListener('touchmove', onPointerMove, {passive:false});
   svg.addEventListener('touchend', onPointerUp, {passive:false});
 
-  // Numeric input hygiene (blur/Enter normalize)
+  // numeric hygiene
   function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
     if (!inp) return;
     inp.addEventListener('input', () => {
       const s = inp.value;
-      const cleaned = s
-        .replace(/[^0-9.\-]/g, '')
-        .replace(/(.*\..*)\./, '$1')
-        .replace(/(.*-).*-/ , '$1');
+      const cleaned = s.replace(/[^0-9.\-]/g,'').replace(/(.*\..*)\./,'$1').replace(/(.*-).*-/,'$1');
       if (cleaned !== s) inp.value = cleaned;
     });
     function normalize(){
@@ -1482,17 +1483,14 @@ function renderMiniQ6(intoEl, node){
   wireNumericInput(elC, { min:0, max:10,   decimals:2 });
   wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
 
-  // inputs: no snap-back while typing; we only redraw on blur/Enter
   elS.addEventListener('input', ()=>{ window.miniPristine=false; });
   elC.addEventListener('input', ()=>{ window.miniPristine=false; });
   elV.addEventListener('input', ()=>{ window.miniPristine=false; });
 
-  // Persist on any edit
-  const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
+  const persistQ6 = () => saveNodeState && saveNodeState('Q6', collectFormValues(q6Root));
   q6Root.addEventListener('input',  persistQ6);
   q6Root.addEventListener('change', persistQ6);
 
-  // If fields already have values (e.g., returning from AB2), compute once
   requestAnimationFrame(() => {
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (hasAll) {
@@ -1502,7 +1500,6 @@ function renderMiniQ6(intoEl, node){
     }
   });
 
-  // initial paint
   draw();
 
   // Bottom buttons
@@ -1515,6 +1512,9 @@ function renderMiniQ6(intoEl, node){
   };
   btns.appendChild(cont);
 }
+
+// make it globally callable
+window.renderMiniQ6 = renderMiniQ6;
 
 /* ===========================================================
    Q7 — visualization-only mirror (draggable; inputs greyed)
