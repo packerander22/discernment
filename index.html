@@ -1078,19 +1078,20 @@ function renderMiniQ6(intoEl, node){
   intoEl.appendChild(top);
 
   // Wrapper + fields
-  const wrap = document.createElement('div'); wrap.className = 'mini-wrap';
+  const wrap   = document.createElement('div'); wrap.className = 'mini-wrap';
   const fields = document.createElement('div'); fields.className = 'mini-fields';
 
-  // Inputs UI
+  // S / C inputs
   const sBox = document.createElement('div'); sBox.className='mini-field';
   sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
   const cBox = document.createElement('div'); cBox.className='mini-field';
   cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
   fields.appendChild(sBox); fields.appendChild(cBox);
 
+  // Probability mode + value
   const pRow = document.createElement('div'); pRow.className='mini-fields';
   const mBox = document.createElement('div'); mBox.className='mini-field';
-  mBox.innerHTML = '<label>Probability input mode</label>\
+  mBox.innerHTML = '<label>Probability Unit</label>\
     <select id="miniMode" name="q6Units">\
       <option value="oneInX">1 in X</option>\
       <option value="percent">Percentage (%)</option>\
@@ -1100,9 +1101,8 @@ function renderMiniQ6(intoEl, node){
   vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label><input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000">';
   pRow.appendChild(mBox); pRow.appendChild(vBox);
 
-  wrap.appendChild(fields); wrap.appendChild(pRow);
-
-  const q6Root = intoEl;  // container for Q6
+  wrap.appendChild(fields);
+  wrap.appendChild(pRow);
 
   // SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -1128,22 +1128,53 @@ function renderMiniQ6(intoEl, node){
     e.preventDefault();
     const target = 'concept-prob-sev-cost';
     history.replaceState(null, '', `#${target}`);
-    jumpToConcept(target, /* back */ node.id);
+    if (typeof jumpToConcept === 'function') jumpToConcept(target, /* back */ node.id);
   });
   wrap.appendChild(link);
 
+  // Attach wrapper to DOM
   intoEl.appendChild(wrap);
 
-  // ===== Persistence (restore first, BEFORE querying inputs) =====
-  const savedQ6 = loadNodeState('Q6');
-  if (savedQ6) applyFormValues(q6Root, savedQ6);
+  // --- ensure one .mini-sep before each section heading (inline; no observers) ---
+  (function ensureDividers(root){
+    if (!root) return;
+    const names = ['Severity','Cost','Probability'];
+    const labels = root.querySelectorAll('.mini-heading, .mini-field > label, label');
+    names.forEach(name=>{
+      const heading = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name.toLowerCase());
+      if (!heading || !heading.parentElement) return;
+      const parent = heading.parentElement;
 
-  // Inputs (query AFTER persistence so refs are live)
+      // remove extra .mini-sep immediately before heading
+      const toRemove = [];
+      let prev = heading.previousElementSibling;
+      while (prev && prev.classList && prev.classList.contains('mini-sep')){
+        toRemove.push(prev);
+        prev = prev.previousElementSibling;
+      }
+      if (toRemove.length > 1) toRemove.slice(1).forEach(el=>el.remove());
+
+      // ensure exactly one exists directly before
+      if (toRemove.length === 0){
+        const sep = document.createElement('div');
+        sep.className = 'mini-sep';
+        parent.insertBefore(sep, heading);
+      }
+    });
+  })(wrap);
+
+  // Inputs
   const elS  = wrap.querySelector('#miniS');
   const elC  = wrap.querySelector('#miniC');
   const elM  = wrap.querySelector('#miniMode');
   const elV  = wrap.querySelector('#miniVal');
+  let   labV = wrap.querySelector('#miniProbLabel');
   const probName = wrap.querySelector('#miniProbName');
+
+  // ===== Persistence (restore first) =====
+  const q6Root  = intoEl;
+  const savedQ6 = loadNodeState('Q6');
+  if (savedQ6) applyFormValues(q6Root, savedQ6);
 
   // helpers
   function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
@@ -1153,45 +1184,47 @@ function renderMiniQ6(intoEl, node){
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
 
-  // Set initial mode + symbol
-  if (elM) elM.value = miniMaster.mode;
+  // Set initial mode on the select + symbol
+  elM.value = miniMaster.mode;
   if (typeof miniProbSymbol === 'function' && probName){
     probName.textContent = miniProbSymbol(miniMaster.mode);
   }
 
-  // --- dynamic probability label + placeholder (robust) ---
+  // Resolve/create the label robustly
+  if (!labV){
+    const vField = elV && elV.closest('.mini-field');
+    labV = vField ? (vField.querySelector('label') || (()=>{ 
+      const lbl = document.createElement('label');
+      lbl.id = 'miniProbLabel';
+      vField.insertBefore(lbl, vField.firstChild);
+      return lbl;
+    })()) : null;
+  }
+
+  // Drive VALUE label + placeholder off the mode
   function updateProbLabelForMode(mode){
-    // Re-resolve fresh nodes each time in case DOM was rehydrated
-    const liveV   = wrap.querySelector('#miniVal');
-    const vField  = liveV && liveV.closest('.mini-field');
-    let   liveLab = vField ? (vField.querySelector('#miniProbLabel') || vField.querySelector('label')) : null;
-    if (!liveLab && vField){
-      liveLab = document.createElement('label');
-      liveLab.id = 'miniProbLabel';
-      vField.insertBefore(liveLab, vField.firstChild);
-    }
-    if (!liveLab || !liveV) return;
-
+    if (!labV || !elV) return;
     if (mode === 'oneInX'){
-      liveLab.textContent = 'Enter X (for “1 in X”)';
-      liveV.placeholder   = 'e.g. 1,000';
+      labV.textContent = 'Enter X (for “1 in X”)';
+      elV.placeholder  = 'e.g. 1,000';
     } else if (mode === 'percent'){
-      liveLab.textContent = 'Enter percentage (%)';
-      liveV.placeholder   = 'e.g. 1';
+      labV.textContent = 'Enter percentage (%)';
+      elV.placeholder  = 'e.g. 1';
     } else { // micromort
-      liveLab.textContent = 'Enter micromorts (µm)';
-      liveV.placeholder   = 'e.g. 1';
+      labV.textContent = 'Enter micromorts (µm)';
+      elV.placeholder  = 'e.g. 1';
     }
-
     if (typeof miniProbSymbol === 'function' && probName){
       probName.textContent = miniProbSymbol(mode);
     }
   }
-
-  // Initial paint for label
   updateProbLabelForMode(elM ? elM.value : 'oneInX');
+  if (elM && !elM.__boundUpdateProbLabel){
+    elM.addEventListener('change', (e)=> updateProbLabelForMode(e.target.value));
+    elM.__boundUpdateProbLabel = true;
+  }
 
-  // geometry
+  // SVG layers
   const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
   const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
   const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
@@ -1204,6 +1237,7 @@ function renderMiniQ6(intoEl, node){
   const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
   const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
+  // geometry
   const pad = { left:120, right:30, top:34, bottom:96 };
   const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   const rMin=1, rMax=10;
@@ -1224,10 +1258,10 @@ function renderMiniQ6(intoEl, node){
       t.setAttribute('dominant-baseline','hanging'); t.setAttribute('text-anchor','middle'); t.textContent=r;
       axesG.appendChild(t);
     }
-    // y grid + ticks
-    const yr=yRange(mode);
-    yr.ticks.forEach(yv=>{
-      const y = yToPx(yv, yr.yMin, yr.yMax);
+    // y grid + ticks — use 'range' (fixes previous 'yr' redeclare)
+    const range = yRange(mode);
+    range.ticks.forEach(yv=>{
+      const y = yToPx(yv, range.yMin, range.yMax);
       const h=document.createElementNS('http://www.w3.org/2000/svg','line');
       h.setAttribute('x1',pad.left); h.setAttribute('x2',pad.left+plotW); h.setAttribute('y1',y); h.setAttribute('y2',y);
       axesG.appendChild(h);
@@ -1251,20 +1285,14 @@ function renderMiniQ6(intoEl, node){
     yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
   }
 
-  function yRange(mode){
-    if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Cutoff Probability (%) (log scale)" };
-    if (mode==='micromort') return { yMin: 1,      yMax: 1e6,   ticks:[1e6,1e5,1e4,1e3,100,10,1],        label:"Cutoff Probability (µm) (log scale)" };
-    return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
-  }
-
   function buildCurve(mode){
-    const yr=yRange(mode), N=800;
+    const range = yRange(mode), N=800;
     let d='';
     for (let i=0;i<=N;i++){
       const r = 1 + 9*(i/N);
       const X = miniXcutoff_from_ratio(r);
       const Y = miniXtoUnit(X, mode);
-      const x = rToPx(r), y = yToPx(Y, yr.yMin, yr.yMax);
+      const x = rToPx(r), y = yToPx(Y, range.yMin, range.yMax);
       d += (i? 'L ':'M ') + x + ',' + y + ' ';
     }
     curve.setAttribute('d', d);
@@ -1272,19 +1300,19 @@ function renderMiniQ6(intoEl, node){
     // shaded region (act region)
     const leftX=rToPx(1), rightX=rToPx(10);
     if (mode === 'oneInX'){
-      const bottom = yToPx(yr.yMin, yr.yMin, yr.yMax);
+      const bottom = yToPx(range.yMin, range.yMin, range.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
     } else {
-      const top = yToPx(yr.yMax, yr.yMin, yr.yMax);
+      const top = yToPx(range.yMax, range.yMin, range.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + top + ' L ' + leftX + ',' + top + ' Z');
     }
   }
 
   function curveYPxAtRatio(r, mode){
-    const yr = yRange(mode);
+    const range = yRange(mode);
     const Xc = miniXcutoff_from_ratio(r);
     const Yc = miniXtoUnit(Xc, mode);
-    return yToPx(Yc, yr.yMin, yr.yMax);
+    return yToPx(Yc, range.yMin, range.yMax);
   }
 
   function snapInputs(){
@@ -1307,10 +1335,10 @@ function renderMiniQ6(intoEl, node){
     const sHad = String(elS.value||'').trim() !== '';
     const cHad = String(elC.value||'').trim() !== '';
     const vHad = String(elV.value||'').trim() !== '';
-
     if (sHad) elS.value = String(S);
     if (cHad) elC.value = String(C);
     if (vHad) elV.value = String(vv);
+
     miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
     miniMaster.X_user = miniNormalizeToX(mode, vv);
   }
@@ -1343,14 +1371,14 @@ function renderMiniQ6(intoEl, node){
 
     const r  = miniMaster.S/miniMaster.C;
     const Xc = miniXcutoff_from_ratio(r);
-    const yr = yRange(mode);
+    const range = yRange(mode);
 
     const Yuser = (miniMaster.X_user != null)
       ? miniXtoUnit(miniMaster.X_user, mode)
       : miniXtoUnit(Xc, mode);
 
     const cx = rToPx(miniClamp(r,1,10));
-    const cy = yToPx(Yuser, yr.yMin, yr.yMax);
+    const cy = yToPx(Yuser, range.yMin, range.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
     const label = 'S=' + trimDeci(miniMaster.S) + ' , C=' + trimDeci(miniMaster.C) + ' · S/C=' + trimDeci(r) + ' · ' +
@@ -1388,14 +1416,14 @@ function renderMiniQ6(intoEl, node){
     const px = miniClamp(sp.x, pad.left, pad.left+plotW);
     const r  = pxToR(px);
 
-    // snapping
+    // snapping (vertical)
     const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
     const yCurve  = curveYPxAtRatio(r, elM.value);
     const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
 
-    // vary C to follow r = S/C
+    // vary C to follow r = S/C, keep within bounds
     let S = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
     let C = S / r;
     if (C <= MINI_EPS || C > MINI_MAX){
@@ -1408,13 +1436,13 @@ function renderMiniQ6(intoEl, node){
     }
     elS.value = String(S); elC.value = String(C);
 
-    // compute user probability from yCursor
+    // compute user probability from yCursor (snap to curve if close)
     const mode = elM.value;
-    const yr = yRange(mode);
+    const range = yRange(mode);
     let yPix = Math.min(pad.top+plotH, Math.max(pad.top, sp.y));
     if (willSnap) yPix = yCurve;
     const frac = 1 - (yPix - pad.top) / plotH;
-    const logY = Math.log10(yr.yMin) + frac * (Math.log10(yr.yMax) - Math.log10(yr.yMin));
+    const logY = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
     const Y = Math.pow(10, logY);
     const X_user = unitToX(Y, mode);
     miniMaster.S = S; miniMaster.C = C; miniMaster.mode = mode; miniMaster.X_user = X_user;
@@ -1438,30 +1466,7 @@ function renderMiniQ6(intoEl, node){
   svg.addEventListener('touchmove', onPointerMove, {passive:false});
   svg.addEventListener('touchend', onPointerUp, {passive:false});
 
-  // ===== Micromorts lock (S=10 + grey out) & friendly inputs =====
-  function lockSeverity(val = 10){
-    elS.value = String(val);
-    elS.disabled = true;
-    elS.classList.add('is-disabled');
-  }
-  function unlockSeverity(){
-    elS.disabled = false;
-    elS.classList.remove('is-disabled');
-  }
-  function applyUnitsRule(){
-    const mode = elM.value;
-    if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10);
-    else unlockSeverity();
-  }
-  applyUnitsRule();
-
-  // Bind one change handler
-  if (elM && !elM.__boundProb){
-    elM.addEventListener('change', () => { updateProbLabelForMode(elM.value); applyUnitsRule(); });
-    elM.__boundProb = true;
-  }
-
-  // backspace-friendly inputs
+  // Numeric input hygiene (blur/Enter normalize)
   function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
     if (!inp) return;
     inp.addEventListener('input', () => {
@@ -1485,12 +1490,11 @@ function renderMiniQ6(intoEl, node){
     inp.addEventListener('blur', normalize);
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
   }
-
   wireNumericInput(elS, { min:0, max:10,   decimals:2 });
   wireNumericInput(elC, { min:0, max:10,   decimals:2 });
   wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
 
-  // inputs: no snap-back while typing; redraw on blur/Enter
+  // inputs: no snap-back while typing; we only redraw on blur/Enter
   elS.addEventListener('input', ()=>{ window.miniPristine=false; });
   elC.addEventListener('input', ()=>{ window.miniPristine=false; });
   elV.addEventListener('input', ()=>{ window.miniPristine=false; });
@@ -3246,64 +3250,6 @@ renderMiniQ6 = function (intoEl, node) {
       }
     }
   }).observe(document.body, {childList:true, subtree:true});
-})();
-</script>
-
-<script id="q6-insert-dividers-only">
-(function(){
-  function q6Root(intoEl){
-    if (intoEl && intoEl.querySelector){
-      const r = intoEl.querySelector('.mini-wrap');
-      if (r) return r;
-    }
-    return document.querySelector('[data-q="Q6"] .mini-wrap')
-        || document.querySelector('#q6-entry .mini-wrap')
-        || document.querySelector('#q6-entry')
-        || document.querySelector('[id*="q6"] .mini-wrap')
-        || null;
-  }
-
-  // Ensure exactly one .mini-sep immediately before each .mini-heading
-  function ensureDividers(root){
-    if (!root) return;
-    root.querySelectorAll('.mini-heading').forEach(h=>{
-      const parent = h.parentElement;
-      if (!parent) return;
-
-      // collect contiguous .mini-sep right before the heading
-      const toRemove = [];
-      let prev = h.previousElementSibling;
-      while (prev && prev.classList && prev.classList.contains('mini-sep')){
-        toRemove.push(prev);
-        prev = prev.previousElementSibling;
-      }
-
-      if (toRemove.length === 0){
-        const sep = document.createElement('div');
-        sep.className = 'mini-sep';
-        parent.insertBefore(sep, h);
-      } else if (toRemove.length > 1){
-        // keep only the one closest to the heading
-        toRemove.slice(1).forEach(el => el.remove());
-      }
-    });
-  }
-
-  // Hook after Q6 renders (no styling/spacing tweaks here)
-  if (typeof window.renderMiniQ6 === 'function' && !window.renderMiniQ6.__q6SepOnly){
-    const _render = window.renderMiniQ6;
-    window.renderMiniQ6 = function(intoEl, node){
-      const out = _render.apply(this, arguments);
-      try { ensureDividers(q6Root(intoEl)); } catch(e){}
-      return out;
-    };
-    window.renderMiniQ6.__q6SepOnly = true;
-  }
-
-  // First pass + mount detection (no loops; just call ensure once when Q6 appears)
-  const run = () => { try { ensureDividers(q6Root()); } catch(e){} };
-  document.addEventListener('DOMContentLoaded', run);
-  new MutationObserver(run).observe(document.documentElement, { childList:true, subtree:true });
 })();
 </script>
 
