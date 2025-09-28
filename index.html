@@ -1090,75 +1090,64 @@ function jumpToConcept(conceptId, backQId){
 function renderMiniQ6(intoEl, node){
   if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
   let cont;
-
-  // fresh mount
   intoEl.innerHTML = '';
 
-  // top text
+  // Top text
   const top = document.createElement('div');
   top.className = 'mini-top';
   top.innerHTML = node.text || '';
   intoEl.appendChild(top);
 
-  // wrap + fields
+  // Wrapper + fields (same structure/look as your old build)
   const wrap   = document.createElement('div'); wrap.className = 'mini-wrap';
   const fields = document.createElement('div'); fields.className = 'mini-fields';
 
-  // helpers
-  const sepBefore = (el)=>{ const d=document.createElement('div'); d.className='mini-sep'; el.parentElement.insertBefore(d, el); };
-  const heading   = (txt)=>{ const h=document.createElement('div'); h.className='mini-heading'; h.textContent=txt; return h; };
-
-  // === Severity ===
-  const hSev = heading('Severity'); fields.appendChild(hSev); sepBefore(hSev);
   const sBox = document.createElement('div'); sBox.className='mini-field';
   sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
-  fields.appendChild(sBox);
-
-  // === Cost ===
-  const hCost = heading('Cost'); fields.appendChild(hCost); sepBefore(hCost);
   const cBox = document.createElement('div'); cBox.className='mini-field';
   cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
-  fields.appendChild(cBox);
-
-  // === Probability ===
-  const hProb = heading('Probability'); fields.appendChild(hProb); sepBefore(hProb);
+  fields.appendChild(sBox); fields.appendChild(cBox);
 
   const pRow = document.createElement('div'); pRow.className='mini-fields';
   const mBox = document.createElement('div'); mBox.className='mini-field';
-  mBox.innerHTML = '<label>Probability Unit</label>\
-    <select id="miniMode" name="q6Units">\
-      <option value="oneInX">1 in X</option>\
-      <option value="percent">Percentage (%)</option>\
-      <option value="micromort">Micromorts</option>\
-    </select>';
-  const vBox = document.createElement('div'); vBox.className='mini-field';
-  vBox.innerHTML = '<label id="miniProbLabel">Enter X (for “1 in X”)</label>\
-                    <input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000">';
-  pRow.appendChild(mBox); pRow.appendChild(vBox);
+  mBox.innerHTML =
+    '<label>Probability Unit</label>\
+     <select id="miniMode" name="q6Units">\
+       <option value="oneInX">1 in X</option>\
+       <option value="percent">Percentage (%)</option>\
+       <option value="micromort">Micromorts</option>\
+     </select>';
 
+  const vBox = document.createElement('div'); vBox.className='mini-field';
+  vBox.innerHTML =
+    '<label id="miniProbLabel">Enter X (for “1 in X”)</label>\
+     <input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000">';
+
+  pRow.appendChild(mBox); pRow.appendChild(vBox);
   wrap.appendChild(fields);
   wrap.appendChild(pRow);
 
-  // SVG
+  // SVG (as in the old build)
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg');
   svg.setAttribute('viewBox','0 0 940 620');
   svg.style.overflow = 'visible';
   wrap.appendChild(svg);
 
-  // Rule + verdict + link
+  // Rule + verdict
   const rule = document.createElement('div'); rule.className='rule';
   rule.innerHTML = 'Rule: Only if <span id="miniProbName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.';
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(rule); wrap.appendChild(verdict);
 
+  // Link
   const link = document.createElement('a');
   link.href = '#concept-prob-sev-cost';
   link.textContent = 'See full explanation of Probability × Severity × Cost';
   link.style.display = 'inline-block';
   link.style.marginTop = '8px';
-  link.addEventListener('click', (e)=>{
+  link.addEventListener('click', function(e){
     e.preventDefault();
     const target = 'concept-prob-sev-cost';
     history.replaceState(null, '', `#${target}`);
@@ -1166,74 +1155,115 @@ function renderMiniQ6(intoEl, node){
   });
   wrap.appendChild(link);
 
+  // Attach wrapper
   intoEl.appendChild(wrap);
 
-  // HIDE any legacy rows outside our new wrap so duplicates don’t show
-  Array.from(intoEl.querySelectorAll(':scope > .mini-field, :scope > .mini-heading, :scope > .mini-sep'))
-    .forEach(el => { if (!wrap.contains(el)) el.style.display = 'none'; });
+  // --- Insert exactly ONE divider before each section heading (inline) ---
+  (function ensureDividers(root){
+    if (!root) return;
+    const names = ['Severity','Cost','Probability'];
+    const labels = root.querySelectorAll('.mini-heading, .mini-field > label, label');
+    names.forEach(name=>{
+      const heading = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name.toLowerCase());
+      if (!heading || !heading.parentElement) return;
+      const parent = heading.parentElement;
+      // remove extra .mini-sep right before
+      const toRemove = [];
+      let prev = heading.previousElementSibling;
+      while (prev && prev.classList && prev.classList.contains('mini-sep')){
+        toRemove.push(prev);
+        prev = prev.previousElementSibling;
+      }
+      if (toRemove.length > 1) toRemove.slice(1).forEach(el=>el.remove());
+      if (toRemove.length === 0){
+        const sep = document.createElement('div');
+        sep.className = 'mini-sep';
+        parent.insertBefore(sep, heading);
+      }
+    });
+  })(wrap);
 
-  // ===== Inputs & persistence =====
+  // ===== Inputs & state =====
   const elS  = wrap.querySelector('#miniS');
   const elC  = wrap.querySelector('#miniC');
   const elM  = wrap.querySelector('#miniMode');
   const elV  = wrap.querySelector('#miniVal');
+  let   labV = wrap.querySelector('#miniProbLabel');
   const probName = wrap.querySelector('#miniProbName');
 
-  // restore saved first (so select has the right value)
-  const q6Root = intoEl;
-  const saved  = loadNodeState && loadNodeState('Q6');
-  if (saved) applyFormValues(q6Root, saved);
+  const q6Root  = intoEl;
+  const savedQ6 = loadNodeState('Q6');
+  if (savedQ6) applyFormValues(q6Root, savedQ6);
 
-  // sync select with miniMaster if still blank
-  if (elM && !elM.value) elM.value = (miniMaster && miniMaster.mode) || 'oneInX';
-  if (miniMaster) miniMaster.mode = elM.value;
-
-  if (typeof miniProbSymbol === 'function' && probName){
-    probName.textContent = miniProbSymbol(elM.value);
-  }
-
-  function updateProbLabelForMode(mode){
-    const vField  = elV && elV.closest('.mini-field');
-    let labV = vField ? (vField.querySelector('#miniProbLabel') || vField.querySelector('label')) : null;
-    if (!labV && vField){ labV = document.createElement('label'); labV.id='miniProbLabel'; vField.insertBefore(labV, vField.firstChild); }
-    if (!labV || !elV) return;
-
-    if (mode === 'oneInX'){ labV.textContent='Enter X (for “1 in X”)'; elV.placeholder='e.g. 1,000'; }
-    else if (mode === 'percent'){ labV.textContent='Enter percentage (%)'; elV.placeholder='e.g. 1'; }
-    else { labV.textContent='Enter micromorts (µm)'; elV.placeholder='e.g. 1'; }
-
-    if (typeof miniProbSymbol === 'function' && probName){
-      probName.textContent = miniProbSymbol(mode);
-    }
-  }
-  updateProbLabelForMode(elM.value);
-  if (!elM.__boundUpdateProbLabel){
-    elM.addEventListener('change', (e)=>{ miniMaster.mode = e.target.value; updateProbLabelForMode(e.target.value); saveNodeState('Q6', collectFormValues(q6Root)); });
-    elM.__boundUpdateProbLabel = true;
-  }
-
-  // ===== Graph + logic (from your working version) =====
-  const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
-  const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
-  const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
-  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','mini-handle'); handle.setAttribute('r','12'); svg.appendChild(handle);
-  const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); labelG.style.pointerEvents='none'; svg.appendChild(labelG);
-  const labelBg= document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','mini-ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
-  const labelTx= document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','mini-ptlabel'); labelG.appendChild(labelTx);
-  const xLab   = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
-  const yLab   = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
-
+  function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
   function yRange(mode){
     if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Cutoff Probability (%) (log scale)" };
     if (mode==='micromort') return { yMin: 1,      yMax: 1e6,   ticks:[1e6,1e5,1e4,1e3,100,10,1],        label:"Cutoff Probability (µm) (log scale)" };
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
+
+  // Initial unit + symbol from your app’s state
+  elM.value = miniMaster.mode;
+  if (typeof miniProbSymbol === 'function' && probName){
+    probName.textContent = miniProbSymbol(miniMaster.mode);
+  }
+
+  // Robust label resolving
+  if (!labV){
+    const vField = elV && elV.closest('.mini-field');
+    labV = vField ? (vField.querySelector('label') || (()=>{ 
+      const lbl = document.createElement('label');
+      lbl.id = 'miniProbLabel';
+      vField.insertBefore(lbl, vField.firstChild);
+      return lbl;
+    })()) : null;
+  }
+
+  // 🔁 Dynamic Probability value label/placeholder
+  function updateProbLabelForMode(mode){
+    if (!labV || !elV) return;
+    if (mode === 'oneInX'){ labV.textContent = 'Enter X (for “1 in X”)'; elV.placeholder = 'e.g. 1,000'; }
+    else if (mode === 'percent'){ labV.textContent = 'Enter percentage (%)'; elV.placeholder = 'e.g. 1'; }
+    else { labV.textContent = 'Enter micromorts (µm)'; elV.placeholder = 'e.g. 1'; }
+    if (typeof miniProbSymbol === 'function' && probName){
+      probName.textContent = miniProbSymbol(mode);
+    }
+  }
+  updateProbLabelForMode(elM ? elM.value : 'oneInX');
+
+  // Micromorts rule (lock Severity at 10)
+  function lockSeverity(val = 10){ elS.value = String(val); elS.disabled = true; elS.classList.add('is-disabled'); }
+  function unlockSeverity(){ elS.disabled = false; elS.classList.remove('is-disabled'); }
+  function applyUnitsRule(){
+    const mode = elM.value;
+    if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10); else unlockSeverity();
+  }
+  applyUnitsRule();
+
+  if (!elM.__boundUpdateProbLabel){
+    elM.addEventListener('change', (e)=>{ updateProbLabelForMode(e.target.value); applyUnitsRule(); });
+    elM.__boundUpdateProbLabel = true;
+  }
+
+  // ===== Graph (same geometry/behavior as old) =====
+  const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
+  const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
+  const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
+  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','mini-handle'); handle.setAttribute('r','12'); svg.appendChild(handle);
+
+  const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); labelG.style.pointerEvents='none'; svg.appendChild(labelG);
+  const labelBg= document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','mini-ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
+  const labelTx= document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','mini-ptlabel'); labelG.appendChild(labelTx);
+
+  const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
+  const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
+
   const pad = { left:120, right:30, top:34, bottom:96 };
   const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   const rMin=1, rMax=10;
-  const rToPx = r => pad.left + (r-rMin)/(rMax-rMin)*plotW;
-  const pxToR = px => (rMin + (px-pad.left)/plotW*(rMax-rMin));
-  const yToPx = (y,yMin,yMax) => pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin)));
+  function rToPx(r){ return pad.left + (r-rMin)/(rMax-rMin)*plotW; }
+  function pxToR(px){ return (rMin + (px-pad.left)/plotW*(rMax-rMin)); }
+  function yToPx(y,yMin,yMax){ return pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); }
 
   function drawAxes(mode){
     axesG.innerHTML='';
@@ -1247,7 +1277,7 @@ function renderMiniQ6(intoEl, node){
       t.setAttribute('dominant-baseline','hanging'); t.setAttribute('text-anchor','middle'); t.textContent=r;
       axesG.appendChild(t);
     }
-    const range = yRange(elM.value);
+    const range = yRange(mode);
     range.ticks.forEach(yv=>{
       const y = yToPx(yv, range.yMin, range.yMax);
       const h=document.createElementNS('http://www.w3.org/2000/svg','line');
@@ -1256,13 +1286,14 @@ function renderMiniQ6(intoEl, node){
       const yt=document.createElementNS('http://www.w3.org/2000/svg','text');
       yt.setAttribute('x', pad.left - 10); yt.setAttribute('y', y);
       yt.setAttribute('text-anchor','end'); yt.setAttribute('dominant-baseline','middle');
-      yt.textContent = (elM.value==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
+      yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
       axesG.appendChild(yt);
     });
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
+
     const Y_LABEL_OFFSET = 90, desiredLeftPadding=8;
-    yLab.textContent = yRange(elM.value).label;
+    yLab.textContent = yRange(mode).label;
     yLab.setAttribute('text-anchor','middle'); yLab.setAttribute('dominant-baseline','middle');
     const cy = pad.top + plotH/2, cx0 = pad.left - Y_LABEL_OFFSET;
     yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
@@ -1271,19 +1302,20 @@ function renderMiniQ6(intoEl, node){
     yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
   }
 
-  function buildCurve(){
-    const range = yRange(elM.value), N=800;
+  function buildCurve(mode){
+    const range = yRange(mode), N=800;
     let d='';
     for (let i=0;i<=N;i++){
       const r = 1 + 9*(i/N);
       const X = miniXcutoff_from_ratio(r);
-      const Y = miniXtoUnit(X, elM.value);
+      const Y = miniXtoUnit(X, mode);
       const x = rToPx(r), y = yToPx(Y, range.yMin, range.yMax);
       d += (i? 'L ':'M ') + x + ',' + y + ' ';
     }
     curve.setAttribute('d', d);
+
     const leftX=rToPx(1), rightX=rToPx(10);
-    if (elM.value === 'oneInX'){
+    if (mode === 'oneInX'){
       const bottom = yToPx(range.yMin, range.yMin, range.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
     } else {
@@ -1291,14 +1323,13 @@ function renderMiniQ6(intoEl, node){
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + top + ' L ' + leftX + ',' + top + ' Z');
     }
   }
-  function curveYPxAtRatio(r){
-    const range = yRange(elM.value);
+
+  function curveYPxAtRatio(r, mode){
+    const range = yRange(mode);
     const Xc = miniXcutoff_from_ratio(r);
-    const Yc = miniXtoUnit(Xc, elM.value);
+    const Yc = miniXtoUnit(Xc, mode);
     return yToPx(Yc, range.yMin, range.yMax);
   }
-
-  function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
 
   function snapInputs(){
     if (window.miniPristine) return;
@@ -1332,8 +1363,9 @@ function renderMiniQ6(intoEl, node){
   let isSnapped = false;
 
   function draw(){
-    drawAxes();
-    buildCurve();
+    const mode = elM.value;
+    drawAxes(mode);
+    buildCurve(mode);
 
     if (window.miniPristine) {
       const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
@@ -1355,18 +1387,18 @@ function renderMiniQ6(intoEl, node){
 
     const r  = miniMaster.S/miniMaster.C;
     const Xc = miniXcutoff_from_ratio(r);
-    const range = yRange(elM.value);
+    const range = yRange(mode);
 
     const Yuser = (miniMaster.X_user != null)
-      ? miniXtoUnit(miniMaster.X_user, elM.value)
-      : miniXtoUnit(Xc, elM.value);
+      ? miniXtoUnit(miniMaster.X_user, mode)
+      : miniXtoUnit(Xc, mode);
 
     const cx = rToPx(miniClamp(r,1,10));
     const cy = yToPx(Yuser, range.yMin, range.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
     const label = 'S=' + trimDeci(miniMaster.S) + ' , C=' + trimDeci(miniMaster.C) + ' · S/C=' + trimDeci(r) + ' · ' +
-      (elM.value==='percent' ? ('X≈' + trimDeci(100/Xc,6) + '%') : (elM.value==='micromort' ? ('X≈' + trimDeci(1e6/Xc,2) + ' µm') : ('X≈' + Math.round(Xc).toLocaleString())));
+      (mode==='percent' ? ('X≈' + trimDeci(100/Xc,6) + '%') : (mode==='micromort' ? ('X≈' + trimDeci(1e6/Xc,2) + ' µm') : ('X≈' + Math.round(Xc).toLocaleString())));
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
     let ly = cy - 34; const minTop = pad.top + 20; if (ly < minTop) ly = minTop;
@@ -1384,12 +1416,13 @@ function renderMiniQ6(intoEl, node){
     if (cont) cont.disabled = false;
   }
 
-  const svgPoint = (evt) => {
+  // Pointer handlers (old behavior)
+  function svgPoint(evt){
     const pt = svg.createSVGPoint();
     pt.x = (evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX);
     pt.y = (evt.touches && evt.touches[0] ? evt.touches[0].clientY : evt.clientY);
     return pt.matrixTransform(svg.getScreenCTM().inverse());
-  };
+  }
 
   let dragging=false;
   function onPointerDown(e){ e.preventDefault(); window.miniPristine=false; dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){ } onPointerMove(e); }
@@ -1400,11 +1433,12 @@ function renderMiniQ6(intoEl, node){
     const r  = pxToR(px);
 
     const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
-    const yCurve  = curveYPxAtRatio(r);
+    const yCurve  = curveYPxAtRatio(r, elM.value);
     const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
 
+    // keep S/C ratio, clamp inside bounds
     let S = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
     let C = S / r;
     if (C <= MINI_EPS || C > MINI_MAX){
@@ -1417,18 +1451,19 @@ function renderMiniQ6(intoEl, node){
     }
     elS.value = String(S); elC.value = String(C);
 
-    const range = yRange(elM.value);
+    const mode = elM.value;
+    const range = yRange(mode);
     let yPix = Math.min(pad.top+plotH, Math.max(pad.top, sp.y));
     if (willSnap) yPix = yCurve;
     const frac = 1 - (yPix - pad.top) / plotH;
     const logY = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
     const Y = Math.pow(10, logY);
-    const X_user = unitToX(Y, elM.value);
-    miniMaster.S = S; miniMaster.C = C; miniMaster.mode = elM.value; miniMaster.X_user = X_user;
+    const X_user = unitToX(Y, mode);
+    miniMaster.S = S; miniMaster.C = C; miniMaster.mode = mode; miniMaster.X_user = X_user;
 
-    let valOut = (elM.value==='oneInX') ? X_user : (elM.value==='percent' ? (100/X_user) : (1e6/X_user));
-    if (elM.value==='oneInX') { if (valOut < 2) valOut = 2; }
-    else if (elM.value==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
+    let valOut = (mode==='oneInX') ? X_user : (mode==='percent' ? (100/X_user) : (1e6/X_user));
+    if (mode==='oneInX') { if (valOut < 2) valOut = 2; }
+    else if (mode==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
     else { if (valOut<=0) valOut=0.0001; if (valOut>=1e6) valOut=999999.99; }
     elV.value = String(valOut);
     miniMaster.val = valOut;
@@ -1436,7 +1471,6 @@ function renderMiniQ6(intoEl, node){
     draw();
   }
   function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
-
   handle.addEventListener('pointerdown', onPointerDown, {passive:false});
   svg.addEventListener('pointermove', onPointerMove, {passive:false});
   svg.addEventListener('pointerup', onPointerUp, {passive:false});
@@ -1444,51 +1478,61 @@ function renderMiniQ6(intoEl, node){
   svg.addEventListener('touchmove', onPointerMove, {passive:false});
   svg.addEventListener('touchend', onPointerUp, {passive:false});
 
-  // numeric hygiene
-  function wireNum(inp,{min=-Infinity,max=Infinity,decimals=null}={}){
+  // Numeric input hygiene
+  function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
     if (!inp) return;
-    inp.addEventListener('input', ()=>{
-      const s=inp.value;
-      const cleaned=s.replace(/[^0-9.\-]/g,'').replace(/(.*\..*)\./,'$1').replace(/(.*-).*-/,'$1');
-      if (cleaned!==s) inp.value=cleaned;
+    inp.addEventListener('input', () => {
+      const s = inp.value;
+      const cleaned = s
+        .replace(/[^0-9.\-]/g, '')
+        .replace(/(.*\..*)\./, '$1')
+        .replace(/(.*-).*-/ , '$1');
+      if (cleaned !== s) inp.value = cleaned;
     });
     function normalize(){
-      const raw=(inp.value||'').trim();
-      if (raw===''||raw==='-'||raw==='.'||raw==='-.'){ inp.value=''; return; }
-      let n=Number(raw); if (!Number.isFinite(n)){ inp.value=''; return; }
-      n=Math.min(max,Math.max(min,n));
-      inp.value=(decimals==null)?String(n):String(Number(n.toFixed(decimals)));
-      window.miniPristine=false; draw();
+      const raw = (inp.value || '').trim();
+      if (raw === '' || raw === '-' || raw === '.' || raw === '-.') { inp.value = ''; return; }
+      let n = Number(raw);
+      if (!Number.isFinite(n)) { inp.value = ''; return; }
+      n = Math.min(max, Math.max(min, n));
+      inp.value = (decimals == null) ? String(n) : String(Number(n.toFixed(decimals)));
+      window.miniPristine = false;
+      draw();
     }
     inp.addEventListener('blur', normalize);
-    inp.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
   }
-  wireNum(elS,{min:0,max:10,decimals:2});
-  wireNum(elC,{min:0,max:10,decimals:2});
-  wireNum(elV,{min:0,max:1e12,decimals:6});
+  wireNumericInput(elS, { min:0, max:10,   decimals:2 });
+  wireNumericInput(elC, { min:0, max:10,   decimals:2 });
+  wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
 
   elS.addEventListener('input', ()=>{ window.miniPristine=false; });
   elC.addEventListener('input', ()=>{ window.miniPristine=false; });
   elV.addEventListener('input', ()=>{ window.miniPristine=false; });
 
-  // persist any edit
-  const persist = () => saveNodeState('Q6', collectFormValues(q6Root));
-  q6Root.addEventListener('input',  persist);
-  q6Root.addEventListener('change', persist);
+  const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
+  q6Root.addEventListener('input',  persistQ6);
+  q6Root.addEventListener('change', persistQ6);
 
-  // compute if already filled
-  requestAnimationFrame(()=>{
-    const hasAll=[elS,elC,elV].every(el=>el && String(el.value||'').trim()!=='');
-    if (hasAll){ window.miniPristine=false; snapInputs(); draw(); }
+  requestAnimationFrame(() => {
+    const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
+    if (hasAll) {
+      window.miniPristine = false;
+      snapInputs();
+      draw();
+    }
   });
 
   draw();
 
-  // bottom buttons
+  // Bottom buttons
   const btns = document.getElementById('buttons');
   btns.innerHTML = '';
   cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
-  cont.onclick = function(){ miniActGate = !!renderMiniQ6._act; goToNode(miniActGate ? 'Q10' : 'Q7'); };
+  cont.onclick = function(){
+    miniActGate = !!renderMiniQ6._act;
+    goToNode(miniActGate ? 'Q10' : 'Q7');
+  };
   btns.appendChild(cont);
 }
 
@@ -2686,6 +2730,392 @@ function renderNode(node) {
   }
 }
 
+</script>
+
+  
+<script>
+(function(){
+function absorbOriginalRow(root, sel) {
+    const inp = root.querySelector(sel);
+    if (!inp) return null;
+    const row = inp.closest('.mini-field') || inp.parentElement;
+    if (row && row.parentElement) row.parentElement.removeChild(row);
+    return inp;
+  }
+
+function rootFor(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
+
+function buildOneColumn(root, opts) {
+    const id = opts.id;
+    let stack = root.querySelector('#' + id + '-entry');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = id + '-entry';
+      const anchor = root.querySelector('.mini-field');
+      if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(stack, anchor);
+      else root.prepend(stack);
+    } else {
+      stack.innerHTML = '';
+    }
+
+    // Instances
+    const nRow = document.createElement('div');
+    nRow.className = 'mini-field';
+    nRow.style.textAlign = 'left';
+    nRow.innerHTML = '<label>Total instances (N)</label><input id="' + id + 'N" type="number" min="1" step="1" value="1">';
+    stack.appendChild(nRow);
+
+    function makeSection(sectionTitle, selectors, baseId, placeholder, extraLabel, extraKind) {
+      const h = document.createElement('div');
+      h.className = 'mini-heading';
+      h.textContent = sectionTitle;
+      stack.appendChild(h);
+
+      const toggle = document.createElement('div');
+      toggle.className = 'hint';
+      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+      stack.appendChild(toggle);
+
+      stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+
+      const field = document.createElement('div');
+      field.className = 'mini-field';
+      field.innerHTML = '<label>' + extraLabel + '</label>';
+      // try a few selectors for Q6 and Q7 variants
+      const inputEl = absorbOriginalRow(root, selectors[0]) ||
+                      absorbOriginalRow(root, selectors[1]) ||
+                      absorbOriginalRow(root, selectors[2]) ||
+                      document.createElement('input');
+      if (!inputEl.type) inputEl.type = 'number';
+      inputEl.id = baseId;
+      inputEl.placeholder = placeholder;
+      field.appendChild(inputEl);
+      stack.appendChild(field);
+
+      const extra = document.createElement('div');
+      extra.className = 'mini-field';
+      extra.id = baseId + 'ExtraWrap';
+      extra.innerHTML =
+        '<div class="hint">Total extra ' + extraKind + ' across outliers (sum)</div>' +
+        '<input id="' + baseId + 'ExtraVal" type="number" step="any" placeholder="e.g. ' + (extraKind === 'severity' ? '3' : '2') + '">';
+      stack.appendChild(extra);
+
+      return { toggle, inputEl, extra };
+    }
+
+    // Severity & Cost
+const __sepSev=document.createElement('div');__sepSev.className='mini-sep';stack.appendChild(__sepSev);
+    const sev = makeSection('Severity',
+      ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
+      id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
+const __sepCost=document.createElement('div');__sepCost.className='mini-sep';stack.appendChild(__sepCost);
+    const cost = makeSection('Cost',
+      ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
+      id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
+const __sepProb=document.createElement('div');__sepProb.className='mini-sep';stack.appendChild(__sepProb);
+
+    // Probability
+    const hP = document.createElement('div');
+    hP.className = 'mini-heading';
+    hP.textContent = 'Probability';
+    stack.appendChild(hP);
+
+    const probToggle = document.createElement('div');
+    probToggle.className = 'hint';
+    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+    stack.appendChild(probToggle);
+
+    stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+
+    const modeRow = document.createElement('div');
+    modeRow.className = 'mini-field';
+    modeRow.id = id + 'ModeRow';
+    modeRow.innerHTML = '<label>Probability Unit</label>';
+    const modeSel = absorbOriginalRow(root, 'select[name="q6Units"]') ||
+                    absorbOriginalRow(root, '#miniMode') ||
+                    absorbOriginalRow(root, 'select[data-q="mode"]') ||
+                    document.createElement('select');
+    modeRow.appendChild(modeSel);
+    stack.appendChild(modeRow);
+
+    const pValRow = document.createElement('div');
+    pValRow.className = 'mini-field';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
+    const pVal = absorbOriginalRow(root, '#miniVal') ||
+                 absorbOriginalRow(root, 'input[name="probVal"]') ||
+                 absorbOriginalRow(root, 'input[data-q="pVal"]') ||
+                 document.createElement('input');
+    if (!pVal.type) pVal.type = 'number';
+    pValRow.appendChild(pVal);
+    stack.appendChild(pValRow);
+
+    const groupsWrap = document.createElement('div');
+    groupsWrap.id = id + 'GroupsWrap';
+    groupsWrap.className = 'mini-field';
+    groupsWrap.innerHTML =
+      '<div id="' + id + 'Groups"></div>' +
+      '<div class="mini-field" style="margin:0;padding:0">' +
+      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add Probability Group</button>' +
+      '</div>' +
+      '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
+    stack.appendChild(groupsWrap);
+
+    // hide any leftover original rows not moved
+    killStrays(root, stack);
+
+    return {
+      stack,
+      N: stack.querySelector('#' + id + 'N'),
+      tgSev: sev.toggle.querySelector('input'),
+      tgCost: cost.toggle.querySelector('input'),
+      tgProb: probToggle.querySelector('input'),
+      sExtraWrap: sev.extra,
+      cExtraWrap: cost.extra,
+      sExtraVal: sev.extra.querySelector('input'),
+      cExtraVal: cost.extra.querySelector('input'),
+      groupsWrap, groups: groupsWrap.querySelector('#' + id + 'Groups'),
+      addGroup: groupsWrap.querySelector('#' + id + 'AddGroup'),
+      countMsg: groupsWrap.querySelector('#' + id + 'CountMsg'),
+      pMode: modeSel, pVal: pVal,
+      modeRow: modeRow
+    };
+  }
+
+function dedupeVaries(scope){
+    ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(function(sel){
+      var all = qa(sel, scope);
+      for (var i=1;i<all.length;i++){ var w = up(all[i], '.mini-field'); if (w) w.remove(); }
+    });
+  }
+
+function keepBaseProbabilityVisible(scope){
+    var unit = q('#miniMode', scope), val  = q('#miniVal', scope);
+    var uw = unit && up(unit, '.mini-field'); var vw = val && up(val, '.mini-field');
+    if (uw) uw.style.display = ''; if (vw) vw.style.display = '';
+  }
+
+function wireProbabilityVaries(scope){
+    keepBaseProbabilityVisible(scope);
+    var cb    = q('#miniProbVaries', scope);
+    var mBox2 = q('#miniMode2', scope) && up(q('#miniMode2', scope), '.mini-field');
+    var vBox2 = q('#miniVal2',  scope) && up(q('#miniVal2',  scope), '.mini-field');
+    var gWrap = q('#miniProbGroups', scope) && up(q('#miniProbGroups', scope), '.mini-field');
+    function show(on){
+      if (mBox2) mBox2.style.display = on ? '' : 'none';
+      if (vBox2) vBox2.style.display = on ? '' : 'none';
+      if (gWrap) gWrap.style.display  = on ? '' : 'none';
+    }
+    if (cb){ cb.addEventListener('change', function(){ keepBaseProbabilityVisible(scope); show(cb.checked); }); show(!!cb.checked); }
+    else { show(false); }
+  }
+
+function blankUntilEdited(scope){
+    var root = scope || document;
+    var nums = qa('.mini-field input[type="number"]', root);
+    nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+
+    var s = q('#miniS', root);
+    var n = findInstancesInput(root);
+
+    function clearUntouched(){
+      qa('.mini-field input[type="number"]', root).forEach(function(inp){
+        if (inp === s) return;
+        if (n && inp === n) return;
+        if (!inp.dataset.touched) inp.value = '';
+      });
+    }
+
+    if (s){
+      ['input','change'].forEach(function(evt){
+        s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
+      });
+    }
+
+    if (n){
+      n.addEventListener('input', function(){
+        var digits = String(this.value||'').replace(/[^0-9]/g, '');
+        this.value = digits;
+      });
+      n.addEventListener('blur', function(){
+        if (this.value === '') return;
+        var v = parseInt(this.value,10); if (!isFinite(v) || v < 1) v = 1;
+        this.value = String(v);
+      });
+    }
+
+    var groups = q('#miniProbGroups', root);
+    if (groups){
+      groups.addEventListener('input', function(e){
+        var target = e.target;
+        if (!target || target.type !== 'number') return;
+        var maxN = n && n.value ? parseInt(n.value,10) : null;
+        if (!maxN) return;
+        var inputs = qa('input[type="number"]', groups);
+        var sum = 0;
+        for (var i=0;i<inputs.length;i++){
+          var v = parseInt(inputs[i].value||'0',10) || 0;
+          if (inputs[i] === target){
+            if (sum + v > maxN){ inputs[i].value = String(Math.max(0, maxN - sum)); }
+            v = parseInt(inputs[i].value||'0',10) || 0;
+          }
+          sum += v;
+        }
+      });
+    }
+  }
+
+function ensureFullWidth(scope){
+    try{
+      var root = scope || document;
+      qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
+        if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
+      });
+      var wrap = root.querySelector('.mini-wrap');
+      if (wrap && wrap.style){
+        wrap.style.width='100%';
+        wrap.style.maxWidth='100%';
+        wrap.style.overflowX='hidden';
+        wrap.style.overflowY='visible';
+      }
+      qa('svg', root).forEach(function(svg){
+        if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
+      });
+    }catch(e){}
+  }
+
+function killStrays(root, stack) {
+    // hide anything outside our stack to avoid leftover right-side fields
+    const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
+    kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
+  }
+
+const _orig6 = renderMiniQ6;
+renderMiniQ6 = function (intoEl, node) {
+      _orig6(intoEl, node);
+      const root = intoEl.querySelector('.mini-wrap') || intoEl;
+      if (!root) return;
+
+      const el = buildOneColumn(root, { id: 'q6' });
+      const state = window.__q6State || { groups: [] };
+
+      // restore
+      try {
+        if (el.N && state.N != null) el.N.value = state.N;
+        if (el.tgSev) el.tgSev.checked = !!state.tgSev;
+        if (el.tgCost) el.tgCost.checked = !!state.tgCost;
+        if (el.tgProb) el.tgProb.checked = !!state.tgProb;
+        if (el.sExtraVal && state.sExtraVal != null) el.sExtraVal.value = state.sExtraVal;
+        if (el.cExtraVal && state.cExtraVal != null) el.cExtraVal.value = state.cExtraVal;
+        if (el.pMode && state.pModeVal != null) el.pMode.value = state.pModeVal;
+        if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
+        if (state.groups && state.groups.length) setTimeout(()=>drawGroups(),0);
+      } catch(_) {}
+
+      function setHidden(e,on){ if(e){ e.style.display=on?'none':''; e.classList.toggle('hidden',on);} }
+      function setGrey(row,on){ if(row) row.classList.toggle('muted', on); }
+
+      function refreshVisibility(){
+        const N = Math.max(1, el.N ? (el.N.valueAsNumber || 1) : 1);
+        const dis = (N === 1);
+
+        [el.tgSev, el.tgCost, el.tgProb].forEach(cb=>{
+          if (!cb) return;
+          cb.disabled = dis;
+          setGrey(cb.parentElement, dis);
+          if (dis) cb.checked = false;
+        });
+
+        setHidden(el.sExtraWrap, dis || !el.tgSev || !el.tgSev.checked);
+        setHidden(el.cExtraWrap, dis || !el.tgCost || !el.tgCost.checked);
+
+        const hideGroups = dis || !el.tgProb || !el.tgProb.checked;
+        setHidden(el.groupsWrap, hideGroups);
+        if (el.addGroup) { el.addGroup.disabled = hideGroups; el.addGroup.classList.toggle('muted', hideGroups); }
+
+        // FIX: hide probability unit row ONLY when varies is checked; show otherwise
+        setHidden(el.modeRow, false);
+
+        if (dis || !(el.tgSev && el.tgSev.checked)) if (el.sExtraVal) el.sExtraVal.value='';
+        if (dis || !(el.tgCost && el.tgCost.checked)) if (el.cExtraVal) el.cExtraVal.value='';
+        if (dis || !(el.tgProb && el.tgProb.checked)) { state.groups=[]; if (el.groups) el.groups.innerHTML=''; if (el.countMsg) el.countMsg.textContent=''; }
+
+        // persist
+        window.__q6State = {
+          N: el.N ? el.N.value : 1,
+          tgSev: el.tgSev ? el.tgSev.checked : false,
+          tgCost: el.tgCost ? el.tgCost.checked : false,
+          tgProb: el.tgProb ? el.tgProb.checked : false,
+          sExtraVal: el.sExtraVal ? el.sExtraVal.value : null,
+          cExtraVal: el.cExtraVal ? el.cExtraVal.value : null,
+          pModeVal: el.pMode ? el.pMode.value : null,
+          pVal: el.pVal ? el.pVal.value : null,
+          groups: JSON.parse(JSON.stringify(state.groups || []))
+        };
+      }
+
+      function drawGroups(){
+        if (!el.groups) return;
+        el.groups.innerHTML='';
+        (state.groups || []).forEach((g,i)=>{
+          const wrap=document.createElement('div');
+          wrap.className='mini-fields';
+          wrap.innerHTML =
+            '<div class="mini-field"><label>Group '+(i+1)+' count</label><input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'"></div>'+
+            '<div class="mini-field"><label>Unit</label><select data-i="'+i+'" data-k="mode">'+
+            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>'+
+            '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>'+
+            '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>'+
+            '</select></div>'+
+            '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
+            '<div class="mini-field"><button class="back" data-remove="'+i+'" type="button" style="width:100%">Remove</button></div>';
+          el.groups.appendChild(wrap);
+    (function(){
+      var unitSel = wrap.querySelector('select[data-k="mode"]');
+      var valInput = wrap.querySelector('input[data-k="val"]') || wrap.querySelector('input[type="number"], input[type="text"]');
+      if (!unitSel || !valInput || unitSel.__phBound) return;
+      unitSel.__phBound = true;
+      function setPH(){
+        var v = unitSel.value || 'oneInX';
+        if (v === 'percent') valInput.placeholder = 'e.g. 0.5';
+        else if (v === 'micromort') valInput.placeholder = 'e.g. 10';
+        else valInput.placeholder = 'e.g. 100,000';
+      }
+      unitSel.addEventListener('change', setPH);
+      setPH();
+    })();
+        });
+        if (el.countMsg) el.countMsg.textContent='';
+      }
+
+      ['input','change'].forEach(evt=>{
+        [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal]
+          .forEach(x => x && x.addEventListener(evt, refreshVisibility));
+      });
+      if (el.addGroup) el.addGroup.addEventListener('click', ()=>{
+        (state.groups = state.groups || []).push({count:0, mode:(el.pMode && el.pMode.value) || 'oneInX', val:null});
+        drawGroups(); refreshVisibility();
+      });
+      if (el.groups) {
+        el.groups.addEventListener('input', e=>{
+          const t=e.target, i=+t.dataset.i; if(!Number.isFinite(i)) return;
+          const k=t.dataset.k;
+          if (k==='count') state.groups[i].count = t.value===''?0:(t.value|0);
+          if (k==='mode')  state.groups[i].mode  = t.value;
+          if (k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
+          const used = (state.groups||[]).reduce((s,g)=>s+(g.count|0),0);
+          if (el.countMsg && el.N) el.countMsg.textContent = used > (el.N.value|0) ? 'Group counts exceed N ('+used+'/'+el.N.value+').' : '';
+          refreshVisibility();
+        });
+        el.groups.addEventListener('click', e=>{
+          const idx = e.target.dataset.remove;
+          if (idx != null) { state.groups.splice(+idx,1); drawGroups(); refreshVisibility(); }
+        });
+      }
+
+      drawGroups();
+      refreshVisibility();
+    }
+})();
 </script>
 
 </body>
