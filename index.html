@@ -2804,34 +2804,81 @@ function renderNode(node) {
 
 
 
-<style id="q6-varies-align-like-16">
-  /* Make the 'Varies Across Instances' row look like index 16 */
-  #q6-entry .mini-field > label.varies-label,
-  #q7-entry .mini-field > label.varies-label{
+<style id="q6-like-16-override">
+  /* Force Q6/Q7 stack and spacing to match index 16 */
+  #q6-entry, #q7-entry {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* Headings (Severity, Cost, Probability) */
+  #q6-entry .mini-heading, #q7-entry .mini-heading {
     display: block !important;
+    width: 100% !important;
+    font-weight: 700 !important;
+    font-size: 1.5rem !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+  }
+
+  /* Make the "Varies Across Instances" sit on its own line under the heading */
+  #q6-entry .mini-field > label.varies-label,
+  #q7-entry .mini-field > label.varies-label {
+    display: block !important;
+    position: static !important;
+    float: none !important;
+    width: 100% !important;
+    margin: 0 0 4px 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
     font-size: 0.95rem !important;
     font-weight: 400 !important;
     line-height: 1.35 !important;
-    margin: 0 0 4px 0 !important;    /* beneath the heading, slight gap */
-    text-align: left !important;
-    opacity: 1 !important;
+    opacity: .6 !important; /* match the faint "hint" look from index 16 */
   }
+
+  /* Checkbox on the left, with a small gap */
   #q6-entry .mini-field > label.varies-label input[type="checkbox"],
-  #q7-entry .mini-field > label.varies-label input[type="checkbox"]{
+  #q7-entry .mini-field > label.varies-label input[type="checkbox"] {
     margin-right: .5rem !important;
     vertical-align: middle !important;
   }
 
-  /* Ensure each of these rows occupies its own line */
-  #q6-entry .mini-field,
-  #q7-entry .mini-field{
-    width: 100% !important;
+  /* Ensure the "Varies..." row block isn't being laid out inline with the heading by any parent */
+  #q6-entry .mini-heading + .mini-field,
+  #q7-entry .mini-heading + .mini-field {
+    display: block !important;
   }
 
-  /* Keep headings and rows stacked in a single column */
-  #q6-entry, #q7-entry{
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
+  /* Inputs/selects full width */
+  #q6-entry .mini-field input,
+  #q6-entry .mini-field select,
+  #q6-entry .mini-field textarea,
+  #q7-entry .mini-field input,
+  #q7-entry .mini-field select,
+  #q7-entry .mini-field textarea {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
   }
+
+  /* Keep the same opacity behaviors as index 16 */
+  #q6-entry .muted { opacity: .6 !important; }
+  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint {
+    opacity: .6 !important;
+    pointer-events: none !important;
+  }
+
+  /* Divider and spacer match */
+  .mini-sep{
+    border-top: 2px solid var(--border) !important;
+    opacity: .9 !important;
+    margin: 8px 0 0 !important;
+  }
+  .mini-spacer{ height: 6px !important; }
 </style>
