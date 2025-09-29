@@ -548,7 +548,7 @@
   }
 </style>
 
-<style id="q6-q7-layout">
+<style>
   /* Make the mini area stretch like the rest of the site */
   .mini-wrap, #q6-entry, #q7-entry { width: 100%; }
   #q6-entry, #q7-entry {
@@ -557,66 +557,23 @@
     gap: 14px;
     max-width: none;  /* allow full-width */
   }
-
-  /* Section headers (“Severity”, “Cost”, “Probability”) */
   #q6-entry .mini-heading, #q7-entry .mini-heading {
     font-weight: 700;
     font-size: 1.5rem;
   }
-
-  /* Default label size */
   #q6-entry label, #q7-entry label {
     font-size: 0.95rem;
     font-weight: 400;
   }
-
-  /* Inputs should fill the column */
-  #q6-entry .mini-field input,
-  #q6-entry .mini-field select,
-  #q7-entry .mini-field input,
-  #q7-entry .mini-field select {
+  #q6-entry .mini-field input, #q6-entry .mini-field select,
+  #q7-entry .mini-field input, #q7-entry .mini-field select {
     width: 100%;
     max-width: none;
-    box-sizing: border-box;
   }
-
-  /* Q7 is read-only/minimal */
-  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint {
-    opacity: .6; pointer-events: none;
-  }
-
-  /* Muted rows (used when N = 1 disables “Varies Across Instances”) */
-  #q6-entry .mini-field.muted { opacity: .55; }
-  #q6-entry .mini-field.muted input[type="checkbox"]{ pointer-events:none; }
-
-  /* Smaller, inline “Varies Across Instances” label (overrides default label size) */
-  #q6-entry .mini-field > label.varies-label{
-    display:inline-flex; align-items:center; gap:.5rem;
-    font-size:.85rem !important;  /* override the default 0.95rem */
-    font-weight:400; opacity:.9; margin:0; line-height:1.3;
-  }
-  #q6-entry .mini-field > label.varies-label input[type="checkbox"]{
-    margin:0; vertical-align:middle;
-  }
-
-  /* Divider line (you already had this) */
-  .mini-sep{
-    border-top: 2px solid var(--border);
-    opacity: .9;
-    margin: 8px 0 0;  /* optional; change if you want zero spacing */
-  }
-
+  #q7-entry input, #q7-entry select, #q7-entry button,
+  #q7-entry .hint { opacity: .6; pointer-events: none; }
+  #q6-entry .muted { opacity: .6; }
   .mini-spacer { height: 6px; }
-
-  /* Mobile focus ring: don’t clip, don’t zoom */
-  @media (max-width:560px){
-    .mini-wrap, .mini-field{ overflow: visible !important; }
-    .mini-field input, .mini-field select, .mini-field textarea{
-      font-size: 16px !important;  /* stops iOS zoom */
-      outline-offset: 3px;         /* keeps ring from clipping */
-      box-shadow: none;
-    }
-  }
 </style>
   
 </head>
@@ -1131,63 +1088,46 @@ function jumpToConcept(conceptId, backQId){
    Q6 — interactive: inputs + 2D drag + snap + correct shading
 =========================================================== */
 function renderMiniQ6(intoEl, node){
-  // first-visit flag (keeps user values if they come back later)
   if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
   let cont;
-
-  // clear & top text
   intoEl.innerHTML = '';
+
+  // Top text
   const top = document.createElement('div');
   top.className = 'mini-top';
   top.innerHTML = node.text || '';
   intoEl.appendChild(top);
 
-  // wrapper
-  const wrap = document.createElement('div'); wrap.className = 'mini-wrap';
-  intoEl.appendChild(wrap);
+  // Wrapper + fields (same structure/look as your old build)
+  const wrap   = document.createElement('div'); wrap.className = 'mini-wrap';
+  const fields = document.createElement('div'); fields.className = 'mini-fields';
 
-  // helper to insert a divider + heading
-  function section(title){
-    const sep = document.createElement('div'); sep.className = 'mini-sep'; wrap.appendChild(sep);
-    const h = document.createElement('div'); h.className = 'mini-heading'; h.textContent = title; wrap.appendChild(h);
-    return h;
-  }
-  // helper to add a mini-field row
-  function row(html){ const d = document.createElement('div'); d.className='mini-field'; d.innerHTML = html; wrap.appendChild(d); return d; }
+  const sBox = document.createElement('div'); sBox.className='mini-field';
+  sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
+  const cBox = document.createElement('div'); cBox.className='mini-field';
+  cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
+  fields.appendChild(sBox); fields.appendChild(cBox);
 
-  // --- Total Instances (N) ---
-  const nHead = document.createElement('div'); nHead.className='mini-heading'; nHead.textContent=''; // no divider above N
-  wrap.appendChild(nHead);
-  const nRow = row('<label>Total instances (N)</label><input id="miniN" type="number" min="1" step="1" value="1">');
+  const pRow = document.createElement('div'); pRow.className='mini-fields';
+  const mBox = document.createElement('div'); mBox.className='mini-field';
+  mBox.innerHTML =
+    '<label>Probability Unit</label>\
+     <select id="miniMode" name="q6Units">\
+       <option value="oneInX">1 in X</option>\
+       <option value="percent">Percentage (%)</option>\
+       <option value="micromort">Micromorts</option>\
+     </select>';
 
-  // --- Severity ---
-  section('Severity');
-  const sVar = row('<label class="varies-label block-like"><input id="miniSVaries" type="checkbox"> Varies Across Instances</label>');
-wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
-  const sRow = row('<label>Enter Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">');
+  const vBox = document.createElement('div'); vBox.className='mini-field';
+  vBox.innerHTML =
+    '<label id="miniProbLabel">Enter X (for “1 in X”)</label>\
+     <input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000">';
 
-  // --- Cost ---
-  section('Cost');
-  const cVar = row('<label class="varies-label block-like"><input id="miniCVaries" type="checkbox"> Varies Across Instances</label>');
-wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
-  const cRow = row('<label>Enter Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">');
+  pRow.appendChild(mBox); pRow.appendChild(vBox);
+  wrap.appendChild(fields);
+  wrap.appendChild(pRow);
 
-  // --- Probability ---
-  section('Probability');
-  const pVar = row('<label class="varies-label block-like"><input id="miniProbVaries" type="checkbox"> Varies Across Instances</label>');
-wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
-
-  const mRow = row('<label>Probability Unit</label>\
-<select id="miniMode" name="q6Units">\
-  <option value="oneInX">1 in X</option>\
-  <option value="percent">Percentage (%)</option>\
-  <option value="micromort">Micromorts</option>\
-</select>');
-
-  const vRow = row('<label id="miniProbLabel">Enter X (for “1 in X”)</label>\
-<input id="miniVal" type="number" min="2" step="1" placeholder="e.g. 1,000">');
-
-  // --- SVG graph container ---
+  // SVG (as in the old build)
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg');
   svg.setAttribute('viewBox','0 0 940 620');
@@ -1211,32 +1151,50 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
     e.preventDefault();
     const target = 'concept-prob-sev-cost';
     history.replaceState(null, '', `#${target}`);
-    if (typeof jumpToConcept === 'function') jumpToConcept(target, /* back */ node.id);
+    if (typeof jumpToConcept === 'function') jumpToConcept(target, node.id);
   });
   wrap.appendChild(link);
 
-  // ----- element refs
-  const elN  = nRow.querySelector('#miniN');
-  const elS  = sRow.querySelector('#miniS');
-  const elC  = cRow.querySelector('#miniC');
-  const elM  = mRow.querySelector('#miniMode');
-  const elV  = vRow.querySelector('#miniVal');
-  const labV = vRow.querySelector('#miniProbLabel');
-  const probName = rule.querySelector('#miniProbName');
+  // Attach wrapper
+  intoEl.appendChild(wrap);
 
-  const sVcb = sVar.querySelector('#miniSVaries');
-  const cVcb = cVar.querySelector('#miniCVaries');
-  const pVcb = pVar.querySelector('#miniProbVaries');
+  // --- Insert exactly ONE divider before each section heading (inline) ---
+  (function ensureDividers(root){
+    if (!root) return;
+    const names = ['Severity','Cost','Probability'];
+    const labels = root.querySelectorAll('.mini-heading, .mini-field > label, label');
+    names.forEach(name=>{
+      const heading = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name.toLowerCase());
+      if (!heading || !heading.parentElement) return;
+      const parent = heading.parentElement;
+      // remove extra .mini-sep right before
+      const toRemove = [];
+      let prev = heading.previousElementSibling;
+      while (prev && prev.classList && prev.classList.contains('mini-sep')){
+        toRemove.push(prev);
+        prev = prev.previousElementSibling;
+      }
+      if (toRemove.length > 1) toRemove.slice(1).forEach(el=>el.remove());
+      if (toRemove.length === 0){
+        const sep = document.createElement('div');
+        sep.className = 'mini-sep';
+        parent.insertBefore(sep, heading);
+      }
+    });
+  })(wrap);
 
-  const q6Root = intoEl;
+  // ===== Inputs & state =====
+  const elS  = wrap.querySelector('#miniS');
+  const elC  = wrap.querySelector('#miniC');
+  const elM  = wrap.querySelector('#miniMode');
+  const elV  = wrap.querySelector('#miniVal');
+  let   labV = wrap.querySelector('#miniProbLabel');
+  const probName = wrap.querySelector('#miniProbName');
 
-  // ===== Persistence (restore first) =====
-  try{
-    const saved = loadNodeState && loadNodeState('Q6');
-    if (saved) applyFormValues && applyFormValues(q6Root, saved);
-  }catch(_){}
+  const q6Root  = intoEl;
+  const savedQ6 = loadNodeState('Q6');
+  if (savedQ6) applyFormValues(q6Root, savedQ6);
 
-  // ===== Helpers from your build
   function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
   function yRange(mode){
     if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Cutoff Probability (%) (log scale)" };
@@ -1244,71 +1202,50 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
 
-  // initial unit + symbol
-  elM.value = (window.miniMaster && miniMaster.mode) || 'oneInX';
+  // Initial unit + symbol from your app’s state
+  elM.value = miniMaster.mode;
   if (typeof miniProbSymbol === 'function' && probName){
-    probName.textContent = miniProbSymbol(elM.value);
+    probName.textContent = miniProbSymbol(miniMaster.mode);
   }
 
-  // changing VALUE label + placeholder off the mode
+  // Robust label resolving
+  if (!labV){
+    const vField = elV && elV.closest('.mini-field');
+    labV = vField ? (vField.querySelector('label') || (()=>{ 
+      const lbl = document.createElement('label');
+      lbl.id = 'miniProbLabel';
+      vField.insertBefore(lbl, vField.firstChild);
+      return lbl;
+    })()) : null;
+  }
+
+  // 🔁 Dynamic Probability value label/placeholder
   function updateProbLabelForMode(mode){
     if (!labV || !elV) return;
-    if (mode === 'oneInX'){
-      labV.textContent = 'Enter X (for “1 in X”)';
-      elV.placeholder  = 'e.g. 1,000';
-    } else if (mode === 'percent'){
-      labV.textContent = 'Enter percentage (%)';
-      elV.placeholder  = 'e.g. 1';
-    } else { // micromort
-      labV.textContent = 'Enter micromorts (µm)';
-      elV.placeholder  = 'e.g. 1';
-    }
+    if (mode === 'oneInX'){ labV.textContent = 'Enter X (for “1 in X”)'; elV.placeholder = 'e.g. 1,000'; }
+    else if (mode === 'percent'){ labV.textContent = 'Enter percentage (%)'; elV.placeholder = 'e.g. 1'; }
+    else { labV.textContent = 'Enter micromorts (µm)'; elV.placeholder = 'e.g. 1'; }
     if (typeof miniProbSymbol === 'function' && probName){
       probName.textContent = miniProbSymbol(mode);
     }
   }
-  updateProbLabelForMode(elM.value);
+  updateProbLabelForMode(elM ? elM.value : 'oneInX');
+
+  // Micromorts rule (lock Severity at 10)
+  function lockSeverity(val = 10){ elS.value = String(val); elS.disabled = true; elS.classList.add('is-disabled'); }
+  function unlockSeverity(){ elS.disabled = false; elS.classList.remove('is-disabled'); }
+  function applyUnitsRule(){
+    const mode = elM.value;
+    if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10); else unlockSeverity();
+  }
+  applyUnitsRule();
+
   if (!elM.__boundUpdateProbLabel){
-    elM.addEventListener('change', (e)=> updateProbLabelForMode(e.target.value));
+    elM.addEventListener('change', (e)=>{ updateProbLabelForMode(e.target.value); applyUnitsRule(); });
     elM.__boundUpdateProbLabel = true;
   }
 
-  // lock/unlock Severity when micromorts
-  function lockSeverity(val = 10){
-    elS.value = String(val);
-    elS.disabled = true;
-    elS.classList.add('is-disabled');
-  }
-  function unlockSeverity(){
-    elS.disabled = false;
-    elS.classList.remove('is-disabled');
-  }
-  function applyUnitsRule(){
-    const mode = elM.value;
-    if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10);
-    else unlockSeverity();
-  }
-  applyUnitsRule();
-  elM.addEventListener('change', applyUnitsRule);
-
-  // N-based “Varies” logic
-  function refreshVariesUI(){
-    const N = Math.max(1, elN.valueAsNumber || 1);
-    const dis = (N === 1);
-
-    [sVar, cVar, pVar].forEach(row=>{
-      row.classList.toggle('muted', dis);
-    });
-    [sVcb, cVcb, pVcb].forEach(cb=>{
-      cb.disabled = dis;
-      if (dis) cb.checked = false;
-    });
-  }
-  refreshVariesUI();
-  elN.addEventListener('input', refreshVariesUI);
-  elN.addEventListener('change', refreshVariesUI);
-
-  // ===== SVG layers (unchanged from your working build)
+  // ===== Graph (same geometry/behavior as old) =====
   const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
   const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
   const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
@@ -1321,7 +1258,6 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
   const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
   const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
-  // geometry
   const pad = { left:120, right:30, top:34, bottom:96 };
   const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   const rMin=1, rMax=10;
@@ -1480,7 +1416,7 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
     if (cont) cont.disabled = false;
   }
 
-  // pointer helpers
+  // Pointer handlers (old behavior)
   function svgPoint(evt){
     const pt = svg.createSVGPoint();
     pt.x = (evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX);
@@ -1502,6 +1438,7 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
 
+    // keep S/C ratio, clamp inside bounds
     let S = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
     let C = S / r;
     if (C <= MINI_EPS || C > MINI_MAX){
@@ -1534,7 +1471,6 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
     draw();
   }
   function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
-
   handle.addEventListener('pointerdown', onPointerDown, {passive:false});
   svg.addEventListener('pointermove', onPointerMove, {passive:false});
   svg.addEventListener('pointerup', onPointerUp, {passive:false});
@@ -1566,92 +1502,39 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
     inp.addEventListener('blur', normalize);
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
   }
-  wireNumericInput(elN, { min:1, max:1e12, decimals:0 });
   wireNumericInput(elS, { min:0, max:10,   decimals:2 });
   wireNumericInput(elC, { min:0, max:10,   decimals:2 });
   wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
 
-  // mark non-pristine while typing
-  [elN, elS, elC, elV].forEach(el => el.addEventListener('input', ()=>{ window.miniPristine=false; }));
+  elS.addEventListener('input', ()=>{ window.miniPristine=false; });
+  elC.addEventListener('input', ()=>{ window.miniPristine=false; });
+  elV.addEventListener('input', ()=>{ window.miniPristine=false; });
 
-  // Persist on any edit (uses your helpers if present)
-  const persistQ6 = () => { try{ saveNodeState && saveNodeState('Q6', collectFormValues(q6Root)); }catch(_){ } };
+  const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
   q6Root.addEventListener('input',  persistQ6);
   q6Root.addEventListener('change', persistQ6);
 
-  // compute once if values already present
   requestAnimationFrame(() => {
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (hasAll) {
       window.miniPristine = false;
       snapInputs();
       draw();
-    } else {
-      draw();
     }
   });
 
+  draw();
+
   // Bottom buttons
   const btns = document.getElementById('buttons');
-  if (btns){
-    btns.innerHTML = '';
-    cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
-    cont.onclick = function(){
-      miniActGate = !!renderMiniQ6._act;
-      goToNode(miniActGate ? 'Q10' : 'Q7');
-    };
-    btns.appendChild(cont);
-  }
-
-  // Inject Q6 scoped styles once
-  (function ensureQ6Style(){
-    if (document.getElementById('q6-inline-style')) return;
-    const style = document.createElement('style');
-    style.id = 'q6-inline-style';
-    style.textContent = `
-      #q6-entry .mini-heading{ display:block; width:100%; font-weight:700; font-size:1.5rem; line-height:1.25; margin:0 0 8px 0; }
-      #q6-entry label.varies-label.block-like{ display:block; width:100%; font-size:0.95rem; font-weight:400; line-height:1.35; margin:0 0 6px 0; opacity:.9; }
-      #q6-entry label.varies-label.block-like input[type="checkbox"]{ margin-right:.5rem; vertical-align:middle; }
-      #q6-entry .mini-sep{ border-top:2px solid var(--border); opacity:.9; margin:8px 0 0; }
-      #q6-entry .mini-spacer{ height:6px; }
-      #q6-entry, #q6-entry .mini-fields, #q6-entry .fields{ display:grid; grid-template-columns:1fr; gap:14px; width:100%; max-width:none; }
-      #q6-entry label.varies-label.is-disabled{ opacity:.55; pointer-events:none; }
-    `;
-    document.head.appendChild(style);
-  })();
-
-  // N-based lock/unlock for varies
-  (function q6NLock(){
-    var nEl = document.getElementById('miniN');
-    function update(){
-      var n = parseInt(nEl && nEl.value, 10);
-      var lock = !n || n <= 1;
-      ['miniSVaries','miniCVaries','miniProbVaries'].forEach(function(id){
-        var cb = document.getElementById(id);
-        if (!cb) return;
-        var label = cb.closest('label.varies-label') || cb.parentElement;
-        if (lock){
-          if (cb.checked){
-            cb.checked = false;
-            try{ cb.dispatchEvent(new Event('change', {bubbles:true})); }catch(e){}
-          }
-          cb.disabled = true;
-          if (label) label.classList.add('is-disabled');
-        } else {
-          cb.disabled = false;
-          if (label) label.classList.remove('is-disabled');
-        }
-      });
-    }
-    if (nEl){
-      nEl.addEventListener('input', update);
-      nEl.addEventListener('change', update);
-    }
-    update();
-  })();
-
+  btns.innerHTML = '';
+  cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
+  cont.onclick = function(){
+    miniActGate = !!renderMiniQ6._act;
+    goToNode(miniActGate ? 'Q10' : 'Q7');
+  };
+  btns.appendChild(cont);
 }
-
 
 
 /* ===========================================================
@@ -2850,5 +2733,390 @@ function renderNode(node) {
 </script>
 
   
+<script>
+(function(){
+function absorbOriginalRow(root, sel) {
+    const inp = root.querySelector(sel);
+    if (!inp) return null;
+    const row = inp.closest('.mini-field') || inp.parentElement;
+    if (row && row.parentElement) row.parentElement.removeChild(row);
+    return inp;
+  }
+
+function rootFor(id){ return document.getElementById(id) || document.querySelector('[data-id="'+id+'"]'); }
+
+function buildOneColumn(root, opts) {
+    const id = opts.id;
+    let stack = root.querySelector('#' + id + '-entry');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = id + '-entry';
+      const anchor = root.querySelector('.mini-field');
+      if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(stack, anchor);
+      else root.prepend(stack);
+    } else {
+      stack.innerHTML = '';
+    }
+
+    // Instances
+    const nRow = document.createElement('div');
+    nRow.className = 'mini-field';
+    nRow.style.textAlign = 'left';
+    nRow.innerHTML = '<label>Total instances (N)</label><input id="' + id + 'N" type="number" min="1" step="1" value="1">';
+    stack.appendChild(nRow);
+
+    function makeSection(sectionTitle, selectors, baseId, placeholder, extraLabel, extraKind) {
+      const h = document.createElement('div');
+      h.className = 'mini-heading';
+      h.textContent = sectionTitle;
+      stack.appendChild(h);
+
+      const toggle = document.createElement('div');
+      toggle.className = 'hint';
+      toggle.innerHTML = '<input id="' + baseId + 'Tg" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+      stack.appendChild(toggle);
+
+      stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+
+      const field = document.createElement('div');
+      field.className = 'mini-field';
+      field.innerHTML = '<label>' + extraLabel + '</label>';
+      // try a few selectors for Q6 and Q7 variants
+      const inputEl = absorbOriginalRow(root, selectors[0]) ||
+                      absorbOriginalRow(root, selectors[1]) ||
+                      absorbOriginalRow(root, selectors[2]) ||
+                      document.createElement('input');
+      if (!inputEl.type) inputEl.type = 'number';
+      inputEl.id = baseId;
+      inputEl.placeholder = placeholder;
+      field.appendChild(inputEl);
+      stack.appendChild(field);
+
+      const extra = document.createElement('div');
+      extra.className = 'mini-field';
+      extra.id = baseId + 'ExtraWrap';
+      extra.innerHTML =
+        '<div class="hint">Total extra ' + extraKind + ' across outliers (sum)</div>' +
+        '<input id="' + baseId + 'ExtraVal" type="number" step="any" placeholder="e.g. ' + (extraKind === 'severity' ? '3' : '2') + '">';
+      stack.appendChild(extra);
+
+      return { toggle, inputEl, extra };
+    }
+
+    // Severity & Cost
+const __sepSev=document.createElement('div');__sepSev.className='mini-sep';stack.appendChild(__sepSev);
+    const sev = makeSection('Severity',
+      ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
+      id + 'S', 'e.g. 5', 'Enter Severity (S) — up to 10', 'severity');
+const __sepCost=document.createElement('div');__sepCost.className='mini-sep';stack.appendChild(__sepCost);
+    const cost = makeSection('Cost',
+      ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
+      id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
+const __sepProb=document.createElement('div');__sepProb.className='mini-sep';stack.appendChild(__sepProb);
+
+    // Probability
+    const hP = document.createElement('div');
+    hP.className = 'mini-heading';
+    hP.textContent = 'Probability';
+    stack.appendChild(hP);
+
+    const probToggle = document.createElement('div');
+    probToggle.className = 'hint';
+    probToggle.innerHTML = '<input id="' + id + 'TgProb" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+    stack.appendChild(probToggle);
+
+    stack.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+
+    const modeRow = document.createElement('div');
+    modeRow.className = 'mini-field';
+    modeRow.id = id + 'ModeRow';
+    modeRow.innerHTML = '<label>Probability Unit</label>';
+    const modeSel = absorbOriginalRow(root, 'select[name="q6Units"]') ||
+                    absorbOriginalRow(root, '#miniMode') ||
+                    absorbOriginalRow(root, 'select[data-q="mode"]') ||
+                    document.createElement('select');
+    modeRow.appendChild(modeSel);
+    stack.appendChild(modeRow);
+
+    const pValRow = document.createElement('div');
+    pValRow.className = 'mini-field';
+    pValRow.innerHTML = '<label id="' + id + 'ProbLabel">Enter X (for "1 in X")</label>';
+    const pVal = absorbOriginalRow(root, '#miniVal') ||
+                 absorbOriginalRow(root, 'input[name="probVal"]') ||
+                 absorbOriginalRow(root, 'input[data-q="pVal"]') ||
+                 document.createElement('input');
+    if (!pVal.type) pVal.type = 'number';
+    pValRow.appendChild(pVal);
+    stack.appendChild(pValRow);
+
+    const groupsWrap = document.createElement('div');
+    groupsWrap.id = id + 'GroupsWrap';
+    groupsWrap.className = 'mini-field';
+    groupsWrap.innerHTML =
+      '<div id="' + id + 'Groups"></div>' +
+      '<div class="mini-field" style="margin:0;padding:0">' +
+      '<button id="' + id + 'AddGroup" class="back" type="button" style="width:100%">Add Probability Group</button>' +
+      '</div>' +
+      '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
+    stack.appendChild(groupsWrap);
+
+    // hide any leftover original rows not moved
+    killStrays(root, stack);
+
+    return {
+      stack,
+      N: stack.querySelector('#' + id + 'N'),
+      tgSev: sev.toggle.querySelector('input'),
+      tgCost: cost.toggle.querySelector('input'),
+      tgProb: probToggle.querySelector('input'),
+      sExtraWrap: sev.extra,
+      cExtraWrap: cost.extra,
+      sExtraVal: sev.extra.querySelector('input'),
+      cExtraVal: cost.extra.querySelector('input'),
+      groupsWrap, groups: groupsWrap.querySelector('#' + id + 'Groups'),
+      addGroup: groupsWrap.querySelector('#' + id + 'AddGroup'),
+      countMsg: groupsWrap.querySelector('#' + id + 'CountMsg'),
+      pMode: modeSel, pVal: pVal,
+      modeRow: modeRow
+    };
+  }
+
+function dedupeVaries(scope){
+    ['#miniSVaries','#miniCVaries','#miniProbVaries'].forEach(function(sel){
+      var all = qa(sel, scope);
+      for (var i=1;i<all.length;i++){ var w = up(all[i], '.mini-field'); if (w) w.remove(); }
+    });
+  }
+
+function keepBaseProbabilityVisible(scope){
+    var unit = q('#miniMode', scope), val  = q('#miniVal', scope);
+    var uw = unit && up(unit, '.mini-field'); var vw = val && up(val, '.mini-field');
+    if (uw) uw.style.display = ''; if (vw) vw.style.display = '';
+  }
+
+function wireProbabilityVaries(scope){
+    keepBaseProbabilityVisible(scope);
+    var cb    = q('#miniProbVaries', scope);
+    var mBox2 = q('#miniMode2', scope) && up(q('#miniMode2', scope), '.mini-field');
+    var vBox2 = q('#miniVal2',  scope) && up(q('#miniVal2',  scope), '.mini-field');
+    var gWrap = q('#miniProbGroups', scope) && up(q('#miniProbGroups', scope), '.mini-field');
+    function show(on){
+      if (mBox2) mBox2.style.display = on ? '' : 'none';
+      if (vBox2) vBox2.style.display = on ? '' : 'none';
+      if (gWrap) gWrap.style.display  = on ? '' : 'none';
+    }
+    if (cb){ cb.addEventListener('change', function(){ keepBaseProbabilityVisible(scope); show(cb.checked); }); show(!!cb.checked); }
+    else { show(false); }
+  }
+
+function blankUntilEdited(scope){
+    var root = scope || document;
+    var nums = qa('.mini-field input[type="number"]', root);
+    nums.forEach(function(inp){ inp.addEventListener('input', function(){ this.dataset.touched='1'; }); });
+
+    var s = q('#miniS', root);
+    var n = findInstancesInput(root);
+
+    function clearUntouched(){
+      qa('.mini-field input[type="number"]', root).forEach(function(inp){
+        if (inp === s) return;
+        if (n && inp === n) return;
+        if (!inp.dataset.touched) inp.value = '';
+      });
+    }
+
+    if (s){
+      ['input','change'].forEach(function(evt){
+        s.addEventListener(evt, function(){ setTimeout(clearUntouched, 0); });
+      });
+    }
+
+    if (n){
+      n.addEventListener('input', function(){
+        var digits = String(this.value||'').replace(/[^0-9]/g, '');
+        this.value = digits;
+      });
+      n.addEventListener('blur', function(){
+        if (this.value === '') return;
+        var v = parseInt(this.value,10); if (!isFinite(v) || v < 1) v = 1;
+        this.value = String(v);
+      });
+    }
+
+    var groups = q('#miniProbGroups', root);
+    if (groups){
+      groups.addEventListener('input', function(e){
+        var target = e.target;
+        if (!target || target.type !== 'number') return;
+        var maxN = n && n.value ? parseInt(n.value,10) : null;
+        if (!maxN) return;
+        var inputs = qa('input[type="number"]', groups);
+        var sum = 0;
+        for (var i=0;i<inputs.length;i++){
+          var v = parseInt(inputs[i].value||'0',10) || 0;
+          if (inputs[i] === target){
+            if (sum + v > maxN){ inputs[i].value = String(Math.max(0, maxN - sum)); }
+            v = parseInt(inputs[i].value||'0',10) || 0;
+          }
+          sum += v;
+        }
+      });
+    }
+  }
+
+function ensureFullWidth(scope){
+    try{
+      var root = scope || document;
+      qa('.mini-field input, .mini-field select, .mini-field textarea', root).forEach(function(el){
+        if (el && el.style){ el.style.width='100%'; el.style.maxWidth='100%'; el.style.boxSizing='border-box'; }
+      });
+      var wrap = root.querySelector('.mini-wrap');
+      if (wrap && wrap.style){
+        wrap.style.width='100%';
+        wrap.style.maxWidth='100%';
+        wrap.style.overflowX='hidden';
+        wrap.style.overflowY='visible';
+      }
+      qa('svg', root).forEach(function(svg){
+        if (svg && svg.style){ svg.style.width='100%'; svg.style.maxWidth='100%'; svg.style.height='auto'; svg.style.display='block'; }
+      });
+    }catch(e){}
+  }
+
+function killStrays(root, stack) {
+    // hide anything outside our stack to avoid leftover right-side fields
+    const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
+    kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
+  }
+
+const _orig6 = renderMiniQ6;
+renderMiniQ6 = function (intoEl, node) {
+      _orig6(intoEl, node);
+      const root = intoEl.querySelector('.mini-wrap') || intoEl;
+      if (!root) return;
+
+      const el = buildOneColumn(root, { id: 'q6' });
+      const state = window.__q6State || { groups: [] };
+
+      // restore
+      try {
+        if (el.N && state.N != null) el.N.value = state.N;
+        if (el.tgSev) el.tgSev.checked = !!state.tgSev;
+        if (el.tgCost) el.tgCost.checked = !!state.tgCost;
+        if (el.tgProb) el.tgProb.checked = !!state.tgProb;
+        if (el.sExtraVal && state.sExtraVal != null) el.sExtraVal.value = state.sExtraVal;
+        if (el.cExtraVal && state.cExtraVal != null) el.cExtraVal.value = state.cExtraVal;
+        if (el.pMode && state.pModeVal != null) el.pMode.value = state.pModeVal;
+        if (el.pVal && state.pVal != null) el.pVal.value = state.pVal;
+        if (state.groups && state.groups.length) setTimeout(()=>drawGroups(),0);
+      } catch(_) {}
+
+      function setHidden(e,on){ if(e){ e.style.display=on?'none':''; e.classList.toggle('hidden',on);} }
+      function setGrey(row,on){ if(row) row.classList.toggle('muted', on); }
+
+      function refreshVisibility(){
+        const N = Math.max(1, el.N ? (el.N.valueAsNumber || 1) : 1);
+        const dis = (N === 1);
+
+        [el.tgSev, el.tgCost, el.tgProb].forEach(cb=>{
+          if (!cb) return;
+          cb.disabled = dis;
+          setGrey(cb.parentElement, dis);
+          if (dis) cb.checked = false;
+        });
+
+        setHidden(el.sExtraWrap, dis || !el.tgSev || !el.tgSev.checked);
+        setHidden(el.cExtraWrap, dis || !el.tgCost || !el.tgCost.checked);
+
+        const hideGroups = dis || !el.tgProb || !el.tgProb.checked;
+        setHidden(el.groupsWrap, hideGroups);
+        if (el.addGroup) { el.addGroup.disabled = hideGroups; el.addGroup.classList.toggle('muted', hideGroups); }
+
+        // FIX: hide probability unit row ONLY when varies is checked; show otherwise
+        setHidden(el.modeRow, false);
+
+        if (dis || !(el.tgSev && el.tgSev.checked)) if (el.sExtraVal) el.sExtraVal.value='';
+        if (dis || !(el.tgCost && el.tgCost.checked)) if (el.cExtraVal) el.cExtraVal.value='';
+        if (dis || !(el.tgProb && el.tgProb.checked)) { state.groups=[]; if (el.groups) el.groups.innerHTML=''; if (el.countMsg) el.countMsg.textContent=''; }
+
+        // persist
+        window.__q6State = {
+          N: el.N ? el.N.value : 1,
+          tgSev: el.tgSev ? el.tgSev.checked : false,
+          tgCost: el.tgCost ? el.tgCost.checked : false,
+          tgProb: el.tgProb ? el.tgProb.checked : false,
+          sExtraVal: el.sExtraVal ? el.sExtraVal.value : null,
+          cExtraVal: el.cExtraVal ? el.cExtraVal.value : null,
+          pModeVal: el.pMode ? el.pMode.value : null,
+          pVal: el.pVal ? el.pVal.value : null,
+          groups: JSON.parse(JSON.stringify(state.groups || []))
+        };
+      }
+
+      function drawGroups(){
+        if (!el.groups) return;
+        el.groups.innerHTML='';
+        (state.groups || []).forEach((g,i)=>{
+          const wrap=document.createElement('div');
+          wrap.className='mini-fields';
+          wrap.innerHTML =
+            '<div class="mini-field"><label>Group '+(i+1)+' count</label><input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'"></div>'+
+            '<div class="mini-field"><label>Unit</label><select data-i="'+i+'" data-k="mode">'+
+            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>'+
+            '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>'+
+            '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>'+
+            '</select></div>'+
+            '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
+            '<div class="mini-field"><button class="back" data-remove="'+i+'" type="button" style="width:100%">Remove</button></div>';
+          el.groups.appendChild(wrap);
+    (function(){
+      var unitSel = wrap.querySelector('select[data-k="mode"]');
+      var valInput = wrap.querySelector('input[data-k="val"]') || wrap.querySelector('input[type="number"], input[type="text"]');
+      if (!unitSel || !valInput || unitSel.__phBound) return;
+      unitSel.__phBound = true;
+      function setPH(){
+        var v = unitSel.value || 'oneInX';
+        if (v === 'percent') valInput.placeholder = 'e.g. 0.5';
+        else if (v === 'micromort') valInput.placeholder = 'e.g. 10';
+        else valInput.placeholder = 'e.g. 100,000';
+      }
+      unitSel.addEventListener('change', setPH);
+      setPH();
+    })();
+        });
+        if (el.countMsg) el.countMsg.textContent='';
+      }
+
+      ['input','change'].forEach(evt=>{
+        [el.N, el.tgSev, el.tgCost, el.tgProb, el.sExtraVal, el.cExtraVal, el.pMode, el.pVal]
+          .forEach(x => x && x.addEventListener(evt, refreshVisibility));
+      });
+      if (el.addGroup) el.addGroup.addEventListener('click', ()=>{
+        (state.groups = state.groups || []).push({count:0, mode:(el.pMode && el.pMode.value) || 'oneInX', val:null});
+        drawGroups(); refreshVisibility();
+      });
+      if (el.groups) {
+        el.groups.addEventListener('input', e=>{
+          const t=e.target, i=+t.dataset.i; if(!Number.isFinite(i)) return;
+          const k=t.dataset.k;
+          if (k==='count') state.groups[i].count = t.value===''?0:(t.value|0);
+          if (k==='mode')  state.groups[i].mode  = t.value;
+          if (k==='val')   state.groups[i].val   = t.value===''?null:+t.value;
+          const used = (state.groups||[]).reduce((s,g)=>s+(g.count|0),0);
+          if (el.countMsg && el.N) el.countMsg.textContent = used > (el.N.value|0) ? 'Group counts exceed N ('+used+'/'+el.N.value+').' : '';
+          refreshVisibility();
+        });
+        el.groups.addEventListener('click', e=>{
+          const idx = e.target.dataset.remove;
+          if (idx != null) { state.groups.splice(+idx,1); drawGroups(); refreshVisibility(); }
+        });
+      }
+
+      drawGroups();
+      refreshVisibility();
+    }
+})();
+</script>
+
 </body>
 </html>
