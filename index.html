@@ -548,7 +548,7 @@
   }
 </style>
 
-<style>
+<style id="q6-q7-layout">
   /* Make the mini area stretch like the rest of the site */
   .mini-wrap, #q6-entry, #q7-entry { width: 100%; }
   #q6-entry, #q7-entry {
@@ -557,23 +557,66 @@
     gap: 14px;
     max-width: none;  /* allow full-width */
   }
+
+  /* Section headers (“Severity”, “Cost”, “Probability”) */
   #q6-entry .mini-heading, #q7-entry .mini-heading {
     font-weight: 700;
     font-size: 1.5rem;
   }
+
+  /* Default label size */
   #q6-entry label, #q7-entry label {
     font-size: 0.95rem;
     font-weight: 400;
   }
-  #q6-entry .mini-field input, #q6-entry .mini-field select,
-  #q7-entry .mini-field input, #q7-entry .mini-field select {
+
+  /* Inputs should fill the column */
+  #q6-entry .mini-field input,
+  #q6-entry .mini-field select,
+  #q7-entry .mini-field input,
+  #q7-entry .mini-field select {
     width: 100%;
     max-width: none;
+    box-sizing: border-box;
   }
-  #q7-entry input, #q7-entry select, #q7-entry button,
-  #q7-entry .hint { opacity: .6; pointer-events: none; }
-  #q6-entry .muted { opacity: .6; }
+
+  /* Q7 is read-only/minimal */
+  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint {
+    opacity: .6; pointer-events: none;
+  }
+
+  /* Muted rows (used when N = 1 disables “Varies Across Instances”) */
+  #q6-entry .mini-field.muted { opacity: .55; }
+  #q6-entry .mini-field.muted input[type="checkbox"]{ pointer-events:none; }
+
+  /* Smaller, inline “Varies Across Instances” label (overrides default label size) */
+  #q6-entry .mini-field > label.varies-label{
+    display:inline-flex; align-items:center; gap:.5rem;
+    font-size:.85rem !important;  /* override the default 0.95rem */
+    font-weight:400; opacity:.9; margin:0; line-height:1.3;
+  }
+  #q6-entry .mini-field > label.varies-label input[type="checkbox"]{
+    margin:0; vertical-align:middle;
+  }
+
+  /* Divider line (you already had this) */
+  .mini-sep{
+    border-top: 2px solid var(--border);
+    opacity: .9;
+    margin: 8px 0 0;  /* optional; change if you want zero spacing */
+  }
+
   .mini-spacer { height: 6px; }
+
+  /* Mobile focus ring: don’t clip, don’t zoom */
+  @media (max-width:560px){
+    .mini-wrap, .mini-field{ overflow: visible !important; }
+    .mini-field input, .mini-field select, .mini-field textarea{
+      font-size: 16px !important;  /* stops iOS zoom */
+      outline-offset: 3px;         /* keeps ring from clipping */
+      box-shadow: none;
+    }
+  }
 </style>
   
 </head>
@@ -2758,3 +2801,98 @@ function renderNode(node) {
   
 </body>
 </html>
+
+
+
+<style id="q6-q7-final-override">
+  /* ===== FINAL OVERRIDE: make Q6 in index 17 look like Q6 in index 16 ===== */
+  /* Layout: single column, consistent spacing */
+  #q6-entry {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+  #q7-entry {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  /* Section headers */
+  #q6-entry .mini-heading,
+  #q7-entry .mini-heading{
+    font-weight: 700 !important;
+    font-size: 1.5rem !important;
+    margin: 0 !important;
+  }
+
+  /* Labels: uniform size + rhythm */
+  #q6-entry label,
+  #q6-entry .mini-field > label,
+  #q6-entry .mini-field > label.varies-label{
+    display: block !important;
+    font-size: 0.95rem !important;
+    font-weight: 400 !important;
+    line-height: 1.35 !important;
+    margin: 0 0 4px 0 !important;
+    opacity: 1 !important;
+  }
+
+  /* Inputs/selects full width */
+  #q6-entry .mini-field input,
+  #q6-entry .mini-field select,
+  #q6-entry .mini-field textarea{
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Wrap/container sizing */
+  .mini-wrap, #q6-entry, #q7-entry{
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Muted rows in Q6 */
+  #q6-entry .muted{
+    opacity: .6 !important;
+  }
+
+  /* Q7 read-only look, like 16 */
+  #q7-entry input,
+  #q7-entry select,
+  #q7-entry button,
+  #q7-entry .hint{
+    opacity: .6 !important;
+    pointer-events: none !important;
+  }
+
+  /* Tiny spacer, match 16 */
+  .mini-spacer{ height: 6px !important; }
+
+  /* Divider look, match 16 */
+  .mini-sep{
+    border-top: 2px solid var(--border) !important;
+    opacity: .9 !important;
+    margin: 8px 0 0 !important;
+  }
+
+  /* Ensure any grid inside tiles stays single column on Q6 */
+  #q6-entry .mini-fields,
+  #q6-entry .fields{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Avoid side scroll pushing the layout */
+  #q6-entry, #q7-entry{
+    overflow-x: hidden !important;
+  }
+</style>
