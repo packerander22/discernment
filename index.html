@@ -1162,29 +1162,17 @@ function renderMiniQ6(intoEl, node){
 
   // --- Severity ---
   section('Severity');
-  const sVar = document.createElement('div');
-sVar.className = 'hint';
-sVar.innerHTML = '<input id="miniSVaries" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
-wrap.appendChild(sVar);
-wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+  const sVar = row('<label class="varies-label"><input id="miniSVaries" type="checkbox"> Varies Across Instances</label>');
   const sRow = row('<label>Enter Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">');
 
   // --- Cost ---
   section('Cost');
-  const cVar = document.createElement('div');
-cVar.className = 'hint';
-cVar.innerHTML = '<input id="miniCVaries" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
-wrap.appendChild(cVar);
-wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+  const cVar = row('<label class="varies-label"><input id="miniCVaries" type="checkbox"> Varies Across Instances</label>');
   const cRow = row('<label>Enter Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">');
 
   // --- Probability ---
   section('Probability');
-  const pVar = document.createElement('div');
-pVar.className = 'hint';
-pVar.innerHTML = '<input id="miniProbVaries" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
-wrap.appendChild(pVar);
-wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
+  const pVar = row('<label class="varies-label"><input id="miniProbVaries" type="checkbox"> Varies Across Instances</label>');
 
   const mRow = row('<label>Probability Unit</label>\
 <select id="miniMode" name="q6Units">\
@@ -1612,27 +1600,38 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
     btns.appendChild(cont);
   }
 
-  // === Lock/unlock 'Varies Across Instances' when N <= 1 ===
-  (function(){
-    var nInput = document.getElementById('miniN');
-    function updateVariesLock(){
-      var n = parseInt(nInput && nInput.value, 10);
-      var lock = !n || n <= 1;
-      [sVar, cVar, pVar].forEach(function(el){
-        if (!el) return;
-        el.classList.toggle('is-disabled', lock);
-        var cb = el.querySelector('input[type="checkbox"]');
-        if (cb){
-          cb.disabled = lock;
-          if (lock) cb.checked = false;
+  // === Option2: lock/unlock Varies when N <= 1 (no logic rewiring) ===
+  function __q6UpdateVariesLock(){
+    var nEl = document.getElementById('miniN');
+    var n = parseInt(nEl && nEl.value, 10);
+    var lock = !n || n <= 1;
+
+    var ids = ['miniSVaries','miniCVaries','miniProbVaries'];
+    ids.forEach(function(id){
+      var cb = document.getElementById(id);
+      if (!cb) return;
+      var label = cb.closest('label.varies-label') || cb.parentElement;
+      if (lock){
+        if (cb.checked){
+          cb.checked = false;
+          // Fire change so existing logic removes groups/etc.
+          try { cb.dispatchEvent(new Event('change', {bubbles:true})); } catch(e){}
         }
-      });
+        cb.disabled = true;
+        if (label) label.classList.add('is-disabled');
+      } else {
+        cb.disabled = false;
+        if (label) label.classList.remove('is-disabled');
+      }
+    });
+  }
+  (function(){
+    var nEl = document.getElementById('miniN');
+    if (nEl){
+      nEl.addEventListener('input', __q6UpdateVariesLock);
+      nEl.addEventListener('change', __q6UpdateVariesLock);
     }
-    if (nInput){
-      nInput.addEventListener('input', updateVariesLock);
-      nInput.addEventListener('change', updateVariesLock);
-    }
-    updateVariesLock();
+    __q6UpdateVariesLock();
   })();
 
 }
@@ -2838,16 +2837,59 @@ function renderNode(node) {
 </body>
 </html>
 
-<style id="q6-final-block-hint">
-/* Ensure headings are block and hint rows stack cleanly */
-#q6-entry .mini-heading, #q7-entry .mini-heading { display:block; width:100%; margin:0; }
-#q6-entry .hint, #q7-entry .hint { display:block; width:100%; }
-#q6-entry .hint input[type="checkbox"], #q7-entry .hint input[type="checkbox"] { margin-right:.5rem; vertical-align:middle; }
-#q6-entry .mini-field > label, #q7-entry .mini-field > label { font-size:0.95rem; font-weight:400; line-height:1.35; margin:0 0 4px 0; }
-</style>
 
+<style id="q6-option2-visual-sync">
+  /* Exact index-16 rhythm */
+  #q6-entry .mini-heading {
+    display: block !important;
+    width: 100% !important;
+    font-weight: 700 !important;
+    font-size: 1.5rem !important;
+    line-height: 1.25 !important;
+    margin: 0 0 8px 0 !important; /* header -> 8px */
+  }
 
-<style id="q6-spacing-tune">
-  #q6-entry .mini-heading{ margin-bottom:8px !important; }
-  #q6-entry .hint{ margin:0 0 6px 0 !important; opacity:.9; }
+  /* Varies row should be a full-width block under the header */
+  #q6-entry .mini-field > label.varies-label {
+    display: block !important;      /* force block, not inline-flex */
+    width: 100% !important;
+    font-size: 0.95rem !important;  /* match index 16 */
+    font-weight: 400 !important;
+    line-height: 1.35 !important;
+    margin: 0 0 6px 0 !important;   /* 6px before inputs/spacer */
+    opacity: 0.9 !important;
+  }
+  #q6-entry .mini-field > label.varies-label input[type="checkbox"]{
+    margin-right: .5rem !important;
+    vertical-align: middle !important;
+  }
+
+  /* Divider style and spacing like index 16 */
+  #q6-entry .mini-sep{
+    border-top: 2px solid var(--border) !important;
+    opacity: .9 !important;
+    margin: 8px 0 0 !important;     /* divider top margin = 8px */
+  }
+  #q6-entry .mini-spacer{ height: 6px !important; } /* spacer = 6px */
+
+  /* Ensure fields stack in a single column with consistent gap */
+  #q6-entry, #q6-entry .mini-fields, #q6-entry .fields{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* Q7 appearance preserved */
+  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint{
+    opacity: .6 !important;
+    pointer-events: none !important;
+  }
+
+  /* Disabled look for varies labels (uses existing .is-disabled pattern) */
+  #q6-entry label.varies-label.is-disabled{
+    opacity: .55 !important;
+    pointer-events: none !important;
+  }
 </style>
