@@ -548,7 +548,7 @@
   }
 </style>
 
-<style id="q6-q7-layout">
+<style>
   /* Make the mini area stretch like the rest of the site */
   .mini-wrap, #q6-entry, #q7-entry { width: 100%; }
   #q6-entry, #q7-entry {
@@ -557,66 +557,23 @@
     gap: 14px;
     max-width: none;  /* allow full-width */
   }
-
-  /* Section headers (“Severity”, “Cost”, “Probability”) */
   #q6-entry .mini-heading, #q7-entry .mini-heading {
     font-weight: 700;
     font-size: 1.5rem;
   }
-
-  /* Default label size */
   #q6-entry label, #q7-entry label {
     font-size: 0.95rem;
     font-weight: 400;
   }
-
-  /* Inputs should fill the column */
-  #q6-entry .mini-field input,
-  #q6-entry .mini-field select,
-  #q7-entry .mini-field input,
-  #q7-entry .mini-field select {
+  #q6-entry .mini-field input, #q6-entry .mini-field select,
+  #q7-entry .mini-field input, #q7-entry .mini-field select {
     width: 100%;
     max-width: none;
-    box-sizing: border-box;
   }
-
-  /* Q7 is read-only/minimal */
-  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint {
-    opacity: .6; pointer-events: none;
-  }
-
-  /* Muted rows (used when N = 1 disables “Varies Across Instances”) */
-  #q6-entry .mini-field.muted { opacity: .55; }
-  #q6-entry .mini-field.muted input[type="checkbox"]{ pointer-events:none; }
-
-  /* Smaller, inline “Varies Across Instances” label (overrides default label size) */
-  #q6-entry .mini-field > label.varies-label{
-    display:inline-flex; align-items:center; gap:.5rem;
-    font-size:.85rem !important;  /* override the default 0.95rem */
-    font-weight:400; opacity:.9; margin:0; line-height:1.3;
-  }
-  #q6-entry .mini-field > label.varies-label input[type="checkbox"]{
-    margin:0; vertical-align:middle;
-  }
-
-  /* Divider line (you already had this) */
-  .mini-sep{
-    border-top: 2px solid var(--border);
-    opacity: .9;
-    margin: 8px 0 0;  /* optional; change if you want zero spacing */
-  }
-
+  #q7-entry input, #q7-entry select, #q7-entry button,
+  #q7-entry .hint { opacity: .6; pointer-events: none; }
+  #q6-entry .muted { opacity: .6; }
   .mini-spacer { height: 6px; }
-
-  /* Mobile focus ring: don’t clip, don’t zoom */
-  @media (max-width:560px){
-    .mini-wrap, .mini-field{ overflow: visible !important; }
-    .mini-field input, .mini-field select, .mini-field textarea{
-      font-size: 16px !important;  /* stops iOS zoom */
-      outline-offset: 3px;         /* keeps ring from clipping */
-      box-shadow: none;
-    }
-  }
 </style>
   
 </head>
