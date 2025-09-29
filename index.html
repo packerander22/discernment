@@ -1611,6 +1611,30 @@ wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini
     };
     btns.appendChild(cont);
   }
+
+  // === Lock/unlock 'Varies Across Instances' when N <= 1 ===
+  (function(){
+    var nInput = document.getElementById('miniN');
+    function updateVariesLock(){
+      var n = parseInt(nInput && nInput.value, 10);
+      var lock = !n || n <= 1;
+      [sVar, cVar, pVar].forEach(function(el){
+        if (!el) return;
+        el.classList.toggle('is-disabled', lock);
+        var cb = el.querySelector('input[type="checkbox"]');
+        if (cb){
+          cb.disabled = lock;
+          if (lock) cb.checked = false;
+        }
+      });
+    }
+    if (nInput){
+      nInput.addEventListener('input', updateVariesLock);
+      nInput.addEventListener('change', updateVariesLock);
+    }
+    updateVariesLock();
+  })();
+
 }
 
 
@@ -2820,4 +2844,10 @@ function renderNode(node) {
 #q6-entry .hint, #q7-entry .hint { display:block; width:100%; }
 #q6-entry .hint input[type="checkbox"], #q7-entry .hint input[type="checkbox"] { margin-right:.5rem; vertical-align:middle; }
 #q6-entry .mini-field > label, #q7-entry .mini-field > label { font-size:0.95rem; font-weight:400; line-height:1.35; margin:0 0 4px 0; }
+</style>
+
+
+<style id="q6-spacing-tune">
+  #q6-entry .mini-heading{ margin-bottom:8px !important; }
+  #q6-entry .hint{ margin:0 0 6px 0 !important; opacity:.9; }
 </style>
