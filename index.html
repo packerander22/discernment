@@ -1162,17 +1162,20 @@ function renderMiniQ6(intoEl, node){
 
   // --- Severity ---
   section('Severity');
-  const sVar = row('<label class="varies-label"><input id="miniSVaries" type="checkbox"> Varies Across Instances</label>');
+  const sVar = row('<label class="varies-label block-like"><input id="miniSVaries" type="checkbox"> Varies Across Instances</label>');
+wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
   const sRow = row('<label>Enter Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">');
 
   // --- Cost ---
   section('Cost');
-  const cVar = row('<label class="varies-label"><input id="miniCVaries" type="checkbox"> Varies Across Instances</label>');
+  const cVar = row('<label class="varies-label block-like"><input id="miniCVaries" type="checkbox"> Varies Across Instances</label>');
+wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
   const cRow = row('<label>Enter Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">');
 
   // --- Probability ---
   section('Probability');
-  const pVar = row('<label class="varies-label"><input id="miniProbVaries" type="checkbox"> Varies Across Instances</label>');
+  const pVar = row('<label class="varies-label block-like"><input id="miniProbVaries" type="checkbox"> Varies Across Instances</label>');
+wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
 
   const mRow = row('<label>Probability Unit</label>\
 <select id="miniMode" name="q6Units">\
@@ -1600,38 +1603,51 @@ function renderMiniQ6(intoEl, node){
     btns.appendChild(cont);
   }
 
-  // === Option2: lock/unlock Varies when N <= 1 (no logic rewiring) ===
-  function __q6UpdateVariesLock(){
-    var nEl = document.getElementById('miniN');
-    var n = parseInt(nEl && nEl.value, 10);
-    var lock = !n || n <= 1;
+  // Inject Q6 scoped styles once
+  (function ensureQ6Style(){
+    if (document.getElementById('q6-inline-style')) return;
+    const style = document.createElement('style');
+    style.id = 'q6-inline-style';
+    style.textContent = `
+      #q6-entry .mini-heading{ display:block; width:100%; font-weight:700; font-size:1.5rem; line-height:1.25; margin:0 0 8px 0; }
+      #q6-entry label.varies-label.block-like{ display:block; width:100%; font-size:0.95rem; font-weight:400; line-height:1.35; margin:0 0 6px 0; opacity:.9; }
+      #q6-entry label.varies-label.block-like input[type="checkbox"]{ margin-right:.5rem; vertical-align:middle; }
+      #q6-entry .mini-sep{ border-top:2px solid var(--border); opacity:.9; margin:8px 0 0; }
+      #q6-entry .mini-spacer{ height:6px; }
+      #q6-entry, #q6-entry .mini-fields, #q6-entry .fields{ display:grid; grid-template-columns:1fr; gap:14px; width:100%; max-width:none; }
+      #q6-entry label.varies-label.is-disabled{ opacity:.55; pointer-events:none; }
+    `;
+    document.head.appendChild(style);
+  })();
 
-    var ids = ['miniSVaries','miniCVaries','miniProbVaries'];
-    ids.forEach(function(id){
-      var cb = document.getElementById(id);
-      if (!cb) return;
-      var label = cb.closest('label.varies-label') || cb.parentElement;
-      if (lock){
-        if (cb.checked){
-          cb.checked = false;
-          // Fire change so existing logic removes groups/etc.
-          try { cb.dispatchEvent(new Event('change', {bubbles:true})); } catch(e){}
-        }
-        cb.disabled = true;
-        if (label) label.classList.add('is-disabled');
-      } else {
-        cb.disabled = false;
-        if (label) label.classList.remove('is-disabled');
-      }
-    });
-  }
-  (function(){
+  // N-based lock/unlock for varies
+  (function q6NLock(){
     var nEl = document.getElementById('miniN');
-    if (nEl){
-      nEl.addEventListener('input', __q6UpdateVariesLock);
-      nEl.addEventListener('change', __q6UpdateVariesLock);
+    function update(){
+      var n = parseInt(nEl && nEl.value, 10);
+      var lock = !n || n <= 1;
+      ['miniSVaries','miniCVaries','miniProbVaries'].forEach(function(id){
+        var cb = document.getElementById(id);
+        if (!cb) return;
+        var label = cb.closest('label.varies-label') || cb.parentElement;
+        if (lock){
+          if (cb.checked){
+            cb.checked = false;
+            try{ cb.dispatchEvent(new Event('change', {bubbles:true})); }catch(e){}
+          }
+          cb.disabled = true;
+          if (label) label.classList.add('is-disabled');
+        } else {
+          cb.disabled = false;
+          if (label) label.classList.remove('is-disabled');
+        }
+      });
     }
-    __q6UpdateVariesLock();
+    if (nEl){
+      nEl.addEventListener('input', update);
+      nEl.addEventListener('change', update);
+    }
+    update();
   })();
 
 }
@@ -2836,60 +2852,3 @@ function renderNode(node) {
   
 </body>
 </html>
-
-
-<style id="q6-option2-visual-sync">
-  /* Exact index-16 rhythm */
-  #q6-entry .mini-heading {
-    display: block !important;
-    width: 100% !important;
-    font-weight: 700 !important;
-    font-size: 1.5rem !important;
-    line-height: 1.25 !important;
-    margin: 0 0 8px 0 !important; /* header -> 8px */
-  }
-
-  /* Varies row should be a full-width block under the header */
-  #q6-entry .mini-field > label.varies-label {
-    display: block !important;      /* force block, not inline-flex */
-    width: 100% !important;
-    font-size: 0.95rem !important;  /* match index 16 */
-    font-weight: 400 !important;
-    line-height: 1.35 !important;
-    margin: 0 0 6px 0 !important;   /* 6px before inputs/spacer */
-    opacity: 0.9 !important;
-  }
-  #q6-entry .mini-field > label.varies-label input[type="checkbox"]{
-    margin-right: .5rem !important;
-    vertical-align: middle !important;
-  }
-
-  /* Divider style and spacing like index 16 */
-  #q6-entry .mini-sep{
-    border-top: 2px solid var(--border) !important;
-    opacity: .9 !important;
-    margin: 8px 0 0 !important;     /* divider top margin = 8px */
-  }
-  #q6-entry .mini-spacer{ height: 6px !important; } /* spacer = 6px */
-
-  /* Ensure fields stack in a single column with consistent gap */
-  #q6-entry, #q6-entry .mini-fields, #q6-entry .fields{
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  /* Q7 appearance preserved */
-  #q7-entry input, #q7-entry select, #q7-entry button, #q7-entry .hint{
-    opacity: .6 !important;
-    pointer-events: none !important;
-  }
-
-  /* Disabled look for varies labels (uses existing .is-disabled pattern) */
-  #q6-entry label.varies-label.is-disabled{
-    opacity: .55 !important;
-    pointer-events: none !important;
-  }
-</style>
