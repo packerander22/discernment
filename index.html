@@ -559,14 +559,10 @@
   }
 
   /* Section headers (“Severity”, “Cost”, “Probability”) */
-  #q6-entry .mini-heading{
-  display:block;
-  width:100%;
-  font-weight:700;
-  font-size:1.5rem;
-  line-height:1.25;
-  margin:0;
-}
+  #q6-entry .mini-heading, #q7-entry .mini-heading {
+    font-weight: 700;
+    font-size: 1.5rem;
+  }
 
   /* Default label size */
   #q6-entry label, #q7-entry label {
@@ -595,17 +591,13 @@
 
   /* Smaller, inline “Varies Across Instances” label (overrides default label size) */
   #q6-entry .mini-field > label.varies-label{
-  display:block;                /* was inline-flex -> puts it under the heading */
-  font-size:0.95rem !important; /* match index 16 label size */
-  font-weight:400;
-  line-height:1.35;
-  margin:0 0 4px 0;
-  opacity:.9;
-}
+    display:inline-flex; align-items:center; gap:.5rem;
+    font-size:.85rem !important;  /* override the default 0.95rem */
+    font-weight:400; opacity:.9; margin:0; line-height:1.3;
+  }
   #q6-entry .mini-field > label.varies-label input[type="checkbox"]{
-  margin-right:.5rem;
-  vertical-align:middle;
-}
+    margin:0; vertical-align:middle;
+  }
 
   /* Divider line (you already had this) */
   .mini-sep{
@@ -1170,17 +1162,29 @@ function renderMiniQ6(intoEl, node){
 
   // --- Severity ---
   section('Severity');
-  const sVar = row('<label class="varies-label"><input id="miniSVaries" type="checkbox"> Varies Across Instances</label>');
+  const sVar = document.createElement('div');
+sVar.className = 'hint';
+sVar.innerHTML = '<input id="miniSVaries" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+wrap.appendChild(sVar);
+wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
   const sRow = row('<label>Enter Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">');
 
   // --- Cost ---
   section('Cost');
-  const cVar = row('<label class="varies-label"><input id="miniCVaries" type="checkbox"> Varies Across Instances</label>');
+  const cVar = document.createElement('div');
+cVar.className = 'hint';
+cVar.innerHTML = '<input id="miniCVaries" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+wrap.appendChild(cVar);
+wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
   const cRow = row('<label>Enter Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">');
 
   // --- Probability ---
   section('Probability');
-  const pVar = row('<label class="varies-label"><input id="miniProbVaries" type="checkbox"> Varies Across Instances</label>');
+  const pVar = document.createElement('div');
+pVar.className = 'hint';
+pVar.innerHTML = '<input id="miniProbVaries" type="checkbox"> <span class="toggle-label">Varies Across Instances</span>';
+wrap.appendChild(pVar);
+wrap.appendChild(Object.assign(document.createElement('div'), { className: 'mini-spacer' }));
 
   const mRow = row('<label>Probability Unit</label>\
 <select id="miniMode" name="q6Units">\
@@ -2809,3 +2813,11 @@ function renderNode(node) {
   
 </body>
 </html>
+
+<style id="q6-final-block-hint">
+/* Ensure headings are block and hint rows stack cleanly */
+#q6-entry .mini-heading, #q7-entry .mini-heading { display:block; width:100%; margin:0; }
+#q6-entry .hint, #q7-entry .hint { display:block; width:100%; }
+#q6-entry .hint input[type="checkbox"], #q7-entry .hint input[type="checkbox"] { margin-right:.5rem; vertical-align:middle; }
+#q6-entry .mini-field > label, #q7-entry .mini-field > label { font-size:0.95rem; font-weight:400; line-height:1.35; margin:0 0 4px 0; }
+</style>
