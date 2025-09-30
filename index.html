@@ -1534,6 +1534,59 @@ function renderMiniQ6(intoEl, node){
     goToNode(miniActGate ? 'Q10' : 'Q7');
   };
   btns.appendChild(cont);
+
+  // === Dynamic probability label (index 17-style) ===
+  (function q6ProbLabelInit(){
+    var modeEl = document.getElementById('miniMode');        // unit/mode selector
+    var nameEl  = document.getElementById('miniProbName');   // e.g., "per try" / "per instance"
+    function updateProbLabel(){
+      if (!nameEl) return;
+      var mode = modeEl && modeEl.value;
+      switch (mode){
+        case 'perTry':       nameEl.textContent = 'per try'; break;
+        case 'perInstance':  nameEl.textContent = 'per instance'; break;
+        case 'perEvent':     nameEl.textContent = 'per event'; break;
+        default:             nameEl.textContent = 'probability'; break;
+      }
+    }
+    if (modeEl){
+      modeEl.addEventListener('input', updateProbLabel);
+      modeEl.addEventListener('change', updateProbLabel);
+    }
+    updateProbLabel();
+  })();
+
+  // === Lock/unlock "Varies Across Instances" when N <= 1 (index 17 behavior) ===
+  (function q6NLockInit(){
+    var nEl = document.getElementById('miniN');
+    var ids = ['miniSVaries','miniCVaries','miniProbVaries'];
+    function updateLock(){
+      var n = parseInt(nEl && nEl.value, 10);
+      var lock = !n || n <= 1;
+      ids.forEach(function(id){
+        var cb = document.getElementById(id);
+        if (!cb) return;
+        var label = cb.closest('label.varies-label') || cb.parentElement;
+        if (lock){
+          if (cb.checked){
+            cb.checked = false;
+            try{ cb.dispatchEvent(new Event('change', {bubbles:true})); }catch(e){}
+          }
+          cb.disabled = true;
+          if (label) label.classList.add('is-disabled');
+        } else {
+          cb.disabled = false;
+          if (label) label.classList.remove('is-disabled');
+        }
+      });
+    }
+    if (nEl){
+      nEl.addEventListener('input', updateLock);
+      nEl.addEventListener('change', updateLock);
+    }
+    updateLock();
+  })();
+
 }
 
 
