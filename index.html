@@ -30,7 +30,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./favicon_180_transparent.png">
 
 <script>
-  // MathJax v3 config: allow \( … \) inline TeX
+  
   window.MathJax = {
     tex: {inlineMath: [['\\(','\\)']]},
     options: {skipHtmlTags: ['script','noscript','style','textarea','pre','code']}
@@ -41,10 +41,9 @@
 <style>
   :root {
     --btn-pad-y:10px; --btn-pad-x:12px;
-    --flash-dur: 1500ms;           /* <- top-level; now it exists */
+    --flash-dur: 1500ms;           
 
-
-    /* slider custom props */
+    
     --track-height: 8px;
     --thumb-size: 28px;
     --thumb-shadow: 0 1px 3px rgba(0,0,0,.25);
@@ -65,7 +64,7 @@
     display:flex; flex-direction:column; justify-content:space-between;
   }
 
-  /* Header */
+  
   .segment-heading {
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
@@ -80,14 +79,14 @@
   .flash-gold   { color: var(--flash-gold); }
   .flash-purple { color: var(--flash-purple); }
 
-  /* Give AB2 headings the same fade behavior as the verdict header */
+  
   .about-wrapper h1,
   .about-wrapper h2,
   .about-wrapper h3 {
     transition: color var(--flash-dur) cubic-bezier(.4,0,.6,1);
   }
 
-  /* Buttons */
+  
   button { flex:1; padding:var(--btn-pad-y) var(--btn-pad-x); font-size:1em; border:none; border-radius:5px; cursor:pointer; }
   button.yes { background:#4CAF50; color:#fff; }
   button.no { background:#F44336; color:#fff; }
@@ -127,7 +126,7 @@
   .buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
   .buttons.center { justify-content:center; }
 
-  /* Slider container */
+  
   .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
   .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
   .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
@@ -136,7 +135,7 @@
 
   .error { color:#B00020; font-size:0.95em; }
 
-  /* === Slider visual customization === */
+  
   .slider-wrap {
     position: relative;
     width: 100%;
@@ -150,10 +149,10 @@
     touch-action: pan-x;
   }
   
-  /* defaults (only needed once) */
+  
   .heat-slider{
-    --fill: #3b82f6;            /* start: blue */
-    --track-bg: #e5e7eb;        /* unfilled track */
+    --fill: #3b82f6;            
+    --track-bg: #e5e7eb;        
     --track-height: 8px;
     --thumb-size: 22px;
     --thumb-shadow: 0 1px 2px rgba(0,0,0,.2);
@@ -214,21 +213,20 @@
   .heat-slider::-ms-fill-upper { background: var(--track-bg); border-radius: calc(var(--track-height)/2); }
   .heat-slider::-ms-thumb { width: var(--thumb-size); height: var(--thumb-size); border-radius: 50%; background: #fff; border:2px solid #999; box-shadow: var(--thumb-shadow); }
 
-
-  /* Math-style text for inline formulas */
+  
   .math {
     font-family: "Times New Roman", "STIX Two Math", "Cambria Math", serif;
     font-style: italic;
     font-size: 1.05em;
     letter-spacing: 0.5px;
-    white-space: nowrap;   /* keep formulas together */
-    color: var(--text);    /* default = light theme text */
+    white-space: nowrap;   
+    color: var(--text);    
   }
   
   .math sub,
   .math sup {
     font-size: 0.75em;
-    font-style: normal;    /* keep subscripts/superscripts upright */
+    font-style: normal;    
     vertical-align: baseline;
     position: relative;
   }
@@ -236,14 +234,14 @@
   .math sub { bottom: -0.2em; }
   .math sup { top: -0.4em; }
   
-  /* Dark mode override */
+  
   @media (prefers-color-scheme: dark) {
     .math {
-      color: var(--label-text);  /* lighter tone in dark theme */
+      color: var(--label-text);  
     }
   }
   
-  /* Manual toggle support */
+  
   :root[data-theme="dark"] .math {
     color: var(--label-text);
   }
@@ -251,10 +249,10 @@
     color: var(--text);
   }
 
-  /* anchors/sections that deep-link should respect sticky headers etc. */
-  [id] { scroll-margin-top: 16px; } /* or the height of any sticky header */
+  
+  [id] { scroll-margin-top: 16px; } 
 
-  /* Make the injected back button the same purple as Restart (#9C27B0) */
+  
   .about-wrapper .concept-back {
     display: inline-block;
     margin: 8px 0 12px 0;
@@ -273,15 +271,13 @@
     outline-offset: 2px;
   }
   
-  /* grey out a locked control (micromorts) */
+  
   .is-disabled { opacity: .55; pointer-events: none; }
 
-  /* ================================
-     THEME TOKENS + OVERRIDES
-     ================================ */
+  
   :root { color-scheme: light dark; }
 
-  /* Light defaults */
+  
   :root {
     --bg: #f7f7f7;
     --card: #ffffff;
@@ -303,11 +299,11 @@
     --tick-color: rgba(0,0,0,.35);
     --track-bg: #e0e0e0;
 
-    --if-accent: #2e7d32;        /* ✅ used for Verdict green + graph shading */
+    --if-accent: #2e7d32;        
     --when-accent: goldenrod;
     --result-accent: #9C27B0;
 
-    /* Graph theme tokens */
+    
     --axis-color: #555;
     --axis-color-dim: #777;
     --grid-color: rgba(0,0,0,.12);
@@ -320,7 +316,7 @@
     --label-text: #111111;
   }
 
-  /* Dark overrides follow system */
+  
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0f1115;
@@ -343,28 +339,28 @@
       --tick-color: rgba(255,255,255,.38);
       --track-bg: #2a2f3a;
 
-      --if-accent: #5bd36a;   /* ✅ same green family for dark */
+      --if-accent: #5bd36a;   
       --when-accent: #f1c24c;
       --result-accent: #c77dff;
 
-      /* Graph in dark */
-      --axis-color: #e9edf1;         /* ✅ tick/label white-ish */
+      
+      --axis-color: #e9edf1;         
       --axis-color-dim: #c7cbd2;
       --grid-color: rgba(255,255,255,.18);
       --curve-color: #8fb3ff;
       --handle-fill: #ff6b6b;
       --handle-stroke: #171a21;
-      --shade-in: color-mix(in oklab, var(--if-accent), #000 70%); /* subtle green */
+      --shade-in: color-mix(in oklab, var(--if-accent), #000 70%); 
       --shade-out: rgba(255,255,255,.05);
       --label-bg: #0f1115;
       --label-text: #e9edf1;
     }
   }
 
-  /* Manual override via data-theme (appears only if user toggles) */
+  
   :root[data-theme="light"] {
     color-scheme: light;
-    /* (re-apply the same LIGHT tokens as above) */
+    
     --bg: #f7f7f7; --card:#ffffff; --text:#111111; --subtle-text:#333333; --border:#dddddd; --shadow:0 2px 6px rgba(0,0,0,0.10);
     --btn-yes:#4CAF50; --btn-no:#F44336; --btn-same:#1E88E5; --btn-next:#2196F3; --btn-back:#555; --btn-restart:#9C27B0; --btn-muted:#9E9E9E; --btn-text:#fff;
     --thumb-border:#999; --tick-color:rgba(0,0,0,.35); --track-bg:#e0e0e0;
@@ -391,7 +387,7 @@
     --label-bg:#0f1115; --label-text:#e9edf1;
   }
 
-  /* Map existing components to tokens (non-destructive overrides) */
+  
   body { background: var(--bg); color: var(--text); }
   .card { background: var(--card); color: var(--text); box-shadow: var(--shadow); border: 1px solid var(--border); }
   .segment-heading { border-bottom: 2px solid var(--border); }
@@ -414,7 +410,7 @@
     background: color-mix(in oklab, var(--card), var(--text) 20%);
   }
 
-  /* Buttons pick up theme tokens */
+  
   button { color: var(--btn-text); }
   button.yes      { background: var(--btn-yes); }
   button.no       { background: var(--btn-no); }
@@ -424,25 +420,25 @@
   button.restart  { background: var(--btn-restart); }
   button.examples-btn, button.viz-btn, button.reasoning-btn { background: var(--btn-muted); }
 
-  /* ====== Graph typography & spacing (bigger, bolder, more outside) ====== */
+  
   .graph-axis text { font-size: 14px; font-weight: 600; fill: var(--axis-color); }
   .graph-axis .dim  { fill: var(--axis-color-dim); }
   .graph-grid line  { stroke: var(--grid-color); stroke-width: 1; }
   .graph-curve      { fill:none; stroke: var(--curve-color); stroke-width: 2.5; }
   .graph-handle     { fill: var(--handle-fill); stroke: var(--handle-stroke); stroke-width: 2; cursor: pointer; touch-action:none; }
-  .graph-shade-in   { fill: var(--if-accent); fill-opacity: .18; }  /* ✅ green shading */
+  .graph-shade-in   { fill: var(--if-accent); fill-opacity: .18; }  
   .graph-shade-out  { fill: var(--shade-out); }
 
   .ptlabel    { font-size: 16px; font-weight: 700; fill: var(--label-text); pointer-events:none; }
   .ptlabel-bg { fill: var(--label-bg); fill-opacity:.98; stroke: var(--border); rx:10; ry:10; }
   
-  /* ===== Rule + Verdict unified styles ===== */
+  
   .rule    { font-weight:700; margin-top:14px; }
-  .verdict { margin-top:12px; font-weight:700; }  /* top-only spacing */
+  .verdict { margin-top:12px; font-weight:700; }  
   .verdict.ok { color: var(--if-accent); }
   .verdict.no { color: var(--subtle-text); }
 
-  /* ==== MINI GRAPH styles (additive) ==== */
+  
   .mini-lead { margin-bottom: 10px; }
   .mini-wrap { display:block; border:1px solid var(--border); border-radius:8px; background: color-mix(in oklab, var(--card), var(--bg) 6%); padding:12px; margin:10px 0 16px; overflow: visible; }
   .mini-wrap > a{font-size:.95rem;text-decoration:underline;color:var(--curve-color);margin-top:8px;display:inline-block}
@@ -457,7 +453,7 @@
   .verdict.ok { color: var(--if-accent); }
   .verdict.no { color: var(--subtle-text); }
   
-  /* SVG */
+  
   .mini-svg{width:100%;height:auto;display:block;touch-action:none;overflow:visible}
   .mini-axis line{stroke: var(--grid-color);stroke-width: 1;opacity: .35}
   .mini-axis text{font-size:14px; fill: var(--text); opacity:0.85; font-weight:600}
@@ -473,8 +469,6 @@
   .mini-axes-label{font-weight:800; font-size:16px; fill: var(--text); opacity:.9}
   
 
-
-/* === Normalize disabled mini inputs to match active style (keep read-only cursor) === */
 .mini-field input[disabled],
 .mini-field select[disabled]{
   opacity: 1;
@@ -494,17 +488,17 @@
 </script>
 
 <style id="mini-fix-css">
-  /* Restore vertical scroll; prevent side overflow */
+  
   .mini-wrap { width:100%; max-width:100%; overflow-x:hidden; overflow-y:visible; }
-  /* Single-column, full-width layout inside the tile */
+  
   .mini-wrap .mini-fields,
   .mini-wrap .fields { display:grid; grid-template-columns: 1fr !important; gap:14px; }
   .mini-wrap .mini-field input,
   .mini-wrap .mini-field select,
   .mini-wrap .mini-field textarea { width:100% !important; max-width:100% !important; box-sizing:border-box; }
-  /* Graph scales without pushing layout */
+  
   .mini-wrap svg { width:100%; max-width:100%; height:auto; }
-  /* Make "Varies across instances" labels match input labels */
+  
   .mini-field label { font-size: 0.95rem; line-height: 1.35; }
   .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
 </style>
@@ -518,7 +512,7 @@
   .mini-sep{
     border-top: 2px solid var(--border);
     opacity: .9;
-    margin: 8px 0 0; /* divider present; spacing is simple */
+    margin: 8px 0 0; 
   }
 </style>
 
@@ -530,7 +524,7 @@
     .mini-field input,
     .mini-field select,
     .mini-field textarea{
-      font-size: 16px !important;     /* stop iOS zoom */
+      font-size: 16px !important;     
       border-radius: 10px;
       outline: 0 !important;
       box-shadow: 0 0 0 1px var(--border) inset !important;
@@ -549,13 +543,13 @@
 </style>
 
 <style>
-  /* Make the mini area stretch like the rest of the site */
+  
   .mini-wrap, #q6-entry, #q7-entry { width: 100%; }
   #q6-entry, #q7-entry {
     display: grid;
     grid-template-columns: 1fr;
     gap: 14px;
-    max-width: none;  /* allow full-width */
+    max-width: none;  
   }
   #q6-entry .mini-heading, #q7-entry .mini-heading {
     font-weight: 700;
@@ -624,7 +618,7 @@
 </div>
 
 <script>
-/* ======= THEME INIT + TOGGLE ======= */
+
 (function initTheme(){
   const root = document.documentElement;
   const themeBtn = document.getElementById('themeToggle');
@@ -691,10 +685,9 @@
   window.__refreshThemeButtonLabel = setButtonLabel;
 })();
 
-/* ======= FLOW JSON (Q0–Q47 + About) ======= */
 var flowchart = [
   { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and sliders later). Answer everything to the best of your knowledge, and if you don't know something, do what you can to find out (once there aren't any other more important things to do).", "next": "Q1" },
-  /* ===== IF YOU SHOULD ACT ===== */
+  
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1",  "no": "Q2" },
   { "id": "Q2",  "type": "question", "text": "Is there a current <i>real problem</i> or desired functional QoL (quality of life) improvement, rather than just a <i>“problem”</i> or preference that doesn’t affect performance or outcomes?", "yes": "Q10",  "no": "Q3" },
   { "id": "Q3",  "type": "question", "text": "Is there cause for a future potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q4" },
@@ -702,10 +695,10 @@ var flowchart = [
 
   { "id": "Q5",  "type": "question", "text": "Is the future potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
 
-  /* ==== NEW Q6: mini interactive slide ==== */
+  
   { "id": "Q6", "type": "mini", "text": "Use the interactive tool below to weigh the estimated <b>Severity</b>, <b>Cost</b>, and <b>Probability</b> of this future potential problem (for just this instance). Enter them into the boxes, and choose the probability measurement unit that applies.", "yes": "Q10", "no": "Q7" },
 
-  /* ==== NEW Q7: visualization-only slide ==== */
+  
   { "id": "Q7", "type": "miniViz", "text": "Is there a time further down the road that the circumstances in the <i>previous question</i> could change and flip the verdict?\nNote: This slide does not change your original input unless you go back and edit the last slide.", "yes": "R3", "no": "Q21" },
   { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q11",  "no": "R4" },
   { "id": "Q11", "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
@@ -714,7 +707,7 @@ var flowchart = [
 
   { "id": "Q14", "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q15", "no": "Q16" },
   { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q16" },
-  /* ==== Q16 split into trio (cost-before, cost-after, total) ==== */
+  
   { "id": "Q16", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it (for just this instance)?", "yes": "Q17", "no": "Q20" },
   { "id": "Q17", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it (for just this instance)?", "yes": "Q18", "no": "Q20" },
   { "id": "Q18", "type": "question", "text": "Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q22", "no": "Q20", "same": "Q19" },
@@ -732,15 +725,15 @@ var flowchart = [
   { "id": "Q28", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q29", "no": "R2" },
   { "id": "Q29", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time this situation arises</i>? (Or at least this time knowing it’s <i>temporary</i>?)", "yes": "Q31", "no": "Q30" },
   { "id": "Q30", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL), in the long term or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
-  /* ===== WHEN YOU SHOULD ACT ===== */
+  
   { "id": "Q31", "type": "question", "text": "Does this address a potential <i>future</i> problem?", "yes": "Q32", "no": "Q35" },
   { "id": "Q32", "type": "question", "text": "Does addressing this issue involve <i>preventative maintenance</i>?", "yes": "Q37", "no": "Q35" },
 
-  /* Severity selection */
+  
   { "id": "Q33", "type": "info",     "text": "Set the estimated catastrophic severity if you waited too long to act. (1-10)", "next": "Q34" },
   { "id": "Q34", "type": "question", "text": "Would there be <i>guaranteed clear telltale signs</i> of future functional failure before it actually happened, with a big enough window of time to address it properly in advance?", "yes": "Q46", "no": "Q47" },
 
-  /* Availability / timing */
+  
   { "id": "Q35", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria), assuming you could do it whenever you wanted?", "yes": "Q39", "no": "Q36" },
   { "id": "Q36", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q39", "no": "R5" },
 
@@ -756,10 +749,10 @@ var flowchart = [
   { "id": "Q44", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
   { "id": "Q45", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
 
-  /* WHEN thresholds */
+  
   { "id": "Q46", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
   { "id": "Q47", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
-  /* RESULTS */
+  
   { "id": "R1",  "type": "result",   "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
   { "id": "R2",  "type": "result",   "text": "<i>Don’t worry about it:)</i>" },
   { "id": "R3",  "type": "result",   "text": "If that time ever does come, re-evaluate the issue. Until then, (once there aren't any other more important things to do), consider any other solutions that could work and be worth it, or perhaps even be <i>better overall</i>." },
@@ -770,13 +763,12 @@ var flowchart = [
   { "id": "R8",  "type": "result",   "text": "Wait until that better time, then solve/address it once there aren't any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any other solutions that could either also work and be worth it, or—in the case of preventative maintenance—mitigate consequences if failure did occur." },
   { "id": "R9",  "type": "result",   "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) are met, once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any solutions that would mitigate consequences if failure did occur." },
 
-  /* ===== ABOUT MENU + PAGES ===== */
+  
   { "id": "AB0", "type": "aboutMenu", "heading": "About", "text": "Choose a section to learn more about the guide and its background." },
   { "id": "AB1", "type": "about", "heading": "About Me", "text": "Hi! My name is Packer, I’m the creator of this guide. I've had OCD for as long as I can remember, and one of the most difficult things for me is knowing whether or not I should worry about or address something, which led me to create this guide over the course of a year and a half—molded from many, <i>many</i> mistakes in my actions. I've learned it's not about being content with imperfection, or striving to make everything perfect, but rather about <i>discerning</i> what to do (or not do), and when to do it. This guide aims to help others make decision—regardless of if they suffer from OCD, anxiety, or not—as the logic it uses can be applied to all areas of life.\n\nTo contact or support me, I'm reachable at:\npackerander22@gmail.com" },
   { "id":"AB2","type":"about","heading":"Guide Concepts Explained","text":"<p>This guide is built to prevent wasted effort, “analysis paralysis,” and unhealthy worry, by walking through the two essential questions of decision-making: <b>Should I act?</b> (IF) and <b>When should I act?</b> (WHEN). Along the way, it uses concepts from psychology, economics, and systems thinking. Below is a deep dive into each principle, ordered as they appear in the guide. Where equations appear, they’re written so a curious, non-technical reader can follow them step-by-step.</p><h2 id='concepts-top'>IF You Should Act</h2><h3 id='concept-real-vs-cosmetic'>1. Real Problems vs. Cosmetic Problems</h3><p>Not every “problem” is a <i>real</i> problem.</p><ul><li><b>Real problems</b> affect functionality, outcomes, or safety.</li><li><b>Cosmetic or preference problems</b> only affect comfort, appearance, or personal taste.</li></ul><p><b>How it works:</b> By sorting issues into these two categories, you focus only on what actually changes results. Cosmetic issues can be ignored without consequence.</p><h3 id='concept-potential-vs-inevitable'>2. Potential vs. Inevitable Problems</h3><p>A potential problem may or may not happen. An inevitable problem <i>will</i> happen if ignored.</p><ul><li>Example: a frayed charging cable is <i>inevitably</i> going to fail.</li><li>Example: a squeaky door hinge <i>might</i> get worse, but may never actually break.</li></ul><p><b>How it works:</b> If a problem is inevitable, fixing it early prevents larger costs later. Potential problems require more analysis, especially when severity is high.</p><h3 id='concept-costs-benefits'>3. Costs vs. Benefits</h3><p>Every action carries a trade-off:</p><ul><li><b>Upfront costs/efforts:</b> time, money, or energy you spend right now.</li><li><b>Resulting downsides:</b> risks or hassles created by the fix itself.</li><li><b>Combined total:</b> both categories together, compared against what happens if you do nothing.</li></ul><p><b>Simple Rule:</b> Act if doing nothing causes more downside than acting: <i>D<sub>nothing</sub> > (C<sub>upfront</sub> + D<sub>action</sub>)</i>.</p><p><b>Worked Example:</b> If ignoring a car repair will eventually cost $500, while fixing now costs $100 and creates $50 in hassles, then 500 > (100+50) → 500 > 150 → Act now.</p><h3 id='concept-prob-sev-cost'>4. Probability vs. Severity vs. Cost</h3><p>Use this when the issue is a <i>non-inevitable potential future problem</i>. Even if failure is unlikely, <b>severity</b> matters; and even if it would be severe, the <b>cost of prevention</b> matters.</p><ul><li><b>Low probability + low severity:</b> usually safe to ignore.</li><li><b>Low probability + high severity:</b> often worth preventing (e.g., helmet).</li><li><b>High probability + low severity:</b> acceptable to ignore if prevention costs more than the nuisance.</li><li><b>High probability + high severity:</b> always act.</li></ul><p><b>4.1 The straight-ahead test (expected value):</b> treat probability (P), severity (S, 1–10), and cost (C, 1–10). If the expected downside beats the cost, act.</p><div class='mathblock'><math display='block'><mrow><mi>P</mi><mo>×</mo><mi>S</mi><mo>></mo><mi>C</mi></mrow></math></div><p><i>Meaning:</i> multiply chance by how bad it would be; if that “expected hit” is bigger than the cost of preventing it, do it.</p><p><b>4.2 A calibrated, more conservative cutoff (one-in-X scale):</b> For very rare but severe outcomes, people still tend to act. We encode that with a tuned cutoff curve on a log scale of “1 in X”. Let X be the probability denominator (e.g., X=1,000 means 1-in-1,000 chance). Given your <b>S/C</b> ratio (severity divided by cost), the <b>largest</b> X you should accept is:</p><div class='mathblock'><math display='block'><mrow><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>=</mo><msup><mn>10</mn><mrow><mn>6</mn><mo>⋅</mo><msup><mrow><mo>(</mo><mfrac><mrow><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>−</mo><mn>1</mn></mrow><mn>9</mn></mfrac><mo>)</mo></mrow><mi>α</mi></msup></mrow></msup></mrow></math></div><p>Here <i>α</i> is a constant chosen so the curve hits intuitive anchor points:</p><div class='mathblock'><math display='block'><mrow><mi>α</mi><mo>=</mo><mfrac><mrow><mi>ln</mi><mo>(</mo><mn>0.5</mn><mo>)</mo></mrow><mrow><mi>ln</mi><mo>(</mo><mfrac><mrow><msqrt><mn>10</mn></msqrt><mo>−</mo><mn>1</mn></mrow><mn>9</mn></mfrac><mo>)</mo></mrow></mfrac><mo>≈</mo><mn>0.48606</mn></mrow></math></div><p><i>Sanity checks (what the curve guarantees):</i></p><ul><li><math display='inline'><mrow><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>=</mo><mn>1</mn></mrow></math> ⇒ <math display='inline'><mrow><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>=</mo><mn>1</mn></mrow></math> (only act if certain).</li><li><math display='inline'><mrow><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>=</mo><mn>10</mn></mrow></math> ⇒ <math display='inline'><mrow><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>=</mo><msup><mn>10</mn><mn>6</mn></msup></mrow></math> (act even at one-in-a-million).</li><li><math display='inline'><mrow><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>=</mo><msqrt><mn>10</mn></msqrt></mrow></math> ⇒ <math display='inline'><mrow><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>≈</mo><msup><mn>10</mn><mn>3</mn></msup></mrow></math> (act around one-in-a-thousand).</li></ul><p><b>How to use the chart:</b> On the X-axis you’ll see <b>S/C</b> from 1 to 10. On the Y-axis you’ll see the probability written as <b>1 in X</b> on a log scale from 1 to 1,000,000. The blue line is the cutoff <i>X<sub>cutoff</sub></i>. The green region shows where action is justified: for a given <b>S/C</b>, points <i>below</i> the blue line (smaller X ⇒ higher risk) mean “act”, points above mean “don’t act”.</p><figure style='margin:8px 0;'><img src='./prob_sev_cost_chart.png' alt='Probability–Severity–Cost decision boundary: X-axis S/C (1–10), Y-axis 1 in X (1–1,000,000), blue cutoff curve, green “act” region below the curve.' style='max-width:100%;height:auto;'/><figcaption style='font-size:.95em;opacity:.85'>Blue curve = calibrated cutoff; green area = “act”.</figcaption></figure><p><b>Worked single-instance example:</b> Suppose there’s a 1-in-10,000 risk (<i>X</i>=10,000) of a severity 8 outcome (<i>S</i>=8), and prevention costs <i>C</i>=5. Your ratio is <i>S/C</i>=1.6. From the curve, <i>X<sub>cutoff</sub></i> at 1.6 is roughly a few thousand; since 10,000 is <i>above</i> that cutoff (safer than the limit), you would not act. If the cost drops or severity rises, the blue cutoff falls and you cross into the green region.</p><p><b>4.3 Repeated or multiple instances (trips, sessions, days):</b> When the same risk shows up many times, combine the instances instead of judging one in isolation.</p><p><u>Exact combined chance:</u></p><div class='mathblock'><math display='block'><mrow><msub><mi>p</mi><mtext>total</mtext></msub><mo>=</mo><mn>1</mn><mo>−</mo><munder><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow></munder><msup><mrow><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>i</mi></msub><mo>)</mo></mrow><msub><mi>n</mi><mi>i</mi></msub></msup></mrow></math></div><p>For small probabilities this is well-approximated by a simple sum:</p><div class='mathblock'><math display='block'><mrow><msub><mi>p</mi><mtext>total</mtext></msub><mo>≈</mo><munder><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow></munder><mrow><msub><mi>n</mi><mi>i</mi></msub><mo>⋅</mo><msub><mi>p</mi><mi>i</mi></msub></mrow></mrow></math></div><p><u>Expected-value test across groups:</u></p><div class='mathblock'><math display='block'><mrow><msub><mi>E</mi><mtext>total</mtext></msub><mo>=</mo><munder><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow></munder><mrow><msub><mi>n</mi><mi>i</mi></msub><mo>⋅</mo><msub><mi>p</mi><mi>i</mi></msub><mo>⋅</mo><msub><mi>S</mi><mi>i</mi></msub></mrow><mo>></mo><mi>C</mi></mrow></math></div><p><i>Interpretation:</i> sum each group’s “chance × severity”, then compare that total to the prevention cost. If it’s bigger than <i>C</i>, act.</p><p><u>Identical instances shortcut:</u> If all <i>N</i> instances have the same severity <i>S</i> and probability denominator <i>X</i> (so per-instance <i>p</i>=1/<i>X</i>), you can compare an “effective” denominator to the same blue cutoff by dividing by <i>N</i>:</p><div class='mathblock'><math display='block'><mrow><msub><mi>X</mi><mtext>eff</mtext></msub><mo>=</mo><mfrac><mi>X</mi><mi>N</mi></mfrac><mo>,</mo><mspace width='0.5em'/><msub><mi>X</mi><mtext>eff</mtext></msub><mo>≤</mo><msub><mi>X</mi><mtext>cutoff</mtext></msub><mo>(</mo><mfrac><mi>S</mi><mi>C</mi></mfrac><mo>)</mo></mrow></math></div><p><i>Why this works:</i> over <i>N</i> tries, the combined chance is about <i>N/X</i>; smaller denominators mean riskier. Dividing <i>X</i> by <i>N</i> puts the repeated scenario on the same chart.</p><p><b>Worked multi-group example:</b> You’ll play 100 matches. 95 are low-risk at 1-in-1,000,000; 5 are higher-risk at 1-in-100,000. Assume the severe outcome is <i>S</i>=8 and prevention cost is <i>C</i>=5. Expected total impact: <math display='inline'><mrow><mn>95</mn><mo>⋅</mo><mfrac><mn>1</mn><mn>1,000,000</mn></mfrac><mo>⋅</mo><mn>8</mn><mo>+</mo><mn>5</mn><mo>⋅</mo><mfrac><mn>1</mn><mn>100,000</mn></mfrac><mo>⋅</mo><mn>8</mn><mo>=</mo><mn>0.00476</mn></mrow></math>. Since 0.00476 < 5, prevention is not justified here. If cost dropped to 0.1, or severity rose, the inequality could flip.</p><p><b>4.4 Practical notes:</b> (1) If probabilities aren’t tiny, use the exact combined formula. (2) If prevention reduces both probability <i>and</i> severity, compute expected downside <i>with</i> and <i>without</i> prevention and compare the improvement to cost. (3) Our scales cap S and C at 10 to keep judgments stable and comparable.</p><h3 id='concept-alternatives'>5. Alternative Solutions</h3><p>The first idea isn’t always best. Consider simpler fixes, substitutes, or better long-term approaches.</p><p><b>How it works:</b> Surveying alternatives reduces downside and can add unexpected upsides.</p><h3 id='concept-info-value'>6. Information Value</h3><p>Sometimes action is worth it for the <i>learning</i> alone.</p><p><b>How it works:</b> Small experiments reduce uncertainty and improve future choices.</p><h3 id='concept-diminishing-returns'>7. Diminishing Returns</h3><p>Beyond a point, extra effort yields smaller improvements.</p><p><b>Rule of thumb:</b> Stop when marginal benefit < marginal cost.</p><figure style='margin:8px 0;'><img src='./diminishing_returns_curve.png' alt='Diminishing Returns Curve' style='max-width:100%;height:auto;'/></figure><h3 id='concept-inverted-u'>8. Inverted-U Curve (Sweet Spot)</h3><p>Too little or too much effort hurts results; there’s an objective optimum.</p><p><b>Why invest:</b> You’re not chasing perfection; you’re closing in on a measurable optimum, so extra effort to find it is justified.</p><figure style='margin:8px 0;'><img src='./inverted_u_curve.png' alt='Inverted-U Curve' style='max-width:100%;height:auto;'/></figure><h3 id='concept-functional-diff'>9. Functional Difference (Blind Test)</h3><p>Only differences you can actually detect (and that matter for purpose) count.</p><p><b>How it works:</b> If a change isn’t noticeable in use, it shouldn’t drive the decision.</p><h3 id='concept-long-vs-short'>10. Long-Term vs. Short-Term Benefits</h3><p>Short-term relief vs. root-cause fixes.</p><p><b>How it works:</b> Temporary fixes are fine for temporary issues; root-cause fixes justify more cost because they stop repeats.</p><h3 id='concept-always-vs-sometimes'>11. Always vs. Sometimes Worth It</h3><p>Some actions are habit-worthy (always worth it); others depend on context.</p><p><b>How it works:</b> Make the universal ones automatic; evaluate the conditional ones each time.</p><h3 id='concept-preventative'>12. Preventative Maintenance</h3><p>Prevent small issues from becoming large failures.</p><p><b>How it works:</b> Small predictable costs now avert large unpredictable costs later.</p><h2 id='when-top'>WHEN You Should Act</h2><h3 id='concept-severity-threshold'>13. Severity and Thresholds</h3><p>Severity is worst-case impact; threshold is your acceptable limit.</p><p><b>Simple Rule:</b> act when severity meets or exceeds your threshold:</p><div class='mathblock'><math display='block'><mrow><mfrac><mi>S</mi><mi>T</mi></mfrac><mo>≥</mo><mn>1</mn></mrow></math></div><p><b>Worked Example:</b> If severity = 7.5 and your threshold = 5.0, then 7.5 ÷ 5.0 = 1.5 ≥ 1 → Act now.</p><figure style='margin:8px 0;'><img src='./linear_threshold_chart.png' alt='Linear Severity to Action Threshold' style='max-width:100%;height:auto;'/></figure><h3 id='concept-telltale-signs'>14. Telltale Signs</h3><p>Warnings before failure (e.g., brake squeal, storage warnings) give safe buffer time.</p><p><b>How it works:</b> Use the buffer to plan; ignoring signs risks urgent, expensive fixes.</p><h3 id='concept-timing'>15. Timing and Availability</h3><p>When you act changes value.</p><p><b>How it works:</b> Wait for better conditions or act now to prevent escalation—whichever maximizes benefit vs. cost.</p><h3 id='concept-better-later'>16. Better Alternatives Down the Road</h3><p>Sometimes waiting yields a clearly superior option.</p><p><b>How it works:</b> Avoid near-term obsolescence by delaying when a better option is imminent.</p><h2 id='concepts-summary'>Putting It All Together</h2><h3 id='concept-decision-logic'>17. The Decision Logic</h3><p>The guide’s structure reflects real-world logic:</p><ol><li>Is this a real or inevitable problem?</li><li>Do benefits outweigh costs?</li><li>How do probability, severity, and cost balance out (including repeated instances)?</li><li>Are alternatives better?</li><li>Is the solution functional and noticeable?</li><li>Where’s the sweet spot for effort?</li><li>Is it a long-term or short-term fix?</li><li>Is it universally worth it, or conditional?</li><li>Should you prevent it early?</li><li>How severe is it compared to your threshold?</li><li>Are there warning signs?</li><li>Is the timing right, or should you wait for a better alternative?</li></ol><p><b>Bottom line:</b> Layering these concepts prevents wasted energy, avoids unhealthy overthinking, and leads to decisions that are rational, balanced, and sustainable.</p>"}
 ];
 
-/* ===== EXAMPLES (two per question; no info or results) ===== */
 window.examples = {
   "Q1":  ["Finish homework due tonight before reorganizing the closet.", "Call the dentist first if you’re in pain instead of tweaking your workout plan."],
   "Q2":  ["Laptop battery dies quickly during class; you need reliable runtime.", "Your shoe tread is worn and you slip when running on wet pavement."],
@@ -825,7 +817,6 @@ window.examples = {
   "Q47": ["Replace smoke alarm batteries when failure probability approaches your set threshold.", "Swap the UPS battery when charge-holding dips near your limit."]
 };
 
-/* ===== Special threshold-based examples for Q46/Q47 at extremes ===== */
 window.examplesThreshold = {
   "Q46": {
     "0": [
@@ -849,36 +840,31 @@ window.examplesThreshold = {
   }
 };
 
-/* ============== MINI MATH + STATE (additive, no removals) ============== */
-
-// Shared master state for Q6 entries
 var miniMaster = {
-  S: 5, C: 1,             // up to 10; can be <1; not 0
-  mode: 'oneInX',         // 'oneInX' | 'percent' | 'micromort'
-  val: 1000000,           // user-entered value in selected mode
-  X_user: 1000000         // normalized to 1 in X
+  S: 5, C: 1,             
+  mode: 'oneInX',         
+  val: 1000000,           
+  X_user: 1000000         
 };
 
-// Clear Q33 threshold if this page load is a browser refresh
 (function () {
   const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]);
   const isReload = nav ? (nav.type === 'reload') 
                        : (performance && performance.navigation && performance.navigation.type === 1);
   if (isReload) {
     sessionStorage.removeItem('userThreshold');
-    // optional: also clear any cached mirror
+    
     delete window.currentThresholdPct;
   }
 })();
   
-// Blank-on-first-visit flag for Q6 (keeps user values if they come back)
+
 if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
   
-// constants (match the mini prototype)
+
 var MINI_EPS = 1e-9, MINI_MAX = 10;
 var MINI_ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
 
-// math helpers
 function miniClamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
 function miniCeilPlaces(x,p){ var f=Math.pow(10,p); return Math.ceil(x*f)/f; }
 
@@ -901,51 +887,50 @@ function miniComputeSCutoffForX(X){
 function miniProbSymbol(mode){ return mode==='percent' ? '%' : (mode==='micromort' ? 'µm' : 'X'); }
 function miniXtoUnit(X,mode){ return mode==='percent' ? (100/X) : (mode==='micromort' ? (1e6/X) : X); }
 function unitToX(Y, mode){
-  // inverse of miniXtoUnit
-  if (mode === 'percent')   return 100 / Y;          // X = 100 / %
-  if (mode === 'micromort') return 1e6 / Y;          // X = 1e6 / µm
-  return Y;                                           // 1 in X scale -> X = Y
+  
+  if (mode === 'percent')   return 100 / Y;          
+  if (mode === 'micromort') return 1e6 / Y;          
+  return Y;                                           
 }
 
-// Helper: fast fade-in → HOLD → fast fade-out (total time = --flash-dur)
 function flashWithPlateau(el, cls, opts) {
   if (!el) return;
 
-  // Read global duration (fallback 1500ms), then derive phase timings if not passed
+  
   const root = getComputedStyle(document.documentElement);
   const durStr = (root.getPropertyValue('--flash-dur').trim() || '1500ms');
   const totalMs = durStr.endsWith('ms') ? parseFloat(durStr) : parseFloat(durStr) * 1000;
 
-  const inMs   = opts?.inMs  ?? 180;   // fast in
-  const outMs  = opts?.outMs ?? 420;   // fast out
-  const holdMs = opts?.holdMs ?? Math.max(0, totalMs - inMs - outMs); // fill the rest
+  const inMs   = opts?.inMs  ?? 180;   
+  const outMs  = opts?.outMs ?? 420;   
+  const holdMs = opts?.holdMs ?? Math.max(0, totalMs - inMs - outMs); 
 
-  // Clear any prior flash classes
+  
   el.classList.remove('flash-purple','flash-green','flash-gold');
 
-  // PHASE 1: fast fade-in
+  
   el.style.setProperty('--flash-dur', inMs + 'ms');
   requestAnimationFrame(() => {
     el.classList.add(cls);
 
-    // After fade-in completes, HOLD solid (no transition running)
+    
     setTimeout(() => {
-      el.style.setProperty('--flash-dur', '0ms'); // instant changes while holding
+      el.style.setProperty('--flash-dur', '0ms'); 
 
-      // PHASE 3: fast fade-out back to base
+      
       setTimeout(() => {
         el.style.setProperty('--flash-dur', outMs + 'ms');
         requestAnimationFrame(() => {
           el.classList.remove(cls);
 
-          // Cleanup: restore element to using the stylesheet’s --flash-dur
+          
           setTimeout(() => {
             el.style.removeProperty('--flash-dur');
           }, outMs + 50);
         });
       }, holdMs);
 
-    }, inMs + 20); // tiny buffer to ensure the first transition has finished
+    }, inMs + 20); 
   });
 }
   
@@ -953,19 +938,18 @@ function flashAb2Heading(id) {
   const h = document.getElementById(id);
   if (!h) return;
 
-  // Reuse the same purple flash as verdict header
+  
   flashWithPlateau(h, 'flash-purple', { inMs: 300, holdMs: 900, outMs: 300 });
 }
 
 function formatCShort(c){
-  // show a compact C in the tooltip while preserving full-precision in state
+  
   if (!isFinite(c)) return String(c);
   if (c >= 1) return Number(c).toFixed(3).replace(/\.?0+$/,'');
-  // for small values, show up to 4 significant digits
+  
   return Number(c.toPrecision(4)) + '';
 }
 
-// ---- persistence helpers (use for Q6/Q33/etc.) ----
 function saveNodeState(key, obj){
   try { sessionStorage.setItem('node:'+key, JSON.stringify(obj)); } catch(_) {}
 }
@@ -997,36 +981,30 @@ function applyFormValues(root, vals){
   });
 }
   
-/* ============== MINI RENDERERS FOR Q6 & Q7 ============== */
-/* -----------------------------------------------------------
-   Shared tiny haptic helper (safe no-op on iOS Safari)
------------------------------------------------------------ */
+
 window.hapticBump = window.hapticBump || function () {
   try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
 };
 
-// Cosmetic: shorten long decimals for the floating label (does not change actual values)
 function trimDeci(val, places = 3) {
   const n = Number(val);
   if (!isFinite(n)) return String(val);
-  // keep small integers untouched; otherwise trim without trailing zeros
+  
   const s = n.toFixed(places);
   return s.indexOf('.') === -1 ? s : s.replace(/\.?0+$/, '');
 }
 
-// Given a ratio r and the current mode, return the curve's **pixel Y** at that r
 function curveYPxAtRatio(r, mode, pad, plotH, yToPx) {
   const Xc = miniXcutoff_from_ratio(r);
   const yr = (function yRange(m){
     if (m==='percent')   return { yMin: 0.0001, yMax: 100 };
     if (m==='micromort') return { yMin: 1,      yMax: 1e6  };
-    return { yMin: 1,     yMax: 1e6  }; // 1 in X
+    return { yMin: 1,     yMax: 1e6  }; 
   })(mode);
   const Yc = miniXtoUnit(Xc, mode);
   return yToPx(Yc, yr.yMin, yr.yMax);
 }
 
-// --- GLOBAL: smooth scroll + back injection (single source of truth) ---
 function scrollToConcept(targetId, backQId) {
   if (window.__isScrollingConcept) return;
   window.__isScrollingConcept = true;
@@ -1040,7 +1018,7 @@ function scrollToConcept(targetId, backQId) {
     if (!el) return false;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     ensureConceptBackButton(targetId, backQId);
-    flashAb2Heading(targetId); // 👈 smooth purple pulse here
+    flashAb2Heading(targetId); 
     return true;
   }
 
@@ -1052,7 +1030,6 @@ function scrollToConcept(targetId, backQId) {
   })();
 }
 
-// Back button injected directly *below* the heading, blue-styled
 function ensureConceptBackButton(targetId, backQId) {
   const heading = document.getElementById(targetId);
   if (!heading) return;
@@ -1060,8 +1037,8 @@ function ensureConceptBackButton(targetId, backQId) {
 
   const btn = document.createElement('button');
   btn.type = 'button';
-  // Add both classes: keeps the semantic 'concept-back' marker,
-  // but also inherits the Restart button styling.
+  
+  
   btn.className = 'concept-back restart';
   btn.textContent = '← Back';
 
@@ -1074,31 +1051,27 @@ function ensureConceptBackButton(targetId, backQId) {
   heading.dataset.backInjected = '1';
 }
 
-// Call this when clicking "See concept…" links from Q6/Q33/etc.
 function jumpToConcept(conceptId, backQId){
-  // one-shot intent for the very next AB2 render only
+  
   window.__pendingConceptScroll = { conceptId, backQId: backQId || currentNode?.id || 'Q0' };
-  // mark as a temp visit so Back skips AB2 once
+  
   window.__ab2TempVisit = true;
-  // go to AB2
+  
   goToNode('AB2');
 }
 
-/* ===========================================================
-   Q6 — interactive: inputs + 2D drag + snap + correct shading
-=========================================================== */
 function renderMiniQ6(intoEl, node){
   if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
   let cont;
   intoEl.innerHTML = '';
 
-  // Top text
+  
   const top = document.createElement('div');
   top.className = 'mini-top';
   top.innerHTML = node.text || '';
   intoEl.appendChild(top);
 
-  // Wrapper + fields (same structure/look as your old build)
+  
   const wrap   = document.createElement('div'); wrap.className = 'mini-wrap';
   const fields = document.createElement('div'); fields.className = 'mini-fields';
 
@@ -1127,21 +1100,21 @@ function renderMiniQ6(intoEl, node){
   wrap.appendChild(fields);
   wrap.appendChild(pRow);
 
-  // SVG (as in the old build)
+  
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg');
   svg.setAttribute('viewBox','0 0 940 620');
   svg.style.overflow = 'visible';
   wrap.appendChild(svg);
 
-  // Rule + verdict
+  
   const rule = document.createElement('div'); rule.className='rule';
   rule.innerHTML = 'Rule: Only if <span id="miniProbName">X</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.';
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(rule); wrap.appendChild(verdict);
 
-  // Link
+  
   const link = document.createElement('a');
   link.href = '#concept-prob-sev-cost';
   link.textContent = 'See full explanation of Probability × Severity × Cost';
@@ -1155,10 +1128,10 @@ function renderMiniQ6(intoEl, node){
   });
   wrap.appendChild(link);
 
-  // Attach wrapper
+  
   intoEl.appendChild(wrap);
 
-  // --- Insert exactly ONE divider before each section heading (inline) ---
+  
   (function ensureDividers(root){
     if (!root) return;
     const names = ['Severity','Cost','Probability'];
@@ -1167,7 +1140,7 @@ function renderMiniQ6(intoEl, node){
       const heading = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name.toLowerCase());
       if (!heading || !heading.parentElement) return;
       const parent = heading.parentElement;
-      // remove extra .mini-sep right before
+      
       const toRemove = [];
       let prev = heading.previousElementSibling;
       while (prev && prev.classList && prev.classList.contains('mini-sep')){
@@ -1183,7 +1156,7 @@ function renderMiniQ6(intoEl, node){
     });
   })(wrap);
 
-  // ===== Inputs & state =====
+  
   const elS  = wrap.querySelector('#miniS');
   const elC  = wrap.querySelector('#miniC');
   const elM  = wrap.querySelector('#miniMode');
@@ -1202,13 +1175,13 @@ function renderMiniQ6(intoEl, node){
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
 
-  // Initial unit + symbol from your app’s state
+  
   elM.value = miniMaster.mode;
   if (typeof miniProbSymbol === 'function' && probName){
     probName.textContent = miniProbSymbol(miniMaster.mode);
   }
 
-  // Robust label resolving
+  
   if (!labV){
     const vField = elV && elV.closest('.mini-field');
     labV = vField ? (vField.querySelector('label') || (()=>{ 
@@ -1219,7 +1192,7 @@ function renderMiniQ6(intoEl, node){
     })()) : null;
   }
 
-  // 🔁 Dynamic Probability value label/placeholder
+  
   function updateProbLabelForMode(mode){
     if (!labV || !elV) return;
     if (mode === 'oneInX'){ labV.textContent = 'Enter X (for “1 in X”)'; elV.placeholder = 'e.g. 1,000'; }
@@ -1231,7 +1204,7 @@ function renderMiniQ6(intoEl, node){
   }
   updateProbLabelForMode(elM ? elM.value : 'oneInX');
 
-  // Micromorts rule (lock Severity at 10)
+  
   function lockSeverity(val = 10){ elS.value = String(val); elS.disabled = true; elS.classList.add('is-disabled'); }
   function unlockSeverity(){ elS.disabled = false; elS.classList.remove('is-disabled'); }
   function applyUnitsRule(){
@@ -1245,7 +1218,7 @@ function renderMiniQ6(intoEl, node){
     elM.__boundUpdateProbLabel = true;
   }
 
-  // ===== Graph (same geometry/behavior as old) =====
+  
   const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
   const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
   const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
@@ -1416,7 +1389,7 @@ function renderMiniQ6(intoEl, node){
     if (cont) cont.disabled = false;
   }
 
-  // Pointer handlers (old behavior)
+  
   function svgPoint(evt){
     const pt = svg.createSVGPoint();
     pt.x = (evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX);
@@ -1438,7 +1411,7 @@ function renderMiniQ6(intoEl, node){
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
 
-    // keep S/C ratio, clamp inside bounds
+    
     let S = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
     let C = S / r;
     if (C <= MINI_EPS || C > MINI_MAX){
@@ -1478,7 +1451,7 @@ function renderMiniQ6(intoEl, node){
   svg.addEventListener('touchmove', onPointerMove, {passive:false});
   svg.addEventListener('touchend', onPointerUp, {passive:false});
 
-  // Numeric input hygiene
+  
   function wireNumericInput(inp, { min=-Infinity, max=Infinity, decimals=null } = {}){
     if (!inp) return;
     inp.addEventListener('input', () => {
@@ -1525,7 +1498,7 @@ function renderMiniQ6(intoEl, node){
 
   draw();
 
-  // Bottom buttons
+  
   const btns = document.getElementById('buttons');
   btns.innerHTML = '';
   cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
@@ -1534,125 +1507,38 @@ function renderMiniQ6(intoEl, node){
     goToNode(miniActGate ? 'Q10' : 'Q7');
   };
   btns.appendChild(cont);
-
-  // === Dynamic probability label (index 17-style) ===
-  (function q6ProbLabelInit(){
-    var modeEl = document.getElementById('miniMode');        // unit/mode selector
-    var nameEl  = document.getElementById('miniProbName');   // e.g., "per try" / "per instance"
-    function updateProbLabel(){
-      if (!nameEl) return;
-      var mode = modeEl && modeEl.value;
-      switch (mode){
-        case 'perTry':       nameEl.textContent = 'per try'; break;
-        case 'perInstance':  nameEl.textContent = 'per instance'; break;
-        case 'perEvent':     nameEl.textContent = 'per event'; break;
-        default:             nameEl.textContent = 'probability'; break;
-      }
-    }
-    if (modeEl){
-      modeEl.addEventListener('input', updateProbLabel);
-      modeEl.addEventListener('change', updateProbLabel);
-    }
-    updateProbLabel();
-  })();
-
-  // === Lock/unlock "Varies Across Instances" when N <= 1 (index 17 behavior) ===
-  (function q6NLockInit(){
-    var nEl = document.getElementById('miniN');
-    var ids = ['miniSVaries','miniCVaries','miniProbVaries'];
-    function updateLock(){
-      var n = parseInt(nEl && nEl.value, 10);
-      var lock = !n || n <= 1;
-      ids.forEach(function(id){
-        var cb = document.getElementById(id);
-        if (!cb) return;
-        var label = cb.closest('label.varies-label') || cb.parentElement;
-        if (lock){
-          if (cb.checked){
-            cb.checked = false;
-            try{ cb.dispatchEvent(new Event('change', {bubbles:true})); }catch(e){}
-          }
-          cb.disabled = true;
-          if (label) label.classList.add('is-disabled');
-        } else {
-          cb.disabled = false;
-          if (label) label.classList.remove('is-disabled');
-        }
-      });
-    }
-    if (nEl){
-      nEl.addEventListener('input', updateLock);
-      nEl.addEventListener('change', updateLock);
-    }
-    updateLock();
-  })();
-
-
-  // === Probability label updates (ported from index 17) ===
-  (function(){
-    const labV = document.getElementById('miniProbLabel');
-    const elV  = document.getElementById('miniVal');
-    const elM  = document.getElementById('miniMode');
-    if (!elM || !labV || !elV) return;
-
-    function updateProbLabelForMode(mode){
-      if (!labV || !elV) return;
-      if (mode === 'oneInX'){
-        labV.textContent = 'Enter X (for “1 in X”)';
-        elV.placeholder  = 'e.g. 1,000';
-      } else if (mode === 'percent'){
-        labV.textContent = 'Enter percentage (%)';
-        elV.placeholder  = 'e.g. 1';
-      } else { // micromort
-        labV.textContent = 'Enter micromorts (µm)';
-        elV.placeholder  = 'e.g. 1';
-      }
-    }
-
-    // Initialize + bind once
-    updateProbLabelForMode(elM.value);
-    if (!elM.__boundUpdateProbLabel){
-      elM.addEventListener('change', (e)=> updateProbLabelForMode(e.target.value));
-      elM.__boundUpdateProbLabel = true;
-    }
-  })();
-
 }
 
-
-/* ===========================================================
-   Q7 — visualization-only mirror (draggable; inputs greyed)
-=========================================================== */
 function renderMiniQ7(intoEl, node){
-  // ---- Q7 is display-only; make a LOCAL snapshot from Q6 and never persist ----
-  // Prefer saved Q6 state; fall back to miniMaster; finally hard defaults
+  
+  
   const savedQ6 = (typeof loadNodeState === 'function') ? loadNodeState('Q6') : null;
   const base = (savedQ6 && savedQ6.Q6) ? savedQ6.Q6 : (window.miniMaster || {});
   const local = {
     S:   Number.isFinite(+base.S)   ? +base.S   : 5,
     C:   Number.isFinite(+base.C)   ? +base.C   : 1,
     mode:(base.mode || 'oneInX'),
-    // prefer user-entered value in chosen unit if present
+    
     val: Number.isFinite(+base.val) ? +base.val : (base.mode==='percent' ? 1 : (base.mode==='micromort' ? 1 : 1000)),
-    // optional X_user snapshot if you store it
+    
     X_user: (base.X_user != null && isFinite(base.X_user)) ? +base.X_user : null
   };
 
-  // NEVER mutate global miniMaster or saveNodeState inside Q7:
+  
   const MINI_EPS = 1e-9, MINI_MAX = 1e9;
 
-  // Helpers (reuse same math as Q6 expects)
+  
   function miniClamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
-  function miniXcutoff_from_ratio(r){ // your app’s rule: Xc = f(r)
-    // NOTE: keep consistent with Q6!
-    // Example placeholder: Xc increases with r (S/C).
-    // Replace with your actual function if different:
-    return Math.pow(10, (11 - r)); // (just an example; use the same as Q6)
+  function miniXcutoff_from_ratio(r){ 
+    
+    
+    
+    return Math.pow(10, (11 - r)); 
   }
   function miniXtoUnit(X, mode){
     if (mode==='percent')   return 100 / X;
     if (mode==='micromort') return 1e6 / X;
-    return X; // oneInX
+    return X; 
   }
   function unitToX(Y, mode){
     if (mode==='percent')   return 100 / Math.max(Y, MINI_EPS);
@@ -1666,7 +1552,7 @@ function renderMiniQ7(intoEl, node){
   }
   function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
 
-  // UI shell
+  
   intoEl.innerHTML = '';
   const top = document.createElement('div');
   top.className = 'mini-top';
@@ -1676,14 +1562,14 @@ function renderMiniQ7(intoEl, node){
   const wrap = document.createElement('div'); wrap.className='mini-wrap';
   intoEl.appendChild(wrap);
 
-  // Graph only (no inputs)
+  
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.classList.add('mini-svg');
   svg.setAttribute('viewBox','0 0 940 620');
   svg.style.overflow = 'visible';
   wrap.appendChild(svg);
 
-  // Rule + Verdict
+  
   const rule = document.createElement('div'); rule.className='rule';
   const probSym = (typeof miniProbSymbol==='function') ? miniProbSymbol(local.mode) : 'X';
   rule.innerHTML = `Rule: Only if <span>${probSym}</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.`;
@@ -1691,7 +1577,7 @@ function renderMiniQ7(intoEl, node){
   verdict.textContent = 'Interact with the graph to explore.';
   wrap.appendChild(rule); wrap.appendChild(verdict);
 
-  // Concept link
+  
   const link = document.createElement('a');
   link.href = '#concept-prob-sev-cost';
   link.textContent = 'See full explanation of Probability × Severity × Cost';
@@ -1705,7 +1591,7 @@ function renderMiniQ7(intoEl, node){
   });
   wrap.appendChild(link);
 
-  // Buttons (Yes / No)
+  
   const yesTarget = (node && node.nextYes) || 'Q10';
   const noTarget  = (node && node.nextNo)  || 'Q21';
   const btns = document.getElementById('buttons');
@@ -1718,7 +1604,7 @@ function renderMiniQ7(intoEl, node){
     btns.appendChild(noBtn); btns.appendChild(yesBtn);
   }
 
-  // ===== Graph bits (copy of Q6 drawing, but LOCAL state only) =====
+  
   const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
   const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
   const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
@@ -1804,7 +1690,7 @@ function renderMiniQ7(intoEl, node){
     return yToPx(Yc, range.yMin, range.yMax);
   }
 
-  // Local-only render (no persistence)
+  
   const SNAP_PX = 22; let isSnapped = false;
 
   function draw(){
@@ -1841,7 +1727,7 @@ function renderMiniQ7(intoEl, node){
     verdict.classList.toggle('no', !act);
   }
 
-  // Interaction: update LOCAL state only
+  
   function svgPoint(evt){
     const pt = svg.createSVGPoint();
     pt.x = (evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX);
@@ -1857,7 +1743,7 @@ function renderMiniQ7(intoEl, node){
     const px = miniClamp(sp.x, pad.left, pad.left+plotW);
     const r  = pxToR(px);
 
-    // keep S/C by varying C (locally)
+    
     let S = miniClamp(local.S, MINI_EPS, MINI_MAX);
     let C = S / r;
     if (C <= MINI_EPS || C > MINI_MAX){
@@ -1882,7 +1768,7 @@ function renderMiniQ7(intoEl, node){
     const frac = 1 - (yPix - pad.top) / plotH;
     const logY = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
     const Y = Math.pow(10, logY);
-    local.X_user = unitToX(Y, mode); // LOCAL ONLY
+    local.X_user = unitToX(Y, mode); 
 
     draw();
   }
@@ -1895,19 +1781,17 @@ function renderMiniQ7(intoEl, node){
   svg.addEventListener('touchmove', onPointerMove, {passive:false});
   svg.addEventListener('touchend', onPointerUp, {passive:false});
 
-  // initial draw
+  
   draw();
 }
 
-/* ======= STATE ======= */
 var currentThresholdPct = 90;
-var miniActGate = false; // If Q6 verdict said "Act should be considered", skip Q16–Q18 later
+var miniActGate = false; 
 var hasFlashedIf = false;
 var hasFlashedWhen = false;
 var lastWasResult = false;
 var originalTitleHTML = null;
 
-/* ======= APP LOGIC ======= */
 var historyStack = [];
 var currentNode = flowchart.find(function(n){ return n.id === "Q0"; });
 var currentSegment = "If You Should Act";
@@ -1920,7 +1804,6 @@ function getSegmentForNodeId(id) {
   return num >= 31 ? "When You Should Act" : "If You Should Act";
 }
 
-/* Verdict/custom heading */
 function setHeadingText(node) {
   var title = document.getElementById('segmentTitle');
   var skipBtn = document.getElementById('skipBtn');
@@ -1955,7 +1838,6 @@ function setHeadingText(node) {
     : 'none';
 }
 
-/* Flash heading */
 function flashHeadingColor(targetSegment, node) {
   const el = document.getElementById('segmentHeading');
   if (!el) return;
@@ -1966,7 +1848,7 @@ function flashHeadingColor(targetSegment, node) {
   else if (targetSegment === 'If You Should Act') cls = 'flash-green';
   else                                        cls = 'flash-gold';
 
-  // 1500ms total by default: 180 in + 900 hold + 420 out
+  
   flashWithPlateau(el, cls, { inMs: 300, holdMs: 900, outMs: 300 });
 }
 
@@ -1986,14 +1868,13 @@ function maybeFlashOnEnter(node, fromId){
   const fromNode    = flowchart.find(n => n.id === fromId);
   const fromSection = getSectionKey(fromNode);
 
-  // Flash Q1 only if arriving from Q0 OR from a non-IF section
+  
   if (fromId === 'Q0' || (fromSection && fromSection !== 'if')) {
-    // This label is what your header uses for the IF segment
+    
     flashHeadingColor('If You Should Act', node);
   }
 }
 
-/* Reset panels */
 function closeAllPanels() {
   collapseSharedPanel();
   var risk = document.getElementById('riskInline');
@@ -2003,7 +1884,6 @@ function closeAllPanels() {
   }
 }
 
-/* Auto-skip logic (based on Q6 verdict) */
 function beforeEnterNode(nextId) {
   if (miniActGate && (nextId === 'Q16' || nextId === 'Q17' || nextId === 'Q18')) {
     return 'Q22';
@@ -2011,7 +1891,6 @@ function beforeEnterNode(nextId) {
   return nextId;
 }
 
-/* Navigation helpers */
 function makeButton(label, cls, action) {
   var btn = document.createElement('button');
   btn.type = 'button';
@@ -2021,7 +1900,7 @@ function makeButton(label, cls, action) {
   return btn;
 }
 function goToNode(id) {
-  // Save Q33/Q6 state when navigating away
+  
   if (currentNode && (currentNode.id === 'Q33' || currentNode.id === 'Q6')) {
     const root = document.getElementById('text');
     if (root) {
@@ -2043,7 +1922,7 @@ function goToNode(id) {
   maybeFlashOnEnter(currentNode, fromId);
 }
 function goBack() {
-  // Save Q33/Q6 state when navigating away
+  
   if (currentNode && (currentNode.id === 'Q33' || currentNode.id === 'Q6')) {
     const root = document.getElementById('text');
     if (root) {
@@ -2058,10 +1937,10 @@ function goBack() {
   var fromId = currentNode ? currentNode.id : '';
   var prevId = historyStack.pop();
 
-  // 🔹 If AB2 was a temporary concept visit, skip it
+  
   if (prevId === 'AB2' && window.__ab2TempVisit) {
-    window.__ab2TempVisit = false; // clear flag
-    prevId = historyStack.pop();   // jump one more back
+    window.__ab2TempVisit = false; 
+    prevId = historyStack.pop();   
   }
 
   var prev = flowchart.find(n => n.id === prevId);
@@ -2092,13 +1971,11 @@ function restart() {
   renderNode(currentNode);
 }
 
-/* Skip button */
 document.getElementById('skipBtn').addEventListener('click', function() {
   closeAllPanels();
   goToNode('Q31');
 });
 
-/* Shared panel */
 function collapseSharedPanel() {
   var panel = document.getElementById('sharedPanel');
   if (panel) {
@@ -2130,7 +2007,6 @@ function collapseSharedPanel() {
   }
 }
 
-/* ======= Shared panel helpers + visuals ======= */
 function openSharedPanel(panel, mode) {
   panel.style.display = 'block';
   panel.setAttribute('aria-hidden','false');
@@ -2175,14 +2051,13 @@ function updateSliderFill(slider, sev) {
   const pct = ((sev - 1) / 9) * 100;
   slider.style.setProperty('--pct', pct + '%');
 
-  // nonlinear progression: low severities push color shift faster
-  const t = Math.pow((sev - 1) / 9, 0.2); // exponent <1 makes early shift steeper
-  const hue = 240 - t * 240; // blue → red
+  
+  const t = Math.pow((sev - 1) / 9, 0.2); 
+  const hue = 240 - t * 240; 
   const color = `hsl(${hue}, 90%, 50%)`;
   slider.style.setProperty('--fill', color);
 }
 
-/* ---------- Controls under the text ---------- */
 function setupAuxToggles(node) {
   var leftWrap = document.getElementById('leftControlsWrapper');
   var rightWrap = document.getElementById('rightControlsWrapper');
@@ -2192,11 +2067,11 @@ function setupAuxToggles(node) {
   rightWrap.innerHTML = '';
   collapseSharedPanel();
 
-  // ✅ Show aux controls for questions, and ALSO for Q33 specifically
+  
   var allowAux = (node.type === 'question') || (node.id === 'Q33');
   if (!allowAux) return;
 
-  // LEFT: Examples (always for allowed nodes)
+  
   var examplesBtn = document.createElement('button');
   examplesBtn.type = 'button';
   examplesBtn.textContent = 'Show Examples';
@@ -2217,7 +2092,7 @@ function setupAuxToggles(node) {
     }
   };
 
-  // RIGHT: Only one graph/logic button per applicable slide
+  
   if (node.id === 'Q22' || node.id === 'Q24') {
     var vizBtn = document.createElement('button');
     vizBtn.type = 'button';
@@ -2252,7 +2127,7 @@ function setupAuxToggles(node) {
             ? 'concept-diminishing-returns'
             : 'concept-inverted-u';
           history.replaceState(null, '', `#${target}`);
-          jumpToConcept(target, /* back */ node.id);
+          jumpToConcept(target,  node.id);
         })
         
         panel.appendChild(link);
@@ -2293,7 +2168,7 @@ function setupAuxToggles(node) {
           e.preventDefault();
           const target = 'concept-severity-threshold';
           history.replaceState(null, '', `#${target}`);
-          jumpToConcept(target, /* back */ node.id);
+          jumpToConcept(target,  node.id);
         })
         panel.appendChild(link);
 
@@ -2306,20 +2181,19 @@ function setupAuxToggles(node) {
   }
 }
 
-/* === Dynamic text transforms for Q46 / Q47 (optional) === */
 function formatPct(p){ 
-  // Keep integers clean, otherwise show up to 1 decimal
+  
   return (Math.round(p) === p ? String(p) : String(Number(p.toFixed(1))));
 }
 
 function transformQ46(html){
-  // Replace the hardcoded 50% with the live threshold
+  
   var pct = formatPct(currentThresholdPct);
   return html.replace(/nearing or greater than 50%/g, 'nearing or greater than ' + pct + '%');
 }
 
 function transformQ47(html){
-  // Replace the hardcoded 50% with the live threshold
+  
   var pct = formatPct(currentThresholdPct);
   return html.replace(/nearing or greater than 50%/g, 'nearing or greater than ' + pct + '%');
 }
@@ -2366,9 +2240,9 @@ function showOrHideRiskInline(node) {
   container.appendChild(ticks);
 
   function applyFromSeverity(sev) {
-    var s = Math.max(1, Math.min(10, Number(sev) || 1)); // clamp 1..10
+    var s = Math.max(1, Math.min(10, Number(sev) || 1)); 
     var thr = 100 - s * 10;
-    window.currentThresholdPct = thr; // <-- make the global write explicit
+    window.currentThresholdPct = thr; 
     sevDisplay.textContent = String(s);
     updateSliderFill(slider, s);
     
@@ -2385,14 +2259,12 @@ function showOrHideRiskInline(node) {
   slider.oninput = function() {
     var sev = parseInt(slider.value, 10);
     applyFromSeverity(sev);
-    setUserThreshold(slider.value);   // <— persist immediately
+    setUserThreshold(slider.value);   
     if (typeof hapticBump === 'function') hapticBump();
   };
 }
   
-/* ========= Concept deep-link helpers (clean, consolidated) ========= */
 
-// Map Q-ids to concept anchors (used by call sites if you prefer indirection)
 var CONCEPT_ANCHOR_BY_QID = {
   Q22: 'concept-diminishing-returns',
   Q24: 'concept-inverted-u',
@@ -2417,7 +2289,7 @@ function assignConceptAnchors() {
     return false;
   }
 
-  // only (re)assign if missing
+  
   if (!textDiv.querySelector('#concepts-top')) {
     setIdByHeadingContains('IF You Should Act', 'concepts-top');
     setIdByHeadingContains('Diminishing Returns', 'concept-diminishing-returns');
@@ -2427,7 +2299,6 @@ function assignConceptAnchors() {
   }
 }
 
-// Remember where the user came from (a Q# slide)
 let __lastQuestionId = null;
 function noteOrigin(node) {
   if (node && node.id && /^Q\d+$/.test(node.id)) __lastQuestionId = node.id;
@@ -2445,31 +2316,30 @@ window.addEventListener('unhandledrejection', e => {
 });
   
 function bootGuide() {
-  // make sure DOM is present
+  
   const text = document.getElementById('text');
   if (!text) {
     console.warn('DOM not ready for boot; retrying…');
     return setTimeout(bootGuide, 30);
   }
 
-  // flowchart must exist
+  
   if (!Array.isArray(window.flowchart) || !flowchart.length) {
     console.warn('flowchart not ready; retrying…');
     return setTimeout(bootGuide, 30);
   }
 
-  // cache title safely
+  
   const titleEl = document.getElementById('segmentTitle');
   if (titleEl && !window.originalTitleHTML) {
     window.originalTitleHTML = titleEl.innerHTML || '';
   }
 
-  // set starting node & render
+  
   window.currentNode = flowchart.find(n => n.id === 'Q0') || flowchart[0];
   renderNode(window.currentNode);
 }
 
-// Run after DOM, or immediately if it’s already ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', bootGuide);
 } else {
@@ -2485,7 +2355,6 @@ function safeTypeset(rootEl) {
   return Promise.resolve();
 }
 
-// Q33 threshold persistence
 function setUserThreshold(v){
   const n = Number(v);
   if (!Number.isFinite(n)) return;
@@ -2498,33 +2367,32 @@ function getUserThreshold(){
   return Number.isFinite(n) ? n : null;
 }
 
-// Ensure heat-slider's fill matches its value (in case no input handler ran yet)
 function syncHeatSliderFill(sl){
   if (!sl) return;
   const min = sl.min !== '' ? Number(sl.min) : 0;
   const max = sl.max !== '' ? Number(sl.max) : 100;
   const sev = Number(sl.value) || min;
   const pct = Math.max(0, Math.min(100, ((sev - min) / (max - min)) * 100));
-  // percentage goes in --pct; color comes from updateSliderFill
+  
   sl.style.setProperty('--pct', pct + '%');
-  // also set the hue color so the gradient is correct
+  
   if (typeof updateSliderFill === 'function') {
     updateSliderFill(sl, sev);
   }
 }
 
-  // Wait for MathJax + images + a couple of frames, then resolve (or time out)
+  
   function waitForAB2Layout(root, {timeout=800} = {}) {
     const waits = [];
   
-    // MathJax settle
+    
     try {
       if (window.MathJax && MathJax.typesetPromise) {
         waits.push(MathJax.typesetPromise([root]).catch(()=>{}));
       }
     } catch (_) {}
   
-    // Images settle
+    
     const imgs = Array.from(root.querySelectorAll('img'));
     if (imgs.length) {
       waits.push(Promise.all(imgs.map(img =>
@@ -2536,45 +2404,44 @@ function syncHeatSliderFill(sl){
       )));
     }
   
-    // Next couple of frames
+    
     function nextFrames(n=2){ return new Promise(r=>{
       let i=0; const step=()=>{ if(++i>n) r(); else requestAnimationFrame(step); };
       requestAnimationFrame(step);
     });}
     waits.push(nextFrames(2));
   
-    // Race with a timeout so we never hang
+    
     return Promise.race([
       Promise.all(waits),
       new Promise(res => setTimeout(res, timeout))
     ]);
   }
   
-  // Do the scroll now and once again after layout settles
+  
   async function robustScrollToConcept(root, conceptId, backQId) {
-    // your existing scroll now (keeps current behavior)
+    
     scrollToConcept(conceptId, backQId);
   
-    // run after layout is stable, then re-scroll precisely
+    
     await waitForAB2Layout(root);
     scrollToConcept(conceptId, backQId);
   
-    // tiny nudge once more on the next frame for stubborn cases
+    
     requestAnimationFrame(() => scrollToConcept(conceptId, backQId));
   }
 
-
 function resetQ6State() {
-  // Clear any persisted threshold or Q6 cache (if you’ve added one)
+  
   try {
-    sessionStorage.removeItem('userThreshold');   // already used elsewhere
-    sessionStorage.removeItem('miniMaster');      // only if you ever saved it
+    sessionStorage.removeItem('userThreshold');   
+    sessionStorage.removeItem('miniMaster');      
   } catch (_) {}
 
-  // Blank-on-first-visit behavior for Q6
+  
   window.miniPristine = true;
 
-  // Reset the master values so nothing pre-fills
+  
   window.miniMaster = {
     S: null,
     C: null,
@@ -2583,7 +2450,7 @@ function resetQ6State() {
     X_user: null
   };
 
-  // If the Q6 UI might be on screen, clear its inputs immediately
+  
   const s = document.querySelector('#q6_S');
   const c = document.querySelector('#q6_C');
   const v = document.querySelector('#q6_val');
@@ -2594,7 +2461,7 @@ function resetQ6State() {
   if (modeSel) modeSel.value = 'oneInX';
 }
   
-/* Render node */
+
 if (!originalTitleHTML) {
   originalTitleHTML = document.getElementById('segmentTitle').innerHTML;
 }
@@ -2641,7 +2508,7 @@ function renderNode(node) {
 
   var textDiv = document.getElementById('text');
 
-  // Theme button + back visibility
+  
   var themeBtn = document.getElementById('themeToggle');
   if (themeBtn) {
     themeBtn.style.display = (node.id === 'Q0') ? 'inline-block' : 'none';
@@ -2649,7 +2516,7 @@ function renderNode(node) {
   }
   document.getElementById('backBtn').style.visibility = historyStack.length > 0 ? 'visible' : 'hidden';
 
-  // ✅ Custom slides Q6/Q7 are handled here with early returns
+  
   if (node.id === 'Q6') {
     textDiv.innerHTML = '';
     document.getElementById('buttons').innerHTML = '';
@@ -2663,35 +2530,34 @@ function renderNode(node) {
     return;
   }
   
-  // Default content
+  
   let html = node.text || '';
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
     html = (node.id === 'Q46') ? transformQ46(html) : transformQ47(html);
   }
   
-  /* ✅ ADD THIS: inject default slide content for all non-special slides */
+  
   document.getElementById('text').innerHTML = html;
 
-
-  // ==== Q33: restore + persist the .heat-slider ====
+  
   if (node && node.id === 'Q33') {
     const q33Root = document.getElementById('text');
     const slider  = q33Root.querySelector('.heat-slider');
   
-    // Restore other persisted fields if you use them
+    
     const saved = (typeof loadNodeState === 'function') ? loadNodeState('Q33') : null;
     if (saved && typeof applyFormValues === 'function') applyFormValues(q33Root, saved);
   
-    // Defer restore two frames so defaults elsewhere can't overwrite us
+    
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const stored = getUserThreshold();
       if (slider && stored != null) {
         slider.value = String(stored);
-        syncHeatSliderFill(slider);        // <-- uses the fixed helper
+        syncHeatSliderFill(slider);        
       }
     }));
   
-    // Keep both stores in sync on any edit
+    
     const persistQ33 = () => {
       if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
         saveNodeState('Q33', collectFormValues(q33Root));
@@ -2701,23 +2567,23 @@ function renderNode(node) {
     q33Root.addEventListener('input',  persistQ33);
     q33Root.addEventListener('change', persistQ33);
   
-    // Also set once on entry (covers first-visit / default write)
+    
     if (slider) setUserThreshold(slider.value);
   }
 
-  // ==== Q46 / Q47: restore threshold from Q33 ====
+  
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
     const root = document.getElementById('text');
     const stored = getUserThreshold();
   
-    // If you want to show the value somewhere in Q46/Q47
+    
     if (stored != null) {
       const out = root.querySelector('.threshold-display');
-      if (out) out.textContent = stored;  // or set value on input if you have one
+      if (out) out.textContent = stored;  
     }
   }
 
-  // 🔹 Inject content, but wrap AB2 so we have an element to target
+  
   if (node && node.id === 'AB2') {
     const textDiv = document.getElementById('text');
     textDiv.innerHTML = `<section id="AB2" class="about-wrapper">${html}</section>`;
@@ -2725,29 +2591,29 @@ function renderNode(node) {
     const ab2El = document.getElementById('AB2');
     assignConceptAnchors();
   
-    // (safe MathJax typeset as you already have)
+    
     try {
       if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
         if (typeof MathJax.typesetClear === 'function') MathJax.typesetClear();
         MathJax.typesetPromise([ab2El]).catch(() => {});
       }
-    } catch (err) { /* no-op */ }
+    } catch (err) {  }
   
-    // === NEW: do special behavior ONLY when we have a pending concept scroll ===
-    const intent = window.__pendingConceptScroll;   // {conceptId, backQId} | undefined
+    
+    const intent = window.__pendingConceptScroll;   
     if (intent && intent.conceptId) {
       const backQId = intent.backQId || 'Q0';
-      // clear one-shot intent immediately so later AB2 loads are normal
+      
       window.__pendingConceptScroll = null;
       window.__backTargetForAB2 = backQId;
   
-      // 1) optional: flash AB2 heading only for concept intent
+      
       try { flashAb2Heading('ab2Heading'); } catch(_) {}
   
-      // 2) scroll to concept
+      
       robustScrollToConcept(ab2El, intent.conceptId, backQId);
   
-      // 3) handle in-page #anchor clicks only in this intent mode
+      
       ab2El.addEventListener('click', function (e) {
         const a = e.target.closest('a[href^="#"]');
         if (!a) return;
@@ -2760,13 +2626,13 @@ function renderNode(node) {
   
   
     } else {
-      // NORMAL AB2: no flash, no forced scroll, no injected back button
+      
       window.__backTargetForAB2 = null;
-      // optional: clear any stale hash from earlier sessions
-      // history.replaceState(null, '', location.pathname);
+      
+      
     }
   
-    // Aux toggles etc.
+    
     setupAuxToggles(node);
     showOrHideRiskInline(node);
     return;
@@ -2841,7 +2707,7 @@ function buildOneColumn(root, opts) {
       stack.innerHTML = '';
     }
 
-    // Instances
+    
     const nRow = document.createElement('div');
     nRow.className = 'mini-field';
     nRow.style.textAlign = 'left';
@@ -2864,7 +2730,7 @@ function buildOneColumn(root, opts) {
       const field = document.createElement('div');
       field.className = 'mini-field';
       field.innerHTML = '<label>' + extraLabel + '</label>';
-      // try a few selectors for Q6 and Q7 variants
+      
       const inputEl = absorbOriginalRow(root, selectors[0]) ||
                       absorbOriginalRow(root, selectors[1]) ||
                       absorbOriginalRow(root, selectors[2]) ||
@@ -2886,7 +2752,7 @@ function buildOneColumn(root, opts) {
       return { toggle, inputEl, extra };
     }
 
-    // Severity & Cost
+    
 const __sepSev=document.createElement('div');__sepSev.className='mini-sep';stack.appendChild(__sepSev);
     const sev = makeSection('Severity',
       ['input[name="severity"]', '#miniS', 'input[data-q="S"]'],
@@ -2897,7 +2763,7 @@ const __sepCost=document.createElement('div');__sepCost.className='mini-sep';sta
       id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
 const __sepProb=document.createElement('div');__sepProb.className='mini-sep';stack.appendChild(__sepProb);
 
-    // Probability
+    
     const hP = document.createElement('div');
     hP.className = 'mini-heading';
     hP.textContent = 'Probability';
@@ -2943,7 +2809,7 @@ const __sepProb=document.createElement('div');__sepProb.className='mini-sep';sta
       '<div id="' + id + 'CountMsg" class="error" style="text-align:left"></div>';
     stack.appendChild(groupsWrap);
 
-    // hide any leftover original rows not moved
+    
     killStrays(root, stack);
 
     return {
@@ -3067,7 +2933,7 @@ function ensureFullWidth(scope){
   }
 
 function killStrays(root, stack) {
-    // hide anything outside our stack to avoid leftover right-side fields
+    
     const kids = Array.from(root.querySelectorAll(':scope > .mini-field'));
     kids.forEach(k => { if (!stack.contains(k)) k.style.display = 'none'; });
   }
@@ -3081,7 +2947,7 @@ renderMiniQ6 = function (intoEl, node) {
       const el = buildOneColumn(root, { id: 'q6' });
       const state = window.__q6State || { groups: [] };
 
-      // restore
+      
       try {
         if (el.N && state.N != null) el.N.value = state.N;
         if (el.tgSev) el.tgSev.checked = !!state.tgSev;
@@ -3115,14 +2981,14 @@ renderMiniQ6 = function (intoEl, node) {
         setHidden(el.groupsWrap, hideGroups);
         if (el.addGroup) { el.addGroup.disabled = hideGroups; el.addGroup.classList.toggle('muted', hideGroups); }
 
-        // FIX: hide probability unit row ONLY when varies is checked; show otherwise
+        
         setHidden(el.modeRow, false);
 
         if (dis || !(el.tgSev && el.tgSev.checked)) if (el.sExtraVal) el.sExtraVal.value='';
         if (dis || !(el.tgCost && el.tgCost.checked)) if (el.cExtraVal) el.cExtraVal.value='';
         if (dis || !(el.tgProb && el.tgProb.checked)) { state.groups=[]; if (el.groups) el.groups.innerHTML=''; if (el.countMsg) el.countMsg.textContent=''; }
 
-        // persist
+        
         window.__q6State = {
           N: el.N ? el.N.value : 1,
           tgSev: el.tgSev ? el.tgSev.checked : false,
@@ -3197,7 +3063,57 @@ renderMiniQ6 = function (intoEl, node) {
 
       drawGroups();
       refreshVisibility();
-    }
+    
+      
+      (function(){
+        if (!el) return;
+        
+        function updateQ6ProbLabel(){
+          if (!el.pMode) return;
+          var mode = (el.pMode.value || '').toLowerCase();
+          if (mode === 'oneinx' || mode === '1 in x' || mode === '1inx') mode = 'oneInX';
+          if (mode === 'percentage' || mode === '%' || mode === 'percent%') mode = 'percent';
+          if (mode === 'micromorts') mode = 'micromort';
+          var lab = el.stack && el.stack.querySelector('#q6ProbLabel');
+          if (lab){
+            if (mode === 'oneInX'){ lab.textContent = 'Enter X (for “1 in X”)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1,000'; }
+            else if (mode === 'percent'){ lab.textContent = 'Enter percentage (%)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1'; }
+            else { lab.textContent = 'Enter micromorts (µm)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1'; }
+          }
+          var sym = (mode==='percent') ? '%' : (mode==='micromort' ? 'µm' : 'X');
+          var probName = document.getElementById('miniProbName') || (el.stack && el.stack.querySelector('#miniProbName'));
+          if (probName) probName.textContent = sym;
+        }
+        updateQ6ProbLabel();
+        if (el.pMode && !el.pMode.__q6LabelBound){
+          el.pMode.addEventListener('change', function(){ updateQ6ProbLabel(); if (typeof refreshVisibility==='function') refreshVisibility(); });
+          el.pMode.addEventListener('input',  updateQ6ProbLabel);
+          el.pMode.__q6LabelBound = true;
+        }
+
+        
+        if (el.N && !el.N.__intBound){
+          el.N.setAttribute('step','1'); el.N.setAttribute('min','1'); el.N.setAttribute('inputmode','numeric');
+          el.N.addEventListener('keydown', function(e){
+            var k = e.key;
+            if (k === '.' || k === ',' || k.toLowerCase() === 'e') e.preventDefault();
+          });
+          function sanitize(){
+            var s = String(el.N.value || '').trim();
+            if (s === '') return; 
+            s = s.replace(/[^\d]/g, '');
+            if (s === '') s = '1';
+            var n = parseInt(s,10);
+            if (!(n >= 1)) n = 1;
+            el.N.value = String(n);
+          }
+          el.N.addEventListener('blur', sanitize);
+          el.N.addEventListener('change', sanitize);
+          el.N.__intBound = true;
+        }
+      })();
+
+}
 })();
 </script>
 
