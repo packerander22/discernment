@@ -1210,19 +1210,13 @@ function renderMiniQ6(intoEl, node){
     return `X=${prefix}${Xshown.toLocaleString()}`;
   }
 
-  // --- x-axis helpers (adaptive, “unlimited”) ---
+  // --- axes: X = Cost (C), linear; Y = log probability units ---
   const pad = { left:120, right:30, top:34, bottom:96 };
   const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
-  const rMin = 1;
-  let rMaxView = 10;
 
-  function niceCeil(x){
-    if (!isFinite(x) || x <= 0) return 10;
-    const p = Math.pow(10, Math.floor(Math.log10(x)));
-    const m = x / p;
-    const n = (m <= 2) ? 2 : (m <= 3) ? 3 : (m <= 5) ? 5 : 10;
-    return n * p;
-  }
+  const cMinView = 0;     // show 0 on axis, but we never compute with C=0 (we clamp)
+  let   cMaxView = 10;    // UI caps C at 10
+
   function niceStep(span, targetTicks = 7){
     if (span <= 0) return 1;
     const raw = span / Math.max(1, targetTicks);
@@ -1236,17 +1230,15 @@ function renderMiniQ6(intoEl, node){
     const start = Math.ceil(min / step) * step;
     const ticks = [];
     for (let v = start; v <= max + 1e-9; v += step) ticks.push(Number(v.toFixed(10)));
+    if (min === 0 && ticks[0] > 0) ticks.unshift(0);
     return ticks;
   }
-  // r where cut line hits top (X=1e6): log10(X)= (2/3)*C*(r-1)=6 => r=1+9/C
-  function rTopForC(C){ const Cpos = Math.max(MINI_EPS, C); return 1 + 9 / Cpos; }
-  function computeRMaxView(C, rCurrent){ const target = Math.max(10, rCurrent, rTopForC(C) + 0.5); return niceCeil(target); }
 
-  function rToPx(r){ return pad.left + (r - rMin) / (rMaxView - rMin) * plotW; }
-  function pxToR(px){ return rMin + (px - pad.left) / plotW * (rMaxView - rMin); }
-  function yToPx(y,yMin,yMax){ 
+  function CtoPx(C){ return pad.left + (C - cMinView) / (cMaxView - cMinView) * plotW; }
+  function pxToC(px){ return cMinView + (px - pad.left) / plotW * (cMaxView - cMinView); }
+  function yToPx(y,yMin,yMax){
     const yy = Math.min(yMax, Math.max(yMin, y));
-    return pad.top + plotH * (1 - (Math.log10(yy)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); 
+    return pad.top + plotH * (1 - (Math.log10(yy)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin)));
   }
 
   elM.value = miniMaster.mode;
@@ -1285,16 +1277,14 @@ function renderMiniQ6(intoEl, node){
 
   const SNAP_PX = 22;
   let isSnapped = false;
-
-  // NEW: lock severity while dragging so the handle only changes C
-  let SDragLock = null;
+  let SDragLock = null;   // lock S while dragging
 
   function drawAxes(mode){
     axesG.innerHTML='';
 
-    // X ticks
-    niceTicks(rMin, rMaxView, 7).forEach(t => {
-      const x = rToPx(t);
+    // X: Cost (C)
+    niceTicks(cMinView, cMaxView, 7).forEach(t => {
+      const x = CtoPx(t);
       const v = document.createElementNS('http://www.w3.org/2000/svg','line');
       v.setAttribute('x1', x); v.setAttribute('x2', x);
       v.setAttribute('y1', pad.top); v.setAttribute('y2', pad.top + plotH);
@@ -1303,11 +1293,11 @@ function renderMiniQ6(intoEl, node){
       const lab = document.createElementNS('http://www.w3.org/2000/svg','text');
       lab.setAttribute('x', x); lab.setAttribute('y', pad.top + plotH + 16);
       lab.setAttribute('dominant-baseline', 'hanging'); lab.setAttribute('text-anchor', 'middle');
-      lab.textContent = (Math.abs(t - Math.round(t)) < 1e-8) ? Math.round(t) : t;
+      lab.textContent = (Math.abs(t - Math.round(t)) < 1e-8) ? Math.round(t) : t.toFixed(1).replace(/\.0$/,'');
       axesG.appendChild(lab);
     });
 
-    // Y ticks
+    // Y ticks (unchanged)
     const range = yRange(mode);
     range.ticks.forEach(yv=>{
       const y = yToPx(yv, range.yMin, range.yMax);
@@ -1322,7 +1312,7 @@ function renderMiniQ6(intoEl, node){
     });
 
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
-    xLab.textContent = 'Severity / Cost Ratio (S / C)';
+    xLab.textContent = 'Cost (C)';
 
     const Y_LABEL_OFFSET = 90, desiredLeftPadding=8;
     yLab.textContent = yRange(mode).label;
@@ -1336,18 +1326,19 @@ function renderMiniQ6(intoEl, node){
 
   function buildCurve(mode){
     const range = yRange(mode), N=800;
+    const cMinPlot = Math.max(MINI_EPS, cMinView + 1e-6); // avoid C=0 in math
     let d='';
     for (let i=0;i<=N;i++){
-      const r = rMin + (rMaxView-rMin)*(i/N);
+      const C = cMinPlot + (cMaxView - cMinPlot)*(i/N);
+      const r = (miniMaster.S || MINI_EPS) / C;
       const X = miniXcutoff_from_ratio(r);
       const Y = clampYToRange(miniXtoUnit(X, mode), mode);
-      const x = rToPx(r), y = yToPx(Y, range.yMin, range.yMax);
+      const x = CtoPx(C), y = yToPx(Y, range.yMin, range.yMax);
       d += (i? 'L ':'M ') + x + ',' + y + ' ';
     }
     curve.setAttribute('d', d);
 
-    const leftX=rToPx(rMin), rightX=rToPx(rMaxView);
-    // Green area = where decision is "consider" (X_user <= Xc across units)
+    const leftX=CtoPx(cMinView), rightX=CtoPx(cMaxView);
     if (mode === 'oneInX'){
       const bottom = yToPx(range.yMin, range.yMin, range.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
@@ -1357,8 +1348,9 @@ function renderMiniQ6(intoEl, node){
     }
   }
 
-  function curveYPxAtRatio(r, mode){
+  function curveYPxAtCost(C, mode){
     const range = yRange(mode);
+    const r  = (miniMaster.S || MINI_EPS) / Math.max(MINI_EPS, C);
     const Xc = miniXcutoff_from_ratio(r);
     const Yc = clampYToRange(miniXtoUnit(Xc, mode), mode);
     return yToPx(Yc, range.yMin, range.yMax);
@@ -1395,10 +1387,7 @@ function renderMiniQ6(intoEl, node){
   function draw(){
     const mode = elM.value;
 
-    // Adaptive x-range covers current r and where curve tops out
-    const rCurrent = miniMaster.S / Math.max(MINI_EPS, miniMaster.C);
-    rMaxView = computeRMaxView(miniMaster.C, rCurrent);
-
+    // Fixed Cost range [0..10] (UI cap). Could be made adaptive if you later expand C’s max.
     drawAxes(mode);
     buildCurve(mode);
 
@@ -1420,14 +1409,14 @@ function renderMiniQ6(intoEl, node){
 
     snapInputs();
 
-    const r  = miniMaster.S/miniMaster.C;
+    const r  = miniMaster.S / miniMaster.C;
     const Xc = miniXcutoff_from_ratio(r); // cutoff (1-in-X)
     const range = yRange(mode);
 
-    // Red dot = USER value (so chart matches verdict)
+    // Red dot = USER value
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
     const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
-    const cx = rToPx(Math.max(rMin, Math.min(rMaxView, r)));
+    const cx = CtoPx(Math.max(cMinView, Math.min(cMaxView, miniMaster.C)));
     const cy = yToPx(Ydot, range.yMin, range.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
@@ -1464,8 +1453,8 @@ function renderMiniQ6(intoEl, node){
     e.preventDefault();
     window.miniPristine = false;
     dragging = true;
-    // Lock S to whatever it is right now
-    SDragLock = miniClamp(parseFloat(elS.value) || miniMaster.S || 5, MINI_EPS, MINI_MAX);
+    // Lock S to current value; drag only adjusts C
+    SDragLock = Math.max(MINI_EPS, Math.min(MINI_MAX, parseFloat(elS.value) || miniMaster.S || 5));
     try { handle.setPointerCapture(e.pointerId); } catch(_) {}
     onPointerMove(e);
   }
@@ -1474,32 +1463,25 @@ function renderMiniQ6(intoEl, node){
     if(!dragging) return; e.preventDefault();
     const sp = svgPoint(e);
 
-    // Horizontal → choose r from x; recompute C from LOCKED S only
-    const px = miniClamp(sp.x, pad.left, pad.left+plotW);
-    const r  = pxToR(px);
+    // Horizontal → set Cost directly from x (S remains locked)
+    let Cn = pxToC(Math.max(pad.left, Math.min(pad.left+plotW, sp.x)));
+    Cn = Math.max(MINI_EPS, Math.min(MINI_MAX, Cn));
 
-    const S0 = (SDragLock != null)
-      ? SDragLock
-      : miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
-
-    const Cn = miniClamp(S0 / r, MINI_EPS, MINI_MAX);
-
-    // Write back: S stays fixed, only C changes
-    elS.value = String(S0);
+    elS.value = String(SDragLock);
     elC.value = String(Cn);
-    miniMaster.S = S0;
+    miniMaster.S = SDragLock;
     miniMaster.C = Cn;
 
-    // Snap vertically to curve if near it; vertical moves set the USER probability
+    // Vertical → set USER probability (snap to curve at current C if close)
     const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
-    const yCurve  = curveYPxAtRatio(r, elM.value);
+    const yCurve  = curveYPxAtCost(Cn, elM.value);
     const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
 
     const mode = elM.value;
     const range = yRange(mode);
-    let yPix = Math.min(pad.top+plotH, Math.max(pad.top, sp.y));
+    let yPix = yCursor;
     if (willSnap) yPix = yCurve;
 
     const frac  = 1 - (yPix - pad.top) / plotH;
@@ -1526,7 +1508,7 @@ function renderMiniQ6(intoEl, node){
 
   function onPointerUp(e){
     dragging=false;
-    SDragLock = null;  // release the severity lock
+    SDragLock = null;
     try{handle.releasePointerCapture(e.pointerId);}catch(_){}
   }
 
@@ -1592,6 +1574,7 @@ function renderMiniQ6(intoEl, node){
   };
   btns.appendChild(cont);
 }
+
 
 function renderMiniQ7(root, opts){
   const el = (typeof root === 'string') ? document.querySelector(root) : root;
