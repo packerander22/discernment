@@ -1125,7 +1125,7 @@ function renderMiniQ6(intoEl, node){
   svg.style.overflow = 'visible';
   wrap.appendChild(svg);
 
-  // (Rule removed to reduce clutter)
+  // (Rule removed)
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(verdict);
@@ -1186,13 +1186,12 @@ function renderMiniQ6(intoEl, node){
     if (mode==='micromort') return { yMin: 1,      yMax: 1e6,   ticks:[1e6,1e5,1e4,1e3,100,10,1],        label:"Cutoff Probability (µm) (log scale)" };
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
-  // clamp Y to top of chart
   function clampYToRange(Y, mode){
     const r = yRange(mode);
     return Math.min(r.yMax, Math.max(r.yMin, Y));
   }
 
-  // unit label for the moving tooltip (unit BEFORE number; '='; show ≥ when clipped)
+  // moving label: unit before number, '='
   function labelUnit(mode, X){
     if (mode === 'percent'){
       const pctRaw = 100 / X;
@@ -1211,7 +1210,7 @@ function renderMiniQ6(intoEl, node){
     return `X=${prefix}${Xshown.toLocaleString()}`;
   }
 
-  // --- x-axis helpers: adaptive "unlimited" range with nice ticks ---
+  // --- x-axis helpers (adaptive, “unlimited”) ---
   const pad = { left:120, right:30, top:34, bottom:96 };
   const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
   const rMin = 1;
@@ -1239,14 +1238,14 @@ function renderMiniQ6(intoEl, node){
     for (let v = start; v <= max + 1e-9; v += step) ticks.push(Number(v.toFixed(10)));
     return ticks;
   }
-  // r where the blue line hits top (X=1e6) for given C under Prob C: log10(X)= (2/3)*C*(r-1)=6 → r=1+9/C
+  // r where cut line hits top (X=1e6): log10(X)= (2/3)*C*(r-1)=6 => r=1+9/C
   function rTopForC(C){ const Cpos = Math.max(MINI_EPS, C); return 1 + 9 / Cpos; }
   function computeRMaxView(C, rCurrent){ const target = Math.max(10, rCurrent, rTopForC(C) + 0.5); return niceCeil(target); }
 
   function rToPx(r){ return pad.left + (r - rMin) / (rMaxView - rMin) * plotW; }
   function pxToR(px){ return rMin + (px - pad.left) / plotW * (rMaxView - rMin); }
   function yToPx(y,yMin,yMax){ 
-    const yy = Math.min(yMax, Math.max(yMin, y)); // clamp Y before mapping
+    const yy = Math.min(yMax, Math.max(yMin, y));
     return pad.top + plotH * (1 - (Math.log10(yy)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); 
   }
 
@@ -1287,7 +1286,7 @@ function renderMiniQ6(intoEl, node){
   function drawAxes(mode){
     axesG.innerHTML='';
 
-    // X ticks (nice spacing; adaptive right edge)
+    // X ticks
     niceTicks(rMin, rMaxView, 7).forEach(t => {
       const x = rToPx(t);
       const v = document.createElementNS('http://www.w3.org/2000/svg','line');
@@ -1342,6 +1341,9 @@ function renderMiniQ6(intoEl, node){
     curve.setAttribute('d', d);
 
     const leftX=rToPx(rMin), rightX=rToPx(rMaxView);
+    // Green area = where decision is "consider" (X_user <= Xc across units)
+    // For 1-in-X that’s BELOW the curve; for percent & µm (since we normalize to X) it’s ABOVE,
+    // but the inequality on X is the same, so we keep the original visual convention:
     if (mode === 'oneInX'){
       const bottom = yToPx(range.yMin, range.yMin, range.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
@@ -1392,7 +1394,7 @@ function renderMiniQ6(intoEl, node){
   function draw(){
     const mode = elM.value;
 
-    // expand x-axis to include current r and where the line tops out (no hard max)
+    // Adaptive x-range covers current r and where curve tops out
     const rCurrent = miniMaster.S / Math.max(MINI_EPS, miniMaster.C);
     rMaxView = computeRMaxView(miniMaster.C, rCurrent);
 
@@ -1428,7 +1430,7 @@ function renderMiniQ6(intoEl, node){
     const cy = yToPx(Ydot, range.yMin, range.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
-    // Moving label: S, C, and one probability readout
+    // Moving label
     const label = `S=${trimDeci(miniMaster.S)}, C=${trimDeci(miniMaster.C)} · ${labelUnit(mode, Xuser)}`;
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
@@ -1438,7 +1440,7 @@ function renderMiniQ6(intoEl, node){
     labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
-    // Verdict: user vs cutoff (same units)
+    // Verdict: consider iff user's X <= cutoff X
     const act = (miniMaster.X_user != null) ? (miniMaster.X_user <= Xc + 1e-15) : false;
     verdict.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
     verdict.classList.toggle('ok', act);
@@ -1460,26 +1462,22 @@ function renderMiniQ6(intoEl, node){
   function onPointerMove(e){
     if(!dragging) return; e.preventDefault();
     const sp = svgPoint(e);
+
+    // Horizontal movement -> change r -> recompute C only (S stays fixed)
     const px = miniClamp(sp.x, pad.left, pad.left+plotW);
     const r  = pxToR(px);
+    const S0 = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
+    const Cn = miniClamp(S0 / r, MINI_EPS, MINI_MAX);
+    elS.value = String(S0);   // lock S
+    elC.value = String(Cn);   // update C to reflect r
+    miniMaster.S = S0; miniMaster.C = Cn;
 
+    // Snap vertically to curve if near it; vertical moves set the USER probability
     const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
     const yCurve  = curveYPxAtRatio(r, elM.value);
     const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
     if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
     isSnapped = willSnap;
-
-    let S = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
-    let C = S / r;
-    if (C <= MINI_EPS || C > MINI_MAX){
-      C = miniClamp(parseFloat(elC.value)||miniMaster.C||1, MINI_EPS, MINI_MAX);
-      S = r * C;
-      if (S <= MINI_EPS || S > MINI_MAX){
-        S = miniClamp(S, MINI_EPS, MINI_MAX);
-        C = miniClamp(S / r, MINI_EPS, MINI_MAX);
-      }
-    }
-    elS.value = String(S); elC.value = String(C);
 
     const mode = elM.value;
     const range = yRange(mode);
@@ -1489,8 +1487,10 @@ function renderMiniQ6(intoEl, node){
     const logY = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
     const Y = Math.pow(10, logY);
     const X_user = unitToX(Y, mode);
-    miniMaster.S = S; miniMaster.C = C; miniMaster.mode = mode; miniMaster.X_user = X_user;
 
+    miniMaster.mode = mode; miniMaster.X_user = X_user;
+
+    // Keep the numeric input in sync
     let valOut = (mode==='oneInX') ? X_user : (mode==='percent' ? (100/X_user) : (1e6/X_user));
     if (mode==='oneInX') { if (valOut < 2) valOut = 2; }
     else if (mode==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
