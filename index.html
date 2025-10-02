@@ -1125,7 +1125,7 @@ function renderMiniQ6(intoEl, node){
   svg.style.overflow = 'visible';
   wrap.appendChild(svg);
 
-  // (Rule removed)
+  // Verdict (rule removed)
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(verdict);
@@ -1283,6 +1283,12 @@ function renderMiniQ6(intoEl, node){
   const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
   const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
+  const SNAP_PX = 22;
+  let isSnapped = false;
+
+  // NEW: lock severity while dragging so the handle only changes C
+  let SDragLock = null;
+
   function drawAxes(mode){
     axesG.innerHTML='';
 
@@ -1342,8 +1348,6 @@ function renderMiniQ6(intoEl, node){
 
     const leftX=rToPx(rMin), rightX=rToPx(rMaxView);
     // Green area = where decision is "consider" (X_user <= Xc across units)
-    // For 1-in-X that’s BELOW the curve; for percent & µm (since we normalize to X) it’s ABOVE,
-    // but the inequality on X is the same, so we keep the original visual convention:
     if (mode === 'oneInX'){
       const bottom = yToPx(range.yMin, range.yMin, range.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
@@ -1387,9 +1391,6 @@ function renderMiniQ6(intoEl, node){
     miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
     miniMaster.X_user = miniNormalizeToX(mode, vv);
   }
-
-  const SNAP_PX = 22;
-  let isSnapped = false;
 
   function draw(){
     const mode = elM.value;
@@ -1458,19 +1459,36 @@ function renderMiniQ6(intoEl, node){
   }
 
   let dragging=false;
-  function onPointerDown(e){ e.preventDefault(); window.miniPristine=false; dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){ } onPointerMove(e); }
+
+  function onPointerDown(e){
+    e.preventDefault();
+    window.miniPristine = false;
+    dragging = true;
+    // Lock S to whatever it is right now
+    SDragLock = miniClamp(parseFloat(elS.value) || miniMaster.S || 5, MINI_EPS, MINI_MAX);
+    try { handle.setPointerCapture(e.pointerId); } catch(_) {}
+    onPointerMove(e);
+  }
+
   function onPointerMove(e){
     if(!dragging) return; e.preventDefault();
     const sp = svgPoint(e);
 
-    // Horizontal movement -> change r -> recompute C only (S stays fixed)
+    // Horizontal → choose r from x; recompute C from LOCKED S only
     const px = miniClamp(sp.x, pad.left, pad.left+plotW);
     const r  = pxToR(px);
-    const S0 = miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
+
+    const S0 = (SDragLock != null)
+      ? SDragLock
+      : miniClamp(parseFloat(elS.value)||miniMaster.S||5, MINI_EPS, MINI_MAX);
+
     const Cn = miniClamp(S0 / r, MINI_EPS, MINI_MAX);
-    elS.value = String(S0);   // lock S
-    elC.value = String(Cn);   // update C to reflect r
-    miniMaster.S = S0; miniMaster.C = Cn;
+
+    // Write back: S stays fixed, only C changes
+    elS.value = String(S0);
+    elC.value = String(Cn);
+    miniMaster.S = S0;
+    miniMaster.C = Cn;
 
     // Snap vertically to curve if near it; vertical moves set the USER probability
     const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
@@ -1483,24 +1501,35 @@ function renderMiniQ6(intoEl, node){
     const range = yRange(mode);
     let yPix = Math.min(pad.top+plotH, Math.max(pad.top, sp.y));
     if (willSnap) yPix = yCurve;
-    const frac = 1 - (yPix - pad.top) / plotH;
-    const logY = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
-    const Y = Math.pow(10, logY);
+
+    const frac  = 1 - (yPix - pad.top) / plotH;
+    const logY  = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
+    const Y     = Math.pow(10, logY);
     const X_user = unitToX(Y, mode);
 
-    miniMaster.mode = mode; miniMaster.X_user = X_user;
+    miniMaster.mode   = mode;
+    miniMaster.X_user = X_user;
 
-    // Keep the numeric input in sync
-    let valOut = (mode==='oneInX') ? X_user : (mode==='percent' ? (100/X_user) : (1e6/X_user));
-    if (mode==='oneInX') { if (valOut < 2) valOut = 2; }
-    else if (mode==='percent') { if (valOut<=0) valOut=0.000001; if (valOut>=100) valOut=99.999999; }
-    else { if (valOut<=0) valOut=0.0001; if (valOut>=1e6) valOut=999999.99; }
+    // Keep numeric probability input in sync
+    let valOut = (mode==='oneInX') ? X_user
+              : (mode==='percent') ? (100/X_user)
+              : (1e6/X_user);
+    if (mode==='oneInX')       { if (valOut < 2)   valOut = 2; }
+    else if (mode==='percent') { if (valOut<=0)    valOut = 0.000001; if (valOut>=100) valOut = 99.999999; }
+    else                       { if (valOut<=0)    valOut = 0.0001;   if (valOut>=1e6) valOut = 999999.99; }
+
     elV.value = String(valOut);
     miniMaster.val = valOut;
 
     draw();
   }
-  function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
+
+  function onPointerUp(e){
+    dragging=false;
+    SDragLock = null;  // release the severity lock
+    try{handle.releasePointerCapture(e.pointerId);}catch(_){}
+  }
+
   handle.addEventListener('pointerdown', onPointerDown, {passive:false});
   svg.addEventListener('pointermove', onPointerMove, {passive:false});
   svg.addEventListener('pointerup', onPointerUp, {passive:false});
