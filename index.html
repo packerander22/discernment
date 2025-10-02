@@ -1214,8 +1214,8 @@ function renderMiniQ6(intoEl, node){
   const pad = { left:120, right:30, top:34, bottom:96 };
   const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
 
-  const cMinView = 0;     // show 0 on axis, but we never compute with C=0 (we clamp)
-  let   cMaxView = 10;    // UI caps C at 10
+  const cMinView = 0;     // show 0 on axis; never compute at 0 (we clamp)
+  let   cMaxView = 10;    // UI cap for C
 
   function niceStep(span, targetTicks = 7){
     if (span <= 0) return 1;
@@ -1258,7 +1258,12 @@ function renderMiniQ6(intoEl, node){
   }
   applyUnitsRule();
   if (!elM.__boundUpdateProbLabel){
-    elM.addEventListener('change', (e)=>{ updateProbLabelForMode(e.target.value); applyUnitsRule(); });
+    elM.addEventListener('change', (e)=>{
+      updateProbLabelForMode(e.target.value);
+      applyUnitsRule();
+      window.miniPristine = false;
+      draw(); // ensure redraw on unit change
+    });
     elM.__boundUpdateProbLabel = true;
   }
 
@@ -1277,7 +1282,7 @@ function renderMiniQ6(intoEl, node){
 
   const SNAP_PX = 22;
   let isSnapped = false;
-  let SDragLock = null;   // lock S while dragging
+  let SDragLock = null; // lock S while dragging
 
   function drawAxes(mode){
     axesG.innerHTML='';
@@ -1297,7 +1302,7 @@ function renderMiniQ6(intoEl, node){
       axesG.appendChild(lab);
     });
 
-    // Y ticks (unchanged)
+    // Y: probability units (log scale)
     const range = yRange(mode);
     range.ticks.forEach(yv=>{
       const y = yToPx(yv, range.yMin, range.yMax);
@@ -1339,6 +1344,7 @@ function renderMiniQ6(intoEl, node){
     curve.setAttribute('d', d);
 
     const leftX=CtoPx(cMinView), rightX=CtoPx(cMaxView);
+    // Green area = where decision is "consider" (X_user <= Xc)
     if (mode === 'oneInX'){
       const bottom = yToPx(range.yMin, range.yMin, range.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
@@ -1357,7 +1363,6 @@ function renderMiniQ6(intoEl, node){
   }
 
   function snapInputs(){
-    if (window.miniPristine) return;
     let S = parseFloat(elS.value);
     let C = parseFloat(elC.value);
     const mode = elM.value;
@@ -1373,12 +1378,9 @@ function renderMiniQ6(intoEl, node){
     if (mode==='percent'){ if (vv<=0) vv=0.000001; if (vv>=100) vv=99.999999; }
     if (mode==='micromort'){ if (vv<=0) vv=0.0001; if (vv>=1e6) vv=999999.99; }
 
-    const sHad = String(elS.value||'').trim() !== '';
-    const cHad = String(elC.value||'').trim() !== '';
-    const vHad = String(elV.value||'').trim() !== '';
-    if (sHad) elS.value = String(S);
-    if (cHad) elC.value = String(C);
-    if (vHad) elV.value = String(vv);
+    elS.value = String(S);
+    elC.value = String(C);
+    elV.value = String(vv);
 
     miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
     miniMaster.X_user = miniNormalizeToX(mode, vv);
@@ -1387,33 +1389,30 @@ function renderMiniQ6(intoEl, node){
   function draw(){
     const mode = elM.value;
 
-    // Fixed Cost range [0..10] (UI cap). Could be made adaptive if you later expand C’s max.
+    // Require all inputs; if present, sync state FIRST so curve & verdict match
+    const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
+    if (!hasAll) {
+      verdict.textContent = 'Enter values to see if action should be considered.';
+      verdict.classList.remove('ok','no');
+      handle.setAttribute('visibility','hidden');
+      labelG.setAttribute('visibility','hidden');
+      if (cont) cont.disabled = true;
+      return;
+    }
+    window.miniPristine = false;
+    snapInputs(); // <<< sync BEFORE drawing curve
+
     drawAxes(mode);
     buildCurve(mode);
 
-    if (window.miniPristine) {
-      const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
-      if (!hasAll) {
-        verdict.textContent = 'Enter values to see if action should be considered.';
-        verdict.classList.remove('ok','no');
-        handle.setAttribute('visibility','hidden');
-        labelG.setAttribute('visibility','hidden');
-        if (cont) cont.disabled = true;
-        return;
-      }
-      window.miniPristine = false;
-    }
-
     handle.removeAttribute('visibility');
     labelG.removeAttribute('visibility');
-
-    snapInputs();
 
     const r  = miniMaster.S / miniMaster.C;
     const Xc = miniXcutoff_from_ratio(r); // cutoff (1-in-X)
     const range = yRange(mode);
 
-    // Red dot = USER value
+    // Red dot = USER value (so chart matches verdict)
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
     const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
     const cx = CtoPx(Math.max(cMinView, Math.min(cMaxView, miniMaster.C)));
@@ -1481,8 +1480,7 @@ function renderMiniQ6(intoEl, node){
 
     const mode = elM.value;
     const range = yRange(mode);
-    let yPix = yCursor;
-    if (willSnap) yPix = yCurve;
+    let yPix = willSnap ? yCurve : yCursor;
 
     const frac  = 1 - (yPix - pad.top) / plotH;
     const logY  = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
