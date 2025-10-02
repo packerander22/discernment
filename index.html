@@ -1125,8 +1125,7 @@ function renderMiniQ6(intoEl, node){
   svg.style.overflow = 'visible';
   wrap.appendChild(svg);
 
-  // (Rule block removed)
-
+  // (Rule removed to reduce clutter)
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(verdict);
@@ -1146,6 +1145,7 @@ function renderMiniQ6(intoEl, node){
 
   intoEl.appendChild(wrap);
 
+  // --- section dividers (unchanged) ---
   (function ensureDividers(root){
     if (!root) return;
     const names = ['Severity','Cost','Probability'];
@@ -1174,22 +1174,80 @@ function renderMiniQ6(intoEl, node){
   const elM  = wrap.querySelector('#miniMode');
   const elV  = wrap.querySelector('#miniVal');
   let   labV = wrap.querySelector('#miniProbLabel');
-  const probName = null; // no rule block / no miniProbName in DOM
 
   const q6Root  = intoEl;
   const savedQ6 = loadNodeState('Q6');
   if (savedQ6) applyFormValues(q6Root, savedQ6);
 
+  // ---------- math / scales ----------
   function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
   function yRange(mode){
     if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Cutoff Probability (%) (log scale)" };
     if (mode==='micromort') return { yMin: 1,      yMax: 1e6,   ticks:[1e6,1e5,1e4,1e3,100,10,1],        label:"Cutoff Probability (µm) (log scale)" };
     return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
   }
-  // clamp helpers so graph cannot exceed the top tick
+  // clamp Y to top of chart
   function clampYToRange(Y, mode){
     const r = yRange(mode);
     return Math.min(r.yMax, Math.max(r.yMin, Y));
+  }
+
+  // unit label for the moving tooltip (unit BEFORE number; '='; show ≥ when clipped)
+  function labelUnit(mode, X){
+    if (mode === 'percent'){
+      const pctRaw = 100 / X;
+      const pctShown = Math.min(100, pctRaw);
+      const prefix   = (pctRaw > 100) ? '≥' : '';
+      return `%=${prefix}${trimDeci(pctShown,6)}`;
+    }
+    if (mode === 'micromort'){
+      const umRaw = 1e6 / X;
+      const umShown = Math.min(1e6, umRaw);
+      const prefix  = (umRaw > 1e6) ? '≥' : '';
+      return `µm=${prefix}${trimDeci(umShown,2)}`;
+    }
+    const Xshown = Math.min(1e6, Math.round(X));
+    const prefix = (X > 1e6) ? '≥' : '';
+    return `X=${prefix}${Xshown.toLocaleString()}`;
+  }
+
+  // --- x-axis helpers: adaptive "unlimited" range with nice ticks ---
+  const pad = { left:120, right:30, top:34, bottom:96 };
+  const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
+  const rMin = 1;
+  let rMaxView = 10;
+
+  function niceCeil(x){
+    if (!isFinite(x) || x <= 0) return 10;
+    const p = Math.pow(10, Math.floor(Math.log10(x)));
+    const m = x / p;
+    const n = (m <= 2) ? 2 : (m <= 3) ? 3 : (m <= 5) ? 5 : 10;
+    return n * p;
+  }
+  function niceStep(span, targetTicks = 7){
+    if (span <= 0) return 1;
+    const raw = span / Math.max(1, targetTicks);
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const m = raw / p;
+    const n = (m <= 2) ? 2 : (m <= 5) ? 5 : 10;
+    return n * p;
+  }
+  function niceTicks(min, max, targetTicks = 7){
+    const step = niceStep(max - min, targetTicks);
+    const start = Math.ceil(min / step) * step;
+    const ticks = [];
+    for (let v = start; v <= max + 1e-9; v += step) ticks.push(Number(v.toFixed(10)));
+    return ticks;
+  }
+  // r where the blue line hits top (X=1e6) for given C under Prob C: log10(X)= (2/3)*C*(r-1)=6 → r=1+9/C
+  function rTopForC(C){ const Cpos = Math.max(MINI_EPS, C); return 1 + 9 / Cpos; }
+  function computeRMaxView(C, rCurrent){ const target = Math.max(10, rCurrent, rTopForC(C) + 0.5); return niceCeil(target); }
+
+  function rToPx(r){ return pad.left + (r - rMin) / (rMaxView - rMin) * plotW; }
+  function pxToR(px){ return rMin + (px - pad.left) / plotW * (rMaxView - rMin); }
+  function yToPx(y,yMin,yMax){ 
+    const yy = Math.min(yMax, Math.max(yMin, y)); // clamp Y before mapping
+    return pad.top + plotH * (1 - (Math.log10(yy)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); 
   }
 
   elM.value = miniMaster.mode;
@@ -1208,12 +1266,12 @@ function renderMiniQ6(intoEl, node){
     if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10); else unlockSeverity();
   }
   applyUnitsRule();
-
   if (!elM.__boundUpdateProbLabel){
     elM.addEventListener('change', (e)=>{ updateProbLabelForMode(e.target.value); applyUnitsRule(); });
     elM.__boundUpdateProbLabel = true;
   }
 
+  // --- SVG elems ---
   const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
   const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
   const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
@@ -1226,28 +1284,25 @@ function renderMiniQ6(intoEl, node){
   const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
   const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
-  const pad = { left:120, right:30, top:34, bottom:96 };
-  const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
-  const rMin=1, rMax=10;
-  function rToPx(r){ return pad.left + (r-rMin)/(rMax-rMin)*plotW; }
-  function pxToR(px){ return (rMin + (px-pad.left)/plotW*(rMax-rMin)); }
-  function yToPx(y,yMin,yMax){ 
-    const yy = Math.min(yMax, Math.max(yMin, y)); // clamp Y before mapping
-    return pad.top + plotH * (1 - (Math.log10(yy)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); 
-  }
-
   function drawAxes(mode){
     axesG.innerHTML='';
-    for (let r=1;r<=10;r++){
-      const x = rToPx(r);
+
+    // X ticks (nice spacing; adaptive right edge)
+    niceTicks(rMin, rMaxView, 7).forEach(t => {
+      const x = rToPx(t);
       const v = document.createElementNS('http://www.w3.org/2000/svg','line');
-      v.setAttribute('x1',x); v.setAttribute('x2',x); v.setAttribute('y1',pad.top); v.setAttribute('y2',pad.top+plotH);
+      v.setAttribute('x1', x); v.setAttribute('x2', x);
+      v.setAttribute('y1', pad.top); v.setAttribute('y2', pad.top + plotH);
       axesG.appendChild(v);
-      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-      t.setAttribute('x',x); t.setAttribute('y', pad.top + plotH + 16);
-      t.setAttribute('dominant-baseline','hanging'); t.setAttribute('text-anchor','middle'); t.textContent=r;
-      axesG.appendChild(t);
-    }
+
+      const lab = document.createElementNS('http://www.w3.org/2000/svg','text');
+      lab.setAttribute('x', x); lab.setAttribute('y', pad.top + plotH + 16);
+      lab.setAttribute('dominant-baseline', 'hanging'); lab.setAttribute('text-anchor', 'middle');
+      lab.textContent = (Math.abs(t - Math.round(t)) < 1e-8) ? Math.round(t) : t;
+      axesG.appendChild(lab);
+    });
+
+    // Y ticks
     const range = yRange(mode);
     range.ticks.forEach(yv=>{
       const y = yToPx(yv, range.yMin, range.yMax);
@@ -1260,6 +1315,7 @@ function renderMiniQ6(intoEl, node){
       yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
       axesG.appendChild(yt);
     });
+
     xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
     xLab.textContent = 'Severity / Cost Ratio (S / C)';
 
@@ -1277,15 +1333,15 @@ function renderMiniQ6(intoEl, node){
     const range = yRange(mode), N=800;
     let d='';
     for (let i=0;i<=N;i++){
-      const r = 1 + 9*(i/N);
+      const r = rMin + (rMaxView-rMin)*(i/N);
       const X = miniXcutoff_from_ratio(r);
-      const Y = clampYToRange(miniXtoUnit(X, mode), mode); // clamp before mapping
+      const Y = clampYToRange(miniXtoUnit(X, mode), mode);
       const x = rToPx(r), y = yToPx(Y, range.yMin, range.yMax);
       d += (i? 'L ':'M ') + x + ',' + y + ' ';
     }
     curve.setAttribute('d', d);
 
-    const leftX=rToPx(1), rightX=rToPx(10);
+    const leftX=rToPx(rMin), rightX=rToPx(rMaxView);
     if (mode === 'oneInX'){
       const bottom = yToPx(range.yMin, range.yMin, range.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
@@ -1335,6 +1391,11 @@ function renderMiniQ6(intoEl, node){
 
   function draw(){
     const mode = elM.value;
+
+    // expand x-axis to include current r and where the line tops out (no hard max)
+    const rCurrent = miniMaster.S / Math.max(MINI_EPS, miniMaster.C);
+    rMaxView = computeRMaxView(miniMaster.C, rCurrent);
+
     drawAxes(mode);
     buildCurve(mode);
 
@@ -1360,32 +1421,14 @@ function renderMiniQ6(intoEl, node){
     const Xc = miniXcutoff_from_ratio(r); // cutoff (1-in-X)
     const range = yRange(mode);
 
-    // Red dot = USER value (so picture matches verdict)
+    // Red dot = USER value (so chart matches verdict)
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
     const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
-    const cx = rToPx(miniClamp(r,1,10));
+    const cx = rToPx(Math.max(rMin, Math.min(rMaxView, r)));
     const cy = yToPx(Ydot, range.yMin, range.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
-    // Moving label: S, C, and ONE probability readout with unit BEFORE number, '=' sign, no extra spaces
-    function labelUnit(mode, X){
-      if (mode === 'percent'){
-        const pctRaw = 100 / X;
-        const pctShown = Math.min(100, pctRaw);
-        const prefix   = (pctRaw > 100) ? '≥' : '';
-        return `%=${prefix}${trimDeci(pctShown,6)}`;
-      }
-      if (mode === 'micromort'){
-        const umRaw = 1e6 / X;
-        const umShown = Math.min(1e6, umRaw);
-        const prefix  = (umRaw > 1e6) ? '≥' : '';
-        return `µm=${prefix}${trimDeci(umShown,2)}`;
-      }
-      const Xshown = Math.min(1e6, Math.round(X));
-      const prefix = (X > 1e6) ? '≥' : '';
-      return `X=${prefix}${Xshown.toLocaleString()}`;
-    }
-
+    // Moving label: S, C, and one probability readout
     const label = `S=${trimDeci(miniMaster.S)}, C=${trimDeci(miniMaster.C)} · ${labelUnit(mode, Xuser)}`;
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
@@ -1395,7 +1438,7 @@ function renderMiniQ6(intoEl, node){
     labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
-    // Verdict: user vs cutoff (same units); epsilon for float tolerance
+    // Verdict: user vs cutoff (same units)
     const act = (miniMaster.X_user != null) ? (miniMaster.X_user <= Xc + 1e-15) : false;
     verdict.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
     verdict.classList.toggle('ok', act);
