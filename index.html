@@ -1280,6 +1280,20 @@ function renderMiniQ6(intoEl, node){
   const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
   const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
 
+  // --- NEW: disabled/veil overlay for "enter values" state ---
+  const veilG   = document.createElementNS('http://www.w3.org/2000/svg','g'); veilG.setAttribute('class','mini-veil'); svg.appendChild(veilG);
+  const veilR   = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  veilR.setAttribute('x', pad.left); veilR.setAttribute('y', pad.top);
+  veilR.setAttribute('width', plotW); veilR.setAttribute('height', plotH);
+  veilR.setAttribute('fill', '#888'); veilR.setAttribute('opacity','0.15');
+  veilR.style.pointerEvents = 'none';
+  const veilT   = document.createElementNS('http://www.w3.org/2000/svg','text');
+  veilT.setAttribute('x', pad.left + plotW/2); veilT.setAttribute('y', pad.top + plotH/2);
+  veilT.setAttribute('text-anchor','middle'); veilT.setAttribute('dominant-baseline','middle');
+  veilT.setAttribute('fill', '#aaa'); veilT.setAttribute('font-size','18');
+  veilT.textContent = 'Enter values above to see the cutoff curve';
+  veilG.appendChild(veilR); veilG.appendChild(veilT);
+
   const SNAP_PX = 22;
   let isSnapped = false;
   let SDragLock = null; // lock S while dragging
@@ -1345,11 +1359,12 @@ function renderMiniQ6(intoEl, node){
 
     const leftX=CtoPx(cMinView), rightX=CtoPx(cMaxView);
     // Green area = where decision is "consider" (X_user <= Xc)
+    const range2 = yRange(mode);
     if (mode === 'oneInX'){
-      const bottom = yToPx(range.yMin, range.yMin, range.yMax);
+      const bottom = yToPx(range2.yMin, range2.yMin, range2.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
     } else {
-      const top = yToPx(range.yMax, range.yMin, range.yMax);
+      const top = yToPx(range2.yMax, range2.yMin, range2.yMax);
       shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + top + ' L ' + leftX + ',' + top + ' Z');
     }
   }
@@ -1389,20 +1404,29 @@ function renderMiniQ6(intoEl, node){
   function draw(){
     const mode = elM.value;
 
-    // Require all inputs; if present, sync state FIRST so curve & verdict match
+    // Always draw axes first so the plot area isn't blank
+    drawAxes(mode);
+
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (!hasAll) {
-      verdict.textContent = 'Enter values to see if action should be considered.';
-      verdict.classList.remove('ok','no');
+      // Disabled state: gray veil, no curve, hidden handle/label
+      axesG.setAttribute('opacity','0.55');
+      curve.setAttribute('d','');      // no curve
+      shadeIn.setAttribute('d','');    // no shaded decision area
+      veilG.removeAttribute('visibility');
       handle.setAttribute('visibility','hidden');
       labelG.setAttribute('visibility','hidden');
+      verdict.textContent = 'Enter values to see if preventative action should be considered.';
+      verdict.classList.remove('ok','no');
       if (cont) cont.disabled = true;
       return;
     }
-    window.miniPristine = false;
-    snapInputs(); // <<< sync BEFORE drawing curve
+    axesG.setAttribute('opacity','1');
+    veilG.setAttribute('visibility','hidden');
 
-    drawAxes(mode);
+    window.miniPristine = false;
+    snapInputs(); // sync BEFORE drawing curve so everything matches
+
     buildCurve(mode);
 
     handle.removeAttribute('visibility');
@@ -1419,7 +1443,6 @@ function renderMiniQ6(intoEl, node){
     const cy = yToPx(Ydot, range.yMin, range.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
-    // Moving label
     const label = `S=${trimDeci(miniMaster.S)}, C=${trimDeci(miniMaster.C)} · ${labelUnit(mode, Xuser)}`;
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
@@ -1429,7 +1452,7 @@ function renderMiniQ6(intoEl, node){
     labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
-    // Verdict: consider iff user's X <= cutoff X
+    // Verdict
     const act = (miniMaster.X_user != null) ? (miniMaster.X_user <= Xc + 1e-15) : false;
     verdict.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
     verdict.classList.toggle('ok', act);
@@ -1544,23 +1567,15 @@ function renderMiniQ6(intoEl, node){
   wireNumericInput(elC, { min:0, max:10,   decimals:2 });
   wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
 
-  elS.addEventListener('input', ()=>{ window.miniPristine=false; });
-  elC.addEventListener('input', ()=>{ window.miniPristine=false; });
-  elV.addEventListener('input', ()=>{ window.miniPristine=false; });
+  elS.addEventListener('input', ()=>{ window.miniPristine=false; draw(); });
+  elC.addEventListener('input', ()=>{ window.miniPristine=false; draw(); });
+  elV.addEventListener('input', ()=>{ window.miniPristine=false; draw(); });
 
   const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
   q6Root.addEventListener('input',  persistQ6);
   q6Root.addEventListener('change', persistQ6);
 
-  requestAnimationFrame(() => {
-    const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
-    if (hasAll) {
-      window.miniPristine = false;
-      snapInputs();
-      draw();
-    }
-  });
-
+  requestAnimationFrame(() => { draw(); });
   draw();
 
   const btns = document.getElementById('buttons');
