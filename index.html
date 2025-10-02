@@ -874,14 +874,34 @@ function miniNormalizeToX(mode, val){
   if (mode === 'micromort'){ if (!(val>0 && val<1e6)) return null; return 1e6/val; }
   return null;
 }
-function miniXcutoff_from_ratio(r) {
-  var tRaw = (r - 1) / 9;
-  var t = Math.max(0, Math.min(1, tRaw));
-  var exponent = 6 * Math.pow(t, MINI_ALPHA);
-  return Math.pow(10, exponent);
+function weight10(x){
+  var xf = parseFloat(x);
+  if (!isFinite(xf) || xf <= 0) return 0;
+  return Math.pow(10, 6*((xf-1)/9)); // 1→1, 10→1,000,000
 }
+
+function currentCost(){
+  if (window.miniMaster && typeof miniMaster.C === 'number') return miniMaster.C || 1;
+  var cEl = document.querySelector('#miniC') || document.querySelector('#q6-cost') || document.querySelector('input[name="cost"]');
+  var C = cEl ? parseFloat(cEl.value || '0') : 0;
+  return (isFinite(C) && C > 0) ? C : 1;
+}
+
+// r = S/C
+function miniXcutoff_from_ratio(r){
+  var C  = currentCost();
+  var rr = parseFloat(r); if (!isFinite(rr)) rr = 1;
+  var S  = rr * C;
+  var X  = weight10(S) / weight10(C); // Prob C cutoff in 1-in-X
+  return (isFinite(X) && X > 0) ? X : 1e6;
+}
+
 function miniComputeSCutoffForX(X){
-  return 1 + 9 * Math.pow((Math.log10(X)/6), 1/MINI_ALPHA);
+  var C = currentCost();
+  var S = C + 1.5 * Math.log10(Math.max(1e-9, X)); // clamp to [1,10]
+  if (!isFinite(S)) S = 10;
+  if (S < 1) S = 1; if (S > 10) S = 10;
+  return S;
 }
 
 function miniProbSymbol(mode){ return mode==='percent' ? '%' : (mode==='micromort' ? 'µm' : 'X'); }
@@ -1509,280 +1529,127 @@ function renderMiniQ6(intoEl, node){
   btns.appendChild(cont);
 }
 
-function renderMiniQ7(intoEl, node){
-  
-  
-  const savedQ6 = (typeof loadNodeState === 'function') ? loadNodeState('Q6') : null;
-  const base = (savedQ6 && savedQ6.Q6) ? savedQ6.Q6 : (window.miniMaster || {});
-  const local = {
-    S:   Number.isFinite(+base.S)   ? +base.S   : 5,
-    C:   Number.isFinite(+base.C)   ? +base.C   : 1,
-    mode:(base.mode || 'oneInX'),
-    
-    val: Number.isFinite(+base.val) ? +base.val : (base.mode==='percent' ? 1 : (base.mode==='micromort' ? 1 : 1000)),
-    
-    X_user: (base.X_user != null && isFinite(base.X_user)) ? +base.X_user : null
-  };
+function renderMiniQ7(root, opts){
+  // --- config ---
+  const el = (typeof root === 'string') ? document.querySelector(root) : root;
+  if (!el) return;
+  const o = Object.assign({
+    question: 'Given these settings, will you proceed?',
+    linkHref: '#',
+    linkText: 'Learn the cutoff rule',
+    // optional callback; you can also listen to the 'q7:answer' event on the container element
+    onAnswer: null
+  }, opts || {});
 
-  
-  const MINI_EPS = 1e-9, MINI_MAX = 1e9;
+  // --- local prob C math (same as Q6, but isolated) ---
+  function w10(x){ const xf = +x; if (!(xf > 0)) return 0; return Math.pow(10, 6*((xf-1)/9)); } // 1→1, 10→1e6
+  function log10(x){ return Math.log10(Math.max(1e-12, +x)); }
+  function Xcut(S, C){ const X = w10(S)/w10(C); return (isFinite(X) && X>0) ? X : 1e6; } // 1-in-X at current S, C
 
-  
-  function miniClamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
-  function miniXcutoff_from_ratio(r){ 
-    
-    
-    
-    return Math.pow(10, (11 - r)); 
-  }
-  function miniXtoUnit(X, mode){
-    if (mode==='percent')   return 100 / X;
-    if (mode==='micromort') return 1e6 / X;
-    return X; 
-  }
-  function unitToX(Y, mode){
-    if (mode==='percent')   return 100 / Math.max(Y, MINI_EPS);
-    if (mode==='micromort') return 1e6 / Math.max(Y, MINI_EPS);
-    return Math.max(Y, 2);
-  }
-  function yRange(mode){
-    if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Cutoff Probability (%) (log scale)" };
-    if (mode==='micromort') return { yMin: 1,      yMax: 1e6,   ticks:[1e6,1e5,1e4,1e3,100,10,1],        label:"Cutoff Probability (µm) (log scale)" };
-    return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
-  }
-  function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
+  // --- local isolated state (does NOT touch Q6) ---
+  const state = { S: 7, C: 7 };
 
-  
-  intoEl.innerHTML = '';
-  const top = document.createElement('div');
-  top.className = 'mini-top';
-  top.innerHTML = node?.text || '';
-  intoEl.appendChild(top);
+  // --- DOM skeleton (minimal; no external CSS) ---
+  el.innerHTML = '';
+  const q = document.createElement('div'); q.textContent = o.question; q.style.fontWeight = '600'; q.style.margin = '4px 0 8px';
+  const canvas = document.createElement('canvas'); canvas.width = 600; canvas.height = 260; canvas.style.width = '100%'; canvas.style.border = '1px solid #e2e2e2'; canvas.style.borderRadius = '8px';
+  const sWrap = document.createElement('div'); sWrap.style.marginTop = '8px';
+  const cWrap = document.createElement('div'); cWrap.style.marginTop = '6px';
+  const sLabel = document.createElement('label'); sLabel.textContent = 'Severity (S) ';
+  const sRange = document.createElement('input'); sRange.type='range'; sRange.min=1; sRange.max=10; sRange.step=0.1; sRange.value=state.S;
+  const sNum   = document.createElement('input'); sNum.type='number'; sNum.min=1; sNum.max=10; sNum.step=0.1; sNum.value=state.S; sNum.style.width='64px'; sNum.style.marginLeft='8px';
+  const cLabel = document.createElement('label'); cLabel.textContent = 'Cost (C) ';
+  const cRange = document.createElement('input'); cRange.type='range'; cRange.min=1; cRange.max=10; cRange.step=0.1; cRange.value=state.C;
+  const cNum   = document.createElement('input'); cNum.type='number'; cNum.min=1; cNum.max=10; cNum.step=0.1; cNum.value=state.C; cNum.style.width='64px'; cNum.style.marginLeft='8px';
 
-  const wrap = document.createElement('div'); wrap.className='mini-wrap';
-  intoEl.appendChild(wrap);
+  const rule = document.createElement('div');
+  rule.style.marginTop = '10px'; rule.style.fontFamily='ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'; rule.style.fontSize='.9rem';
+  rule.textContent = 'Cutoff (1 in X) = 10^{(2/3)·(S − C)} = weight(S) / weight(C),  with weight(x) = 10^{6(x−1)/9}';
 
-  
-  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.classList.add('mini-svg');
-  svg.setAttribute('viewBox','0 0 940 620');
-  svg.style.overflow = 'visible';
-  wrap.appendChild(svg);
+  const verdict = document.createElement('div'); verdict.style.marginTop='8px'; verdict.style.fontWeight='600';
 
-  
-  const rule = document.createElement('div'); rule.className='rule';
-  const probSym = (typeof miniProbSymbol==='function') ? miniProbSymbol(local.mode) : 'X';
-  rule.innerHTML = `Rule: Only if <span>${probSym}</span> ≥ <b>Probability Cutoff</b> and <b>S/C ≥ S/C Cutoff</b> can action be considered.`;
-  const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict7';
-  verdict.textContent = 'Interact with the graph to explore.';
-  wrap.appendChild(rule); wrap.appendChild(verdict);
+  const link = document.createElement('a'); link.href = o.linkHref; link.textContent = o.linkText; link.target='_blank'; link.rel='noopener'; link.style.display='inline-block'; link.style.marginTop='8px';
 
-  
-  const link = document.createElement('a');
-  link.href = '#concept-prob-sev-cost';
-  link.textContent = 'See full explanation of Probability × Severity × Cost';
-  link.style.display = 'inline-block';
-  link.style.marginTop = '8px';
-  link.addEventListener('click', function(e){
-    e.preventDefault();
-    const target = 'concept-prob-sev-cost';
-    history.replaceState(null, '', `#${target}`);
-    if (typeof jumpToConcept === 'function') jumpToConcept(target, node?.id);
-  });
-  wrap.appendChild(link);
+  const btnRow = document.createElement('div'); btnRow.style.display='flex'; btnRow.style.gap='8px'; btnRow.style.marginTop='10px';
+  const yesBtn = document.createElement('button'); yesBtn.textContent='Yes';  yesBtn.style.padding='6px 10px';
+  const noBtn  = document.createElement('button'); noBtn.textContent='No';    noBtn.style.padding='6px 10px';
 
-  
-  const yesTarget = (node && node.nextYes) || 'Q10';
-  const noTarget  = (node && node.nextNo)  || 'Q21';
-  const btns = document.getElementById('buttons');
-  if (btns){
-    btns.innerHTML = '';
-    const noBtn  = document.createElement('button'); noBtn.className='back'; noBtn.type='button'; noBtn.textContent='No';
-    noBtn.onclick = ()=> goToNode(noTarget);
-    const yesBtn = document.createElement('button'); yesBtn.className='next'; yesBtn.type='button'; yesBtn.textContent='Yes';
-    yesBtn.onclick = ()=> goToNode(yesTarget);
-    btns.appendChild(noBtn); btns.appendChild(yesBtn);
-  }
+  sWrap.appendChild(sLabel); sWrap.appendChild(sRange); sWrap.appendChild(sNum);
+  cWrap.appendChild(cLabel); cWrap.appendChild(cRange); cWrap.appendChild(cNum);
+  btnRow.appendChild(yesBtn); btnRow.appendChild(noBtn);
+  el.appendChild(q); el.appendChild(canvas); el.appendChild(sWrap); el.appendChild(cWrap); el.appendChild(rule); el.appendChild(verdict); el.appendChild(link); el.appendChild(btnRow);
 
-  
-  const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
-  const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
-  const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
-  const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','mini-handle'); handle.setAttribute('r','12'); svg.appendChild(handle);
-
-  const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); labelG.style.pointerEvents='none'; svg.appendChild(labelG);
-  const labelBg= document.createElementNS('http://www.w3.org/2000/svg','rect'); labelBg.setAttribute('class','mini-ptlabel-bg'); labelBg.setAttribute('rx','10'); labelBg.setAttribute('ry','10'); labelG.appendChild(labelBg);
-  const labelTx= document.createElementNS('http://www.w3.org/2000/svg','text'); labelTx.setAttribute('class','mini-ptlabel'); labelG.appendChild(labelTx);
-
-  const xLab = document.createElementNS('http://www.w3.org/2000/svg','text'); xLab.setAttribute('class','mini-axes-label'); xLab.setAttribute('text-anchor','middle'); svg.appendChild(xLab);
-  const yLab = document.createElementNS('http://www.w3.org/2000/svg','text'); yLab.setAttribute('class','mini-axes-label'); yLab.setAttribute('text-anchor','middle'); svg.appendChild(yLab);
-
-  const pad = { left:120, right:30, top:34, bottom:96 };
-  const W=940, H=620, plotW=W-pad.left-pad.right, plotH=H-pad.top-pad.bottom;
-  const rMin=1, rMax=10;
-  function rToPx(r){ return pad.left + (r-rMin)/(rMax-rMin)*plotW; }
-  function pxToR(px){ return (rMin + (px-pad.left)/plotW*(rMax-rMin)); }
-  function yToPx(y,yMin,yMax){ return pad.top + plotH * (1 - (Math.log10(y)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))); }
-
-  function drawAxes(mode){
-    axesG.innerHTML='';
-    for (let r=1;r<=10;r++){
-      const x = rToPx(r);
-      const v = document.createElementNS('http://www.w3.org/2000/svg','line');
-      v.setAttribute('x1',x); v.setAttribute('x2',x); v.setAttribute('y1',pad.top); v.setAttribute('y2',pad.top+plotH);
-      axesG.appendChild(v);
-      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-      t.setAttribute('x',x); t.setAttribute('y', pad.top + plotH + 16);
-      t.setAttribute('dominant-baseline','hanging'); t.setAttribute('text-anchor','middle'); t.textContent=r;
-      axesG.appendChild(t);
-    }
-    const range = yRange(mode);
-    range.ticks.forEach(yv=>{
-      const y = yToPx(yv, range.yMin, range.yMax);
-      const h=document.createElementNS('http://www.w3.org/2000/svg','line');
-      h.setAttribute('x1',pad.left); h.setAttribute('x2',pad.left+plotW); h.setAttribute('y1',y); h.setAttribute('y2',y);
-      axesG.appendChild(h);
-      const yt=document.createElementNS('http://www.w3.org/2000/svg','text');
-      yt.setAttribute('x', pad.left - 10); yt.setAttribute('y', y);
-      yt.setAttribute('text-anchor','end'); yt.setAttribute('dominant-baseline','middle');
-      yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
-      axesG.appendChild(yt);
-    });
-    xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
-    xLab.textContent = 'Severity / Cost Ratio (S / C)';
-
-    const Y_LABEL_OFFSET = 90, desiredLeftPadding=8;
-    yLab.textContent = yRange(mode).label;
-    yLab.setAttribute('text-anchor','middle'); yLab.setAttribute('dominant-baseline','middle');
-    const cy = pad.top + plotH/2, cx0 = pad.left - Y_LABEL_OFFSET;
-    yLab.setAttribute('transform', `translate(${cx0} ${cy}) rotate(-90)`);
-    const bb = yLab.getBBox(); const currentLeft = cx0 - (bb.height/2);
-    const dx = Math.max(0, desiredLeftPadding - currentLeft);
-    yLab.setAttribute('transform', `translate(${cx0 + dx} ${cy}) rotate(-90)`);
-  }
-
-  function buildCurve(mode){
-    const range = yRange(mode), N=800;
-    let d='';
-    for (let i=0;i<=N;i++){
-      const r = 1 + 9*(i/N);
-      const X = miniXcutoff_from_ratio(r);
-      const Y = miniXtoUnit(X, mode);
-      const x = rToPx(r), y = yToPx(Y, range.yMin, range.yMax);
-      d += (i? 'L ':'M ') + x + ',' + y + ' ';
-    }
-    curve.setAttribute('d', d);
-
-    const leftX=rToPx(1), rightX=rToPx(10);
-    if (mode === 'oneInX'){
-      const bottom = yToPx(range.yMin, range.yMin, range.yMax);
-      shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + bottom + ' L ' + leftX + ',' + bottom + ' Z');
-    } else {
-      const top = yToPx(range.yMax, range.yMin, range.yMax);
-      shadeIn.setAttribute('d', d + ' L ' + rightX + ',' + top + ' L ' + leftX + ',' + top + ' Z');
-    }
-  }
-
-  function curveYPxAtRatio(r, mode){
-    const range = yRange(mode);
-    const Xc = miniXcutoff_from_ratio(r);
-    const Yc = miniXtoUnit(Xc, mode);
-    return yToPx(Yc, range.yMin, range.yMax);
-  }
-
-  
-  const SNAP_PX = 22; let isSnapped = false;
-
+  // --- drawing (purely illustrative; depends only on local S/C) ---
+  const ctx = canvas.getContext('2d');
   function draw(){
-    const mode = local.mode;
-    drawAxes(mode);
-    buildCurve(mode);
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0,0,W,H);
 
-    const r  = local.S/local.C;
-    const Xc = miniXcutoff_from_ratio(r);
-    const range = yRange(mode);
-    const Yuser = (local.X_user != null)
-      ? miniXtoUnit(local.X_user, mode)
-      : miniXtoUnit(Xc, mode);
+    // axes ranges: r = S/C on x, log10(1-in-X) on y
+    const rMin=0.5, rMax=10;
+    const yMin=0, yMax=6; // 10^0..10^6
+    const padL=40, padR=12, padT=12, padB=28;
+    const plotW=W-padL-padR, plotH=H-padT-padB;
+    const xpix = rr => padL + ((rr - rMin)/(rMax - rMin))*plotW;
+    const ypix = ly => padT + (1 - ((ly - yMin)/(yMax - yMin)))*plotH;
 
-    const cx = rToPx(miniClamp(r,1,10));
-    const cy = yToPx(Yuser, range.yMin, range.yMax);
-    handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
+    // grid + ticks
+    ctx.strokeStyle='#eee'; ctx.lineWidth=1; ctx.fillStyle='#777'; ctx.font='11px system-ui, sans-serif';
+    for(let gy=0; gy<=6; gy++){ const y=ypix(gy); ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke(); ctx.fillText(`10^${gy}`, 4, y+4); }
+    [0.5,1,2,3,5,7,10].forEach(t=>{ const x=xpix(t); ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,H-padB); ctx.stroke(); ctx.textAlign='center'; ctx.fillText(String(t), x, H-8); });
+    ctx.textAlign='left';
 
-    const label = 'S=' + trimDeci(local.S) + ' , C=' + trimDeci(local.C) + ' · S/C=' + trimDeci(r) + ' · ' +
-      (mode==='percent' ? ('X≈' + trimDeci(100/Xc,6) + '%') : (mode==='micromort' ? ('X≈' + trimDeci(1e6/Xc,2) + ' µm') : ('X≈' + Math.round(Xc).toLocaleString())));
-    labelTx.textContent = label;
-    labelTx.setAttribute('text-anchor','middle');
-    let ly = cy - 34; const minTop = pad.top + 20; if (ly < minTop) ly = minTop;
-    labelTx.setAttribute('x', cx); labelTx.setAttribute('y', ly);
-    const bb = labelTx.getBBox(); const padBox=10;
-    labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
-    labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
+    // cutoff curve for CURRENT local C: log10(X) = (2/3)*C*(r-1)
+    ctx.strokeStyle='#1f6feb'; ctx.lineWidth=2; ctx.beginPath();
+    for(let i=0;i<=400;i++){ const rr=rMin+(i/400)*(rMax-rMin); const ly=(2/3)*state.C*(rr-1); const x=xpix(rr), y=ypix(ly); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.stroke();
 
-    const act = (local.X_user != null) ? (local.X_user <= Xc + 1e-15) : false;
-    verdict.textContent = act
-      ? 'Verdict: Preventative action should be considered.'
-      : 'Verdict: Preventative action should NOT be considered.';
-    verdict.classList.toggle('ok', act);
-    verdict.classList.toggle('no', !act);
+    // marker at current r = S/C
+    const rr = state.S/Math.max(1e-6, state.C);
+    const ly = (2/3)*state.C*(rr-1);
+    ctx.fillStyle='#d73a49'; ctx.beginPath(); ctx.arc(xpix(rr), ypix(ly), 4, 0, Math.PI*2); ctx.fill();
+
+    // axis labels
+    ctx.fillStyle='#333'; ctx.font='12px system-ui, sans-serif';
+    ctx.fillText('r = S / C', padL + plotW/2 - 20, H - 6);
+    ctx.save(); ctx.translate(8, padT + plotH/2 + 20); ctx.rotate(-Math.PI/2); ctx.fillText('log10(1-in-X)', 0, 0); ctx.restore();
   }
 
-  
-  function svgPoint(evt){
-    const pt = svg.createSVGPoint();
-    pt.x = (evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX);
-    pt.y = (evt.touches && evt.touches[0] ? evt.touches[0].clientY : evt.clientY);
-    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  // --- verdict (threshold readout only; no decision rule application) ---
+  function fmt1inX(x){
+    if (!isFinite(x) || x<=0) return '—';
+    if (x < 1000) return `1 in ${x.toFixed(0)}`;
+    if (x < 10000) return `1 in ${(x/1e3).toFixed(2)}k`;
+    if (x < 1e6) return `1 in ${(x/1e3).toFixed(0)}k`;
+    return `1 in ${(x/1e6).toFixed(2)}M`;
   }
-
-  let dragging = false;
-  function onPointerDown(e){ e.preventDefault(); dragging=true; try{handle.setPointerCapture(e.pointerId);}catch(_){ } onPointerMove(e); }
-  function onPointerMove(e){
-    if(!dragging) return; e.preventDefault();
-    const sp = svgPoint(e);
-    const px = miniClamp(sp.x, pad.left, pad.left+plotW);
-    const r  = pxToR(px);
-
-    
-    let S = miniClamp(local.S, MINI_EPS, MINI_MAX);
-    let C = S / r;
-    if (C <= MINI_EPS || C > MINI_MAX){
-      C = miniClamp(local.C, MINI_EPS, MINI_MAX);
-      S = r * C;
-      if (S <= MINI_EPS || S > MINI_MAX){
-        S = miniClamp(S, MINI_EPS, MINI_MAX);
-        C = miniClamp(S / r, MINI_EPS, MINI_MAX);
-      }
-    }
-    local.S = S; local.C = C;
-
-    const mode = local.mode;
-    const range = yRange(mode);
-    const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
-    const yCurve  = curveYPxAtRatio(r, mode);
-    const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
-    if (willSnap && !isSnapped && typeof window.hapticBump==='function') window.hapticBump();
-    isSnapped = willSnap;
-
-    let yPix = willSnap ? yCurve : yCursor;
-    const frac = 1 - (yPix - pad.top) / plotH;
-    const logY = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
-    const Y = Math.pow(10, logY);
-    local.X_user = unitToX(Y, mode); 
-
+  function update(){
+    const X = Xcut(state.S, state.C);
+    const p = 1/X, pct = p*100;
+    verdict.textContent = `Cutoff at r = S/C = ${(state.S/state.C).toFixed(2)}: ${fmt1inX(X)}  (${p.toExponential(2)} decimal, ${pct.toFixed(6)}%)`;
     draw();
   }
-  function onPointerUp(e){ dragging=false; try{handle.releasePointerCapture(e.pointerId);}catch(_){} }
 
-  handle.addEventListener('pointerdown', onPointerDown, {passive:false});
-  svg.addEventListener('pointermove', onPointerMove, {passive:false});
-  svg.addEventListener('pointerup', onPointerUp, {passive:false});
-  svg.addEventListener('touchstart', onPointerDown, {passive:false});
-  svg.addEventListener('touchmove', onPointerMove, {passive:false});
-  svg.addEventListener('touchend', onPointerUp, {passive:false});
+  // --- bindings (local only; do not touch Q6) ---
+  function clamp(v){ return Math.min(10, Math.max(1, +v)); }
+  sRange.addEventListener('input',  () => { state.S = clamp(sRange.value); sNum.value = state.S; update(); });
+  sNum  .addEventListener('change', () => { state.S = clamp(sNum.value);   sRange.value = state.S; update(); });
+  cRange.addEventListener('input',  () => { state.C = clamp(cRange.value); cNum.value = state.C; update(); });
+  cNum  .addEventListener('change', () => { state.C = clamp(cNum.value);   cRange.value = state.C; update(); });
 
-  
-  draw();
+  yesBtn.addEventListener('click', () => {
+    const detail = { answer:'yes', S:state.S, C:state.C, Xcut:Xcut(state.S,state.C) };
+    if (typeof o.onAnswer === 'function') o.onAnswer(detail);
+    el.dispatchEvent(new CustomEvent('q7:answer', { detail, bubbles:true }));
+  });
+  noBtn.addEventListener('click', () => {
+    const detail = { answer:'no', S:state.S, C:state.C, Xcut:Xcut(state.S,state.C) };
+    if (typeof o.onAnswer === 'function') o.onAnswer(detail);
+    el.dispatchEvent(new CustomEvent('q7:answer', { detail, bubbles:true }));
+  });
+
+  // initial paint
+  update();
 }
 
 var currentThresholdPct = 90;
