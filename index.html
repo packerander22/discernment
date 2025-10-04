@@ -689,11 +689,13 @@ var flowchart = [
   { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <i>IF</i> and <i>WHEN</i> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (and sliders later). Answer everything to the best of your knowledge, and if you don't know something, do what you can to find out (once there aren't any other more important things to do).", "next": "Q1" },
   
   { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1",  "no": "Q2" },
-  { "id": "Q2",  "type": "question", "text": "Is there a current <i>real problem</i> or desired functional QoL (quality of life) improvement, rather than just a <i>“problem”</i> or preference that doesn’t affect performance or outcomes?", "yes": "Q10",  "no": "Q3" },
-  { "id": "Q3",  "type": "question", "text": "Is there cause for a future potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q4" },
-  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a future POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "R2" },
+  { "id": "Q2",  "type": "question", "text": "Is there a <i>current real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q10",  "no": "Q2b" },
+  { "id": "Q2b",  "type": "question", "text": "Is there a desired <i>QoL</i> (quality of life) improvement, rather than just a preference that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q3" },
+  { "id": "Q3",  "type": "question", "text": "Is there cause for a future potential <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5b",  "no": "Q4" },
+  { "id": "Q4",  "type": "question", "text": "Is there cause for a POTENTIAL cause for a future POTENTIAL <i>real problem</i>, rather than just a <i>“problem”</i> that doesn’t affect performance or outcomes?", "yes": "Q5b",  "no": "R2" },
 
-  { "id": "Q5",  "type": "question", "text": "Is the future potential problem inevitable if left unaddressed?", "yes": "Q10",  "no": "Q6" },
+  { "id": "Q5",  "type": "question", "text": "Is this future potential problem <i>inevitable</i> if left unaddressed?", "yes": "Q10",  "no": "Q6" },
+  { "id": "Q5b",  "type": "question", "text": "Is this desired QoL improvement <i>inevitable</i> if it's addressed?", "yes": "Q10",  "no": "Q6" },
 
   
   { "id": "Q6", "type": "mini", "text": "Use the interactive tool below to weigh the estimated <b>Severity</b>, <b>Cost</b>, and <b>Probability</b> of this future potential problem (for just this instance). Enter them into the boxes, and choose the probability measurement unit that applies.", "yes": "Q10", "no": "Q7" },
@@ -717,7 +719,7 @@ var flowchart = [
   { "id": "Q21", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s worth it or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
   { "id": "Q22", "type": "question", "text": "Does addressing this issue involve a <i>diminishing returns</i> curve for effort applied?", "yes": "Q23", "no": "Q24" },
   { "id": "Q23", "type": "info",     "text": "Find the <i>point of diminishing returns</i> and stop there. If you tend to get absorbed in an activity, find an alternative approach that solves the problem or improves QoL <i>without the addictive pull</i> and possibly even in a <i>better overall way</i>. Treat this approach as a \"better\", more effective overall solution, and <i>ALWAYS</i> use this approach over the original if it's available; if not, you may use the original approach if needed—but <i>only</i> with a pre-set time limit and timer, after which you must stop and re-evaluate.", "next": "Q24" },
-  { "id": "Q24", "type": "question", "text": "Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an <i>objective sweet spot</i> where clear information is available to you?", "yes": "Q25", "no": "Q26" },
+  { "id": "Q24", "type": "question", "text": "Does addressing this issue directly involve an <i>inverted-U curve</i> for specific effort applied with an unknown <i>objective sweet spot</i> where clear information is available to you?", "yes": "Q25", "no": "Q26" },
   { "id": "Q25", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q31" },
 
   { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed (assuming any potential future problems would occur)?", "yes": "Q27", "no": "R2" },
