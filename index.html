@@ -743,14 +743,13 @@ var flowchart = [
   { "id": "Q37", "type": "question", "text": "Is this the <i>most effective solution</i> you know of (that meets the previous criteria)?", "yes": "Q33", "no": "Q38" },
   { "id": "Q38", "type": "question", "text": "Have you considered <i>all better solutions</i> you know of?", "yes": "Q33", "no": "R5" },
   { "id": "Q39", "type": "question", "text": "Is this solution <i>currently</i> available?", "yes": "Q40", "no": "Q41" },
-  { "id": "Q40", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "Q41", "no": "R7" },
+  { "id": "Q40", "type": "question", "text": "Is there a <i>better time</i> down the road to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R7" },
 
   { "id": "Q41", "type": "question", "text": "Assuming you waited until it was available, would the expected <i>overall benefits</i> of using this solution now outweigh the expected <i>overall downsides</i> of having to wait?", "yes": "Q44", "no": "Q43", "same": "Q42" },
   { "id": "Q42", "type": "question", "text": "All things considered, would you <i>rather</i> use this solution?", "yes": "Q44", "no": "Q43" },
 
   { "id": "Q43", "type": "question", "text": "Is there a <i>next best</i> solution you know of?", "yes": "R5",  "no": "R4" },
   { "id": "Q44", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
-  { "id": "Q45", "type": "question", "text": "Is there a <i>better time</i> further down the road than at that time to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
 
   
   { "id": "Q46", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
