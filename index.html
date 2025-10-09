@@ -724,9 +724,11 @@ var flowchart = [
   { "id": "Q25", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q31" },
 
   { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed (assuming any potential future problems would occur)?", "yes": "Q27", "no": "R2" },
-  { "id": "Q27", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q31", "no": "Q28" },
-  { "id": "Q28", "type": "question", "text": "Would solving/addressing it help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q29", "no": "R2" },
-  { "id": "Q29", "type": "question", "text": "Is it logically worth solving/addressing <i>EVERY time this situation arises</i>? (Or at least this time knowing it’s <i>temporary</i>?)", "yes": "Q31", "no": "Q30" },
+  { "id": "Q27", "type": "question", "text": "Would solving/addressing this help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q31", "no": "Q28" },
+  { "id": "Q28", "type": "question", "text": "Would solving/addressing this help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q29", "no": "R2" },
+  { "id": "Q29", "type": "question", "text": "Would it logically worth solving/addressing this <i>EVERY time this situation arises</i>?", "yes": "Q31", "no": "Q29b" },
+  { "id": "Q29b", "type": "question", "text": "Would it be worth solving/addressing this in <i>less frequent intervals</i>?", "yes": "Q31", "no": "Q29c" },
+  { "id": "Q29c", "type": "question", "text": "Is it logically worth solving/addressing this <b>just this time</b> knowing it’s a <i>temporary</i> solution?", "yes": "Q31", "no": "Q30" },
   { "id": "Q30", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL), in the long term or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
   
   { "id": "Q31", "type": "question", "text": "Does this address a potential <i>future</i> problem?", "yes": "Q32", "no": "Q35" },
