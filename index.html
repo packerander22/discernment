@@ -3058,5 +3058,841 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
+
+<script>
+(function(){
+  try{
+    // 1) Normalize flowchart nodes: collapse Q16–Q18 trio into one Q16 (no HTML in JSON)
+    if (Array.isArray(window.flowchart)){
+      const idsToRemove = new Set(['Q17','Q18','Q19']);
+      for (let i = window.flowchart.length - 1; i >= 0; i--) {
+        const n = window.flowchart[i];
+        if (!n) continue;
+        if (idsToRemove.has(n.id)) window.flowchart.splice(i, 1);
+      }
+      const i16 = window.flowchart.findIndex(n => n && n.id === 'Q16');
+      const mini16 = { id: 'Q16', type: 'mini16', text: 'Combined tradeoff (upfront + resulting cost vs benefit)' };
+      if (i16 !== -1) window.flowchart[i16] = mini16; else window.flowchart.push(mini16);
+    }
+
+    // 2) Patch renderNode to handle mini16 without HTML in JSON
+    const _renderNode = window.renderNode;
+    window.renderNode = function(node){
+      if (node && (node.id === 'Q16' || node.type === 'mini16')){
+        const textDiv = document.getElementById('text');
+        if (textDiv) textDiv.innerHTML = '';
+        const btns = document.getElementById('buttons');
+        if (btns) btns.innerHTML = '';
+        if (typeof window.renderMiniQ16 === 'function'){
+          window.renderMiniQ16(textDiv, node);
+        } else {
+          console.error('renderMiniQ16 missing');
+        }
+        return;
+      }
+      return _renderNode.apply(this, arguments);
+    };
+
+    // 3) Define renderMiniQ16 if it does not already exist
+    if (typeof window.renderMiniQ16 !== 'function'){
+      window.renderMiniQ16 = function(containerEl /*, node */){
+        // helpers
+        const el = (tag, cls, text) => {
+          const x = document.createElement(tag);
+          if (cls) x.className = cls;
+          if (text != null) x.textContent = text;
+          return x;
+        };
+        const makeInput = (id) => {
+          const i = document.createElement('input');
+          i.type = 'number';
+          i.id = id;
+          i.min = '0';
+          i.max = '10';
+          i.step = '0.01';
+          i.inputMode = 'decimal';
+          i.autocomplete = 'off';
+          return i;
+        };
+
+        // wrapper (match Q6 base look)
+        const wrap = el('div', 'mini-wrap');
+        const heading = el('div', 'mini-heading', 'Combined Tradeoff (Single Screen)');
+        const lead = el('div', 'mini-lead',
+          'Enter 0–10 for Upfront Cost, Resulting Cost, and Benefit. We apply the same weighting as Q6, add the two costs, and compare to the benefit. If equal, we recommend acting to be safe.'
+        );
+        const sep1 = el('div', 'mini-sep');
+
+        // fields
+        const fields = el('div', 'mini-fields');
+
+        const f1 = el('div', 'mini-field');
+        const l1 = el('label', null, 'Upfront Cost (0–10)');
+        const in1 = makeInput('q16_cost_up'); f1.append(l1, in1);
+
+        const f2 = el('div', 'mini-field');
+        const l2 = el('label', null, 'Resulting Cost (0–10)');
+        const in2 = makeInput('q16_cost_res'); f2.append(l2, in2);
+
+        const f3 = el('div', 'mini-field');
+        const l3 = el('label', null, 'Benefit (0–10)');
+        const in3 = makeInput('q16_benefit'); f3.append(l3, in3);
+
+        fields.append(f1, f2, f3);
+
+        const sep2 = el('div', 'mini-sep');
+
+        const verdict = el('div', 'verdict');
+        verdict.id = 'q16_verdict';
+        verdict.setAttribute('aria-live','polite');
+
+        wrap.append(heading, lead, sep1, fields, sep2, verdict);
+        if (containerEl) containerEl.appendChild(wrap);
+
+        // buttons area
+        const btns = document.getElementById('buttons');
+        if (btns) {
+          btns.innerHTML = '';
+          const cont = el('button', 'next', 'Continue');
+          cont.type = 'button';
+          cont.disabled = true;
+          btns.appendChild(cont);
+
+          function clampNormalize(elm){
+            const raw = (elm.value || '').trim();
+            if (raw === '' || raw === '.' || raw === '-.' || raw === '-') return null;
+            let n = Number(raw);
+            if (!Number.isFinite(n)) return null;
+            if (n < 0) n = 0;
+            if (n > 10) n = 10;
+            // normalize on blur
+            elm.addEventListener('blur', () => {
+              elm.value = (n % 1 === 0) ? String(n) : String(Number(n.toFixed(2)));
+            }, { once: true });
+            return n;
+          }
+
+          function compute(){
+            const cu = clampNormalize(in1);
+            const cr = clampNormalize(in2);
+            const b  = clampNormalize(in3);
+
+            if (cu == null || cr == null || b == null){
+              verdict.textContent = 'Enter all three values to see the recommendation.';
+              verdict.classList.remove('ok','no');
+              cont.disabled = true;
+              cont.onclick = null;
+              return;
+            }
+
+            // reuse Q6’s weighting (must exist globally)
+            if (typeof window.weight10 !== 'function'){
+              console.error('weight10 missing; Q6 weighting not available');
+              verdict.textContent = 'Internal error: weight10 is not defined.';
+              cont.disabled = true;
+              return;
+            }
+            const totalCost = window.weight10(cu) + window.weight10(cr);
+            const benW = window.weight10(b);
+
+            let ok, msg;
+            if (benW > totalCost) {
+              ok = true;
+              msg = '✅ Benefit outweighs total cost — Act should be considered.';
+            } else if (benW === totalCost) {
+              ok = true; // equal => act to be safe
+              msg = '✅ Costs and benefit are equal — Act to be safe.';
+            } else {
+              ok = false;
+              msg = '🤏 Total cost outweighs benefit — Hold/adjust plan.';
+            }
+
+            verdict.textContent = msg;
+            verdict.classList.toggle('ok', ok);
+            verdict.classList.toggle('no', !ok);
+
+            cont.disabled = false;
+            cont.onclick = () => {
+              if (typeof window.goToNode !== 'function'){
+                console.error('goToNode missing');
+                return;
+              }
+              window.goToNode(benW >= totalCost ? 'Q22' : 'Q20');
+            };
+          }
+
+          // live input
+          [in1, in2, in3].forEach(inp => {
+            inp.addEventListener('input', () => {
+              const s = inp.value;
+              const cleaned = s.replace(/[^0-9.]/g,'').replace(/(.*\..*)\./, '$1');
+              if (cleaned !== s) inp.value = cleaned;
+              compute();
+            });
+            inp.addEventListener('change', compute);
+            inp.addEventListener('blur', compute);
+          });
+
+          compute();
+        }
+      };
+    }
+  } catch (e){
+    console.error('Q16 mini integration error', e);
+  }
+})();
+</script>
+
+<style>
+/* Q16 tune-ups, scoped */
+#q16-entry .mini-lead { margin-bottom: 6px; }
+#q16-entry .mini-sep { margin: 14px 0; } /* even spacing above and below */
+#q16-entry .mini-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;           /* match mini-heading weight */
+  font-size: 1.1rem;          /* strong, but smaller than main mini-heading */
+  line-height: 1.2;
+}
+</style>
+<script>
+(function(){
+  // Override/upgrade renderMiniQ16 with improved UX and persistence
+  window.renderMiniQ16 = function(containerEl /*, node */){
+    const el = (tag, cls, text) => {
+      const x = document.createElement(tag);
+      if (cls) x.className = cls;
+      if (text != null) x.textContent = text;
+      return x;
+    };
+    const makeInput = (id, placeholder) => {
+      const i = document.createElement('input');
+      i.type = 'number';
+      i.id = id;
+      i.min = '0.0000001'; // logically > 0, but we'll gate in logic
+      i.max = '10';
+      i.step = '0.01';
+      i.inputMode = 'decimal';
+      i.autocomplete = 'off';
+      i.placeholder = placeholder || '';
+      return i;
+    };
+
+    // Wrapper
+    const wrap = el('div', 'mini-wrap');
+    wrap.id = 'q16-entry';
+    const heading = el('div', 'mini-heading', 'Combined Tradeoff (Single Screen)');
+    const lead = el('div', 'mini-lead',
+      'Enter 0–10 for Upfront Cost, Resulting Cost, and Benefit. We apply the same weighting as Q6, add the two costs, and compare to the benefit. If equal, we recommend acting to be safe.'
+    );
+    const sep1 = el('div', 'mini-sep');
+
+    // Fields
+    const fields = el('div', 'mini-fields');
+
+    const f1 = el('div', 'mini-field');
+    const l1 = el('label', null, 'Upfront Cost (0–10)');
+    const in1 = makeInput('q16_cost_up', 'e.g., 3.5'); f1.append(l1, in1);
+
+    const f2 = el('div', 'mini-field');
+    const l2 = el('label', null, 'Resulting Cost (0–10)');
+    const in2 = makeInput('q16_cost_res', 'e.g., 2'); f2.append(l2, in2);
+
+    const f3 = el('div', 'mini-field');
+    const l3 = el('label', null, 'Benefit (0–10)');
+    const in3 = makeInput('q16_benefit', 'e.g., 8'); f3.append(l3, in3);
+
+    fields.append(f1, f2, f3);
+
+    const sep2 = el('div', 'mini-sep');
+
+    const verdict = el('div', 'verdict');
+    verdict.id = 'q16_verdict';
+    verdict.setAttribute('aria-live','polite');
+
+    wrap.append(heading, lead, sep1, fields, sep2, verdict);
+    if (containerEl) containerEl.innerHTML = '', containerEl.appendChild(wrap);
+
+    // Buttons area
+    const btns = document.getElementById('buttons');
+    if (btns) {
+      btns.innerHTML = '';
+      const cont = el('button', 'next', 'Continue');
+      cont.type = 'button';
+      cont.disabled = true;
+      btns.appendChild(cont);
+
+      const LS = {
+        up: 'q16_cost_up',
+        res: 'q16_cost_res',
+        ben: 'q16_benefit',
+      };
+
+      // Load persisted values
+      try {
+        const upv = localStorage.getItem(LS.up); if (upv !== null) in1.value = upv;
+        const rsv = localStorage.getItem(LS.res); if (rsv !== null) in2.value = rsv;
+        const bnv = localStorage.getItem(LS.ben); if (bnv !== null) in3.value = bnv;
+      } catch(e){ /* ignore */ }
+
+      function save(){
+        try {
+          localStorage.setItem(LS.up, in1.value ?? '');
+          localStorage.setItem(LS.res, in2.value ?? '');
+          localStorage.setItem(LS.ben, in3.value ?? '');
+        } catch(e){ /* ignore */ }
+      }
+
+      // Parsing/validation helpers
+      function parseField(elm){
+        const raw = (elm.value || '').trim();
+        if (raw === '' || raw === '.' || raw === '-.' || raw === '-') return { n: null, ok: false };
+        let n = Number(raw);
+        if (!Number.isFinite(n)) return { n: null, ok: false };
+        // clamp high; allow decimals below 1
+        if (n > 10) n = 10;
+        return { n, ok: n > 0 && n <= 10 };
+      }
+
+      function normalizeOnBlur(elm){
+        const { n, ok } = parseField(elm);
+        if (!ok){
+          // leave as-is (allows full backspace and invalid until user corrects)
+          return;
+        }
+        // Format to 2 decimals only if non-integer
+        elm.value = (n % 1 === 0) ? String(n) : String(Number(n.toFixed(2)));
+      }
+
+      function compute(){
+        save();
+        const a = parseField(in1);
+        const b = parseField(in2);
+        const c = parseField(in3);
+
+        const ready = a.ok && b.ok && c.ok;
+        if (!ready){
+          verdict.textContent = 'Enter all three values (> 0 and ≤ 10) to see the recommendation.';
+          verdict.classList.remove('ok','no');
+          cont.disabled = true;
+          cont.onclick = null;
+          return;
+        }
+
+        if (typeof window.weight10 !== 'function'){
+          verdict.textContent = 'Internal error: weighting function not available.';
+          cont.disabled = true;
+          return;
+        }
+
+        // Use Q6 weighting; this preserves the sub-1 curve behavior
+        const totalCost = window.weight10(a.n) + window.weight10(b.n);
+        const benW = window.weight10(c.n);
+
+        let ok, msg;
+        if (benW > totalCost) {
+          ok = true;
+          msg = '✅ Benefit outweighs total cost — Act should be considered.';
+        } else if (benW === totalCost) {
+          ok = true;
+          msg = '✅ Costs and benefit are equal — Act to be safe.';
+        } else {
+          ok = false;
+          msg = '🤏 Total cost outweighs benefit — Hold/adjust plan.';
+        }
+
+        verdict.textContent = msg;
+        verdict.classList.toggle('ok', ok);
+        verdict.classList.toggle('no', !ok);
+
+        cont.disabled = false;
+        cont.onclick = () => {
+          if (typeof window.goToNode === 'function'){
+            window.goToNode(benW >= totalCost ? 'Q22' : 'Q20');
+          }
+        };
+      }
+
+      // Events: allow full backspace, live filtering, and blur normalization
+      [in1, in2, in3].forEach(inp => {
+        inp.addEventListener('input', () => {
+          const s = inp.value;
+          const cleaned = s.replace(/[^0-9.]/g,'').replace(/(.*\..*)\./, '$1');
+          if (cleaned !== s) inp.value = cleaned;
+          compute();
+        });
+        inp.addEventListener('change', compute);
+        inp.addEventListener('blur', () => { normalizeOnBlur(inp); compute(); });
+      });
+
+      compute();
+    }
+  };
+})();
+</script>
+
+<script>
+(function(){
+  // Re-wrap renderMiniQ16 to enforce the zero-handling rules silently
+  const old = window.renderMiniQ16;
+  window.renderMiniQ16 = function(containerEl /*, node */){
+    // call the previous to build UI, then adjust behavior
+    old && old(containerEl);
+    const wrap = document.getElementById('q16-entry');
+    if (!wrap) return;
+
+    const in1 = wrap.querySelector('#q16_cost_up');
+    const in2 = wrap.querySelector('#q16_cost_res');
+    const in3 = wrap.querySelector('#q16_benefit');
+    const verdict = document.getElementById('q16_verdict');
+    const btns = document.getElementById('buttons');
+    const cont = btns ? btns.querySelector('button.next') : null;
+
+    if (!in1 || !in2 || !in3) return;
+
+    let lastEdited = null;
+    [in1, in2, in3].forEach(inp => {
+      inp.addEventListener('input', () => { lastEdited = inp; }, { capture: true });
+      inp.addEventListener('change', () => { lastEdited = inp; }, { capture: true });
+      inp.addEventListener('blur', () => { lastEdited = inp; }, { capture: true });
+    });
+
+    // Replace compute with stricter zero-handling
+    function parseNum(v){
+      if (v == null) return null;
+      const s = String(v).trim();
+      if (s === '' || s === '.' || s === '-.' || s === '-') return null;
+      let n = Number(s);
+      if (!Number.isFinite(n)) return null;
+      if (n < 0) n = 0;
+      if (n > 10) n = 10;
+      return n;
+    }
+
+    function normalize(el){
+      const n = parseNum(el.value);
+      if (n == null) return;
+      el.value = (n % 1 === 0) ? String(n) : String(Number(n.toFixed(2)));
+    }
+
+    function save(){
+      try {
+        localStorage.setItem('q16_cost_up', in1.value ?? '');
+        localStorage.setItem('q16_cost_res', in2.value ?? '');
+        localStorage.setItem('q16_benefit', in3.value ?? '');
+      } catch(e){}
+    }
+
+    function compute(){
+      // benefit cannot be 0 → auto 1e-9
+      let b = parseNum(in3.value);
+      if (b === 0){
+        in3.value = '0.000000001';
+        b = 0.000000001;
+      }
+
+      // costs: either can be 0 but not both
+      let a = parseNum(in1.value);
+      let c = parseNum(in2.value);
+
+      if (a === null || c === null || b === null){
+        verdict && (verdict.textContent = 'Enter all three values to see the recommendation.');
+        verdict && verdict.classList.remove('ok','no');
+        cont && (cont.disabled = true);
+        return;
+      }
+
+      if (a === 0 && c === 0){
+        // bump the last edited one to 1e-9; if unknown, bump the second
+        const target = lastEdited && (lastEdited === in1 || lastEdited === in2) ? lastEdited : in2;
+        target.value = '0.000000001';
+        if (target === in1) a = 0.000000001; else c = 0.000000001;
+      }
+
+      // ok to proceed; normalize on blur handled by earlier layer
+      save();
+
+      if (typeof window.weight10 !== 'function'){
+        verdict && (verdict.textContent = 'Internal error: weighting function not available.');
+        cont && (cont.disabled = true);
+        return;
+      }
+      const totalCost = window.weight10(a) + window.weight10(c);
+      const benW = window.weight10(b);
+
+      let ok, msg;
+      if (benW > totalCost) {
+        ok = true; msg = '✅ Benefit outweighs total cost — Act should be considered.';
+      } else if (benW === totalCost) {
+        ok = true; msg = '✅ Costs and benefit are equal — Act to be safe.';
+      } else {
+        ok = false; msg = '🤏 Total cost outweighs benefit — Hold/adjust plan.';
+      }
+
+      verdict && (verdict.textContent = msg);
+      verdict && verdict.classList.toggle('ok', ok);
+      verdict && verdict.classList.toggle('no', !ok);
+
+      cont && (cont.disabled = false);
+      cont && (cont.onclick = () => {
+        if (typeof window.goToNode === 'function'){
+          window.goToNode(benW >= totalCost ? 'Q22' : 'Q20');
+        }
+      });
+    }
+
+    // Wire up with existing handlers—run after their compute
+    [in1, in2, in3].forEach(inp => {
+      inp.addEventListener('input', compute);
+      inp.addEventListener('change', compute);
+      inp.addEventListener('blur', compute);
+    });
+
+    // initial run (in case values already present)
+    compute();
+  };
+})();
+</script>
+
+<script>
+(function(){
+  // Fully replace renderMiniQ16 to remove persistence and delay zero-correction until blur/change
+  const buildQ16 = function(containerEl){
+    const el = (tag, cls, text) => {
+      const x = document.createElement(tag);
+      if (cls) x.className = cls;
+      if (text != null) x.textContent = text;
+      return x;
+    };
+    const makeInput = (id, placeholder) => {
+      const i = document.createElement('input');
+      i.type = 'number';
+      i.id = id;
+      i.min = '0';
+      i.max = '10';
+      i.step = '0.01';
+      i.inputMode = 'decimal';
+      i.autocomplete = 'off';
+      i.placeholder = placeholder || '';
+      return i;
+    };
+
+    const wrap = el('div', 'mini-wrap'); wrap.id = 'q16-entry';
+    const heading = el('div', 'mini-heading', 'Combined Tradeoff (Single Screen)');
+    const lead = el('div', 'mini-lead',
+      'Enter 0–10 for Upfront Cost, Resulting Cost, and Benefit. We apply the same weighting as Q6, add the two costs, and compare to the benefit. If equal, we recommend acting to be safe.'
+    );
+    const sep1 = el('div', 'mini-sep');
+
+    const fields = el('div', 'mini-fields');
+    const f1 = el('div', 'mini-field'); const l1 = el('label', null, 'Upfront Cost (0–10)'); const in1 = makeInput('q16_cost_up','e.g., 3.5'); f1.append(l1,in1);
+    const f2 = el('div', 'mini-field'); const l2 = el('label', null, 'Resulting Cost (0–10)'); const in2 = makeInput('q16_cost_res','e.g., 2'); f2.append(l2,in2);
+    const f3 = el('div', 'mini-field'); const l3 = el('label', null, 'Benefit (0–10)'); const in3 = makeInput('q16_benefit','e.g., 8'); f3.append(l3,in3);
+    fields.append(f1,f2,f3);
+
+    const sep2 = el('div', 'mini-sep');
+
+    const verdict = el('div', 'verdict'); verdict.id = 'q16_verdict'; verdict.setAttribute('aria-live','polite');
+
+    wrap.append(heading, lead, sep1, fields, sep2, verdict);
+    if (containerEl) { containerEl.innerHTML=''; containerEl.appendChild(wrap); }
+
+    const btns = document.getElementById('buttons');
+    if (btns){
+      btns.innerHTML='';
+      const cont = el('button','next','Continue'); cont.type='button'; cont.disabled = true; btns.appendChild(cont);
+
+      let lastEdited = null;
+      [in1,in2,in3].forEach(inp => {
+        inp.addEventListener('input', () => { // live filter only; no zero-correction here
+          lastEdited = inp;
+          const s = inp.value;
+          const cleaned = s.replace(/[^0-9.]/g,'').replace(/(.*\..*)\./,'$1');
+          if (cleaned !== s) inp.value = cleaned;
+          compute(false);
+        });
+        inp.addEventListener('blur', () => { lastEdited = inp; finalizeField(inp); compute(true); });
+        inp.addEventListener('change', () => { lastEdited = inp; finalizeField(inp); compute(true); });
+      });
+
+      function parseNum(v){
+        if (v == null) return null;
+        const s = String(v).trim();
+        if (s === '' || s === '.' || s === '-.' || s === '-') return null;
+        let n = Number(s);
+        if (!Number.isFinite(n)) return null;
+        if (n > 10) n = 10;
+        if (n < 0) n = 0;
+        return n;
+      }
+
+      function normalize(el){
+        const n = parseNum(el.value);
+        if (n == null) return;
+        el.value = (n % 1 === 0) ? String(n) : String(Number(n.toFixed(2)));
+      }
+
+      function finalizeField(el){
+        // Apply the 0 -> 1e-9 rules only when the user finishes editing (blur/change)
+        const id = el.id;
+        let n = parseNum(el.value);
+        if (n == null) return;
+        if (id === 'q16_benefit'){
+          if (n === 0){ el.value = '0.000000001'; }
+        } else {
+          // costs: either can be 0, but not both simultaneously
+          const other = (id === 'q16_cost_up') ? in2 : in1;
+          let nOther = parseNum(other.value);
+          if (n === 0 && nOther === 0){
+            // bump the one the user just finished editing
+            el.value = '0.000000001';
+          }
+        }
+        normalize(el);
+      }
+
+      function compute(finalize){
+        const a = parseNum(in1.value);
+        const c = parseNum(in2.value);
+        const b = parseNum(in3.value);
+
+        // when not finalized, allow zeros to show without auto-adjustment; just gate the verdict
+        if (a == null || c == null || b == null){
+          verdict.textContent = 'Enter all three values to see the recommendation.';
+          verdict.classList.remove('ok','no');
+          cont.disabled = true;
+          cont.onclick = null;
+          return;
+        }
+
+        // If finalize==false and disallowed zeros exist, show neutral state without forcing change
+        if (!finalize){
+          const costsBothZero = (a === 0 && c === 0);
+          const benZero = (b === 0);
+          if (costsBothZero || benZero){
+            verdict.textContent = 'Enter all three values to see the recommendation.';
+            verdict.classList.remove('ok','no');
+            cont.disabled = true;
+            cont.onclick = null;
+            return;
+          }
+        }
+
+        if (typeof window.weight10 !== 'function'){
+          verdict.textContent = 'Internal error: weighting function not available.';
+          cont.disabled = true; return;
+        }
+
+        const totalCost = window.weight10(a) + window.weight10(c);
+        const benW = window.weight10(b);
+
+        let ok, msg;
+        if (benW > totalCost) { ok = true; msg = '✅ Benefit outweighs total cost — Act should be considered.'; }
+        else if (benW === totalCost) { ok = true; msg = '✅ Costs and benefit are equal — Act to be safe.'; }
+        else { ok = false; msg = '🤏 Total cost outweighs benefit — Hold/adjust plan.'; }
+
+        verdict.textContent = msg;
+        verdict.classList.toggle('ok', ok);
+        verdict.classList.toggle('no', !ok);
+
+        cont.disabled = false;
+        cont.onclick = () => {
+          if (typeof window.goToNode === 'function'){
+            window.goToNode(benW >= totalCost ? 'Q22' : 'Q20');
+          }
+        };
+      }
+
+      // Expose a restart hook to clear fields (if a restart button exists)
+      function clearQ16Fields(){
+        [in1,in2,in3].forEach(inp => { inp.value = ''; });
+        compute(false);
+      }
+      // Try to attach to a button with id or class indicating restart
+      document.addEventListener('click', function(e){
+        const t = e.target;
+        if (!t) return;
+        const id = t.id || '';
+        const cls = t.className || '';
+        if (/restart/i.test(id) || /restart/i.test(cls) || t.dataset && /restart/i.test(t.dataset.action || '')){
+          clearQ16Fields();
+        }
+      }, true);
+
+      // initial neutral state
+      compute(false);
+    }
+  };
+
+  // Install the replacement into the app
+  window.renderMiniQ16 = function(containerEl){ buildQ16(containerEl); };
+
+  // Also clear any previous localStorage keys on load to ensure refresh reset
+  try {
+    localStorage.removeItem('q16_cost_up');
+    localStorage.removeItem('q16_cost_res');
+    localStorage.removeItem('q16_benefit');
+  } catch(e){}
+})();
+</script>
+
+<script>
+(function(){
+  // Replace renderMiniQ16 to ensure 0 -> 1e-9 persists (no rounding to 0.00)
+  window.renderMiniQ16 = function(containerEl){
+    const el = (tag, cls, text) => {
+      const x = document.createElement(tag);
+      if (cls) x.className = cls;
+      if (text != null) x.textContent = text;
+      return x;
+    };
+    const makeInput = (id, placeholder) => {
+      const i = document.createElement('input');
+      i.type = 'number';
+      i.id = id;
+      i.min = '0';
+      i.max = '10';
+      i.step = '0.01';
+      i.inputMode = 'decimal';
+      i.autocomplete = 'off';
+      i.placeholder = placeholder || '';
+      return i;
+    };
+
+    const wrap = el('div','mini-wrap'); wrap.id='q16-entry';
+    const heading = el('div','mini-heading','Combined Tradeoff (Single Screen)');
+    const lead = el('div','mini-lead','Enter 0–10 for Upfront Cost, Resulting Cost, and Benefit. We apply the same weighting as Q6, add the two costs, and compare to the benefit. If equal, we recommend acting to be safe.');
+    const sep1 = el('div','mini-sep');
+    const fields = el('div','mini-fields');
+    const f1 = el('div','mini-field'); const l1 = el('label', null, 'Upfront Cost (0–10)'); const in1 = makeInput('q16_cost_up','e.g., 3.5'); f1.append(l1,in1);
+    const f2 = el('div','mini-field'); const l2 = el('label', null, 'Resulting Cost (0–10)'); const in2 = makeInput('q16_cost_res','e.g., 2'); f2.append(l2,in2);
+    const f3 = el('div','mini-field'); const l3 = el('label', null, 'Benefit (0–10)'); const in3 = makeInput('q16_benefit','e.g., 8'); f3.append(l3,in3);
+    fields.append(f1,f2,f3);
+    const sep2 = el('div','mini-sep');
+    const verdict = el('div','verdict'); verdict.id='q16_verdict'; verdict.setAttribute('aria-live','polite');
+    wrap.append(heading,lead,sep1,fields,sep2,verdict);
+    if (containerEl){ containerEl.innerHTML=''; containerEl.appendChild(wrap); }
+
+    const btns = document.getElementById('buttons');
+    if (!btns) return;
+    btns.innerHTML='';
+    const cont = el('button','next','Continue'); cont.type='button'; cont.disabled=true; btns.appendChild(cont);
+
+    let lastEdited = null;
+    [in1,in2,in3].forEach(inp => {
+      inp.addEventListener('input', () => {
+        lastEdited = inp;
+        const s = inp.value;
+        const cleaned = s.replace(/[^0-9.]/g,'').replace(/(.*\..*)\./,'$1');
+        if (cleaned !== s) inp.value = cleaned;
+        compute(false);
+      });
+      inp.addEventListener('blur', () => { lastEdited = inp; finalizeField(inp); compute(true); });
+      inp.addEventListener('change', () => { lastEdited = inp; finalizeField(inp); compute(true); });
+    });
+
+    function parseNum(v){
+      if (v == null) return null;
+      const s = String(v).trim();
+      if (s === '' || s === '.' || s === '-.' || s === '-') return null;
+      let n = Number(s);
+      if (!Number.isFinite(n)) return null;
+      if (n > 10) n = 10;
+      if (n < 0) n = 0;
+      return n;
+    }
+
+    function setToMin(el){
+      // Always write a fixed string to avoid 0.00 formatting
+      el.value = '0.000000001';
+      el.dataset.minCorrected = '1';
+    }
+
+    function normalize(el){
+      // If we just applied the minimum, keep exact string
+      if (el.dataset.minCorrected === '1') {
+        // leave as '0.000000001' and clear the flag
+        delete el.dataset.minCorrected;
+        return;
+      }
+      const n = parseNum(el.value);
+      if (n == null) return;
+      if (n > 0 && n < 0.01) {
+        // preserve small numbers; do not round to 0.00
+        el.value = String(n);
+        return;
+      }
+      el.value = (n % 1 === 0) ? String(n) : String(Number(n.toFixed(2)));
+    }
+
+    function finalizeField(el){
+      const id = el.id;
+      let n = parseNum(el.value);
+      if (n == null) return;
+      if (id === 'q16_benefit'){
+        if (n === 0){ setToMin(el); return; } // skip normalize to preserve
+      } else {
+        // costs: either can be 0, but not both
+        const other = (id === 'q16_cost_up') ? in2 : in1;
+        let nOther = parseNum(other.value);
+        if (n === 0 && nOther === 0){
+          setToMin(el); return; // skip normalize
+        }
+      }
+      normalize(el);
+    }
+
+    function compute(finalize){
+      const a = parseNum(in1.value);
+      const c = parseNum(in2.value);
+      const b = parseNum(in3.value);
+
+      if (a == null || c == null || b == null){
+        verdict.textContent = 'Enter all three values to see the recommendation.';
+        verdict.classList.remove('ok','no');
+        cont.disabled = true; cont.onclick = null;
+        return;
+      }
+
+      if (!finalize){
+        const costsBothZero = (a === 0 && c === 0);
+        const benZero = (b === 0);
+        if (costsBothZero || benZero){
+          verdict.textContent = 'Enter all three values to see the recommendation.';
+          verdict.classList.remove('ok','no');
+          cont.disabled = true; cont.onclick = null;
+          return;
+        }
+      }
+
+      if (typeof window.weight10 !== 'function'){
+        verdict.textContent = 'Internal error: weighting function not available.';
+        cont.disabled = true; return;
+      }
+      const totalCost = window.weight10(a) + window.weight10(c);
+      const benW = window.weight10(b);
+
+      let ok, msg;
+      if (benW > totalCost) { ok = true; msg = '✅ Benefit outweighs total cost — Act should be considered.'; }
+      else if (benW === totalCost) { ok = true; msg = '✅ Costs and benefit are equal — Act to be safe.'; }
+      else { ok = false; msg = '🤏 Total cost outweighs benefit — Hold/adjust plan.'; }
+
+      verdict.textContent = msg;
+      verdict.classList.toggle('ok', ok);
+      verdict.classList.toggle('no', !ok);
+
+      cont.disabled = false;
+      cont.onclick = () => {
+        if (typeof window.goToNode === 'function'){
+          window.goToNode(benW >= totalCost ? 'Q22' : 'Q20');
+        }
+      };
+    }
+
+    // initial neutral state
+    compute(false);
+  };
+})();
+</script>
 </body>
 </html>
