@@ -570,13 +570,6 @@
   .mini-spacer { height: 6px; }
 </style>
   
-
-<style>
-#text .mini-field input#q6_costUp,
-#text .mini-field input#q6_costRes { width:100%; max-width:100%; box-sizing:border-box; }
-#text .mini-field label { display:block; margin-bottom:6px; font-weight:700; }
-</style>
-
 </head>
 <body>
 <div class="container">
@@ -717,6 +710,10 @@ var flowchart = [
 
   { "id": "Q14", "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q15", "no": "Q16" },
   { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q16" },
+  
+  { "id": "Q16", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it (for just this instance)?", "yes": "Q17", "no": "Q20" },
+  { "id": "Q17", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it (for just this instance)?", "yes": "Q18", "no": "Q20" },
+  { "id": "Q18", "type": "question", "text": "Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q22", "no": "Q20", "same": "Q19" },
 
   { "id": "Q19", "type": "question", "text": "All things considered, would you <i>rather</i> address it than not?", "yes": "Q22", "no": "Q20" },
   { "id": "Q20", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "Q21" },
@@ -1104,83 +1101,9 @@ function renderMiniQ6(intoEl, node){
   sBox.innerHTML = '<label>Severity (S) — up to 10</label><input id="miniS" type="number" step="0.01" max="10" placeholder="e.g. 5">';
   const cBox = document.createElement('div'); cBox.className='mini-field';
   cBox.innerHTML = '<label>Cost (C) — up to 10</label><input id="miniC" type="number" step="0.01" max="10" placeholder="e.g. 1">';
-  
-\1
-  (function(){
-    try {
-      var root = intoEl.querySelector('.mini-wrap') || intoEl;
-      var baseCost = root.querySelector('#miniC');
-      if (!baseCost) return;
-      baseCost.style.display = 'none';
+  fields.appendChild(sBox); fields.appendChild(cBox);
 
-      function mkField(labelTxt, id){
-        var wrap = document.createElement('div');
-        wrap.className = 'mini-field';
-        var lab = document.createElement('label'); lab.textContent = labelTxt;
-        var inp = document.createElement('input');
-        inp.type = 'text';
-        inp.id = id;
-        inp.placeholder = 'e.g., 3 2.5, 1\t0.5';
-        wrap.appendChild(lab); wrap.appendChild(inp);
-        return {wrap, inp};
-      }
-      var up = mkField('Upfront Cost (groups)',   'q6_costUp');
-      var rs = mkField('Resulting Cost (groups)', 'q6_costRes');
-
-      var costField = baseCost.closest('.mini-field') || baseCost.parentElement;
-      var host = costField && costField.parentElement ? costField.parentElement : root;
-      if (costField && host){
-        host.insertBefore(up.wrap, costField);
-        host.insertBefore(rs.wrap, costField);
-      } else {
-        root.appendChild(up.wrap);
-        root.appendChild(rs.wrap);
-      }
-
-      function invWeight10(W){ if (!(W > 0)) return 0; return 1 + 9*(Math.log10(W)/6); }
-      function toks(str){ return String(str||'').trim().split(/[,\s]+/).filter(Boolean); }
-      function clamp10(n){ if (!isFinite(n)) return null; if (n<0) n=0; if (n>10) n=10; return n; }
-      function sumWeighted(str, finalize){
-        var sumW=0, list=toks(str); if (!list.length) return {sumW:0,len:0,zeros:0};
-        var zeros=0;
-        for (var i=0;i<list.length;i++){
-          var v=parseFloat(list[i]); v = clamp10(v);
-          if (v===null) continue;
-          if (v===0){ zeros++; if (finalize) v=1e-9; }
-          if (v>0){ try{ sumW += (typeof weight10==='function')? weight10(v):0; }catch(e){} }
-        }
-        return {sumW:sumW,len:list.length,zeros:zeros};
-      }
-      var lastEdited=null;
-      function recalc(finalize){
-        var a=sumWeighted(up.inp.value, finalize);
-        var b=sumWeighted(rs.inp.value, finalize);
-        if (finalize && a.sumW===0 && b.sumW===0){
-          var t = lastEdited || rs.inp;
-          if (!toks(t.value).length) t.value='0.000000001';
-          else t.value = t.value.replace(/\b0(\.0+)?\b/, '0.000000001');
-          a=sumWeighted(up.inp.value,false);
-          b=sumWeighted(rs.inp.value,false);
-        }
-        var totalW = a.sumW + b.sumW;
-        var equivC = invWeight10(totalW);
-        if (!(equivC>0)){ baseCost.value=''; }
-        else {
-          if (equivC<1e-9) equivC=1e-9; if (equivC>10) equivC=10;
-          baseCost.value = (equivC%1===0)? String(equivC): String(Number(equivC.toFixed(2)));
-        }
-        try{ if (window.miniMaster) miniMaster.C = parseFloat(baseCost.value||'0')||0; }catch(e){}
-        try{ baseCost.dispatchEvent(new Event(finalize?'change':'input',{bubbles:true})); }catch(e){}
-      }
-      [up.inp, rs.inp].forEach(function(el){
-        el.addEventListener('input', function(){ lastEdited=el; recalc(false); });
-        el.addEventListener('blur',  function(){ lastEdited=el; recalc(true);  });
-        el.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); el.blur(); }});
-      });
-      recalc(false);
-    } catch(e) { console && console.warn('Q6 split-cost init error', e); }
-  })();
-const pRow = document.createElement('div'); pRow.className='mini-fields';
+  const pRow = document.createElement('div'); pRow.className='mini-fields';
   const mBox = document.createElement('div'); mBox.className='mini-field';
   mBox.innerHTML =
     '<label>Probability Unit</label>\
