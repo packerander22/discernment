@@ -2704,6 +2704,122 @@ const __sepCost=document.createElement('div');__sepCost.className='mini-sep';sta
     const cost = makeSection('Cost',
       ['input[name="cost"]', '#miniC', 'input[data-q="C"]'],
       id + 'C', 'e.g. 1', 'Enter Cost (C) — up to 10', 'cost');
+// ---- Q6 dual-cost (Upfront + Resulting) injection ----
+try{
+  (function(){
+    // cost.inputEl is the original single-cost input created above. Hide it and replace with two inputs.
+    const costInput = (function(){
+      // Find the input we just created via makeSection: it's the last input in the Cost section.
+      // It has id like 'q6C'
+      var el = root.querySelector('#q6C') || root.querySelector('#q6_C') || null;
+      return el;
+    })();
+    if (!costInput) return;
+
+    const costField = costInput.closest('.mini-field') || costInput.parentElement;
+    if (!costField) return;
+
+    // Build two new fields just before the original, then hide the original single-cost field.
+    function mkField(id, label, ph){
+      const wrap = document.createElement('div');
+      wrap.className = 'mini-field';
+      const lab = document.createElement('label'); lab.textContent = label;
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.id = id; inp.inputMode='decimal';
+      inp.min='0'; inp.max='10'; inp.step='0.01'; inp.placeholder = ph || '';
+      wrap.appendChild(lab); wrap.appendChild(inp);
+      return {wrap, inp};
+    }
+
+    const up = mkField('q6C_up', 'Upfront Cost (0–10)', 'e.g. 2.5');
+    const rs = mkField('q6C_res', 'Resulting Cost (0–10)', 'e.g. 1.0');
+
+    costField.parentElement.insertBefore(up.wrap, costField);
+    costField.parentElement.insertBefore(rs.wrap, costField);
+    costField.style.display = 'none';
+
+    // Weighting helpers (use app's if present)
+    function weight10(x){
+      if (typeof window.weight10 === 'function') return window.weight10(x);
+      const xf = +x; if (!(xf > 0)) return 0;
+      return Math.pow(10, 6 * ((xf - 1) / 9));
+    }
+    function invWeight10(w){
+      if (!(w > 0)) return 0;
+      return 1 + 1.5 * Math.log10(w);
+    }
+    function cleanStr(s){
+      return String(s || '').replace(/[^0-9.\-]/g,'').replace(/(.*\..*)\./,'$1').replace(/(.*-).*-/,'$1');
+    }
+    function parse(el){
+      const raw = (el.value||'').trim();
+      if (raw === '' || raw === '.' || raw === '-' || raw === '-.') return {n:null};
+      let n = Number(raw);
+      if (!Number.isFinite(n)) return {n:null};
+      if (n < 0) n = 0;
+      if (n > 10) n = 10;
+      return {n:n};
+    }
+    function clamp01to10(x){ if (!(x>=0)) return 0; if (x>10) return 10; return x; }
+
+    function setMin(el){ el.value = '1e-9'; el.dataset.minCorrected = '1'; }
+
+    let lastEdited = null;
+
+    function compute(finalize, trigger){
+      try{
+        localStorage.setItem('q6C_up', up.inp.value ?? '');
+        localStorage.setItem('q6C_res', rs.inp.value ?? '');
+      }catch(_){}
+
+      const A = parse(up.inp), B = parse(rs.inp);
+      if (finalize){
+        const a0 = (A.n === 0 || up.inp.value === '0');
+        const b0 = (B.n === 0 || rs.inp.value === '0');
+        if (a0 && b0){
+          const t = trigger || lastEdited || rs.inp;
+          setMin(t);
+        }
+      }
+      const AA = parse(up.inp), BB = parse(rs.inp);
+      if (AA.n == null || BB.n == null) return;
+
+      const wTotal = weight10(AA.n) + weight10(BB.n);
+      let cEq = invWeight10(wTotal);
+      if (!Number.isFinite(cEq)) cEq = 10;
+      cEq = clamp01to10(cEq);
+      costInput.value = (cEq % 1 === 0) ? String(cEq) : String(Number(cEq.toFixed(2)));
+      costInput.dispatchEvent(new Event('input', {bubbles:true}));
+      costInput.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+
+    // listeners
+    [up.inp, rs.inp].forEach(inp => {
+      inp.addEventListener('input', ()=>{ const s=cleanStr(inp.value); if (s!==inp.value) inp.value=s; lastEdited = inp; compute(false, inp); });
+      inp.addEventListener('change', ()=> compute(true, inp));
+      inp.addEventListener('blur', ()=> compute(true, inp));
+    });
+
+    // restore
+    try{
+      const sUp = localStorage.getItem('q6C_up'); if (sUp != null) up.inp.value = sUp;
+      const sRs = localStorage.getItem('q6C_res'); if (sRs != null) rs.inp.value = sRs;
+    }catch(_){}
+
+    compute(false, null);
+
+    // also clear on restart button (same behavior as app)
+    document.addEventListener('click', function(e){
+      const t = e.target; if (!t) return;
+      const id = t.id || ''; const cls = t.className || '';
+      if (/restart/i.test(id) || /restart/i.test(cls) || (t.dataset && /restart/i.test(t.dataset.action || ''))){
+        try{ localStorage.removeItem('q6C_up'); localStorage.removeItem('q6C_res'); }catch(_){}
+      }
+    }, true);
+  })();
+}catch(e){ console.error('Q6 dual-cost injection failed', e); }
+// ---- end injection ----
+
 const __sepProb=document.createElement('div');__sepProb.className='mini-sep';stack.appendChild(__sepProb);
 
     
