@@ -1427,7 +1427,7 @@ function renderMiniQ6(intoEl, node){
 
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (!hasAll) {
-      if (typeof valuationEl !== 'undefined' && valuationEl) valuationEl.textContent = 'Valuation: —';
+      if (typeof valuationEl !== 'undefined' && valuationEl) valuationEl.textContent = 'Valuation Grade: —';
       axesG.setAttribute('opacity','0.55');
       curve.setAttribute('d','');
       shadeIn.setAttribute('d','');
@@ -1455,7 +1455,7 @@ function renderMiniQ6(intoEl, node){
     const range = yRange(mode);
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
 
-// Valuation: p × Xc, where p = 1 / Xuser
+// Valuation Grade: p × Xc, where p = 1 / Xuser
 if (typeof valuationEl !== 'undefined' && valuationEl &&
     typeof Xc === 'number' && typeof Xuser === 'number' &&
     isFinite(Xc) && isFinite(Xuser) && Xuser > 0){
@@ -1467,9 +1467,9 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
   } else {
     shown = valuation.toFixed(6).replace(/0+$/,'').replace(/\.$/,'');
   }
-  valuationEl.textContent = 'Valuation: ' + shown;
+  valuationEl.textContent = 'Valuation Grade: ' + shown;
 } else if (typeof valuationEl !== 'undefined' && valuationEl){
-  valuationEl.textContent = 'Valuation: —';
+  valuationEl.textContent = 'Valuation Grade: —';
 }
     const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
     const cx = CtoPx(Math.max(cMinView, Math.min(cMaxView, miniMaster.C)));
@@ -3132,8 +3132,8 @@ renderMiniQ6 = function (intoEl, node) {
           wrap.innerHTML =
             '<div class="mini-field"><label>Group '+(i+1)+' count</label><input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'"></div>'+
             '<div class="mini-field"><label>Unit</label><select data-i="'+i+'" data-k="mode">'+
-            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>'+
             '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>'+
+            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>'+
             '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>'+
             '</select></div>'+
             '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
@@ -3192,13 +3192,13 @@ renderMiniQ6 = function (intoEl, node) {
         function updateQ6ProbLabel(){
           if (!el.pMode) return;
           var mode = (el.pMode.value || '').toLowerCase();
-          if (mode === 'oneinx' || mode === '1 in x' || mode === '1inx') mode = 'oneInX';
           if (mode === 'percentage' || mode === '%' || mode === 'percent%') mode = 'percent';
+          if (mode === 'oneinx' || mode === '1 in x' || mode === '1inx') mode = 'oneInX';
           if (mode === 'micromorts') mode = 'micromort';
           var lab = el.stack && el.stack.querySelector('#q6ProbLabel');
           if (lab){
-            if (mode === 'oneInX'){ lab.textContent = 'Enter X (for “1 in X”)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1,000'; }
-            else if (mode === 'percent'){ lab.textContent = 'Enter percentage (%)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1'; }
+            if (mode === 'percent'){ lab.textContent = 'Enter percentage (%)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1'; }
+            else if (mode === 'oneInX'){ lab.textContent = 'Enter X (for “1 in X”)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1,000'; }
             else { lab.textContent = 'Enter micromorts (µm)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1'; }
           }
           var sym = (mode==='percent') ? '%' : (mode==='micromort' ? 'µm' : 'X');
