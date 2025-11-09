@@ -847,7 +847,8 @@ window.examplesThreshold = {
 };
 
 var miniMaster = {
-  S: 5, C: 1,
+  S: 5,
+  C: 1,
   mode: 'percent',
   val: 1,
   X_user: null
@@ -1110,8 +1111,8 @@ function renderMiniQ6(intoEl, node){
   mBox.innerHTML =
     '<label>Probability Unit</label>\
      <select id="miniMode" name="q6Units">\
-       <option value="oneInX">1 in X</option>\
        <option value="percent">Percentage (%)</option>\
+       <option value="oneInX">1 in X</option>\
        <option value="micromort">Micromorts</option>\
      </select>';
 
@@ -1132,6 +1133,13 @@ function renderMiniQ6(intoEl, node){
   svg.style.overflow = 'visible';
   svg.style.marginTop = '12px';
   wrap.appendChild(svg);
+
+  // Valuation (actual formula value) — under the graph, before the verdict
+  const valuationEl = document.createElement('div');
+  valuationEl.className = 'rule';
+  valuationEl.id = 'miniValuation';
+  valuationEl.textContent = 'Valuation Grade: —';
+  wrap.appendChild(valuationEl);
 
   // Verdict
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
@@ -1246,16 +1254,16 @@ function renderMiniQ6(intoEl, node){
   elM.value = miniMaster.mode;
   function updateProbLabelForMode(mode){
     if (!labV || !elV) return;
-    if (mode === 'oneInX'){
-      labV.textContent = 'Enter X (for “1 in X”)';
-      elV.placeholder = 'e.g. 1,000';
-      elV.min = '1';           // <<< set min 1 for 1-in-X
-      elV.step = '1';
-    } else if (mode === 'percent'){
+    if (mode === 'percent'){
       labV.textContent = 'Enter percentage (%)';
       elV.placeholder = 'e.g. 1';
       elV.removeAttribute('min'); // numeric validator handles bounds; snapInputs clamps
       elV.step = '0.000001';
+    } else if (mode === 'oneInX'){
+      labV.textContent = 'Enter X (for “1 in X”)';
+      elV.placeholder = 'e.g. 1,000';
+      elV.min = '1';           // <<< set min 1 for 1-in-X
+      elV.step = '1';
     } else {
       labV.textContent = 'Enter micromorts (µm)';
       elV.placeholder = 'e.g. 1';
@@ -1419,6 +1427,7 @@ function renderMiniQ6(intoEl, node){
 
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (!hasAll) {
+      if (typeof valuationEl !== 'undefined' && valuationEl) valuationEl.textContent = 'Valuation Grade: —';
       axesG.setAttribute('opacity','0.55');
       curve.setAttribute('d','');
       shadeIn.setAttribute('d','');
@@ -1445,6 +1454,23 @@ function renderMiniQ6(intoEl, node){
     const Xc = miniXcutoff_from_ratio(r);
     const range = yRange(mode);
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
+
+// Valuation Grade: p × Xc, where p = 1 / Xuser
+if (typeof valuationEl !== 'undefined' && valuationEl &&
+    typeof Xc === 'number' && typeof Xuser === 'number' &&
+    isFinite(Xc) && isFinite(Xuser) && Xuser > 0){
+  const p = 1 / Xuser;
+  const valuation = p * Xc;
+  let shown;
+  if (valuation >= 1){
+    shown = Math.round(valuation).toLocaleString();
+  } else {
+    shown = valuation.toFixed(6).replace(/0+$/,'').replace(/\.$/,'');
+  }
+  valuationEl.textContent = 'Valuation Grade: ' + shown;
+} else if (typeof valuationEl !== 'undefined' && valuationEl){
+  valuationEl.textContent = 'Valuation Grade: —';
+}
     const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
     const cx = CtoPx(Math.max(cMinView, Math.min(cMaxView, miniMaster.C)));
     const cy = yToPx(Ydot, range.yMin, range.yMax);
@@ -1490,13 +1516,42 @@ function renderMiniQ6(intoEl, node){
     if(!dragging) return; e.preventDefault();
     const sp = svgPoint(e);
 
-    let Cn = pxToC(Math.max(pad.left, Math.min(pad.left+plotW, sp.x)));
-    Cn = Math.max(MINI_EPS, Math.min(MINI_MAX, Cn));
+    
+let Cn = pxToC(Math.max(pad.left, Math.min(pad.left+plotW, sp.x)));
+Cn = Math.max(MINI_EPS, Math.min(MINI_MAX, Cn));
 
-    elS.value = String(SDragLock);
-    elC.value = String(Cn);
-    miniMaster.S = SDragLock;
-    miniMaster.C = Cn;
+// lock S from drag start
+elS.value = String(SDragLock);
+miniMaster.S = SDragLock;
+
+// If dual-cost fields exist: keep Resulting static, adjust Upfront so Upfront+Resulting=Cn
+const upEl = document.getElementById('q6C_up');
+const rsEl = document.getElementById('q6C_res');
+if (upEl && rsEl){
+  const rawR = (rsEl.value || '').trim();
+  let resVal = parseFloat(rawR);
+  if (!isFinite(resVal) || resVal < 0) resVal = 0;
+  if (resVal > 10) resVal = 10;
+
+  let upVal = Cn - resVal;
+  if (upVal < 0) upVal = 0;
+  if (upVal > 10) upVal = 10;
+
+  const shownUp = (upVal % 1 === 0) ? String(upVal) : String(Number(upVal.toFixed(2)));
+  upEl.value = shownUp;
+
+  // recompute hidden total from these two
+  if (typeof window.q6DualCostCompute === 'function'){
+    window.q6DualCostCompute(false, null);
+  }
+} else {
+  // fallback: single cost field only
+  if (elC){
+    const shown = (Cn % 1 === 0) ? String(Cn) : String(Number(Cn.toFixed(2)));
+    elC.value = shown;
+  }
+  miniMaster.C = Cn;
+}
 
     const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
     const yCurve  = curveYPxAtCost(Cn, elM.value);
@@ -2767,31 +2822,38 @@ try{
     let lastEdited = null;
 
     function compute(finalize, trigger){
-      try{
-        localStorage.setItem('q6C_up', up.inp.value ?? '');
-        localStorage.setItem('q6C_res', rs.inp.value ?? '');
-      }catch(_){}
+  try{
+    localStorage.setItem('q6C_up', up.inp.value ?? '');
+    localStorage.setItem('q6C_res', rs.inp.value ?? '');
+  }catch(_){}
 
-      const A = parse(up.inp), B = parse(rs.inp);
-      if (finalize){
-        const a0 = (A.n === 0 || up.inp.value === '0');
-        const b0 = (B.n === 0 || rs.inp.value === '0');
-        if (a0 && b0){
-          const t = trigger || lastEdited || rs.inp;
-          setMin(t);
-        }
-      }
-      const AA = parse(up.inp), BB = parse(rs.inp);
-      if (AA.n == null || BB.n == null) return;
+  const Au = parse(up.inp), Br = parse(rs.inp);
 
-      const wTotal = weight10(AA.n) + weight10(BB.n);
-      let cEq = invWeight10(wTotal);
-      if (!Number.isFinite(cEq)) cEq = 10;
-      cEq = clamp01to10(cEq);
-      costInput.value = (cEq % 1 === 0) ? String(cEq) : String(Number(cEq.toFixed(2)));
-      costInput.dispatchEvent(new Event('input', {bubbles:true}));
-      costInput.dispatchEvent(new Event('change', {bubbles:true}));
-    }
+  const upVal = (Au.n != null) ? Au.n : 0;
+  const resVal = (Br.n != null) ? Br.n : 0;
+
+  // Total cost is simple sum of upfront + resulting
+  let C = upVal + resVal;
+
+  if (!Number.isFinite(C) || C <= 0){
+    // Clear underlying cost if nothing meaningful yet
+    costInput.value = '';
+    costInput.dispatchEvent(new Event('input',  {bubbles:true}));
+    costInput.dispatchEvent(new Event('change', {bubbles:true}));
+    return;
+  }
+
+  // Clamp to Q6 scale and write into hidden single-cost field
+  C = clamp01to10(C);
+  const shown = (C % 1 === 0) ? String(C) : String(Number(C.toFixed(2)));
+  costInput.value = shown;
+  costInput.dispatchEvent(new Event('input',  {bubbles:true}));
+  costInput.dispatchEvent(new Event('change', {bubbles:true}));
+}
+
+// Expose for Q6 mini-graph so it can resync costs on drag
+window.q6DualCostCompute = compute;
+
 
     // listeners
     [up.inp, rs.inp].forEach(inp => {
@@ -2800,13 +2862,13 @@ try{
       inp.addEventListener('blur', ()=> compute(true, inp));
     });
 
-    // restore
-    try{
-      const sUp = localStorage.getItem('q6C_up'); if (sUp != null) up.inp.value = sUp;
-      const sRs = localStorage.getItem('q6C_res'); if (sRs != null) rs.inp.value = sRs;
-    }catch(_){}
-
-    compute(false, null);
+    
+// restore (start fresh with placeholders; clear any old saved values)
+try{
+  localStorage.removeItem('q6C_up');
+  localStorage.removeItem('q6C_res');
+}catch(_){}
+// don't prefill; leave boxes empty until edited
 
     // also clear on restart button (same behavior as app)
     document.addEventListener('click', function(e){
@@ -3070,8 +3132,8 @@ renderMiniQ6 = function (intoEl, node) {
           wrap.innerHTML =
             '<div class="mini-field"><label>Group '+(i+1)+' count</label><input data-i="'+i+'" data-k="count" type="number" min="0" step="1" value="'+((g.count ?? 0))+'"></div>'+
             '<div class="mini-field"><label>Unit</label><select data-i="'+i+'" data-k="mode">'+
-            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>'+
             '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>'+
+            '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>'+
             '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>'+
             '</select></div>'+
             '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
@@ -3130,13 +3192,13 @@ renderMiniQ6 = function (intoEl, node) {
         function updateQ6ProbLabel(){
           if (!el.pMode) return;
           var mode = (el.pMode.value || '').toLowerCase();
-          if (mode === 'oneinx' || mode === '1 in x' || mode === '1inx') mode = 'oneInX';
           if (mode === 'percentage' || mode === '%' || mode === 'percent%') mode = 'percent';
+          if (mode === 'oneinx' || mode === '1 in x' || mode === '1inx') mode = 'oneInX';
           if (mode === 'micromorts') mode = 'micromort';
           var lab = el.stack && el.stack.querySelector('#q6ProbLabel');
           if (lab){
-            if (mode === 'oneInX'){ lab.textContent = 'Enter X (for “1 in X”)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1,000'; }
-            else if (mode === 'percent'){ lab.textContent = 'Enter percentage (%)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1'; }
+            if (mode === 'percent'){ lab.textContent = 'Enter percentage (%)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1'; }
+            else if (mode === 'oneInX'){ lab.textContent = 'Enter X (for “1 in X”)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1,000'; }
             else { lab.textContent = 'Enter micromorts (µm)'; if (el.pVal) el.pVal.placeholder = 'e.g. 1'; }
           }
           var sym = (mode==='percent') ? '%' : (mode==='micromort' ? 'µm' : 'X');
