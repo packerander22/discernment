@@ -686,9 +686,20 @@
 })();
 
 var flowchart = [
-  { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <b>IF</b> and <b>WHEN</b> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (or enter numbers). Answer everything to the best of your knowledge; if you don't know something, do your best to find out if it's worth it.\nAlways consult this guide if the benefit/severity of a given scenario outweighs the actual effort of doing so before acting. For more trivial matters, recall this guide as best you can from memory, and use your best judgment.", "next": "Q1" },
+  { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <b>IF</b> and <b>WHEN</b> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (or enter numbers). Answer everything to the best of your knowledge; if you don't know something, do your best to find out if it's worth it.", "next": "Q1" },
   
-  { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1",  "no": "Q2" },
+  { "id": "Q1",  "type": "question", "text": "Are there any other more important things to do or think about right now?", "yes": "R1",  "no": "Q1b" },
+  { "id": "Q1b",  "type": "question", "text": "Is there an issue in mind that might need to be addressed?", "yes": "Q14",  "no": "R2" },
+  
+  { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the issue in mind even if it’s currently unavailable (or a means of bringing it about)?", "yes": "Q11",  "no": "R4" },
+  { "id": "Q11", "type": "question", "text": "Can this solution be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
+  { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q14", "no": "Q13" },
+  { "id": "Q13", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s within your control or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
+  
+  
+  { "id": "Q14", "type": "question", "text": "Does the issue in mind involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q15", "no": "Q2" },
+  { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q2" },
+  
   { "id": "Q2",  "type": "question", "text": "Is there a <i>current</i> <b>real problem</b>, rather than just a “problem” that doesn’t affect performance or outcomes?", "yes": "Q10",  "no": "Q2b" },
   { "id": "Q2b",  "type": "question", "text": "Is there a desired <i>QoL (quality of life) improvement</i>, rather than just a preference that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q3" },
   { "id": "Q3",  "type": "question", "text": "Is there cause for a <i>future</i> potential <b>real problem</b>, rather than just a “problem” that doesn’t affect performance or outcomes?", "yes": "Q5b",  "no": "Q4" },
@@ -704,20 +715,12 @@ var flowchart = [
   { "id": "Q6", "type": "mini", "text": "Use the interactive tool below to weigh the estimated <b>Severity</b>, <b>Cost</b>, and <b>Probability</b> of this future potential problem (for just this instance). Enter them into the boxes, and choose the probability measurement unit that applies.", "yes": "Q10", "no": "Q7" },
 
   
-  { "id": "Q7", "type": "miniViz", "text": "Is there a time further down the road that the circumstances in the <i>previous question</i> could change and flip the verdict?\nNote: This slide does not change your original input unless you go back and edit the last slide.", "yes": "R3", "no": "Q21" },
-  { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the problem/potential problem even if it’s currently unavailable (or a means of bringing about the QoL improvement)?", "yes": "Q11",  "no": "R4" },
-  { "id": "Q11", "type": "question", "text": "Can this solution or QoL improvement be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
-  { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q14", "no": "Q13" },
-  { "id": "Q13", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s within your control or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
+  { "id": "Q7", "type": "question", "text": "Is there a time further down the road that the circumstances in the <i>previous question</i> could change and flip the verdict?\nNote: This slide does not change your original input unless you go back and edit the last slide.", "yes": "R3", "no": "Q21" },
 
-  { "id": "Q14", "type": "question", "text": "Does this solution or QoL improvement involve gaining information that would be <i>valuable in the future</i>?", "yes": "Q15", "no": "Q16" },
-  { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q16" },
   
   { "id": "Q16", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh the expected <i>upfront</i> costs/efforts of addressing it (for just this instance)?", "yes": "Q17", "no": "Q20" },
-  { "id": "Q17", "type": "question", "text": "Would the expected benefits of addressing this issue outweigh any negative consequences that would likely arise <i>as a result</i> of addressing it (for just this instance)?", "yes": "Q18", "no": "Q20" },
-  { "id": "Q18", "type": "question", "text": "Would the overall benefits of addressing this issue outweigh the <i>combined total</i> of both the upfront costs and any resulting downsides (for just this instance)?", "yes": "Q22", "no": "Q20", "same": "Q19" },
+  
 
-  { "id": "Q19", "type": "question", "text": "All things considered, would you <i>rather</i> address it than not?", "yes": "Q22", "no": "Q20" },
   { "id": "Q20", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "Q21" },
   { "id": "Q21", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s worth it or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
   { "id": "Q22", "type": "question", "text": "Does addressing this issue involve a <i>diminishing returns</i> curve for effort applied?", "yes": "Q23", "no": "Q24" },
