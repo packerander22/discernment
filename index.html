@@ -1456,37 +1456,39 @@ function renderMiniQ6(intoEl, node){
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
 
 // Valuation Grade: p × Xc, where p = 1 / Xuser
-if (valuationEl &&
-    typeof Xc === 'number' && isFinite(Xc) && Xc > 0 &&
-    typeof Xuser === 'number' && isFinite(Xuser) && Xuser > 0) {
-
+if (typeof valuationEl !== 'undefined' && valuationEl &&
+    typeof Xc === 'number' && typeof Xuser === 'number' &&
+    isFinite(Xc) && isFinite(Xuser) && Xuser > 0){
   const p = 1 / Xuser;
   const valuation = p * Xc;
+  let shown;
 
-  // valuation rounding logic: 3dp for <10, 2dp for <100,
-  // 1dp for <1000, 0dp for >=1000
-  const absVal = Math.abs(valuation);
-  let decimals;
-  if (absVal < 10) {
-    decimals = 3;
-  } else if (absVal < 100) {
-    decimals = 2;
-  } else if (absVal < 1000) {
-    decimals = 1;
+  if (!isFinite(valuation) || valuation <= 0){
+    shown = '—';
+  } else if (valuation >= 1000){
+    // ≥ 1000 → no decimals, with grouping
+    shown = Math.round(valuation).toLocaleString();
   } else {
-    decimals = 0;
+    // Tiered rounding:
+    // < 10   → 3 decimal places
+    // 10–<100 → 2 decimal places
+    // 100–<1000 → 1 decimal place
+    let decimals;
+    if (valuation < 10){
+      decimals = 3;
+    } else if (valuation < 100){
+      decimals = 2;
+    } else {
+      decimals = 1;
+    }
+    shown = valuation.toFixed(decimals)
+      .replace(/0+$/,'')
+      .replace(/\.$/,'');
   }
 
-  const shown = valuation.toLocaleString(undefined, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  });
-
   valuationEl.textContent = 'Valuation Grade: ' + shown;
-
-} else if (valuationEl) {
+} else if (typeof valuationEl !== 'undefined' && valuationEl){
   valuationEl.textContent = 'Valuation Grade: —';
-}
 }
     const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
     const cx = CtoPx(Math.max(cMinView, Math.min(cMaxView, miniMaster.C)));
@@ -2785,12 +2787,7 @@ try{
       // It has id like 'q6C'
       var el = root.querySelector('#q6C') || root.querySelector('#q6_C') || null;
       return el;
-  up.inp.value = '';
-rs.inp.value = '';
-costInput.value = '';
-costInput.dispatchEvent(new Event('input', {bubbles:true}));
-costInput.dispatchEvent(new Event('change', {bubbles:true}));
-  })();
+    })();
     if (!costInput) return;
 
     const costField = costInput.closest('.mini-field') || costInput.parentElement;
@@ -2892,25 +2889,14 @@ try{
 }catch(_){}
 // don't prefill; leave boxes empty until edited
 
-    // also clear on restart button
-document.addEventListener('click', function(e){
-  const t = e.target; if (!t) return;
-  const id = t.id || ''; const cls = t.className || '';
-  const dataAct = (t.dataset && (t.dataset.action || '')) || '';
-  if (/restart/i.test(id) || /restart/i.test(cls) || /restart/i.test(dataAct)){
-    if (up && up.inp) up.inp.value = '';
-    if (rs && rs.inp) rs.inp.value = '';
-    if (costInput) {
-      costInput.value = '';
-      costInput.dispatchEvent(new Event('input', {bubbles:true}));
-      costInput.dispatchEvent(new Event('change', {bubbles:true}));
-    }
-  }
-}, true);up.inp.value = '';
-rs.inp.value = '';
-costInput.value = '';
-costInput.dispatchEvent(new Event('input', {bubbles:true}));
-costInput.dispatchEvent(new Event('change', {bubbles:true}));
+    // also clear on restart button (same behavior as app)
+    document.addEventListener('click', function(e){
+      const t = e.target; if (!t) return;
+      const id = t.id || ''; const cls = t.className || '';
+      if (/restart/i.test(id) || /restart/i.test(cls) || (t.dataset && /restart/i.test(t.dataset.action || ''))){
+        try{ localStorage.removeItem('q6C_up'); localStorage.removeItem('q6C_res'); }catch(_){}
+      }
+    }, true);
   })();
 }catch(e){ console.error('Q6 dual-cost injection failed', e); }
 // ---- end injection ----
