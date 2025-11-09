@@ -847,10 +847,10 @@ window.examplesThreshold = {
 };
 
 var miniMaster = {
-  S: 5, C: 1,             
-  mode: 'oneInX',         
-  val: 1000000,           
-  X_user: 1000000         
+  S: 5, C: 1,
+  mode: 'percent',
+  val: 1,
+  X_user: null
 };
 
 (function () {
@@ -2799,25 +2799,21 @@ try{
       inp.addEventListener('change', ()=> compute(true, inp));
       inp.addEventListener('blur', ()=> compute(true, inp));
     });
-// start blank: no persistence on load
-    up.inp.value = '';
-    rs.inp.value = '';
-    costInput.value = '';
-    costInput.dispatchEvent(new Event('input',  {bubbles:true}));
-    costInput.dispatchEvent(new Event('change', {bubbles:true}));
 
-    // clear on restart buttons
+    // restore
+    try{
+      const sUp = localStorage.getItem('q6C_up'); if (sUp != null) up.inp.value = sUp;
+      const sRs = localStorage.getItem('q6C_res'); if (sRs != null) rs.inp.value = sRs;
+    }catch(_){}
+
+    compute(false, null);
+
+    // also clear on restart button (same behavior as app)
     document.addEventListener('click', function(e){
       const t = e.target; if (!t) return;
-      const id = t.id || '';
-      const cls = t.className || '';
-      const dataAct = (t.dataset && (t.dataset.action || '')) || '';
-      if (/restart/i.test(id) || /restart/i.test(cls) || /restart/i.test(dataAct)){
-        up.inp.value = '';
-        rs.inp.value = '';
-        costInput.value = '';
-        costInput.dispatchEvent(new Event('input',  {bubbles:true}));
-        costInput.dispatchEvent(new Event('change', {bubbles:true}));
+      const id = t.id || ''; const cls = t.className || '';
+      if (/restart/i.test(id) || /restart/i.test(cls) || (t.dataset && /restart/i.test(t.dataset.action || ''))){
+        try{ localStorage.removeItem('q6C_up'); localStorage.removeItem('q6C_res'); }catch(_){}
       }
     }, true);
   })();
