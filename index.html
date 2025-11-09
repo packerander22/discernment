@@ -1138,7 +1138,29 @@ function renderMiniQ6(intoEl, node){
   const valuationEl = document.createElement('div');
   valuationEl.className = 'rule';
   valuationEl.id = 'miniValuation';
-  valuationEl.textContent = 'Valuation Grade: —';
+  // valuation rounding logic: 3dp for <10, 2dp for <100, 1dp for <1000, 0dp for >=1000
+if (valuationEl) {
+  if (valuation == null || isNaN(valuation)) {
+    valuationEl.textContent = 'Valuation: —';
+  } else {
+    const v = valuation;
+    const absVal = Math.abs(v);
+    let decimals = 0;
+    if (absVal < 10) {
+      decimals = 3;
+    } else if (absVal < 100) {
+      decimals = 2;
+    } else if (absVal < 1000) {
+      decimals = 1;
+    } else {
+      decimals = 0;
+    }
+    valuationEl.textContent = 'Valuation: ' + v.toLocaleString(undefined, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+}
   wrap.appendChild(valuationEl);
 
   // Verdict
