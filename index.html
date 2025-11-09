@@ -1131,17 +1131,9 @@ function renderMiniQ6(intoEl, node){
   svg.setAttribute('viewBox','0 0 940 620');
   svg.style.overflow = 'visible';
   svg.style.marginTop = '12px';
+  wrap.appendChild(svg);
 
-wrap.appendChild(svg);
-
-// Valuation Grade (actual formula value) — under the graph, before the verdict
-const valuationEl = document.createElement('div');
-valuationEl.className = 'rule';
-valuationEl.id = 'miniValuation';
-valuationEl.textContent = 'Valuation Grade: —';
-wrap.appendChild(valuationEl);
-
-// Verdict
+  // Verdict
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(verdict);
@@ -1427,7 +1419,6 @@ wrap.appendChild(valuationEl);
 
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (!hasAll) {
-      if (typeof valuationEl !== 'undefined' && valuationEl) valuationEl.textContent = 'Valuation Grade: —';
       axesG.setAttribute('opacity','0.55');
       curve.setAttribute('d','');
       shadeIn.setAttribute('d','');
@@ -1454,36 +1445,6 @@ wrap.appendChild(valuationEl);
     const Xc = miniXcutoff_from_ratio(r);
     const range = yRange(mode);
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
-
-// Valuation Grade: p × Xc, where p = 1 / Xuser
-if (typeof valuationEl !== 'undefined' && valuationEl &&
-    typeof Xc === 'number' && typeof Xuser === 'number' &&
-    isFinite(Xc) && isFinite(Xuser) && Xuser > 0) {
-  const p = 1 / Xuser;
-  const valuation = p * Xc;
-
-  // valuation rounding logic: 3dp for <10, 2dp for <100, 1dp for <1000, 0dp for >=1000
-  const v = valuation;
-  const absVal = Math.abs(v);
-  let decimals = 0;
-  if (absVal < 10) {
-    decimals = 3;
-  } else if (absVal < 100) {
-    decimals = 2;
-  } else if (absVal < 1000) {
-    decimals = 1;
-  } else {
-    decimals = 0;
-  }
-
-  valuationEl.textContent = 'Valuation Grade: ' + v.toLocaleString(undefined, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  });
-} else if (typeof valuationEl !== 'undefined' && valuationEl) {
-  valuationEl.textContent = 'Valuation Grade: —';
-}
-
     const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
     const cx = CtoPx(Math.max(cMinView, Math.min(cMaxView, miniMaster.C)));
     const cy = yToPx(Ydot, range.yMin, range.yMax);
@@ -2838,8 +2799,7 @@ try{
       inp.addEventListener('change', ()=> compute(true, inp));
       inp.addEventListener('blur', ()=> compute(true, inp));
     });
-
-    // start blank: no persistence on load
+// start blank: no persistence on load
     up.inp.value = '';
     rs.inp.value = '';
     costInput.value = '';
