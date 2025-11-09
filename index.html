@@ -1131,7 +1131,8 @@ function renderMiniQ6(intoEl, node){
   svg.setAttribute('viewBox','0 0 940 620');
   svg.style.overflow = 'visible';
   svg.style.marginTop = '12px';
-  wrap.appendChild(svg);
+
+wrap.appendChild(svg);
 
 // Valuation Grade (actual formula value) — under the graph, before the verdict
 const valuationEl = document.createElement('div');
@@ -1140,7 +1141,7 @@ valuationEl.id = 'miniValuation';
 valuationEl.textContent = 'Valuation Grade: —';
 wrap.appendChild(valuationEl);
 
-  // Verdict
+// Verdict
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
   verdict.textContent = 'Enter values to see if preventative action should be considered.';
   wrap.appendChild(verdict);
@@ -1453,7 +1454,7 @@ wrap.appendChild(valuationEl);
     const Xc = miniXcutoff_from_ratio(r);
     const range = yRange(mode);
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
-    const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
+
 // Valuation Grade: p × Xc, where p = 1 / Xuser
 if (typeof valuationEl !== 'undefined' && valuationEl &&
     typeof Xc === 'number' && typeof Xuser === 'number' &&
@@ -1483,6 +1484,7 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
   valuationEl.textContent = 'Valuation Grade: —';
 }
 
+    const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
     const cx = CtoPx(Math.max(cMinView, Math.min(cMaxView, miniMaster.C)));
     const cy = yToPx(Ydot, range.yMin, range.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
@@ -2837,20 +2839,25 @@ try{
       inp.addEventListener('blur', ()=> compute(true, inp));
     });
 
-    // restore
-    try{
-      const sUp = localStorage.getItem('q6C_up'); if (sUp != null) up.inp.value = sUp;
-      const sRs = localStorage.getItem('q6C_res'); if (sRs != null) rs.inp.value = sRs;
-    }catch(_){}
+    // start blank: no persistence on load
+    up.inp.value = '';
+    rs.inp.value = '';
+    costInput.value = '';
+    costInput.dispatchEvent(new Event('input',  {bubbles:true}));
+    costInput.dispatchEvent(new Event('change', {bubbles:true}));
 
-    compute(false, null);
-
-    // also clear on restart button (same behavior as app)
+    // clear on restart buttons
     document.addEventListener('click', function(e){
       const t = e.target; if (!t) return;
-      const id = t.id || ''; const cls = t.className || '';
-      if (/restart/i.test(id) || /restart/i.test(cls) || (t.dataset && /restart/i.test(t.dataset.action || ''))){
-        try{ localStorage.removeItem('q6C_up'); localStorage.removeItem('q6C_res'); }catch(_){}
+      const id = t.id || '';
+      const cls = t.className || '';
+      const dataAct = (t.dataset && (t.dataset.action || '')) || '';
+      if (/restart/i.test(id) || /restart/i.test(cls) || /restart/i.test(dataAct)){
+        up.inp.value = '';
+        rs.inp.value = '';
+        costInput.value = '';
+        costInput.dispatchEvent(new Event('input',  {bubbles:true}));
+        costInput.dispatchEvent(new Event('change', {bubbles:true}));
       }
     }, true);
   })();
