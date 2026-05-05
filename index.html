@@ -689,7 +689,7 @@ var flowchart = [
   { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <b>IF</b> and <b>WHEN</b> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (or enter numbers). Answer everything to the best of your knowledge; if you don't know something, do your best to find out if it's worth it.", "next": "Q1" },
   
   { "id": "Q1",  "type": "question", "text": "Is there a question you have that you might want to seek the answer to?", "yes": "Q1b",  "no": "Q1g" },
-  { "id": "Q1b",  "type": "question", "text": "Is it a yes/no type question?", "yes": "Q1c",  "no": "Q15" },
+  { "id": "Q1b",  "type": "question", "text": "Is it a yes/no type question?", "yes": "Q1c",  "no": "Q14" },
   { "id": "Q1c",  "type": "question", "text": "Are you seeking an answer motivated solely by anxiety, with no intention of actually using that information?", "yes": "Rr",  "no": "Q1d" },
   { "id": "Q1d",  "type": "question", "text": "Are you currently confident that you had a perfect knowledge of what the answer to this question was at some point in the past?", "yes": "Q1e",  "no": "Q1g" },
   { "id": "Q1e",  "type": "question", "text": "Assuming it was as you thought back then, is there a realistic chance the verdict could have changed since that time?", "yes": "Q1j",  "no": "Rr" },
@@ -706,7 +706,8 @@ var flowchart = [
   { "id": "Q13", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s within your control or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
   
   
-  { "id": "Q15", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q2" },
+  { "id": "Q14", "type": "question", "text": "Would the <i>information alone</i> gained from doing this outweigh the downsides it would likely cause to make this happen?", "yes": "Q31", "no": "Q15" },
+  { "id": "Q15", "type": "question", "text": "Is there a time further down the road that the answer to the <i>previous question</i> could be yes?", "yes": "R3", "no": "R2" },
   
   { "id": "Q2",  "type": "question", "text": "Is this issue regarding a <i>current</i> <b>real problem</b>, rather than just a “problem” that doesn’t affect performance or outcomes?", "yes": "Q16",  "no": "Q2b" },
   { "id": "Q2b",  "type": "question", "text": "Is this issue regarding a desired <i>QoL (quality of life) improvement</i>, rather than just a preference that doesn’t affect performance or outcomes?", "yes": "Q5",  "no": "Q3" },
