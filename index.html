@@ -688,7 +688,7 @@
 var flowchart = [
   { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <b>IF</b> and <b>WHEN</b> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (or enter numbers). Answer everything to the best of your knowledge; if you don't know something, do your best to find out if it's worth it.", "next": "Q1" },
   
-  { "id": "Q1",  "type": "question", "text": "Is there a question you have that you might want to seek the answer to?", "yes": "Q1b",  "no": "Q1k" },
+  { "id": "Q1",  "type": "question", "text": "Is there a question you have that you might want to seek the answer to?", "yes": "Q1b",  "no": "Q1z" },
   { "id": "Q1b",  "type": "question", "text": "Is it a yes/no type question?", "yes": "Q1c",  "no": "Q14" },
   { "id": "Q1c",  "type": "question", "text": "Are you seeking an answer motivated solely by anxiety, with no intention of actually using that information?", "yes": "Rr",  "no": "Q1d" },
   { "id": "Q1d",  "type": "question", "text": "Are you currently confident that you had a perfect knowledge of what the answer to this question was at some point in the past?", "yes": "Q1e",  "no": "Q1g" },
@@ -696,13 +696,19 @@ var flowchart = [
   { "id": "Q1f",  "type": "question", "text": "Do you have an existing belief of what the answer is that you have previously chosen to believe in?", "yes": "Q1g",  "no": "Q1j" },
   { "id": "Q1g",  "type": "question", "text": "If you were to drop this belief and pursue a different one, would you risk losing something important that could have been the right means of achieving your underlying goal?", "yes": "Q1h",  "no": "Q1j" },
   { "id": "Q1h",  "type": "question", "text": "Has any new evidence (not merely the absence of evidence) been presented that could at all suggest that your belief is incorrect?", "yes": "Q1i",  "no": "Rrb" },
-  { "id": "Q1i",  "type": "question", "text": "Is the total evidence against your current belief now stronger than the total evidence for it?", "yes": "Rf",  "no": "Rrb" },
-  { "id": "Q1j",  "type": "question", "text": "Is the verdict ultimately in someone or something else’s control?", "yes": "Ray",  "no": "Ran" },
-  { "id": "Q1k",  "type": "question", "text": "Is there an issue in mind that might need to be addressed?", "yes": "Q10",  "no": "R2" },
+  { "id": "Q1i",  "type": "question", "text": "Is the total evidence against your current belief now stronger than the total evidence for it?", "yes": "Qf",  "no": "Rrb" },
+  { "id": "Qf", "type": "info",     "text": "Flip your belief and continue.", "next": "Q1j" },
+  { "id": "Q1j",  "type": "question", "text": "Is the verdict ultimately in someone or something else’s control?", "yes": "Q1k",  "no": "Q1m" },
+  { "id": "Q1k",  "type": "question", "text": "Is there a solution to the issue that might need doing depending on the answer to your question?", "yes": "Q1l",  "no": "Ray" },
+  { "id": "Q1l",  "type": "question", "info": "Do what is within your control and worth it to you to contribute positively to achieve the desired outcome and nothing more. Do not seek answers solely to relieve anxiety.", "next": "Q11" },
+  
+  { "id": "Q1m",  "type": "question", "text": "Is there a solution to the issue that might need doing depending on the answer to your question?", "yes": "Q11",  "no": "Ran" },
+    
+  { "id": "Q1z",  "type": "question", "text": "Is there an issue in mind that might need to be addressed?", "yes": "Q10",  "no": "R2" },
   
   { "id": "Q10", "type": "question", "text": "Is there a solution (or at least partial solution) to the issue in mind even if it’s currently unavailable (or a means of bringing it about)?", "yes": "Q11",  "no": "R4" },
   { "id": "Q11", "type": "question", "text": "Can this solution be <i>guaranteed</i> to be fully brought about as a result of <i>your</i> influence?", "yes": "Q14", "no": "Q12" },
-  { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q14", "no": "Q13" },
+  { "id": "Q12", "type": "question", "text": "Do everything in your power first to achieve the desired result, but know that past that it’s out of your hands, and <i>worrying and obsessing won’t change anything and is unhealthy</i>. Is there anything further you can do?", "yes": "Q2", "no": "Q13" },
   { "id": "Q13", "type": "question", "text": "Is there an <i>alternative solution</i> that would solve the problem (or improve QoL) in a way that’s within your control or perhaps even in a <i>better overall way</i>?", "yes": "R5",  "no": "R2" },
   
   
@@ -774,9 +780,8 @@ var flowchart = [
   
   { "id": "Rr",  "type": "result",   "text": "Don't seek reassurance in this case." },
   { "id": "Rrb", "type": "result",    "text": "Continue your belief and don’t seek reassurance in this case." },
-  { "id": "Rf", "type": "info",     "text": "Flip your belief and continue.", "next": "Q1j" },
-  { "id": "Ray",  "type": "result",   "text": "Do what is within your control and worth it (according to the risks, costs, and benefits involved) to contribute positively to achieve the desired outcome and nothing more. Do not seek answers solely to relieve anxiety." },
-  { "id": "Ran",  "type": "result",   "text": "Seeking assurance is good if it’s worth it (according to the risks, costs, and benefits involved) to do so." },
+  { "id": "Ray",  "type": "result",   "text": "Do what is within your control and worth it to you to contribute positively to achieve the desired outcome and nothing more. Do not seek answers solely to relieve anxiety." },
+  { "id": "Ran",  "type": "result",   "text": "Seeking assurance is good if it’s worth it to you." },
   { "id": "R1",  "type": "result",   "text": "Worry about this <i>once those things are addressed</i> and the time is right." },
   { "id": "R2",  "type": "result",   "text": "<i>Don’t worry about it:)</i>" },
   { "id": "R3",  "type": "result",   "text": "If that time ever does come, re-evaluate the issue. Until then, (once there aren't any other more important things to do), consider any other solutions that could work and be worth it, or perhaps even be <i>better overall</i>." },
