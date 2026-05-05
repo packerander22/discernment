@@ -688,7 +688,7 @@
 var flowchart = [
   { "id": "Q0",  "type": "info", "text": "Welcome! This guide helps you determine both <b>IF</b> and <b>WHEN</b> you should act on an issue. This will help to avoid wasting resources and time, and getting stuck in <i>analysis paralysis</i>.\nYou’ll answer simple Yes/No questions (or enter numbers). Answer everything to the best of your knowledge; if you don't know something, do your best to find out if it's worth it.", "next": "Q1" },
   
-  { "id": "Q1",  "type": "question", "text": "Is there a question you have that you might want to seek the answer to?", "yes": "R1",  "no": "Q1b" },
+  { "id": "Q1",  "type": "question", "text": "Is there a question you have that you might want to seek the answer to?", "yes": "Q1b",  "no": "Q1g" },
   { "id": "Q1b",  "type": "question", "text": "Is it a yes/no type question?", "yes": "Q1c",  "no": "Q15" },
   { "id": "Q1c",  "type": "question", "text": "Are you seeking an answer motivated solely by anxiety, with no intention of actually using that information?", "yes": "Rr",  "no": "Q1d" },
   { "id": "Q1d",  "type": "question", "text": "Are you currently confident that you had a perfect knowledge of what the answer to this question was at some point in the past?", "yes": "Q1e",  "no": "Q1g" },
