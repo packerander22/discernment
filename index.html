@@ -744,7 +744,7 @@ var flowchart = [
   { "id": "Q24", "type": "question", "text": "Would addressing this issue have a <i>sweet spot in returns</i> for specific effort applied?", "yes": "Q25", "no": "Q26" },
   { "id": "Q25", "type": "info",     "text": "Wait until there aren’t any other more important things to do, then if it’s worth it to you, find that <i>sweet spot</i>. If not, put in as much effort as you deem worth it.", "next": "Q31" },
 
-  { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i>—like in a blind test compared side by side—likely be noticed if the issue was solved/addressed (assuming any potential future problems would occur)?", "yes": "Q27", "no": "R2" },
+  { "id": "Q26", "type": "question", "text": "In practice and given time, would a <i>functional difference</i> likely be noticed if the issue was solved/addressed (assuming any potential future problems did occur)?", "yes": "Q27", "no": "R2" },
   { "id": "Q27", "type": "question", "text": "Would solving/addressing this help get rid of/prevent the problem (or improve QoL) in the <i>long term</i>?", "yes": "Q31", "no": "Q28" },
   { "id": "Q28", "type": "question", "text": "Would solving/addressing this help get rid of/prevent the problem (or improve QoL) in the <i>short term</i>?", "yes": "Q29", "no": "R2" },
   { "id": "Q29", "type": "question", "text": "Would it logically worth solving/addressing this <i>EVERY time this situation arises</i>?", "yes": "Q31", "no": "Q29b" },
@@ -775,8 +775,8 @@ var flowchart = [
   { "id": "Q44", "type": "question", "text": "Is there a <i>better time</i> further down the road than when this solution is available to solve/address this to <i>maximize value</i>?", "yes": "R8",  "no": "R6" },
 
   
-  { "id": "Q46", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
-  { "id": "Q47", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8", "no": "R9" },
+  { "id": "Q46", "type": "question", "text": "Normally you should solve/address it as soon as both of the following are true: <ul><li><i>Those telltale signs</i> indicate that failure is approaching.</li><li>The <i>estimated chance of failure</i> is nearing or greater than 50%.</li></ul>\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8b", "no": "R9" },
+  { "id": "Q47", "type": "question", "text": "Normally you should solve/address it as soon as the <i>estimated chance of failure</i> is nearing or greater than 50%.\nHowever, is there a <i>better time</i> before or after that time to solve/address this to <i>maximize value</i>?", "yes": "R8b", "no": "R9" },
   
   
   { "id": "Rr",  "type": "result",   "text": "Don't seek reassurance in this case." },
@@ -790,7 +790,8 @@ var flowchart = [
   { "id": "R5",  "type": "result",   "text": "Consider any other solutions, from best to worst, if you haven’t already (run them through the guide)." },
   { "id": "R6",  "type": "result",   "text": "Wait until this solution is available, then solve it when the time is right. Until then, consider any other solutions that could also work and be worth it." },
   { "id": "R7",  "type": "result",   "text": "Address it <i>sooner than later</i>, when the time is right." },
-  { "id": "R8",  "type": "result",   "text": "Wait until that better time, then solve/address it. Until then, consider any other solutions that could either also work and be worth it, or—in the case of preventative maintenance—mitigate consequences if failure did occur." },
+  { "id": "R8",  "type": "result",   "text": "Wait until that better time, then solve/address it. Until then, consider any other solutions that could either also work and be worth it." },
+  { "id": "R8b",  "type": "result",   "text": "Wait until that better time, then solve/address it. Until then, consider any other solutions that could either also work and be worth it, or mitigate consequences if failure did occur." },
   { "id": "R9",  "type": "result",   "text": "Solve/address it as soon as the criteria from the <i>previous slide</i> (before the question) are met, once there aren’t any other more important things to do. Until then, (once there aren't any other more important things to do, and if you'd like), consider any solutions that would mitigate consequences if failure did occur." },
 
   
@@ -3281,190 +3282,6 @@ renderMiniQ6 = function (intoEl, node) {
 })();
 </script>
 
-
-<script>
-(function(){
-  try{
-    // 1) Normalize flowchart nodes: collapse Q16–Q18 trio into one Q16 (no HTML in JSON)
-    if (Array.isArray(window.flowchart)){
-      const idsToRemove = new Set(['Q17','Q18','Q19']);
-      for (let i = window.flowchart.length - 1; i >= 0; i--) {
-        const n = window.flowchart[i];
-        if (!n) continue;
-        if (idsToRemove.has(n.id)) window.flowchart.splice(i, 1);
-      }
-      const i16 = window.flowchart.findIndex(n => n && n.id === 'Q16');
-      const mini16 = { id: 'Q16', type: 'mini16', text: 'Combined tradeoff (upfront + resulting cost vs benefit)' };
-      if (i16 !== -1) window.flowchart[i16] = mini16; else window.flowchart.push(mini16);
-    }
-
-    // 2) Patch renderNode to handle mini16 without HTML in JSON
-    const _renderNode = window.renderNode;
-    window.renderNode = function(node){
-      if (node && (node.id === 'Q16' || node.type === 'mini16')){
-        const textDiv = document.getElementById('text');
-        if (textDiv) textDiv.innerHTML = '';
-        const btns = document.getElementById('buttons');
-        if (btns) btns.innerHTML = '';
-        if (typeof window.renderMiniQ16 === 'function'){
-          window.renderMiniQ16(textDiv, node);
-        } else {
-          console.error('renderMiniQ16 missing');
-        }
-        return;
-      }
-      return _renderNode.apply(this, arguments);
-    };
-
-    // 3) Define renderMiniQ16 if it does not already exist
-    if (typeof window.renderMiniQ16 !== 'function'){
-      window.renderMiniQ16 = function(containerEl /*, node */){
-        // helpers
-        const el = (tag, cls, text) => {
-          const x = document.createElement(tag);
-          if (cls) x.className = cls;
-          if (text != null) x.textContent = text;
-          return x;
-        };
-        const makeInput = (id) => {
-          const i = document.createElement('input');
-          i.type = 'number';
-          i.id = id;
-          i.min = '0';
-          i.max = '10';
-          i.step = '0.01';
-          i.inputMode = 'decimal';
-          i.autocomplete = 'off';
-          return i;
-        };
-
-        // wrapper (match Q6 base look)
-        const wrap = el('div', 'mini-wrap');
-        const heading = el('div', 'mini-heading', 'Combined Tradeoff (Single Screen)');
-        const lead = el('div', 'mini-lead',
-          'Enter 0–10 for Upfront Cost, Resulting Cost, and Benefit. We apply the same weighting as Q6, add the two costs, and compare to the benefit. If equal, we recommend acting to be safe.'
-        );
-        const sep1 = el('div', 'mini-sep');
-
-        // fields
-        const fields = el('div', 'mini-fields');
-
-        const f1 = el('div', 'mini-field');
-        const l1 = el('label', null, 'Upfront Cost (0–10)');
-        const in1 = makeInput('q16_cost_up'); f1.append(l1, in1);
-
-        const f2 = el('div', 'mini-field');
-        const l2 = el('label', null, 'Resulting Cost (0–10)');
-        const in2 = makeInput('q16_cost_res'); f2.append(l2, in2);
-
-        const f3 = el('div', 'mini-field');
-        const l3 = el('label', null, 'Benefit (0–10)');
-        const in3 = makeInput('q16_benefit'); f3.append(l3, in3);
-
-        fields.append(f1, f2, f3);
-
-        const sep2 = el('div', 'mini-sep');
-
-        const verdict = el('div', 'verdict');
-        verdict.id = 'q16_verdict';
-        verdict.setAttribute('aria-live','polite');
-
-        wrap.append(heading, lead, sep1, fields, sep2, verdict);
-        if (containerEl) containerEl.appendChild(wrap);
-
-        // buttons area
-        const btns = document.getElementById('buttons');
-        if (btns) {
-          btns.innerHTML = '';
-          const cont = el('button', 'next', 'Continue');
-          cont.type = 'button';
-          cont.disabled = true;
-          btns.appendChild(cont);
-
-          function clampNormalize(elm){
-            const raw = (elm.value || '').trim();
-            if (raw === '' || raw === '.' || raw === '-.' || raw === '-') return null;
-            let n = Number(raw);
-            if (!Number.isFinite(n)) return null;
-            if (n < 0) n = 0;
-            if (n > 10) n = 10;
-            // normalize on blur
-            elm.addEventListener('blur', () => {
-              elm.value = (n % 1 === 0) ? String(n) : String(Number(n.toFixed(2)));
-            }, { once: true });
-            return n;
-          }
-
-          function compute(){
-            const cu = clampNormalize(in1);
-            const cr = clampNormalize(in2);
-            const b  = clampNormalize(in3);
-
-            if (cu == null || cr == null || b == null){
-              verdict.textContent = 'Enter all three values to see the recommendation.';
-              verdict.classList.remove('ok','no');
-              cont.disabled = true;
-              cont.onclick = null;
-              return;
-            }
-
-            // reuse Q6’s weighting (must exist globally)
-            if (typeof window.weight10 !== 'function'){
-              console.error('weight10 missing; Q6 weighting not available');
-              verdict.textContent = 'Internal error: weight10 is not defined.';
-              cont.disabled = true;
-              return;
-            }
-            const totalCost = window.weight10(cu) + window.weight10(cr);
-            const benW = window.weight10(b);
-
-            let ok, msg;
-            if (benW > totalCost) {
-              ok = true;
-              msg = '✅ Benefit outweighs total cost — Act should be considered.';
-            } else if (benW === totalCost) {
-              ok = true; // equal => act to be safe
-              msg = '✅ Costs and benefit are equal — Act to be safe.';
-            } else {
-              ok = false;
-              msg = '🤏 Total cost outweighs benefit — Hold/adjust plan.';
-            }
-
-            verdict.textContent = msg;
-            verdict.classList.toggle('ok', ok);
-            verdict.classList.toggle('no', !ok);
-
-            cont.disabled = false;
-            cont.onclick = () => {
-              if (typeof window.goToNode !== 'function'){
-                console.error('goToNode missing');
-                return;
-              }
-              window.goToNode(benW >= totalCost ? 'Q22' : 'Q20');
-            };
-          }
-
-          // live input
-          [in1, in2, in3].forEach(inp => {
-            inp.addEventListener('input', () => {
-              const s = inp.value;
-              const cleaned = s.replace(/[^0-9.]/g,'').replace(/(.*\..*)\./, '$1');
-              if (cleaned !== s) inp.value = cleaned;
-              compute();
-            });
-            inp.addEventListener('change', compute);
-            inp.addEventListener('blur', compute);
-          });
-
-          compute();
-        }
-      };
-    }
-  } catch (e){
-    console.error('Q16 mini integration error', e);
-  }
-})();
-</script>
 
 <style>
 /* Q16 tune-ups, scoped */
