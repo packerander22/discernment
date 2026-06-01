@@ -307,7 +307,7 @@
     --axis-color: #555;
     --axis-color-dim: #777;
     --grid-color: rgba(0,0,0,.12);
-    --curve-color: #1f4cff;
+    --curve-color: #7A43BE;
     --handle-fill: #ff3b3b;
     --handle-stroke: #ffffff;
     --shade-in: color-mix(in oklab, var(--if-accent), #ffffff 84%);
@@ -366,7 +366,7 @@
     --thumb-border:#999; --tick-color:rgba(0,0,0,.35); --track-bg:#e0e0e0;
     --if-accent:#2e7d32; --when-accent:goldenrod; --result-accent: #7A43BE;
     --axis-color:#555; --axis-color-dim:#777; --grid-color:rgba(0,0,0,.12);
-    --curve-color:#1f4cff; --handle-fill:#ff3b3b; --handle-stroke:#fff;
+    --curve-color:#7A43BE; --handle-fill:#ff3b3b; --handle-stroke:#fff;
     --shade-in: color-mix(in oklab, var(--if-accent), #ffffff 84%);
     --shade-out: rgba(0,0,0,.06);
     --label-bg:#fff; --label-text:#111;
@@ -381,7 +381,7 @@
     --if-accent:#5bd36a; --when-accent:#f1c24c; --result-accent: #7A43BE;
 
     --axis-color:#e9edf1; --axis-color-dim:#c7cbd2; --grid-color:rgba(255,255,255,.18);
-    --curve-color:#8fb3ff; --handle-fill:#ff6b6b; --handle-stroke:#171a21;
+    --curve-color:#7A43BE; --handle-fill:#ff6b6b; --handle-stroke:#171a21;
     --shade-in: color-mix(in oklab, var(--if-accent), #000 70%);
     --shade-out: rgba(255,255,255,.05);
     --label-bg:#0f1115; --label-text:#e9edf1;
@@ -433,7 +433,7 @@
   .ptlabel-bg { fill: var(--label-bg); fill-opacity:.98; stroke: var(--border); rx:10; ry:10; }
   
   
-  .rule    { font-weight:700; margin-top:14px; }
+  .rule    { font-weight:700; margin-top:8px; }
   .verdict { margin-top:12px; font-weight:700; }  
   .verdict.ok { color: var(--if-accent); }
   .verdict.no { color: var(--subtle-text); }
@@ -457,10 +457,10 @@
   .mini-svg{width:100%;height:auto;display:block;touch-action:none;overflow:visible}
   .mini-axis line{stroke: var(--grid-color);stroke-width: 1;opacity: .35}
   .mini-axis text{font-size:14px; fill: var(--text); opacity:0.85; font-weight:600}
-  .mini-curve{fill:none;stroke:#1f4cff;stroke-width:2.5}
-  @media (prefers-color-scheme: dark) {
-    .mini-curve{stroke:#7ea3ff}
-  }
+  .mini-curve{fill:none;stroke:var(--btn-restart);stroke-width:2.5}
+  .mini-axis-lock-line{stroke:#1E88E5;stroke-width:2.5;stroke-dasharray:7 7;opacity:.85;pointer-events:none}
+  .mini-lock-row{display:flex;align-items:center;gap:.45rem;margin:10px 0 0;font-size:.95rem;font-weight:700}
+  .mini-lock-row input{width:auto !important;max-width:none !important}
   .mini-shade-in{fill:color-mix(in oklab, var(--if-accent), transparent 80%)}
   .mini-shade-out{fill:transparent}
   .mini-handle{fill:#ff3b3b;stroke:#fff;stroke-width:2;cursor:pointer;touch-action:none}
@@ -902,7 +902,7 @@ function miniClamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
 function miniCeilPlaces(x,p){ var f=Math.pow(10,p); return Math.ceil(x*f)/f; }
 
 function miniNormalizeToX(mode, val){
-  if (mode === 'oneInX')   { if (!(val>1)) return null; return val; }
+  if (mode === 'oneInX')   { if (!(val>=1)) return null; return val; }
   if (mode === 'percent')  { if (!(val>0 && val<100)) return null; return 100/val; }
   if (mode === 'micromort'){ if (!(val>0 && val<1e6)) return null; return 1e6/val; }
   return null;
@@ -1139,7 +1139,7 @@ function renderMiniQ6(intoEl, node){
      <select id="miniMode" name="q6Units">\
        <option value="percent">Percentage (%)</option>\
        <option value="oneInX">1 in X</option>\
-       <option value="micromort">Micromorts</option>\
+       <option value="micromort">Micromorts (µm)</option>\
      </select>';
 
   const vBox = document.createElement('div'); vBox.className='mini-field';
@@ -1151,6 +1151,11 @@ function renderMiniQ6(intoEl, node){
   pRow.appendChild(mBox); pRow.appendChild(vBox);
   wrap.appendChild(fields);
   wrap.appendChild(pRow);
+
+  const lockRow = document.createElement('label');
+  lockRow.className = 'mini-lock-row';
+  lockRow.innerHTML = '<input id="miniLockAxes" type="checkbox" checked> Lock to Axes';
+  wrap.appendChild(lockRow);
 
   // SVG
   const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -1215,6 +1220,7 @@ function renderMiniQ6(intoEl, node){
   const elM  = wrap.querySelector('#miniMode');
   const elV  = wrap.querySelector('#miniVal');
   let   labV = wrap.querySelector('#miniProbLabel');
+  const elLockAxes = wrap.querySelector('#miniLockAxes');
 
   const q6Root  = intoEl;
   const savedQ6 = loadNodeState('Q6');
@@ -1222,10 +1228,20 @@ function renderMiniQ6(intoEl, node){
 
   // math / scales
   function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
+  function trimFixed(x,n){ if (!isFinite(x)) return String(x); return Number(x).toFixed(n).replace(/0+$/,'').replace(/\.$/,''); }
+  function displayProbVal(mode, raw){
+    if (!isFinite(raw)) return '';
+    if (mode === 'percent'){
+      const abs = Math.abs(raw);
+      const dec = abs < 0.001 ? 4 : (abs < 0.01 ? 3 : 2);
+      return trimFixed(raw, dec);
+    }
+    return trimFixed(raw, 2);
+  }
   function yRange(mode){
-    if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Cutoff Probability (%) (log scale)" };
-    if (mode==='micromort') return { yMin: 1,      yMax: 1e6,   ticks:[1e6,1e5,1e4,1e3,100,10,1],        label:"Cutoff Probability (µm) (log scale)" };
-    return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Cutoff Probability as '1 in X' (log scale)" };
+    if (mode==='percent')   return { yMin: 0.0001, yMax: 100,   ticks:[100,10,1,0.1,0.01,0.001,0.0001], label:"Probability (%)" };
+    if (mode==='micromort') return { yMin: 1,      yMax: 1e6,   ticks:[1e6,1e5,1e4,1e3,100,10,1],        label:"Probability (µm)" };
+    return { yMin: 1, yMax: 1e6, ticks:[1,10,100,1e3,1e4,1e5,1e6], label:"Probability (1 in X)" };
   }
   function clampYToRange(Y, mode){
     const r = yRange(mode);
@@ -1236,17 +1252,17 @@ function renderMiniQ6(intoEl, node){
       const pctRaw = 100 / X;
       const pctShown = Math.min(100, pctRaw);
       const prefix   = (pctRaw > 100) ? '≥' : '';
-      return `%=${prefix}${trimDeci(pctShown,6)}`;
+      return `Prob (%)=${prefix}${displayProbVal('percent', pctShown)}`;
     }
     if (mode === 'micromort'){
       const umRaw = 1e6 / X;
       const umShown = Math.min(1e6, umRaw);
       const prefix  = (umRaw > 1e6) ? '≥' : '';
-      return `µm=${prefix}${trimDeci(umShown,2)}`;
+      return `Prob (µm)=${prefix}${displayProbVal('micromort', umShown)}`;
     }
-    const Xshown = Math.min(1e6, Math.round(X));
-    const prefix = (X > 1e6) ? '≥' : '';
-    return `X=${prefix}${Xshown.toLocaleString()}`;
+    const Xshown = Math.min(1e12, X);
+    const prefix = (X > 1e12) ? '≥' : '';
+    return `Prob (1 in X)=${prefix}${displayProbVal('oneInX', Xshown)}`;
   }
 
   // axes: X = Cost (C)
@@ -1299,11 +1315,15 @@ function renderMiniQ6(intoEl, node){
   }
   updateProbLabelForMode(elM ? elM.value : 'oneInX');
 
-  function lockSeverity(val = 10){ elS.value = String(val); elS.disabled = true; elS.classList.add('is-disabled'); }
-  function unlockSeverity(){ elS.disabled = false; elS.classList.remove('is-disabled'); }
   function applyUnitsRule(){
-    const mode = elM.value;
-    if (mode === 'micromort' || mode === 'micromorts') lockSeverity(10); else unlockSeverity();
+    const micOpt = elM ? elM.querySelector('option[value="micromort"]') : null;
+    const sev = parseFloat(elS.value);
+    const allowMicro = isFinite(sev) && Math.abs(sev - 10) < 1e-9;
+    if (micOpt) micOpt.disabled = !allowMicro;
+    if (!allowMicro && elM && elM.value === 'micromort'){
+      elM.value = 'oneInX';
+      updateProbLabelForMode('oneInX');
+    }
   }
   applyUnitsRule();
   if (!elM.__boundUpdateProbLabel){
@@ -1320,6 +1340,8 @@ function renderMiniQ6(intoEl, node){
   const axesG  = document.createElementNS('http://www.w3.org/2000/svg','g'); axesG.setAttribute('class','mini-axis'); svg.appendChild(axesG);
   const shadeIn= document.createElementNS('http://www.w3.org/2000/svg','path'); shadeIn.setAttribute('class','mini-shade-in'); svg.appendChild(shadeIn);
   const curve  = document.createElementNS('http://www.w3.org/2000/svg','path'); curve.setAttribute('class','mini-curve'); svg.appendChild(curve);
+  const lockHLine = document.createElementNS('http://www.w3.org/2000/svg','line'); lockHLine.setAttribute('class','mini-axis-lock-line'); svg.appendChild(lockHLine);
+  const lockVLine = document.createElementNS('http://www.w3.org/2000/svg','line'); lockVLine.setAttribute('class','mini-axis-lock-line'); svg.appendChild(lockVLine);
   const handle = document.createElementNS('http://www.w3.org/2000/svg','circle'); handle.setAttribute('class','mini-handle'); handle.setAttribute('r','12'); svg.appendChild(handle);
 
   const labelG = document.createElementNS('http://www.w3.org/2000/svg','g'); labelG.style.pointerEvents='none'; svg.appendChild(labelG);
@@ -1376,7 +1398,7 @@ function renderMiniQ6(intoEl, node){
       axesG.appendChild(yt);
     });
 
-    xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-10);
+    xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-34);
     xLab.textContent = 'Cost (C)';
 
     const Y_LABEL_OFFSET = 90, desiredLeftPadding=8;
@@ -1443,8 +1465,8 @@ function renderMiniQ6(intoEl, node){
     elC.value = String(C);
     elV.value = String(vv);
 
-    miniMaster.S=S; miniMaster.C=C; miniMaster.mode=mode; miniMaster.val=vv;
-    miniMaster.X_user = miniNormalizeToX(mode, vv);
+    miniMaster.S=S; miniMaster.C=(dragging && isFinite(dragExactC)) ? dragExactC : C; miniMaster.mode=mode; miniMaster.val=vv;
+    miniMaster.X_user = (dragging && isFinite(dragExactX)) ? dragExactX : miniNormalizeToX(mode, vv);
   }
 
   function draw(){
@@ -1460,6 +1482,8 @@ function renderMiniQ6(intoEl, node){
       veilG.removeAttribute('visibility');
       handle.setAttribute('visibility','hidden');
       labelG.setAttribute('visibility','hidden');
+      if (typeof lockHLine !== 'undefined') lockHLine.setAttribute('visibility','hidden');
+      if (typeof lockVLine !== 'undefined') lockVLine.setAttribute('visibility','hidden');
       verdict.textContent = 'Enter values to see if preventative action should be considered.';
       verdict.classList.remove('ok','no');
       if (cont) cont.disabled = true;
@@ -1486,7 +1510,9 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
     typeof Xc === 'number' && typeof Xuser === 'number' &&
     isFinite(Xc) && isFinite(Xuser) && Xuser > 0){
   const p = 1 / Xuser;
-  const valuation = p * Xc;
+  let valuation = p * Xc;
+  const valuationTol = 1e-9;
+  if (isFinite(valuation) && Math.abs(valuation - 1) <= valuationTol) valuation = 1;
   let shown;
 
   if (!isFinite(valuation) || valuation <= 0){
@@ -1500,7 +1526,9 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
     // 10–<100 → 2 decimal places
     // 100–<1000 → 1 decimal place
     let decimals;
-    if (valuation < 10){
+    if (valuation < 1){
+      decimals = 4;
+    } else if (valuation < 10){
       decimals = 3;
     } else if (valuation < 100){
       decimals = 2;
@@ -1521,6 +1549,17 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
     const cy = yToPx(Ydot, range.yMin, range.yMax);
     handle.setAttribute('cx', cx); handle.setAttribute('cy', cy);
 
+    const showLock = elLockAxes && elLockAxes.checked;
+    [lockHLine, lockVLine].forEach(l => l.setAttribute('visibility', showLock ? 'visible' : 'hidden'));
+    if (showLock){
+      const lockCx = (dragging && dragStart) ? CtoPx(dragStart.C) : cx;
+      const lockCy = (dragging && dragStart) ? yToPx(dragStart.Y, range.yMin, range.yMax) : cy;
+      lockHLine.setAttribute('x1', pad.left); lockHLine.setAttribute('x2', pad.left + plotW);
+      lockHLine.setAttribute('y1', lockCy); lockHLine.setAttribute('y2', lockCy);
+      lockVLine.setAttribute('x1', lockCx); lockVLine.setAttribute('x2', lockCx);
+      lockVLine.setAttribute('y1', pad.top); lockVLine.setAttribute('y2', pad.top + plotH);
+    }
+
     const label = `S=${trimDeci(miniMaster.S)}, C=${trimDeci(miniMaster.C)} · ${labelUnit(mode, Xuser)}`;
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
@@ -1530,7 +1569,8 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
     labelBg.setAttribute('x', bb.x-padBox); labelBg.setAttribute('y', bb.y-padBox);
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
-    const act = (miniMaster.X_user != null) ? (miniMaster.X_user <= Xc + 1e-15) : false;
+    const valuationForVerdict = (Xuser > 0 && isFinite(Xc) && isFinite(Xuser)) ? (Xc / Xuser) : NaN;
+    const act = isFinite(valuationForVerdict) ? (valuationForVerdict >= 1 - 1e-9) : false;
     verdict.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
     verdict.classList.toggle('ok', act);
     verdict.classList.toggle('no', !act);
@@ -1547,92 +1587,167 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
   }
 
   let dragging=false;
+  let dragStart = null;
+  let dragExactC = null;
+  let dragExactX = null;
 
   function onPointerDown(e){
     e.preventDefault();
     window.miniPristine = false;
     dragging = true;
     SDragLock = Math.max(MINI_EPS, Math.min(MINI_MAX, parseFloat(elS.value) || miniMaster.S || 5));
+    const mode = elM.value;
+    const X0 = miniMaster.X_user || miniNormalizeToX(mode, parseFloat(elV.value)) || 1000;
+    const range0 = yRange(mode);
+    dragStart = { C: Math.max(MINI_EPS, Math.min(MINI_MAX, parseFloat(elC.value) || miniMaster.C || 1)), X: X0, Y: clampYToRange(miniXtoUnit(X0, mode), mode) };
+    dragExactC = dragStart.C;
+    dragExactX = dragStart.X;
     try { handle.setPointerCapture(e.pointerId); } catch(_) {}
     onPointerMove(e);
   }
 
-  function onPointerMove(e){
-    if(!dragging) return; e.preventDefault();
-    const sp = svgPoint(e);
-
-    
-let Cn = pxToC(Math.max(pad.left, Math.min(pad.left+plotW, sp.x)));
-Cn = Math.max(MINI_EPS, Math.min(MINI_MAX, Cn));
-
-// lock S from drag start
-elS.value = String(SDragLock);
-miniMaster.S = SDragLock;
-
-// If dual-cost fields exist: keep Resulting static, adjust Upfront so Upfront+Resulting=Cn
-const upEl = document.getElementById('q6C_up');
-const rsEl = document.getElementById('q6C_res');
-if (upEl && rsEl){
-  const rawR = (rsEl.value || '').trim();
-  let resVal = parseFloat(rawR);
-  if (!isFinite(resVal) || resVal < 0) resVal = 0;
-  if (resVal > 10) resVal = 10;
-
-  let upVal = Cn - resVal;
-  if (upVal < 0) upVal = 0;
-  if (upVal > 10) upVal = 10;
-
-  const shownUp = (upVal % 1 === 0) ? String(upVal) : String(Number(upVal.toFixed(2)));
-  upEl.value = shownUp;
-
-  // recompute hidden total from these two
-  if (typeof window.q6DualCostCompute === 'function'){
-    window.q6DualCostCompute(false, null);
+  function findCostForCutoffX(targetX, fixedS){
+    // Exact inverse of miniXcutoff_from_ratio with fixed S:
+    // X = 10^((2/3) * (S - C))  =>  C = S - 1.5 * log10(X)
+    const X = Math.max(1e-12, Number(targetX));
+    const S = Math.max(MINI_EPS, Math.min(MINI_MAX, Number(fixedS)));
+    const C = S - 1.5 * Math.log10(X);
+    if (!isFinite(C) || C < MINI_EPS || C > MINI_MAX) return null;
+    return C;
   }
-} else {
-  // fallback: single cost field only
-  if (elC){
-    const shown = (Cn % 1 === 0) ? String(Cn) : String(Number(Cn.toFixed(2)));
-    elC.value = shown;
+
+  function findCostForYPx(targetYPx, mode){
+    // Fallback visual search, used only if an exact inverse is not available.
+    let bestC = MINI_EPS, bestD = Infinity;
+    const N = 900;
+    for (let i=0;i<=N;i++){
+      const C = MINI_EPS + (MINI_MAX - MINI_EPS) * (i/N);
+      const d = Math.abs(curveYPxAtCost(C, mode) - targetYPx);
+      if (d < bestD){ bestD = d; bestC = C; }
+    }
+    return bestC;
   }
-  miniMaster.C = Cn;
-}
 
-    const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
-    const yCurve  = curveYPxAtCost(Cn, elM.value);
-    const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
-    if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
-    isSnapped = willSnap;
+  function setCostFromDrag(Cn){
+    Cn = Math.max(MINI_EPS, Math.min(MINI_MAX, Cn));
+    dragExactC = Cn;
+    const upEl = document.getElementById('q6C_up');
+    const rsEl = document.getElementById('q6C_res');
+    if (upEl && rsEl){
+      const rawR = (rsEl.value || '').trim();
+      let resVal = parseFloat(rawR);
+      if (!isFinite(resVal) || resVal < 0) resVal = 0;
+      if (resVal > 10) resVal = 10;
+      let upVal = Cn - resVal;
+      if (upVal < 0) upVal = 0;
+      if (upVal > 10) upVal = 10;
+      upEl.value = displayProbVal('oneInX', upVal);
+      if (typeof window.q6DualCostCompute === 'function') window.q6DualCostCompute(false, null);
+    } else if (elC){
+      elC.value = displayProbVal('oneInX', Cn);
+    }
+    miniMaster.C = Cn;
+  }
 
-    const mode = elM.value;
-    const range = yRange(mode);
-    let yPix = willSnap ? yCurve : yCursor;
-
-    const frac  = 1 - (yPix - pad.top) / plotH;
-    const logY  = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
-    const Y     = Math.pow(10, logY);
-    const X_user = unitToX(Y, mode);
-
+  function setProbFromX(X_user, mode){
+    dragExactX = X_user;
     miniMaster.mode   = mode;
     miniMaster.X_user = X_user;
-
-    // CHANGED: floor to 1 (not 2) for 1-in-X
     let valOut = (mode==='oneInX') ? X_user
               : (mode==='percent') ? (100/X_user)
               : (1e6/X_user);
     if (mode==='oneInX')       { if (valOut < 1)   valOut = 1; }
     else if (mode==='percent') { if (valOut<=0)    valOut = 0.000001; if (valOut>=100) valOut = 99.999999; }
     else                       { if (valOut<=0)    valOut = 0.0001;   if (valOut>=1e6) valOut = 999999.99; }
-
-    elV.value = String(valOut);
+    elV.value = displayProbVal(mode, valOut);
     miniMaster.val = valOut;
+  }
 
+  function onPointerMove(e){
+    if(!dragging) return; e.preventDefault();
+    const sp = svgPoint(e);
+    const mode = elM.value;
+    const range = yRange(mode);
+    const xCursor = Math.max(pad.left, Math.min(pad.left+plotW, sp.x));
+    const yCursor = Math.max(pad.top, Math.min(pad.top+plotH, sp.y));
+
+    elS.value = String(SDragLock);
+    miniMaster.S = SDragLock;
+
+    let Cn = pxToC(xCursor);
+    let yPix = yCursor;
+    let forcedX = null;
+
+    if (elLockAxes && elLockAxes.checked && dragStart){
+      const startX = CtoPx(dragStart.C);
+      const startY = yToPx(dragStart.Y, range.yMin, range.yMax);
+      const dx = Math.abs(xCursor - startX);
+      const dy = Math.abs(yCursor - startY);
+      const horizontal = dx >= dy;
+
+      if (horizontal){
+        // Horizontal lock: probability never changes. The only allowed snap is
+        // the fixed horizontal line's exact intersection with the cutoff curve.
+        yPix = startY;
+        forcedX = dragStart.X;
+        Cn = pxToC(xCursor);
+
+        let snapC = findCostForCutoffX(dragStart.X, SDragLock);
+        if (snapC == null) snapC = findCostForYPx(startY, mode);
+        const snapPx = CtoPx(snapC);
+        const willSnap = isFinite(snapC) && Math.abs(xCursor - snapPx) <= SNAP_PX;
+        if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
+        isSnapped = willSnap;
+        if (willSnap){
+          Cn = snapC;
+          yPix = startY;
+          forcedX = dragStart.X;
+        }
+      } else {
+        // Vertical lock: cost never changes. The only allowed snap is
+        // the fixed vertical line's exact intersection with the cutoff curve.
+        Cn = dragStart.C;
+        const yCurve = curveYPxAtCost(Cn, mode);
+        const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
+        if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
+        isSnapped = willSnap;
+        yPix = willSnap ? yCurve : yCursor;
+      }
+    } else {
+      Cn = pxToC(xCursor);
+      const yCurve  = curveYPxAtCost(Cn, mode);
+      const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
+      if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
+      isSnapped = willSnap;
+      yPix = willSnap ? yCurve : yCursor;
+    }
+
+    Cn = Math.max(MINI_EPS, Math.min(MINI_MAX, Cn));
+    setCostFromDrag(Cn);
+
+    let X_user;
+    if (forcedX != null){
+      X_user = forcedX;
+    } else if (isSnapped){
+      const rExact = SDragLock / Math.max(MINI_EPS, Cn);
+      X_user = miniXcutoff_from_ratio(rExact);
+    } else {
+      const frac  = 1 - (yPix - pad.top) / plotH;
+      const logY  = Math.log10(range.yMin) + frac * (Math.log10(range.yMax) - Math.log10(range.yMin));
+      const Y     = Math.pow(10, logY);
+      X_user = unitToX(Y, mode);
+    }
+
+    setProbFromX(X_user, mode);
     draw();
   }
 
   function onPointerUp(e){
     dragging=false;
     SDragLock = null;
+    dragStart = null;
+    dragExactC = null;
+    dragExactX = null;
     try{handle.releasePointerCapture(e.pointerId);}catch(_){}
   }
 
@@ -1671,9 +1786,10 @@ if (upEl && rsEl){
   wireNumericInput(elV, { min:0, max:1e12, decimals:6 });
 
   // Don't call draw() on input for elV; let blur normalize to avoid mid-typing clamps
-  elS.addEventListener('input', ()=>{ window.miniPristine=false; draw(); });
-  elC.addEventListener('input', ()=>{ window.miniPristine=false; draw(); });
+  elS.addEventListener('input', ()=>{ window.miniPristine=false; applyUnitsRule(); draw(); });
+  elC.addEventListener('input', ()=>{ window.miniPristine=false; applyUnitsRule(); draw(); });
   elV.addEventListener('input', ()=>{ window.miniPristine=false; /* no draw here to avoid clobbering while typing */ });
+  if (elLockAxes) elLockAxes.addEventListener('change', draw);
 
   const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
   q6Root.addEventListener('input',  persistQ6);
@@ -3183,7 +3299,7 @@ renderMiniQ6 = function (intoEl, node) {
             '<div class="mini-field"><label>Unit</label><select data-i="'+i+'" data-k="mode">'+
             '<option value="percent" '+(g.mode==='percent'?'selected':'')+'>Percentage (%)</option>'+
             '<option value="oneInX" '+(g.mode==='oneInX'?'selected':'')+'>1 in X</option>'+
-            '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts</option>'+
+            '<option value="micromort" '+(g.mode==='micromort'?'selected':'')+'>Micromorts (µm)</option>'+
             '</select></div>'+
             '<div class="mini-field"><label>Value</label><input data-i="'+i+'" data-k="val" type="number" step="any" value="'+((g.val ?? ''))+'" placeholder="e.g. 100,000"></div>'+
             '<div class="mini-field"><button class="back" data-remove="'+i+'" type="button" style="width:100%">Remove</button></div>';
