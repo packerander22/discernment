@@ -912,6 +912,11 @@ function weight10(x){
   if (!isFinite(xf) || xf <= 0) return 0;
   return Math.pow(10, 6*((xf-1)/9)); // 1→1, 10→1,000,000
 }
+function invWeight10(w){
+  var wf = parseFloat(w);
+  if (!isFinite(wf) || wf <= 0) return 0;
+  return 1 + 1.5 * Math.log10(wf);
+}
 
 function currentCost(){
   if (window.miniMaster && typeof miniMaster.C === 'number') return miniMaster.C || 1;
@@ -1560,7 +1565,7 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
       lockVLine.setAttribute('y1', pad.top); lockVLine.setAttribute('y2', pad.top + plotH);
     }
 
-    const label = `S=${trimDeci(miniMaster.S)} · C=${trimDeci(miniMaster.C, 2)} · ${labelUnit(mode, Xuser)}`;
+    const label = `S=${trimDeci(miniMaster.S)}, C=${trimDeci(miniMaster.C)} · ${labelUnit(mode, Xuser)}`;
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
     let ly = cy - 34; const minTop = pad.top + 20; if (ly < minTop) ly = minTop;
@@ -1638,7 +1643,21 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
       let resVal = parseFloat(rawR);
       if (!isFinite(resVal) || resVal < 0) resVal = 0;
       if (resVal > 10) resVal = 10;
-      let upVal = Cn - resVal;
+      // Cn is the equivalent total cost on the 1–10 weighted scale.
+      // Preserve resulting cost when possible; solve upfront so:
+      // weight10(upfront) + weight10(resulting) = weight10(Cn).
+      const targetW = weight10(Cn);
+      let resW = weight10(resVal);
+      let upW = targetW - resW;
+      if (upW <= 0){
+        // If resulting alone exceeds the target total, reduce resulting and set upfront to 0.
+        resVal = invWeight10(targetW);
+        if (resVal < 0) resVal = 0;
+        if (resVal > 10) resVal = 10;
+        rsEl.value = displayProbVal('oneInX', resVal);
+        upW = 0;
+      }
+      let upVal = upW > 0 ? invWeight10(upW) : 0;
       if (upVal < 0) upVal = 0;
       if (upVal > 10) upVal = 10;
       upEl.value = displayProbVal('oneInX', upVal);
@@ -2997,10 +3016,14 @@ try{
   const upVal = (Au.n != null) ? Au.n : 0;
   const resVal = (Br.n != null) ? Br.n : 0;
 
-  // Total cost is simple sum of upfront + resulting
-  let C = upVal + resVal;
+  // Weight each cost separately, then add the weighted costs.
+  // The hidden single Cost field stores the equivalent 1–10 cost whose
+  // weight equals: weight10(upfront) + weight10(resulting).
+  const weightedUpfront  = weight10(upVal);
+  const weightedResulting = weight10(resVal);
+  const weightedTotalCost = weightedUpfront + weightedResulting;
 
-  if (!Number.isFinite(C) || C <= 0){
+  if (!Number.isFinite(weightedTotalCost) || weightedTotalCost <= 0){
     // Clear underlying cost if nothing meaningful yet
     costInput.value = '';
     costInput.dispatchEvent(new Event('input',  {bubbles:true}));
@@ -3008,9 +3031,9 @@ try{
     return;
   }
 
-  // Clamp to Q6 scale and write into hidden single-cost field
+  let C = invWeight10(weightedTotalCost);
   C = clamp01to10(C);
-  const shown = (C % 1 === 0) ? String(C) : String(Number(C.toFixed(2)));
+  const shown = (C % 1 === 0) ? String(C) : String(Number(C.toFixed(6)));
   costInput.value = shown;
   costInput.dispatchEvent(new Event('input',  {bubbles:true}));
   costInput.dispatchEvent(new Event('change', {bubbles:true}));
