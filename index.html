@@ -433,7 +433,7 @@
   .ptlabel-bg { fill: var(--label-bg); fill-opacity:.98; stroke: var(--border); rx:10; ry:10; }
   
   
-  .rule    { font-weight:700; margin-top:8px; }
+  .rule    { font-weight:700; margin-top:2px; }
   .verdict { margin-top:12px; font-weight:700; }  
   .verdict.ok { color: var(--if-accent); }
   .verdict.no { color: var(--subtle-text); }
@@ -1560,7 +1560,7 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
       lockVLine.setAttribute('y1', pad.top); lockVLine.setAttribute('y2', pad.top + plotH);
     }
 
-    const label = `S=${trimDeci(miniMaster.S)}, C=${trimDeci(miniMaster.C)} · ${labelUnit(mode, Xuser)}`;
+    const label = `S=${trimDeci(miniMaster.S)} · C=${trimDeci(miniMaster.C, 2)} · ${labelUnit(mode, Xuser)}`;
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
     let ly = cy - 34; const minTop = pad.top + 20; if (ly < minTop) ly = minTop;
