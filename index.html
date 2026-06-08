@@ -503,8 +503,8 @@
 </style>
 
 <style id="mini-fix-css-ovr">
-  #q6-entry, #q7-entry { max-width:100%; overflow-x:hidden; }
-  .tile, .content, .mini-wrap, #q6-entry, #q7-entry { box-sizing:border-box; }
+  #q6-entry { max-width:100%; overflow-x:hidden; }
+  .tile, .content, .mini-wrap, #q6-entry { box-sizing:border-box; }
 </style>
 
 <style id="mini-sep-base">
@@ -544,28 +544,25 @@
 
 <style>
   
-  .mini-wrap, #q6-entry, #q7-entry { width: 100%; }
-  #q6-entry, #q7-entry {
+  .mini-wrap, #q6-entry { width: 100%; }
+  #q6-entry {
     display: grid;
     grid-template-columns: 1fr;
     gap: 14px;
     max-width: none;  
   }
-  #q6-entry .mini-heading, #q7-entry .mini-heading {
+  #q6-entry .mini-heading {
     font-weight: 700;
     font-size: 1.5rem;
   }
-  #q6-entry label, #q7-entry label {
+  #q6-entry label {
     font-size: 0.95rem;
     font-weight: 400;
   }
-  #q6-entry .mini-field input, #q6-entry .mini-field select,
-  #q7-entry .mini-field input, #q7-entry .mini-field select {
+  #q6-entry .mini-field input, #q6-entry .mini-field select {
     width: 100%;
     max-width: none;
   }
-  #q7-entry input, #q7-entry select, #q7-entry button,
-  #q7-entry .hint { opacity: .6; pointer-events: none; }
   #q6-entry .muted { opacity: .6; }
   .mini-spacer { height: 6px; }
 </style>
@@ -1129,37 +1126,72 @@ function renderMiniQ6(intoEl, node){
   intoEl.appendChild(top);
 
   const wrap   = document.createElement('div'); wrap.className = 'mini-wrap';
-  const fields = document.createElement('div'); fields.className = 'mini-fields';
+  const stack = document.createElement('div');
+  stack.id = 'q6-entry';
+  stack.className = 'mini-fields';
 
-  const sBox = document.createElement('div'); sBox.className='mini-field';
-  sBox.innerHTML = '<label>Impact (I)</label><input id="miniS" type="number" step="any" placeholder="e.g. 5">';
-  const cBox = document.createElement('div'); cBox.className='mini-field';
-  cBox.innerHTML = '<label>Cost (C)</label><input id="miniC" type="number" min="0" step="any" placeholder="e.g. 1">';
-  fields.appendChild(cBox); fields.appendChild(sBox);
+  function makeSep(thick){
+    const d = document.createElement('div');
+    d.className = thick ? 'mini-sep mini-sep-thick' : 'mini-sep';
+    return d;
+  }
 
-  const pRow = document.createElement('div'); pRow.className='mini-fields';
-  const mBox = document.createElement('div'); mBox.className='mini-field';
+  const nBox = document.createElement('div');
+  nBox.className = 'mini-field';
+  nBox.innerHTML = '<label>Total instances (N)</label><input id="q6N" name="q6N" type="number" min="1" step="1" inputmode="numeric" value="1">';
+  stack.appendChild(nBox);
+
+  stack.appendChild(makeSep(false));
+  const costHead = document.createElement('div');
+  costHead.className = 'mini-heading';
+  costHead.textContent = 'Cost';
+  stack.appendChild(costHead);
+  const cUpBox = document.createElement('div');
+  cUpBox.className = 'mini-field';
+  cUpBox.innerHTML = '<label>Upfront Cost (C)</label><input id="q6C_up" name="q6C_up" type="number" min="0" step="any" placeholder="e.g. 2.5">';
+  const cResBox = document.createElement('div');
+  cResBox.className = 'mini-field';
+  cResBox.innerHTML = '<label>Resulting Cost (C)</label><input id="q6C_res" name="q6C_res" type="number" min="0" step="any" placeholder="e.g. 1">';
+  const cBox = document.createElement('div');
+  cBox.className = 'mini-field';
+  cBox.style.display = 'none';
+  cBox.innerHTML = '<label>Computed Cost (C)</label><input id="miniC" name="miniC" type="number" min="0" step="any">';
+  stack.appendChild(cUpBox);
+  stack.appendChild(cResBox);
+  stack.appendChild(cBox);
+
+  stack.appendChild(makeSep(false));
+  const impactHead = document.createElement('div');
+  impactHead.className = 'mini-heading';
+  impactHead.textContent = 'Impact';
+  stack.appendChild(impactHead);
+  const sBox = document.createElement('div');
+  sBox.className='mini-field';
+  sBox.innerHTML = '<label>Impact (I)</label><input id="miniS" name="miniS" type="number" step="any" placeholder="e.g. 5">';
+  stack.appendChild(sBox);
+
+  stack.appendChild(makeSep(false));
+  const probHead = document.createElement('div');
+  probHead.className = 'mini-heading';
+  probHead.textContent = 'Probability';
+  stack.appendChild(probHead);
+  const mBox = document.createElement('div');
+  mBox.className='mini-field';
   mBox.innerHTML =
-    '<label>Probability Unit</label>\
-     <select id="miniMode" name="q6Units">\
-       <option value="percent">Percentage (%)</option>\
-       <option value="oneInX">1 in X</option>\
-       <option value="micromort">Micromorts (µm)</option>\
-     </select>';
-
-  const vBox = document.createElement('div'); vBox.className='mini-field';
-  // MIN CHANGED: min="1" (was 2)
+    '<label>Probability Unit</label>     <select id="miniMode" name="q6Units">       <option value="percent">Percentage (%)</option>       <option value="oneInX">1 in X</option>       <option value="micromort">Micromorts (µm)</option>     </select>';
+  const vBox = document.createElement('div');
+  vBox.className='mini-field';
   vBox.innerHTML =
-    '<label id="miniProbLabel">Enter X (for “1 in X”)</label>\
-     <input id="miniVal" type="number" min="0" step="any" placeholder="e.g. 1,000">';
+    '<label id="miniProbLabel">Enter X (for “1 in X”)</label>     <input id="miniVal" name="miniVal" type="number" min="0" step="any" placeholder="e.g. 1,000">';
+  stack.appendChild(mBox);
+  stack.appendChild(vBox);
 
-  pRow.appendChild(mBox); pRow.appendChild(vBox);
-  wrap.appendChild(fields);
-  wrap.appendChild(pRow);
+  stack.appendChild(makeSep(true));
+  wrap.appendChild(stack);
 
   const lockRow = document.createElement('label');
   lockRow.className = 'mini-lock-row';
-  lockRow.innerHTML = '<input id="miniLockAxes" type="checkbox" checked> Lock to Axes';
+  lockRow.innerHTML = '<input id="miniLockAxes" name="miniLockAxes" type="checkbox" checked> Lock to Axes';
   wrap.appendChild(lockRow);
 
   // SVG
@@ -1197,28 +1229,6 @@ function renderMiniQ6(intoEl, node){
 
   intoEl.appendChild(wrap);
 
-  (function ensureDividers(root){
-    if (!root) return;
-    const names = ['Cost','Impact','Probability'];
-    const labels = root.querySelectorAll('.mini-heading, .mini-field > label, label');
-    names.forEach(name=>{
-      const heading = Array.from(labels).find(l => (l.textContent||'').trim().toLowerCase() === name.toLowerCase());
-      if (!heading || !heading.parentElement) return;
-      const parent = heading.parentElement;
-      const toRemove = [];
-      let prev = heading.previousElementSibling;
-      while (prev && prev.classList && prev.classList.contains('mini-sep')){
-        toRemove.push(prev);
-        prev = prev.previousElementSibling;
-      }
-      if (toRemove.length > 1) toRemove.slice(1).forEach(el=>el.remove());
-      if (toRemove.length === 0){
-        const sep = document.createElement('div');
-        sep.className = 'mini-sep';
-        parent.insertBefore(sep, heading);
-      }
-    });
-  })(wrap);
 
   const elS  = wrap.querySelector('#miniS');
   const elC  = wrap.querySelector('#miniC');
@@ -1226,10 +1236,27 @@ function renderMiniQ6(intoEl, node){
   const elV  = wrap.querySelector('#miniVal');
   let   labV = wrap.querySelector('#miniProbLabel');
   const elLockAxes = wrap.querySelector('#miniLockAxes');
+  const elN = wrap.querySelector('#q6N');
+  const elCUp = wrap.querySelector('#q6C_up');
+  const elCRes = wrap.querySelector('#q6C_res');
+
+  function q6Weight10(x){ return Math.pow(10, 6*((Number(x)-1)/9)); }
+  function q6InvWeight10(w){ return 1 + 1.5 * Math.log10(w); }
+  function q6CostPart(el){
+    const n = Number(String(el && el.value || '').trim());
+    return Number.isFinite(n) ? Math.abs(n) : 0;
+  }
+  function syncQ6ComputedCost(){
+    if (!elC) return;
+    const weighted = q6Weight10(q6CostPart(elCUp)) + q6Weight10(q6CostPart(elCRes));
+    if (!Number.isFinite(weighted) || weighted <= 0){ elC.value = ''; return; }
+    elC.value = String(q6InvWeight10(weighted));
+  }
 
   const q6Root  = intoEl;
   const savedQ6 = loadNodeState('Q6');
   if (savedQ6) applyFormValues(q6Root, savedQ6);
+  syncQ6ComputedCost();
 
   // math / scales
   function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
@@ -1467,6 +1494,7 @@ function renderMiniQ6(intoEl, node){
   }
 
   function draw(){
+    syncQ6ComputedCost();
     const mode = elM.value;
     const typedC = Math.abs(parseFloat(elC && elC.value));
     cMaxView = Math.max(10, isFinite(typedC) ? typedC * 1.15 : 10);
@@ -1794,11 +1822,15 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
   }
   wireNumericInput(elS, { min:-Infinity, max:Infinity, decimals:null });
   wireNumericInput(elC, { min:0, max:Infinity, decimals:null });
+  wireNumericInput(elCUp, { min:0, max:Infinity, decimals:null });
+  wireNumericInput(elCRes, { min:0, max:Infinity, decimals:null });
   wireNumericInput(elV, { min:0, max:Infinity, decimals:null });
+  wireNumericInput(elN, { min:1, max:Infinity, decimals:0 });
 
   // Don't call draw() on input for elV; let blur normalize to avoid mid-typing clamps
   elS.addEventListener('input', ()=>{ window.miniPristine=false; applyUnitsRule(); });
   elC.addEventListener('input', ()=>{ window.miniPristine=false; applyUnitsRule(); });
+  [elCUp, elCRes].forEach(el => { if (el) el.addEventListener('input', ()=>{ window.miniPristine=false; syncQ6ComputedCost(); draw(); }); });
   elV.addEventListener('input', ()=>{ window.miniPristine=false; /* no draw here to avoid clobbering while typing */ });
   if (elLockAxes) elLockAxes.addEventListener('change', draw);
 
@@ -1814,7 +1846,7 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
   cont = document.createElement('button'); cont.className='next'; cont.type='button'; cont.textContent='Continue'; cont.disabled=true;
   cont.onclick = function(){
     miniActGate = !!renderMiniQ6._act;
-    goToNode(miniActGate ? 'Q10' : 'Q7');
+    goToNode(miniActGate ? (node.yes || 'Q22') : (node.no || 'Q7'));
   };
   btns.appendChild(cont);
 }
@@ -2690,13 +2722,6 @@ function renderNode(node) {
     renderMiniQ6(textDiv, node);
     return;
   }
-  if (node.id === 'Q7') {
-    textDiv.innerHTML = '';
-    document.getElementById('buttons').innerHTML = '';
-    renderMiniQ7(textDiv, node);
-    return;
-  }
-  
   
   let html = node.text || '';
   if (node && (node.id === 'Q46' || node.id === 'Q47')) {
@@ -2856,123 +2881,6 @@ function renderNode(node) {
 </script>
 
   
-<script>
-(function(){
-  function q(sel, root){ return (root || document).querySelector(sel); }
-  function makeSep(thick){
-    const d = document.createElement('div');
-    d.className = thick ? 'mini-sep mini-sep-thick' : 'mini-sep';
-    return d;
-  }
-  function cleanNumberInput(inp, allowNegative){
-    if (!inp || inp.__q6CleanBound) return;
-    inp.__q6CleanBound = true;
-    inp.setAttribute('step','any');
-    inp.removeAttribute('max');
-    if (!allowNegative) inp.setAttribute('min','0'); else inp.removeAttribute('min');
-    inp.addEventListener('input', function(){
-      let v = String(inp.value || '');
-      v = v.replace(/,/g,'').replace(allowNegative ? /[^0-9.\-]/g : /[^0-9.]/g, '');
-      v = v.replace(/(?!^)-/g, '');
-      const firstDot = v.indexOf('.');
-      if (firstDot !== -1) v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
-      if (v !== inp.value) inp.value = v;
-    });
-    inp.addEventListener('blur', function(){
-      const raw = String(inp.value || '').trim();
-      if (raw === '' || raw === '-' || raw === '.' || raw === '-.') { inp.value=''; return; }
-      let n = Number(raw);
-      if (!Number.isFinite(n)) { inp.value=''; return; }
-      if (!allowNegative && n < 0) n = Math.abs(n);
-      inp.value = String(n);
-      inp.dispatchEvent(new Event('change', {bubbles:true}));
-    });
-  }
-
-  const orig = renderMiniQ6;
-  renderMiniQ6 = function(intoEl, node){
-    orig(intoEl, node);
-    const wrap = intoEl.querySelector('.mini-wrap');
-    if (!wrap) return;
-
-    const oldFields = wrap.querySelector('.mini-fields');
-    const oldPRow = oldFields && oldFields.nextElementSibling && oldFields.nextElementSibling.classList.contains('mini-fields') ? oldFields.nextElementSibling : null;
-    const miniS = q('#miniS', wrap), miniC = q('#miniC', wrap), miniMode = q('#miniMode', wrap), miniVal = q('#miniVal', wrap);
-    const lockRow = q('#miniLockAxes', wrap) && q('#miniLockAxes', wrap).closest('.mini-lock-row');
-    const svg = q('svg.mini-svg', wrap);
-    const valuation = q('#miniValuation', wrap);
-    const verdict = q('#miniVerdict', wrap);
-    const link = q('a[href="#concept-prob-sev-cost"]', wrap);
-
-    const stack = document.createElement('div');
-    stack.id = 'q6-entry';
-    stack.className = 'mini-fields';
-
-    const nRow = document.createElement('div');
-    nRow.className = 'mini-field';
-    nRow.innerHTML = '<label>Total instances (N)</label><input id="q6N" type="number" min="1" step="1" inputmode="numeric" value="1">';
-    stack.appendChild(nRow);
-
-    stack.appendChild(makeSep(false));
-    const costHead = document.createElement('div'); costHead.className='mini-heading'; costHead.textContent='Cost'; stack.appendChild(costHead);
-    const up = document.createElement('div'); up.className='mini-field';
-    up.innerHTML = '<label>Upfront Cost (C)</label><input id="q6C_up" type="number" min="0" step="any" placeholder="e.g. 2.5">';
-    const res = document.createElement('div'); res.className='mini-field';
-    res.innerHTML = '<label>Resulting Cost (C)</label><input id="q6C_res" type="number" min="0" step="any" placeholder="e.g. 1">';
-    stack.appendChild(up); stack.appendChild(res);
-    if (miniC){ miniC.style.display='none'; miniC.closest('.mini-field')?.style.setProperty('display','none'); stack.appendChild(miniC.closest('.mini-field') || miniC); }
-
-    stack.appendChild(makeSep(false));
-    const impactHead = document.createElement('div'); impactHead.className='mini-heading'; impactHead.textContent='Impact'; stack.appendChild(impactHead);
-    const sRow = miniS ? (miniS.closest('.mini-field') || document.createElement('div')) : document.createElement('div');
-    sRow.className='mini-field';
-    let sLabel = sRow.querySelector('label'); if (!sLabel){ sLabel=document.createElement('label'); sRow.prepend(sLabel); }
-    sLabel.textContent='Enter Impact (I)';
-    if (miniS){ miniS.removeAttribute('max'); miniS.removeAttribute('min'); miniS.step='any'; miniS.placeholder='e.g. 5'; }
-    stack.appendChild(sRow);
-
-    stack.appendChild(makeSep(false));
-    const probHead = document.createElement('div'); probHead.className='mini-heading'; probHead.textContent='Probability'; stack.appendChild(probHead);
-    if (miniMode){ const mRow = miniMode.closest('.mini-field'); mRow && stack.appendChild(mRow); }
-    if (miniVal){ const vRow = miniVal.closest('.mini-field'); vRow && stack.appendChild(vRow); miniVal.removeAttribute('max'); miniVal.min='0'; miniVal.step='any'; }
-
-    stack.appendChild(makeSep(true));
-
-    if (oldFields) oldFields.remove();
-    if (oldPRow) oldPRow.remove();
-    wrap.insertBefore(stack, lockRow || svg || valuation || verdict || link || null);
-
-    cleanNumberInput(q('#q6C_up', wrap), false);
-    cleanNumberInput(q('#q6C_res', wrap), false);
-    cleanNumberInput(miniS, true);
-    cleanNumberInput(miniVal, false);
-    const n = q('#q6N', wrap);
-    if (n && !n.__q6NBound){
-      n.__q6NBound = true;
-      n.addEventListener('input', function(){ this.value = String(this.value || '').replace(/[^0-9]/g,''); });
-      n.addEventListener('blur', function(){ let x=parseInt(this.value,10); if (!(x>=1)) x=1; this.value=String(x); });
-    }
-
-    function weight10Local(x){ return (typeof window.weight10 === 'function') ? window.weight10(x) : Math.pow(10, 6*((Number(x)-1)/9)); }
-    function invWeight10Local(w){ return (typeof window.invWeight10 === 'function') ? window.invWeight10(w) : 1 + 1.5 * Math.log10(w); }
-    function parseCost(el){ const n = Number(String(el && el.value || '').trim()); return Number.isFinite(n) ? Math.abs(n) : 0; }
-    function syncCosts(){
-      if (!miniC) return;
-      const weighted = weight10Local(parseCost(q('#q6C_up', wrap))) + weight10Local(parseCost(q('#q6C_res', wrap)));
-      if (!(weighted > 0) || !Number.isFinite(weighted)){ miniC.value=''; return; }
-      const C = invWeight10Local(weighted);
-      miniC.value = String(Number.isFinite(C) ? C : 0);
-      miniC.dispatchEvent(new Event('change', {bubbles:true}));
-    }
-    window.q6DualCostCompute = syncCosts;
-    ['input','change','blur'].forEach(evt=>{
-      q('#q6C_up', wrap)?.addEventListener(evt, syncCosts);
-      q('#q6C_res', wrap)?.addEventListener(evt, syncCosts);
-    });
-    syncCosts();
-  };
-})();
-</script>
 
 
 </body>
