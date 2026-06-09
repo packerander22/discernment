@@ -899,9 +899,11 @@ function miniClamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
 function miniCeilPlaces(x,p){ var f=Math.pow(10,p); return Math.ceil(x*f)/f; }
 
 function miniNormalizeToX(mode, val){
-  if (mode === 'oneInX')   { if (!(val>0)) return null; return val; }
-  if (mode === 'percent')  { if (!(val>0)) return null; return 100/val; }
-  if (mode === 'micromort'){ if (!(val>0)) return null; return 1e6/val; }
+  var n = Math.abs(Number(val));
+  if (!isFinite(n) || n <= 0) return null;
+  if (mode === 'oneInX')   return Math.max(1, n);
+  if (mode === 'percent')  { n = Math.min(100, n); return 100/n; }
+  if (mode === 'micromort'){ n = Math.min(1000000, n); return 1e6/n; }
   return null;
 }
 function weight10(x){
@@ -942,10 +944,11 @@ function miniComputeSCutoffForX(X){
 function miniProbSymbol(mode){ return mode==='percent' ? '%' : (mode==='micromort' ? 'µm' : 'X'); }
 function miniXtoUnit(X,mode){ return mode==='percent' ? (100/X) : (mode==='micromort' ? (1e6/X) : X); }
 function unitToX(Y, mode){
-  
-  if (mode === 'percent')   return 100 / Y;          
-  if (mode === 'micromort') return 1e6 / Y;          
-  return Y;                                           
+  var n = Math.abs(Number(Y));
+  if (!isFinite(n) || n <= 0) return 1;
+  if (mode === 'percent')   return Math.max(1, 100 / Math.min(100, n));
+  if (mode === 'micromort') return Math.max(1, 1e6 / Math.min(1000000, n));
+  return Math.max(1, n);
 }
 
 function flashWithPlateau(el, cls, opts) {
@@ -1138,7 +1141,7 @@ function renderMiniQ6(intoEl, node){
 
   const nBox = document.createElement('div');
   nBox.className = 'mini-field';
-  nBox.innerHTML = '<label>Total instances (N)</label><input id="q6N" name="q6N" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 1">';
+  nBox.innerHTML = '<label>Total instances (N)</label><input id="q6N" name="q6N" type="number" min="1" step="1" inputmode="numeric" value="1">';
   stack.appendChild(nBox);
 
   stack.appendChild(makeSep(false));
@@ -1216,7 +1219,7 @@ function renderMiniQ6(intoEl, node){
 
   const link = document.createElement('a');
   link.href = '#concept-prob-sev-cost';
-  link.textContent = 'See full explanation of Impact × Cost × Probability';
+  link.textContent = 'See full explanation of Probability × Impact × Cost';
   link.style.display = 'inline-block';
   link.style.marginTop = '8px';
   link.addEventListener('click', function(e){
@@ -1240,39 +1243,52 @@ function renderMiniQ6(intoEl, node){
   const elCUp = wrap.querySelector('#q6C_up');
   const elCRes = wrap.querySelector('#q6C_res');
 
-  function q6Weight10(x){
+  // Q6 cost is entered as two visible parts, then converted into one hidden
+  // equivalent weighted cost. Blank visible cost boxes stay blank until touched.
+  function q6WeightedCost(x){
     const n = Number(x);
     if (!Number.isFinite(n) || n <= 0) return 0;
-    return Math.pow(10, 6*((n-1)/9));
+    return Math.pow(10, 6*((n - 1) / 9));
   }
-  function q6InvWeight10(w){
+  function q6CostFromWeight(w){
     const n = Number(w);
     if (!Number.isFinite(n) || n <= 0) return 0;
     return 1 + 1.5 * Math.log10(n);
   }
-  function q6CostPart(el){
-    const raw = String((el && (el.dataset.exactValue || el.value)) || '').trim();
-    if (raw === '' || raw === '.' || raw === '-' || raw === '-.') return 0;
+  function readQ6CostPart(el){
+    const raw = String((el && el.value) || '').trim();
+    if (raw === '') return null;
     const n = Number(raw);
-    if (!Number.isFinite(n)) return 0;
-    return Math.min(10, Math.max(0, Math.abs(n)));
+    return Number.isFinite(n) ? Math.abs(n) : null;
   }
   function syncQ6ComputedCost(){
     if (!elC) return;
-    const weighted = q6Weight10(q6CostPart(elCUp)) + q6Weight10(q6CostPart(elCRes));
-    if (!Number.isFinite(weighted) || weighted <= 0){ elC.value = ''; delete elC.dataset.exactValue; return; }
-    const C = Math.min(10, Math.max(0, q6InvWeight10(weighted)));
-    elC.dataset.exactValue = String(C);
-    elC.value = String(C);
+
+    const upfront = readQ6CostPart(elCUp);
+    const resulting = readQ6CostPart(elCRes);
+
+    if (upfront === null && resulting === null){
+      elC.value = '';
+      return;
+    }
+
+    const weightedCost = q6WeightedCost(upfront || 0) + q6WeightedCost(resulting || 0);
+    elC.value = (!Number.isFinite(weightedCost) || weightedCost <= 0)
+      ? '0'
+      : String(q6CostFromWeight(weightedCost));
   }
 
   const q6Root  = intoEl;
+  const Q6_STATE_VERSION = 'q6-blank-inputs-v3';
   const savedQ6 = loadNodeState('Q6');
-  if (savedQ6) applyFormValues(q6Root, savedQ6);
+  // Only restore Q6 values saved by this base function version. This prevents old
+  // default-filled Q6 state from repopulating the boxes; fresh Q6 loads start blank
+  // except for Total instances (N).
+  if (savedQ6 && savedQ6.__q6Version === Q6_STATE_VERSION) applyFormValues(q6Root, savedQ6);
   syncQ6ComputedCost();
 
   // math / scales
-  function trimDeci(x,n=2){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
+  function trimDeci(x,n=3){ if (!isFinite(x)) return String(x); const s=Number(x).toFixed(n).replace(/\.?0+$/,''); return s; }
   function trimFixed(x,n){ if (!isFinite(x)) return String(x); return Number(x).toFixed(n).replace(/0+$/,'').replace(/\.$/,''); }
   function displayProbVal(mode, raw){
     if (!isFinite(raw)) return '';
@@ -1344,18 +1360,21 @@ function renderMiniQ6(intoEl, node){
     if (mode === 'percent'){
       labV.textContent = 'Enter percentage (%)';
       elV.placeholder = 'e.g. 1';
-      elV.removeAttribute('min'); // numeric validator handles bounds; snapInputs clamps
-      elV.step = '0.000001';
+      elV.min = '0';
+      elV.max = '100';
+      elV.step = 'any';
     } else if (mode === 'oneInX'){
       labV.textContent = 'Enter X (for “1 in X”)';
       elV.placeholder = 'e.g. 1,000';
       elV.min = '1';
-      elV.step = '1';
+      elV.removeAttribute('max');
+      elV.step = 'any';
     } else {
       labV.textContent = 'Enter micromorts (µm)';
       elV.placeholder = 'e.g. 1';
-      elV.removeAttribute('min');
-      elV.step = '1';
+      elV.min = '0';
+      elV.max = '1000000';
+      elV.step = 'any';
     }
   }
   updateProbLabelForMode(elM ? elM.value : 'oneInX');
@@ -1504,34 +1523,90 @@ function renderMiniQ6(intoEl, node){
     return yToPx(Yc, range.yMin, range.yMax);
   }
 
+  function clampProbForMode(mode, val){
+    let n = Math.abs(Number(val));
+    if (!Number.isFinite(n)) return NaN;
+    if (mode === 'oneInX') return Math.max(1, n);              // 1 in 1 is the highest allowed probability
+    if (mode === 'percent') return Math.min(100, Math.max(0.000001, n));
+    if (mode === 'micromort') return Math.min(1000000, Math.max(0.000001, n));
+    return n;
+  }
+
   function snapInputs(){
-    let S = Number((elS.dataset && elS.dataset.exactValue) || elS.value);
-    let C = Number((elC.dataset && elC.dataset.exactValue) || elC.value);
     const mode = elM.value;
-    let vv = Number((elV.dataset && elV.dataset.exactValue) || elV.value);
+    const rawS = String((elS && elS.value) || '').trim();
+    const rawC = String((elC && elC.value) || '').trim();
+    const rawV = String((elV && elV.value) || '').trim();
 
-    if (!isFinite(S)) S = miniMaster.S;
-    if (!isFinite(C)) C = miniMaster.C;
-    S = Math.abs(S);
-    C = Math.abs(C);
-    if (S<=0) S = MINI_EPS; if (C<=0) C = MINI_EPS;
+    // Do not use miniMaster defaults to fill user-visible boxes. Q6 should stay
+    // visually blank until the user enters valid Impact, Cost, and Probability.
+    if (rawS === '' || rawC === '' || rawV === '') return false;
 
-    if (!isFinite(vv)) vv = miniMaster.val;
-    vv = Math.abs(vv);
-    if (mode === 'oneInX')       { if (vv < 1) vv = 1; }
-    else if (mode === 'percent') { if (vv <= 0) vv = 0.000001; if (vv >= 100) vv = 99.999999; }
-    else                         { if (vv <= 0) vv = 0.0001;   if (vv >= 1e6) vv = 999999.99; }
+    let S = Math.abs(Number(rawS));
+    let C = Math.abs(Number(rawC));
+    let vv = Number(rawV);
 
-    if (document.activeElement !== elS && String(elS.value || '').trim() !== '') elS.value = String(S);
-    if (document.activeElement !== elC && String(elC.value || '').trim() !== '') elC.value = String(C);
-    if (document.activeElement !== elV && String(elV.value || '').trim() !== '') elV.value = displayProbVal(mode, vv);
+    if (!Number.isFinite(S) || !Number.isFinite(C) || !Number.isFinite(vv)) return false;
+    if (S <= 0) S = MINI_EPS;
+    if (C <= 0) C = MINI_EPS;
 
-    miniMaster.S=S; miniMaster.C=(dragging && isFinite(dragExactC)) ? dragExactC : C; miniMaster.mode=mode; miniMaster.val=vv;
-    miniMaster.X_user = (dragging && isFinite(dragExactX)) ? dragExactX : miniNormalizeToX(mode, vv);
+    vv = clampProbForMode(mode, vv);
+    if (!Number.isFinite(vv)) return false;
+
+    if (document.activeElement !== elS) elS.value = String(S);
+    if (document.activeElement !== elC) elC.value = String(C);
+    if (document.activeElement !== elV) elV.value = displayProbVal(mode, vv);
+
+    miniMaster.S = S;
+    miniMaster.C = (dragging && Number.isFinite(dragExactC)) ? dragExactC : C;
+    miniMaster.mode = mode;
+    miniMaster.val = vv;
+    miniMaster.X_user = (dragging && Number.isFinite(dragExactX))
+      ? Math.max(1, dragExactX)
+      : miniNormalizeToX(mode, vv);
+
+    return true;
+  }
+
+  function setEmptyGraphState(){
+    valuationEl.textContent = 'Valuation Grade: —';
+    axesG.setAttribute('opacity','0.55');
+    curve.setAttribute('d','');
+    shadeIn.setAttribute('d','');
+    veilG.removeAttribute('visibility');
+    handle.setAttribute('visibility','hidden');
+    labelG.setAttribute('visibility','hidden');
+    lockHLine.setAttribute('visibility','hidden');
+    lockVLine.setAttribute('visibility','hidden');
+    verdict.textContent = 'Enter values to see if preventative action should be considered.';
+    verdict.classList.remove('ok','no');
+    if (cont) cont.disabled = true;
+  }
+
+  function formatValuationGrade(Xc, Xuser){
+    if (!Number.isFinite(Xc) || !Number.isFinite(Xuser) || Xuser <= 0) return '—';
+
+    let valuation = Xc / Xuser;
+    if (Number.isFinite(valuation) && Math.abs(valuation - 1) <= 1e-9) valuation = 1;
+
+    if (!Number.isFinite(valuation) || valuation <= 0) return '—';
+    if (valuation >= 1000) return Math.round(valuation).toLocaleString();
+
+    const decimals = valuation < 1 ? 4
+                   : valuation < 10 ? 3
+                   : valuation < 100 ? 2
+                   : 1;
+
+    return valuation.toFixed(decimals).replace(/0+$/,'').replace(/\.$/,'');
+  }
+
+  function updateValuationGrade(Xc, Xuser){
+    valuationEl.textContent = 'Valuation Grade: ' + formatValuationGrade(Xc, Xuser);
   }
 
   function draw(){
     syncQ6ComputedCost();
+
     const mode = elM.value;
     const typedC = Math.abs(parseFloat(elC && elC.value));
     cMaxView = Math.max(10, isFinite(typedC) ? typedC * 1.15 : 10);
@@ -1539,26 +1614,18 @@ function renderMiniQ6(intoEl, node){
 
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (!hasAll) {
-      if (typeof valuationEl !== 'undefined' && valuationEl) valuationEl.textContent = 'Valuation Grade: —';
-      axesG.setAttribute('opacity','0.55');
-      curve.setAttribute('d','');
-      shadeIn.setAttribute('d','');
-      veilG.removeAttribute('visibility');
-      handle.setAttribute('visibility','hidden');
-      labelG.setAttribute('visibility','hidden');
-      if (typeof lockHLine !== 'undefined') lockHLine.setAttribute('visibility','hidden');
-      if (typeof lockVLine !== 'undefined') lockVLine.setAttribute('visibility','hidden');
-      verdict.textContent = 'Enter values to see if preventative action should be considered.';
-      verdict.classList.remove('ok','no');
-      if (cont) cont.disabled = true;
+      setEmptyGraphState();
       return;
     }
+
     axesG.setAttribute('opacity','1');
     veilG.setAttribute('visibility','hidden');
 
+    if (!snapInputs()) {
+      setEmptyGraphState();
+      return;
+    }
     window.miniPristine = false;
-    snapInputs(); // sync first
-
     buildCurve(mode);
 
     handle.removeAttribute('visibility');
@@ -1569,45 +1636,8 @@ function renderMiniQ6(intoEl, node){
     const range = yRange(mode);
     const Xuser = (miniMaster.X_user != null) ? miniMaster.X_user : Xc;
 
-// Valuation Grade: p × Xc, where p = 1 / Xuser
-if (typeof valuationEl !== 'undefined' && valuationEl &&
-    typeof Xc === 'number' && typeof Xuser === 'number' &&
-    isFinite(Xc) && isFinite(Xuser) && Xuser > 0){
-  const p = 1 / Xuser;
-  let valuation = p * Xc;
-  const valuationTol = 1e-9;
-  if (isFinite(valuation) && Math.abs(valuation - 1) <= valuationTol) valuation = 1;
-  let shown;
+    updateValuationGrade(Xc, Xuser);
 
-  if (!isFinite(valuation) || valuation <= 0){
-    shown = '—';
-  } else if (valuation >= 1000){
-    // ≥ 1000 → no decimals, with grouping
-    shown = Math.round(valuation).toLocaleString();
-  } else {
-    // Tiered rounding:
-    // < 10   → 3 decimal places
-    // 10–<100 → 2 decimal places
-    // 100–<1000 → 1 decimal place
-    let decimals;
-    if (valuation < 1){
-      decimals = 4;
-    } else if (valuation < 10){
-      decimals = 3;
-    } else if (valuation < 100){
-      decimals = 2;
-    } else {
-      decimals = 1;
-    }
-    shown = valuation.toFixed(decimals)
-      .replace(/0+$/,'')
-      .replace(/\.$/,'');
-  }
-
-  valuationEl.textContent = 'Valuation Grade: ' + shown;
-} else if (typeof valuationEl !== 'undefined' && valuationEl){
-  valuationEl.textContent = 'Valuation Grade: —';
-}
     const Ydot  = clampYToRange(miniXtoUnit(Xuser, mode), mode);
     const cx = CtoPx(Math.max(cMinView, Math.min(cMaxView, miniMaster.C)));
     const cy = yToPx(Ydot, range.yMin, range.yMax);
@@ -1624,7 +1654,7 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
       lockVLine.setAttribute('y1', pad.top); lockVLine.setAttribute('y2', pad.top + plotH);
     }
 
-    const label = `I=${trimDeci(miniMaster.S)} · C=${trimDeci(miniMaster.C)} · ${labelUnit(mode, Xuser)}`;
+    const label = `I=${trimDeci(miniMaster.S, 2)} · C=${trimDeci(miniMaster.C, 2)} · ${labelUnit(mode, Xuser)}`;
     labelTx.textContent = label;
     labelTx.setAttribute('text-anchor','middle');
     let ly = cy - 34; const minTop = pad.top + 20; if (ly < minTop) ly = minTop;
@@ -1705,22 +1735,20 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
       // Cn is the equivalent total cost on the 1–10 weighted scale.
       // Preserve resulting cost when possible; solve upfront so:
       // weight10(upfront) + weight10(resulting) = weight10(Cn).
-      const targetW = weight10(Cn);
-      let resW = weight10(resVal);
+      const targetW = q6WeightedCost(Cn);
+      let resW = q6WeightedCost(resVal);
       let upW = targetW - resW;
       if (upW <= 0){
         // If resulting alone exceeds the target total, reduce resulting and set upfront to 0.
-        resVal = invWeight10(targetW);
+        resVal = q6CostFromWeight(targetW);
         if (resVal < 0) resVal = 0;
-        if (resVal > 10) resVal = 10;
-        rsEl.dataset.exactValue = String(resVal);
+        
         rsEl.value = displayProbVal('oneInX', resVal);
         upW = 0;
       }
-      let upVal = upW > 0 ? invWeight10(upW) : 0;
+      let upVal = upW > 0 ? q6CostFromWeight(upW) : 0;
       if (upVal < 0) upVal = 0;
-      if (upVal > 10) upVal = 10;
-      upEl.dataset.exactValue = String(upVal);
+      
       upEl.value = displayProbVal('oneInX', upVal);
       if (typeof window.q6DualCostCompute === 'function') window.q6DualCostCompute(false, null);
     } else if (elC){
@@ -1730,16 +1758,14 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
   }
 
   function setProbFromX(X_user, mode){
+    X_user = Math.max(1, Math.abs(Number(X_user) || 1));
     dragExactX = X_user;
     miniMaster.mode   = mode;
     miniMaster.X_user = X_user;
     let valOut = (mode==='oneInX') ? X_user
               : (mode==='percent') ? (100/X_user)
               : (1e6/X_user);
-    if (mode==='oneInX')       { if (valOut < 1)     valOut = 1; }
-    else if (mode==='percent') { if (valOut <= 0)    valOut = 0.000001; if (valOut >= 100) valOut = 99.999999; }
-    else                       { if (valOut <= 0)    valOut = 0.0001;   if (valOut >= 1e6) valOut = 999999.99; }
-    elV.dataset.exactValue = String(valOut);
+    valOut = clampProbForMode(mode, valOut);
     elV.value = displayProbVal(mode, valOut);
     miniMaster.val = valOut;
   }
@@ -1848,7 +1874,6 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
         .replace(/(.*\..*)\./, '$1')
         .replace(/(.*-).*-/ , '$1');
       if (cleaned !== s) inp.value = cleaned;
-      delete inp.dataset.exactValue;
     });
     function normalize(){
       const raw = (inp.value || '').trim();
@@ -1856,9 +1881,8 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
       let n = Number(raw);
       if (!Number.isFinite(n)) { inp.value = ''; return; }
       n = Math.min(max, Math.max(min, n));
-      inp.dataset.exactValue = String(n);
-      const shouldDisplay2 = (inp === elS || inp === elCUp || inp === elCRes);
-      inp.value = shouldDisplay2 ? displayProbVal('oneInX', n) : ((decimals == null) ? String(n) : String(Number(n.toFixed(decimals))));
+      if (inp === elV) n = clampProbForMode(elM ? elM.value : 'oneInX', n);
+      inp.value = (inp === elV) ? displayProbVal(elM ? elM.value : 'oneInX', n) : ((decimals == null) ? String(n) : String(Number(n.toFixed(decimals))));
       window.miniPristine = false;
       draw();
     }
@@ -1879,7 +1903,13 @@ if (typeof valuationEl !== 'undefined' && valuationEl &&
   elV.addEventListener('input', ()=>{ window.miniPristine=false; /* no draw here to avoid clobbering while typing */ });
   if (elLockAxes) elLockAxes.addEventListener('change', draw);
 
-  const persistQ6 = () => saveNodeState('Q6', collectFormValues(q6Root));
+  const persistQ6 = () => {
+    const vals = collectFormValues(q6Root);
+    vals.__q6Version = Q6_STATE_VERSION;
+    saveNodeState('Q6', vals);
+  };
+  window.__nodePersistHandlers = window.__nodePersistHandlers || {};
+  window.__nodePersistHandlers.Q6 = persistQ6;
   q6Root.addEventListener('input',  persistQ6);
   q6Root.addEventListener('change', persistQ6);
 
@@ -2000,6 +2030,31 @@ function beforeEnterNode(nextId) {
   return nextId;
 }
 
+
+window.__nodePersistHandlers = window.__nodePersistHandlers || {};
+
+function persistCurrentNodeState() {
+  if (!currentNode) return;
+
+  const handler = window.__nodePersistHandlers && window.__nodePersistHandlers[currentNode.id];
+  if (typeof handler === 'function') {
+    handler();
+    return;
+  }
+
+  if (currentNode.id === 'Q33') {
+    const root = document.getElementById('text');
+    if (!root) return;
+
+    const slider = root.querySelector('.heat-slider');
+    if (slider) setUserThreshold(slider.value);
+
+    if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
+      saveNodeState(currentNode.id, collectFormValues(root));
+    }
+  }
+}
+
 function makeButton(label, cls, action) {
   var btn = document.createElement('button');
   btn.type = 'button';
@@ -2009,17 +2064,7 @@ function makeButton(label, cls, action) {
   return btn;
 }
 function goToNode(id) {
-  
-  if (currentNode && (currentNode.id === 'Q33' || currentNode.id === 'Q6')) {
-    const root = document.getElementById('text');
-    if (root) {
-      const slider = root.querySelector('.heat-slider');
-      if (slider) setUserThreshold(slider.value);
-      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
-        saveNodeState(currentNode.id, collectFormValues(root));
-      }
-    }
-  }
+  persistCurrentNodeState();
 
   closeAllPanels();
   var adjustedId = beforeEnterNode(id);
@@ -2031,17 +2076,7 @@ function goToNode(id) {
   maybeFlashOnEnter(currentNode, fromId);
 }
 function goBack() {
-  
-  if (currentNode && (currentNode.id === 'Q33' || currentNode.id === 'Q6')) {
-    const root = document.getElementById('text');
-    if (root) {
-      const slider = root.querySelector('.heat-slider');
-      if (slider) setUserThreshold(slider.value);
-      if (typeof saveNodeState === 'function' && typeof collectFormValues === 'function') {
-        saveNodeState(currentNode.id, collectFormValues(root));
-      }
-    }
-  }
+  persistCurrentNodeState();
   closeAllPanels();
   var fromId = currentNode ? currentNode.id : '';
   var prevId = historyStack.pop();
@@ -2543,8 +2578,7 @@ function resetQ6State() {
   
   try {
     sessionStorage.removeItem('userThreshold');   
-    sessionStorage.removeItem('miniMaster');
-    sessionStorage.removeItem('node:Q6');      
+    sessionStorage.removeItem('miniMaster');      
   } catch (_) {}
 
   
@@ -2560,14 +2594,13 @@ function resetQ6State() {
   };
 
   
-  const s = document.querySelector('#miniS');
-  const c = document.querySelector('#miniC');
-  const up = document.querySelector('#q6C_up');
-  const res = document.querySelector('#q6C_res');
-  const n = document.querySelector('#q6N');
-  const v = document.querySelector('#miniVal');
-  const modeSel = document.querySelector('#miniMode');
-  [s, c, up, res, n, v].forEach(el => { if (el) { el.value = ''; delete el.dataset.exactValue; } });
+  const s = document.querySelector('#q6_S');
+  const c = document.querySelector('#q6_C');
+  const v = document.querySelector('#q6_val');
+  const modeSel = document.querySelector('#q6_mode');
+  if (s) s.value = '';
+  if (c) c.value = '';
+  if (v) v.value = '';
   if (modeSel) modeSel.value = 'oneInX';
 }
   
