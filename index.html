@@ -575,6 +575,14 @@
   .q6-graph-section .mini-lock-row { margin-bottom: -4px; }
   .q6-graph-section .mini-svg { margin-top: -6px; margin-bottom: -8px; }
   .q6-graph-section .rule { margin-top: 0; }
+  .q6-impact-variant-grid { display:grid; grid-template-columns: repeat(var(--q6-impact-count, 1), minmax(150px, 1fr)); gap:10px; align-items:start; overflow-x:auto; padding-bottom:2px; }
+  .q6-impact-tile { display:grid; grid-template-columns:1fr; gap:14px; border:1px solid var(--border); border-radius:8px; background:var(--card); padding:12px; min-width:150px; box-sizing:border-box; }
+  .q6-impact-tile .mini-heading { font-size:1.35rem; }
+  .q6-impact-after-btn { margin:0; }
+  .q6-impact-tile .q6-add-impact,
+  .q6-impact-tile .q6-delete-impact { min-height: var(--q6-impact-btn-h, 36px); display:flex; align-items:center; justify-content:center; text-align:center; }
+  .q6-impact-placeholder { visibility:hidden; pointer-events:none; }
+  @media (max-width: 560px){ .q6-impact-variant-grid { grid-template-columns:1fr !important; } }
 </style>
   
 </head>
@@ -1173,60 +1181,125 @@ function renderMiniQ6(intoEl, node){
   hiddenMasters.innerHTML = '<input id="q6N" name="q6N" type="number" value="1"><input id="miniS" name="miniS" type="number"><input id="q6C_up" name="q6C_up" type="number"><input id="q6C_res" name="q6C_res" type="number"><input id="miniC" name="miniC" type="number"><select id="miniMode" name="q6Units"><option value="percent">Percentage (%)</option><option value="oneInX">1 in X</option><option value="micromort">Micromorts (µm)</option></select><input id="miniVal" name="miniVal" type="number"><label id="miniProbLabel"></label>';
   wrap.appendChild(hiddenMasters);
 
+  function q6ImpactVariantTemplate(values, index){
+    const tile = document.createElement('div');
+    tile.className = 'q6-impact-tile';
+    tile.dataset.q6ImpactIndex = String(index || 0);
+    const isBase = (index || 0) === 0;
+    tile.innerHTML = [
+      '<div class="mini-heading">Impact</div>',
+      '<div class="mini-field"><label>Impact (I)</label><input data-q6-role="S" type="number" step="any" placeholder="e.g. 5"></div>',
+      isBase
+        ? '<button type="button" class="q6-variant-btn q6-add-impact">Add Variant Impact</button>'
+        : '<button type="button" class="q6-variant-btn q6-delete-impact">Delete Variant Impact</button>',
+      isBase
+        ? '<div class="mini-sep q6-impact-after-btn"></div><div class="mini-heading">Cost</div><div class="mini-field"><label>Upfront Cost (C)</label><input data-q6-role="C_up" type="number" min="0" step="any" placeholder="e.g. 2.5"></div><div class="mini-field"><label>Resulting Cost (C)</label><input data-q6-role="C_res" type="number" min="0" step="any" placeholder="e.g. 1"></div>'
+        : '<div class="mini-sep q6-impact-after-btn" aria-hidden="true"></div><div class="mini-heading q6-impact-placeholder" aria-hidden="true">Cost</div><div class="mini-field q6-impact-placeholder" aria-hidden="true"><label>Upfront Cost (C)</label><input type="number" tabindex="-1"></div><div class="mini-field q6-impact-placeholder" aria-hidden="true"><label>Resulting Cost (C)</label><input type="number" tabindex="-1"></div>',
+      '<div class="mini-sep"></div>',
+      '<div class="mini-heading">Probability</div>',
+      '<div class="mini-field"><label>Probability Unit</label><select data-q6-role="mode"><option value="percent">Percentage (%)</option><option value="oneInX">1 in X</option><option value="micromort">Micromorts (µm)</option></select></div>',
+      '<div class="mini-field"><label data-q6-role="probLabel">Enter percentage (%)</label><input data-q6-role="val" type="number" min="0" step="any" placeholder="e.g. 1"></div>'
+    ].join('');
+    if (values) applyQ6ImpactValues(tile, values);
+    return tile;
+  }
+
+  function getQ6ImpactValues(tile){
+    const get = role => tile.querySelector('[data-q6-role="'+role+'"]');
+    return {
+      S: get('S') ? get('S').value : '',
+      mode: get('mode') ? get('mode').value : 'percent',
+      val: get('val') ? get('val').value : ''
+    };
+  }
+
+  function applyQ6ImpactValues(tile, values){
+    const set = (role, value) => { const el = tile.querySelector('[data-q6-role="'+role+'"]'); if (el && value != null) el.value = value; };
+    set('S', values.S || '');
+    set('mode', values.mode || 'percent');
+    set('val', values.val || '');
+  }
+
+  function syncQ6ImpactButtonHeights(chunk){
+    const grid = chunk && chunk.querySelector('.q6-impact-variant-grid');
+    if (!grid) return;
+    const buttons = Array.from(grid.querySelectorAll(':scope > .q6-impact-tile .q6-add-impact, :scope > .q6-impact-tile .q6-delete-impact'));
+    if (!buttons.length) return;
+    grid.style.removeProperty('--q6-impact-btn-h');
+    buttons.forEach(btn => btn.style.minHeight = '');
+    requestAnimationFrame(() => {
+      let maxH = 36;
+      buttons.forEach(btn => { maxH = Math.max(maxH, Math.ceil(btn.getBoundingClientRect().height)); });
+      grid.style.setProperty('--q6-impact-btn-h', maxH + 'px');
+    });
+  }
+
+  function renumberQ6ImpactTiles(chunk){
+    const grid = chunk.querySelector('.q6-impact-variant-grid');
+    if (!grid) return;
+    const tiles = Array.from(grid.querySelectorAll(':scope > .q6-impact-tile'));
+    grid.style.setProperty('--q6-impact-count', String(Math.max(1, tiles.length)));
+    tiles.forEach((tile, idx) => tile.dataset.q6ImpactIndex = String(idx));
+    syncQ6ImpactButtonHeights(chunk);
+  }
+
   function q6VariantTemplate(values){
     const chunk = document.createElement('div');
     chunk.className = 'mini-wrap q6-variant-chunk';
     chunk.innerHTML = [
       '<div class="q6-variant-title"></div>',
       '<div class="mini-field"><label>Total instances (N)</label><input data-q6-role="N" type="number" min="1" step="1" inputmode="numeric" value="1"></div>',
-      '<div class="mini-sep"></div>',
-      '<div class="mini-heading">Impact</div>',
-      '<div class="mini-field"><label>Impact (I)</label><input data-q6-role="S" type="number" step="any" placeholder="e.g. 5"></div>',
-      '<div class="mini-sep"></div>',
-      '<div class="mini-heading">Cost</div>',
-      '<div class="mini-field"><label>Upfront Cost (C)</label><input data-q6-role="C_up" type="number" min="0" step="any" placeholder="e.g. 2.5"></div>',
-      '<div class="mini-field"><label>Resulting Cost (C)</label><input data-q6-role="C_res" type="number" min="0" step="any" placeholder="e.g. 1"></div>',
-      '<div class="mini-sep"></div>',
-      '<div class="mini-heading">Probability</div>',
-      '<div class="mini-field"><label>Probability Unit</label><select data-q6-role="mode"><option value="percent">Percentage (%)</option><option value="oneInX">1 in X</option><option value="micromort">Micromorts (µm)</option></select></div>',
-      '<div class="mini-field"><label data-q6-role="probLabel">Enter percentage (%)</label><input data-q6-role="val" type="number" min="0" step="any" placeholder="e.g. 1"></div>'
+      '<div class="q6-impact-variant-grid"></div>'
     ].join('');
+
+    const grid = chunk.querySelector('.q6-impact-variant-grid');
+    const impactValues = values && Array.isArray(values.impacts) && values.impacts.length
+      ? values.impacts
+      : [{ S: values && values.S || '', mode: values && values.mode || 'percent', val: values && values.val || '' }];
+    impactValues.forEach((impact, idx) => grid.appendChild(q6ImpactVariantTemplate(impact, idx)));
     if (values) applyQ6VariantValues(chunk, values);
+    renumberQ6ImpactTiles(chunk);
     return chunk;
   }
 
   function getQ6VariantValues(chunk){
-    const get = role => chunk.querySelector('[data-q6-role="'+role+'"]');
+    const get = role => chunk.querySelector(':scope > .mini-field [data-q6-role="'+role+'"]');
+    const baseTile = chunk.querySelector('.q6-impact-tile[data-q6-impact-index="0"]') || chunk.querySelector('.q6-impact-tile');
+    const costGet = role => baseTile ? baseTile.querySelector('[data-q6-role="'+role+'"]') : null;
+    const impacts = Array.from(chunk.querySelectorAll('.q6-impact-variant-grid > .q6-impact-tile')).map(getQ6ImpactValues);
+    const firstImpact = impacts[0] || { S:'', mode:'percent', val:'' };
     return {
       N: get('N') ? get('N').value : '1',
-      S: get('S') ? get('S').value : '',
-      C_up: get('C_up') ? get('C_up').value : '',
-      C_res: get('C_res') ? get('C_res').value : '',
-      mode: get('mode') ? get('mode').value : 'percent',
-      val: get('val') ? get('val').value : ''
+      S: firstImpact.S || '',
+      C_up: costGet('C_up') ? costGet('C_up').value : '',
+      C_res: costGet('C_res') ? costGet('C_res').value : '',
+      mode: firstImpact.mode || 'percent',
+      val: firstImpact.val || '',
+      impacts: impacts
     };
   }
 
   function applyQ6VariantValues(chunk, values){
-    const set = (role, value) => { const el = chunk.querySelector('[data-q6-role="'+role+'"]'); if (el && value != null) el.value = value; };
-    set('N', values.N || '1');
-    set('S', values.S || '');
-    set('C_up', values.C_up || '');
-    set('C_res', values.C_res || '');
-    set('mode', values.mode || 'percent');
-    set('val', values.val || '');
+    const nEl = chunk.querySelector(':scope > .mini-field [data-q6-role="N"]');
+    if (nEl) nEl.value = values.N || '1';
+    const baseTile = chunk.querySelector('.q6-impact-tile[data-q6-impact-index="0"]') || chunk.querySelector('.q6-impact-tile');
+    if (baseTile){
+      const setCost = (role, value) => { const el = baseTile.querySelector('[data-q6-role="'+role+'"]'); if (el && value != null) el.value = value; };
+      setCost('C_up', values.C_up || '');
+      setCost('C_res', values.C_res || '');
+    }
   }
 
   function collectQ6Variants(){
-    return Array.from(variantList.querySelectorAll('.q6-variant-chunk')).map(getQ6VariantValues);
+    return Array.from(variantList.querySelectorAll(':scope > .q6-variant-chunk')).map(getQ6VariantValues);
   }
 
   function updateQ6VariantTitlesAndButtons(){
-    const chunks = Array.from(variantList.querySelectorAll('.q6-variant-chunk'));
+    const chunks = Array.from(variantList.querySelectorAll(':scope > .q6-variant-chunk'));
     chunks.forEach((chunk, idx) => {
-      const title = chunk.querySelector('.q6-variant-title');
+      const title = chunk.querySelector(':scope > .q6-variant-title');
       if (title) title.textContent = idx === 0 ? 'Base Instance' : 'Variant Instance ' + (idx + 1);
-      let del = chunk.querySelector('.q6-delete-variant');
+      let del = chunk.querySelector(':scope > .q6-delete-variant');
       if (idx === 0) { if (del) del.remove(); return; }
       if (!del) {
         del = document.createElement('button');
@@ -1253,20 +1326,20 @@ function renderMiniQ6(intoEl, node){
     wireQ6VariantEvents();
   }
 
-  function updateVariantProbLabel(chunk){
-    const mode = (chunk.querySelector('[data-q6-role="mode"]') || {}).value || 'percent';
-    const lab = chunk.querySelector('[data-q6-role="probLabel"]');
-    const val = chunk.querySelector('[data-q6-role="val"]');
+  function updateVariantProbLabel(scope){
+    const mode = (scope.querySelector('[data-q6-role="mode"]') || {}).value || 'percent';
+    const lab = scope.querySelector('[data-q6-role="probLabel"]');
+    const val = scope.querySelector('[data-q6-role="val"]');
     if (!lab || !val) return;
     if (mode === 'percent') { lab.textContent = 'Enter percentage (%)'; val.placeholder = 'e.g. 1'; val.min = '0'; val.max = '100'; }
     else if (mode === 'oneInX') { lab.textContent = 'Enter X (for “1 in X”)'; val.placeholder = 'e.g. 1,000'; val.min = '1'; val.removeAttribute('max'); }
     else { lab.textContent = 'Enter micromorts (µm)'; val.placeholder = 'e.g. 1'; val.min = '0'; val.max = '1000000'; }
   }
 
-  function applyVariantUnitsRule(chunk){
-    const s = chunk.querySelector('[data-q6-role="S"]');
-    const mode = chunk.querySelector('[data-q6-role="mode"]');
-    const val = chunk.querySelector('[data-q6-role="val"]');
+  function applyVariantUnitsRule(scope){
+    const s = scope.querySelector('[data-q6-role="S"]');
+    const mode = scope.querySelector('[data-q6-role="mode"]');
+    const val = scope.querySelector('[data-q6-role="val"]');
     if (!mode) return;
     const opt = mode.querySelector('option[value="micromort"]');
     if (!opt) return;
@@ -1277,27 +1350,68 @@ function renderMiniQ6(intoEl, node){
       const micromorts = Number(val && val.value);
       mode.value = 'oneInX';
       if (Number.isFinite(micromorts) && micromorts > 0 && val) val.value = displayProbVal('oneInX', 1e6 / micromorts);
-      updateVariantProbLabel(chunk);
+      updateVariantProbLabel(scope);
     }
   }
 
+  function addQ6ImpactVariant(chunk){
+    const grid = chunk.querySelector('.q6-impact-variant-grid');
+    if (!grid) return;
+    const firstMode = (grid.querySelector('.q6-impact-tile [data-q6-role="mode"]') || {}).value || 'percent';
+    const tile = q6ImpactVariantTemplate({ S:'', mode:firstMode, val:'' }, grid.querySelectorAll(':scope > .q6-impact-tile').length);
+    grid.appendChild(tile);
+    renumberQ6ImpactTiles(chunk);
+    wireQ6VariantEvents();
+    window.miniPristine = false;
+    if (typeof draw === 'function') draw();
+    if (typeof persistQ6 === 'function') persistQ6();
+  }
+
   function wireQ6VariantEvents(){
-    variantList.querySelectorAll('.q6-variant-chunk').forEach(chunk => {
-      updateVariantProbLabel(chunk);
-      applyVariantUnitsRule(chunk);
-      chunk.querySelectorAll('input, select').forEach(el => {
-        if (el.__q6VariantBound) return;
-        el.addEventListener('input', () => { window.miniPristine = false; applyVariantUnitsRule(chunk); if (typeof draw === 'function') draw(); });
-        el.addEventListener('change', () => { window.miniPristine = false; updateVariantProbLabel(chunk); applyVariantUnitsRule(chunk); if (typeof draw === 'function') draw(); });
-        el.__q6VariantBound = true;
+    variantList.querySelectorAll(':scope > .q6-variant-chunk').forEach(chunk => {
+      renumberQ6ImpactTiles(chunk);
+      const addImpact = chunk.querySelector('.q6-impact-tile[data-q6-impact-index="0"] .q6-add-impact') || chunk.querySelector('.q6-impact-tile .q6-add-impact');
+      if (addImpact && !addImpact.__q6ImpactBound){
+        addImpact.addEventListener('click', () => addQ6ImpactVariant(chunk));
+        addImpact.__q6ImpactBound = true;
+      }
+      chunk.querySelectorAll('.q6-impact-variant-grid > .q6-impact-tile').forEach(tile => {
+        updateVariantProbLabel(tile);
+        applyVariantUnitsRule(tile);
+        const delImpact = tile.querySelector('.q6-delete-impact');
+        if (delImpact && !delImpact.__q6ImpactBound){
+          delImpact.addEventListener('click', () => {
+            tile.remove();
+            renumberQ6ImpactTiles(chunk);
+            window.miniPristine = false;
+            if (typeof draw === 'function') draw();
+            if (typeof persistQ6 === 'function') persistQ6();
+          });
+          delImpact.__q6ImpactBound = true;
+        }
+        tile.querySelectorAll('input, select').forEach(el => {
+          if (el.__q6VariantBound) return;
+          el.addEventListener('input', () => { window.miniPristine = false; applyVariantUnitsRule(tile); q6CapSignedProbabilitiesInChunk(chunk, tile); if (typeof draw === 'function') draw(); });
+          el.addEventListener('change', () => { window.miniPristine = false; updateVariantProbLabel(tile); applyVariantUnitsRule(tile); q6CapSignedProbabilitiesInChunk(chunk, tile); if (typeof draw === 'function') draw(); });
+          el.__q6VariantBound = true;
+        });
       });
+      const nEl = chunk.querySelector(':scope > .mini-field [data-q6-role="N"]');
+      if (nEl && !nEl.__q6VariantBound){
+        nEl.addEventListener('input', () => { window.miniPristine = false; if (typeof draw === 'function') draw(); });
+        nEl.addEventListener('change', () => { window.miniPristine = false; if (typeof draw === 'function') draw(); });
+        nEl.__q6VariantBound = true;
+      }
+      syncQ6ImpactButtonHeights(chunk);
     });
   }
 
   addVariantBtn.addEventListener('click', () => {
-    variantList.appendChild(q6VariantTemplate(null));
+    const chunk = q6VariantTemplate(null);
+    variantList.appendChild(chunk);
     updateQ6VariantTitlesAndButtons();
     wireQ6VariantEvents();
+    syncQ6ImpactButtonHeights(chunk);
     window.miniPristine = false;
     if (typeof draw === 'function') draw();
     if (typeof persistQ6 === 'function') persistQ6();
@@ -1305,6 +1419,7 @@ function renderMiniQ6(intoEl, node){
 
   rebuildQ6Variants([null]);
   intoEl.appendChild(stack);
+  requestAnimationFrame(() => variantList.querySelectorAll(':scope > .q6-variant-chunk').forEach(syncQ6ImpactButtonHeights));
 
   const lockRow = document.createElement('label');
   lockRow.className = 'mini-lock-row';
@@ -1328,7 +1443,7 @@ function renderMiniQ6(intoEl, node){
 
   // Verdict
   const verdict = document.createElement('div'); verdict.className='verdict'; verdict.id='miniVerdict';
-  verdict.textContent = 'Enter values to see if preventative action should be considered.';
+  verdict.textContent = 'Enter values to see if action should be considered.';
   wrap.appendChild(verdict);
 
   const link = document.createElement('a');
@@ -1375,57 +1490,163 @@ function renderMiniQ6(intoEl, node){
     const n = Number(raw);
     return Number.isFinite(n) ? Math.abs(n) : null;
   }
+
+  function q6ImpactProbability(impact, fallbackMode){
+    const X = miniNormalizeToX((impact && impact.mode) || fallbackMode || 'percent', impact && impact.val);
+    if (!Number.isFinite(X) || X <= 0) return NaN;
+    return Math.min(1, Math.max(0, 1 / X));
+  }
+
+  function q6SetProbabilityFromP(impactTile, p){
+    if (!impactTile || !Number.isFinite(p)) return;
+    const modeEl = impactTile.querySelector('[data-q6-role="mode"]');
+    const valEl = impactTile.querySelector('[data-q6-role="val"]');
+    const mode = (modeEl && modeEl.value) || 'percent';
+    const safeP = Math.min(1, Math.max(0, p));
+    if (!valEl) return;
+    if (safeP <= 0){ valEl.value = ''; return; }
+    const raw = mode === 'oneInX' ? (1 / safeP)
+      : mode === 'percent' ? (safeP * 100)
+      : (safeP * 1000000);
+    valEl.value = displayProbVal(mode, clampProbForMode(mode, raw));
+  }
+
+  function q6CapSignedProbabilitiesInChunk(chunk, activeTile){
+    if (!chunk) return;
+    const tiles = Array.from(chunk.querySelectorAll('.q6-impact-variant-grid > .q6-impact-tile'));
+    ['positive','negative'].forEach(kind => {
+      const signedTiles = tiles.filter(tile => {
+        const sEl = tile.querySelector('[data-q6-role="S"]');
+        const n = Number(sEl && sEl.value);
+        return Number.isFinite(n) && n !== 0 && (kind === 'positive' ? n > 0 : n < 0);
+      });
+      if (!signedTiles.length) return;
+      const activeInGroup = activeTile && signedTiles.includes(activeTile) ? activeTile : signedTiles[signedTiles.length - 1];
+      let fixedSum = 0;
+      signedTiles.forEach(tile => {
+        if (tile === activeInGroup) return;
+        const modeEl = tile.querySelector('[data-q6-role="mode"]');
+        const valEl = tile.querySelector('[data-q6-role="val"]');
+        const p = q6ImpactProbability({ mode: modeEl && modeEl.value, val: valEl && valEl.value }, 'percent');
+        if (Number.isFinite(p)) fixedSum += p;
+      });
+      if (fixedSum > 1){
+        let running = 0;
+        signedTiles.forEach(tile => {
+          const modeEl = tile.querySelector('[data-q6-role="mode"]');
+          const valEl = tile.querySelector('[data-q6-role="val"]');
+          const currentP = q6ImpactProbability({ mode: modeEl && modeEl.value, val: valEl && valEl.value }, 'percent');
+          if (!Number.isFinite(currentP)) return;
+          const allowed = Math.max(0, 1 - running);
+          const nextP = Math.min(currentP, allowed);
+          if (nextP !== currentP) q6SetProbabilityFromP(tile, nextP);
+          running += nextP;
+        });
+        return;
+      }
+      const activeMode = activeInGroup.querySelector('[data-q6-role="mode"]');
+      const activeVal = activeInGroup.querySelector('[data-q6-role="val"]');
+      const activeP = q6ImpactProbability({ mode: activeMode && activeMode.value, val: activeVal && activeVal.value }, 'percent');
+      const allowed = Math.max(0, 1 - fixedSum);
+      if (Number.isFinite(activeP) && activeP > allowed + 1e-12) q6SetProbabilityFromP(activeInGroup, allowed);
+    });
+  }
   function q6SyncVariantsToMaster(){
     const variants = collectQ6Variants();
     let allComplete = variants.length > 0;
     let totalN = 0;
-    let totalExpectedImpactWeight = 0;
+    let totalNetExpectedImpactWeight = 0;
     let totalCostWeight = 0;
     let noEventProb = 1;
+    let weightedPForEquivalent = 0;
     let firstMode = (variants[0] && variants[0].mode) || 'percent';
 
-    variants.forEach(v => {
+    window.__q6NetImpactNonPositive = false;
+
+    variants.forEach((v, variantIdx) => {
       const N = Math.max(1, Math.floor(Math.abs(Number(v.N)) || 1));
-      const S = Math.abs(Number(v.S));
       const up = readQ6CostPart({ value: v.C_up });
       const res = readQ6CostPart({ value: v.C_res });
       const Cw = q6WeightedCost(up || 0) + q6WeightedCost(res || 0);
-      const X = miniNormalizeToX(v.mode || 'percent', v.val);
+      const impacts = (Array.isArray(v.impacts) && v.impacts.length)
+        ? v.impacts
+        : [{ S: v.S, mode: v.mode, val: v.val }];
 
-      if (!Number.isFinite(S) || S <= 0 || !Number.isFinite(Cw) || Cw <= 0 || !Number.isFinite(X) || X <= 0) allComplete = false;
+      let variantHasCompleteImpact = false;
+      let positiveExpected = 0;
+      let negativeExpected = 0;
+      let positivePUsed = 0;
+      let negativePUsed = 0;
+      let variantNoEventProb = 1;
+      let variantWeightedP = 0;
+
+      if (!Number.isFinite(Cw) || Cw <= 0) allComplete = false;
 
       totalN += N;
-      if (Number.isFinite(X) && X > 0){
-        const p = Math.min(1, Math.max(0, 1 / X));
-        noEventProb *= Math.pow(1 - p, N);
-
-        if (Number.isFinite(S) && S > 0){
-          // Each variant contributes its own expected weighted impact first:
-          // N × p × weightedImpact. Only then do the variants get combined.
-          totalExpectedImpactWeight += N * p * q6WeightedCost(S);
+      impacts.forEach(impact => {
+        const rawS = Number(impact.S);
+        const absS = Math.abs(rawS);
+        const pRaw = q6ImpactProbability(impact, v.mode);
+        if (!Number.isFinite(rawS) || rawS === 0 || !Number.isFinite(absS) || absS <= 0 || !Number.isFinite(pRaw)) {
+          allComplete = false;
+          return;
         }
-      }
+
+        variantHasCompleteImpact = true;
+        const sign = rawS < 0 ? -1 : 1;
+        const usedP = sign > 0
+          ? Math.min(pRaw, Math.max(0, 1 - positivePUsed))
+          : Math.min(pRaw, Math.max(0, 1 - negativePUsed));
+
+        if (sign > 0) positivePUsed += usedP;
+        else negativePUsed += usedP;
+
+        const weightedImpact = q6WeightedCost(absS) * usedP;
+        if (sign > 0) positiveExpected += weightedImpact;
+        else negativeExpected += weightedImpact;
+
+        if (usedP > 0) {
+          variantNoEventProb *= (1 - usedP);
+          variantWeightedP += usedP;
+        }
+      });
+
+      if (!variantHasCompleteImpact) allComplete = false;
       if (Number.isFinite(Cw) && Cw > 0) totalCostWeight += N * Cw;
+
+      const netExpected = positiveExpected - negativeExpected;
+      totalNetExpectedImpactWeight += N * netExpected;
+      noEventProb *= Math.pow(Math.max(0, variantNoEventProb), N);
+      weightedPForEquivalent += N * Math.min(1, Math.max(0, variantWeightedP));
     });
 
     if (elN) elN.value = String(Math.max(1, totalN || 1));
     if (elM) { elM.value = firstMode; updateProbLabelForMode(firstMode); }
 
-    if (!allComplete || totalExpectedImpactWeight <= 0 || totalCostWeight <= 0){
+    if (!allComplete || totalCostWeight <= 0){
       if (elS) elS.value = '';
       if (elC) elC.value = '';
       if (elV) elV.value = '';
       return false;
     }
 
-    const combinedP = Math.min(1, Math.max(0, 1 - noEventProb));
-    const combinedX = combinedP > 0 ? (1 / combinedP) : MINI_MAX;
+    if (totalNetExpectedImpactWeight <= 0){
+      window.__q6NetImpactNonPositive = true;
+      if (elS) elS.value = '';
+      if (elC) elC.value = String(q6CostFromWeight(totalCostWeight));
+      if (elV) elV.value = '';
+      return true;
+    }
 
-    // Convert the summed expected impact back into the existing hidden S/C/X
-    // graph model without changing the decision math. This makes:
+    const combinedP = Math.min(1, Math.max(0, 1 - noEventProb));
+    const equivalentP = combinedP > 0 ? combinedP : Math.min(1, Math.max(0, weightedPForEquivalent));
+    const combinedX = equivalentP > 0 ? (1 / equivalentP) : MINI_MAX;
+
+    // Convert the signed, net expected impact back into the existing hidden S/C/X
+    // graph model without changing the visible tile math. This makes:
     // valuation = Xcutoff / Xuser
-    //           = totalExpectedImpactWeight / totalCostWeight.
-    const equivalentImpactWeight = combinedP > 0 ? (totalExpectedImpactWeight / combinedP) : totalExpectedImpactWeight;
+    //           = net positive weighted impact / total weighted cost.
+    const equivalentImpactWeight = equivalentP > 0 ? (totalNetExpectedImpactWeight / equivalentP) : totalNetExpectedImpactWeight;
     const S_equiv = q6CostFromWeight(equivalentImpactWeight);
     const C_equiv = q6CostFromWeight(totalCostWeight);
     const valOut = firstMode === 'oneInX' ? combinedX : (firstMode === 'percent' ? 100 / combinedX : 1e6 / combinedX);
@@ -1441,7 +1662,7 @@ function renderMiniQ6(intoEl, node){
   }
 
   const q6Root  = intoEl;
-  const Q6_STATE_VERSION = 'q6-split-containers-v1';
+  const Q6_STATE_VERSION = 'q6-impact-variants-signed-v2';
   const savedQ6 = loadNodeState('Q6');
   // Only restore Q6 values saved by this base function version. This prevents old
   // default-filled Q6 state from repopulating the boxes; fresh Q6 loads start blank
@@ -1744,9 +1965,27 @@ function renderMiniQ6(intoEl, node){
     labelG.setAttribute('visibility','hidden');
     lockHLine.setAttribute('visibility','hidden');
     lockVLine.setAttribute('visibility','hidden');
-    verdict.textContent = 'Enter values to see if preventative action should be considered.';
+    verdict.textContent = 'Enter values to see if action should be considered.';
     verdict.classList.remove('ok','no');
     if (cont) cont.disabled = true;
+  }
+
+  function setNetNonPositiveGraphState(){
+    valuationEl.textContent = 'Valuation Grade: 0';
+    axesG.setAttribute('opacity','0.55');
+    curve.setAttribute('d','');
+    shadeIn.setAttribute('d','');
+    veilG.removeAttribute('visibility');
+    handle.setAttribute('visibility','hidden');
+    labelG.setAttribute('visibility','hidden');
+    lockHLine.setAttribute('visibility','hidden');
+    lockVLine.setAttribute('visibility','hidden');
+    veilT.textContent = 'Net weighted impact is zero or negative';
+    verdict.textContent = 'Verdict: Action should NOT be considered.';
+    verdict.classList.remove('ok');
+    verdict.classList.add('no');
+    renderMiniQ6._act = false;
+    if (cont) cont.disabled = false;
   }
 
   function formatValuationGrade(Xc, Xuser){
@@ -1778,6 +2017,12 @@ function renderMiniQ6(intoEl, node){
     cMaxView = Math.max(10, isFinite(typedC) ? typedC * 1.15 : 10);
     drawAxes(mode);
 
+    if (window.__q6NetImpactNonPositive){
+      setNetNonPositiveGraphState();
+      return;
+    }
+
+    veilT.textContent = 'Enter values above to see the cutoff curve';
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (!hasAll) {
       setEmptyGraphState();
@@ -1831,7 +2076,7 @@ function renderMiniQ6(intoEl, node){
 
     const valuationForVerdict = (Xuser > 0 && isFinite(Xc) && isFinite(Xuser)) ? (Xc / Xuser) : NaN;
     const act = isFinite(valuationForVerdict) ? (valuationForVerdict > 1 + 1e-9) : false;
-    verdict.textContent = act ? 'Verdict: Preventative action should be considered.' : 'Verdict: Preventative action should NOT be considered.';
+    verdict.textContent = act ? 'Verdict: Action should be considered.' : 'Verdict: Action should NOT be considered.';
     verdict.classList.toggle('ok', act);
     verdict.classList.toggle('no', !act);
 
