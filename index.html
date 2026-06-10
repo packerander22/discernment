@@ -498,6 +498,84 @@
 
 <!-- Mobile focus ring (prevents clipping & iOS zoom) -->
 <style id="q6-mobile-focus-visible">
+  .q6-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--q6-gap);
+  }
+
+  .q6-title-row .mini-heading {
+    margin: 0;
+    min-width: 0;
+  }
+
+  .q6-section-title,
+  .q6-variant-title,
+  .q6-graph-title {
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1.25;
+    opacity: 1;
+  }
+
+  .q6-converter-slot {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .q6-converter-btn {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 5px 8px;
+    min-height: 0;
+    font-size: 0.78rem;
+    line-height: 1.1;
+    border-radius: 5px;
+    background: var(--btn-restart);
+    color: var(--btn-text);
+    white-space: nowrap;
+  }
+
+  .q6-variant-btn,
+  .q6-impact-tile .q6-add-impact,
+  .q6-impact-tile .q6-delete-impact {
+    font-size: 1em;
+    font-family: inherit;
+    font-weight: 400;
+    line-height: normal;
+  }
+
+  .q6-converter-page {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    justify-items: center;
+    align-content: center;
+    text-align: center;
+    min-height: 260px;
+    width: 100%;
+  }
+
+  .q6-converter-card {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: min(100%, 360px);
+    margin: 0 auto;
+  }
+
+  .q6-converter-card .mini-field {
+    align-items: center;
+    text-align: center;
+  }
+
+  .q6-converter-card .mini-field input {
+    max-width: 260px;
+    justify-self: center;
+  }
+
   @media (max-width: 560px){
     .mini-wrap, .mini-field { overflow: visible !important; }
 
@@ -612,22 +690,11 @@
   .q6-impact-after-btn {
     margin: 0;
   }
-
-  .q6-variant-title,
-  .q6-graph-title {
-    font-weight: 800;
-    font-size: 1.05rem;
-    opacity: .9;
-  }
-
-  .q6-variant-btn {
+.q6-variant-btn {
     width: 100%;
     flex: 0 0 auto;
     margin: 0;
-    padding: var(--q6-gap) var(--btn-pad-x);
-    min-height: 36px;
-    line-height: 1.15;
-    font-size: 1em;
+    padding: var(--btn-pad-y) var(--btn-pad-x);
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -665,6 +732,84 @@
 
   .q6-graph-section .mini-lock-row { margin-bottom: -4px; }
   .q6-graph-section .mini-svg { margin-top: -6px; margin-bottom: -8px; }
+
+  .q6-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--q6-gap);
+  }
+
+  .q6-title-row .mini-heading {
+    margin: 0;
+    min-width: 0;
+  }
+
+  .q6-section-title,
+  .q6-variant-title,
+  .q6-graph-title {
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1.25;
+    opacity: 1;
+  }
+
+  .q6-converter-slot {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .q6-converter-btn {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 5px 8px;
+    min-height: 0;
+    font-size: 0.78rem;
+    line-height: 1.1;
+    border-radius: 5px;
+    background: var(--btn-restart);
+    color: var(--btn-text);
+    white-space: nowrap;
+  }
+
+  .q6-variant-btn,
+  .q6-impact-tile .q6-add-impact,
+  .q6-impact-tile .q6-delete-impact {
+    font-size: 1em;
+    font-family: inherit;
+    font-weight: 400;
+    line-height: normal;
+  }
+
+  .q6-converter-page {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    justify-items: center;
+    align-content: center;
+    text-align: center;
+    min-height: 260px;
+    width: 100%;
+  }
+
+  .q6-converter-card {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: min(100%, 360px);
+    margin: 0 auto;
+  }
+
+  .q6-converter-card .mini-field {
+    align-items: center;
+    text-align: center;
+  }
+
+  .q6-converter-card .mini-field input {
+    max-width: 260px;
+    justify-self: center;
+  }
 
   @media (max-width: 560px){
     .q6-impact-variant-grid { grid-template-columns: 1fr; }
@@ -1239,7 +1384,7 @@ function renderMiniQ6(intoEl, node){
 
   const wrap   = document.createElement('div');
   wrap.className = 'mini-wrap q6-graph-section';
-  wrap.innerHTML = '<div class="q6-graph-title">Graph</div>';
+  wrap.innerHTML = '<div class="mini-heading q6-graph-title">Graph</div>';
   const stack = document.createElement('div');
   stack.id = 'q6-entry';
   stack.className = 'mini-fields';
@@ -1352,7 +1497,7 @@ function renderMiniQ6(intoEl, node){
     const chunk = document.createElement('div');
     chunk.className = 'mini-wrap q6-variant-chunk';
     chunk.innerHTML = [
-      '<div class="q6-variant-title"></div>',
+      '<div class="q6-title-row"><div class="mini-heading q6-variant-title"></div><span class="q6-converter-slot"></span></div>',
       '<div class="mini-field"><label>Total instances (N)</label><input data-q6-role="N" type="number" min="1" step="1" inputmode="numeric" pattern="[0-9]*" value="1"></div>',
       '<div class="q6-impact-variant-grid"></div>'
     ].join('');
@@ -1402,8 +1547,25 @@ function renderMiniQ6(intoEl, node){
   function updateQ6VariantTitlesAndButtons(){
     const chunks = Array.from(variantList.querySelectorAll(':scope > .q6-variant-chunk'));
     chunks.forEach((chunk, idx) => {
-      const title = chunk.querySelector(':scope > .q6-variant-title');
-      if (title) title.textContent = idx === 0 ? 'Base Instance' : 'Variant Instance ' + (idx + 1);
+      const title = chunk.querySelector(':scope > .q6-title-row .q6-variant-title');
+      if (title) title.textContent = idx === 0 ? 'Base Instance' : 'Variant Instance ' + idx;
+
+      const slot = chunk.querySelector(':scope > .q6-title-row .q6-converter-slot');
+      if (slot) {
+        slot.innerHTML = '';
+        if (idx === 0) {
+          const converterBtn = document.createElement('button');
+          converterBtn.type = 'button';
+          converterBtn.className = 'q6-converter-btn';
+          converterBtn.textContent = 'Weighted Value Converter';
+          converterBtn.addEventListener('click', () => {
+            if (typeof persistQ6 === 'function') persistQ6();
+            renderQ6WeightedValueConverter(intoEl, node);
+          });
+          slot.appendChild(converterBtn);
+        }
+      }
+
       let del = chunk.querySelector(':scope > .q6-delete-variant');
       if (idx === 0) { if (del) del.remove(); return; }
       if (!del) {
@@ -1607,6 +1769,61 @@ function renderMiniQ6(intoEl, node){
     if (!Number.isFinite(n) || n <= 0) return 0;
     return 1 + 1.5 * Math.log10(n);
   }
+  function q6TrimConverterValue(x){
+    if (!Number.isFinite(x)) return '';
+    return Number(x).toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
+  }
+
+  function setQ6ConverterBottomBackButton(targetEl, q6Node){
+    const buttons = document.getElementById('buttons');
+    if (!buttons) return;
+    buttons.innerHTML = '';
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'restart';
+    back.textContent = 'Back';
+    back.addEventListener('click', () => renderMiniQ6(targetEl, q6Node));
+    buttons.appendChild(back);
+  }
+
+  function renderQ6WeightedValueConverter(targetEl, q6Node){
+    targetEl.innerHTML = '';
+    setQ6ConverterBottomBackButton(targetEl, q6Node);
+
+    const page = document.createElement('div');
+    page.className = 'q6-converter-page';
+
+    const heading = document.createElement('div');
+    heading.className = 'mini-heading q6-section-title';
+    heading.textContent = 'Weighted Value Converter';
+    page.appendChild(heading);
+
+    const card = document.createElement('div');
+    card.className = 'mini-wrap q6-converter-card';
+    card.innerHTML = [
+      '<div class="mini-field"><label>Base Value (up to 10)</label><input data-q6-converter="base" type="number" min="0" max="10" step="any" placeholder="e.g. 5"></div>',
+      '<div class="mini-field"><label>Weighted Value (up to 1M)</label><input data-q6-converter="weighted" type="number" min="0" max="1000000" step="any" placeholder="e.g. 1000"></div>'
+    ].join('');
+    page.appendChild(card);
+    targetEl.appendChild(page);
+
+    const baseEl = card.querySelector('[data-q6-converter="base"]');
+    const weightedEl = card.querySelector('[data-q6-converter="weighted"]');
+baseEl.addEventListener('input', () => {
+      const raw = String(baseEl.value || '').trim();
+      if (raw === '') { weightedEl.value = ''; return; }
+      const base = Number(raw);
+      weightedEl.value = Number.isFinite(base) ? q6TrimConverterValue(Math.min(1000000, Math.max(0, q6WeightedCost(base)))) : '';
+    });
+
+    weightedEl.addEventListener('input', () => {
+      const raw = String(weightedEl.value || '').trim();
+      if (raw === '') { baseEl.value = ''; return; }
+      const weighted = Number(raw);
+      baseEl.value = Number.isFinite(weighted) ? q6TrimConverterValue(Math.min(10, Math.max(0, q6CostFromWeight(weighted)))) : '';
+    });
+}
+
   function readQ6CostPart(el){
     const raw = String((el && el.value) || '').trim();
     if (raw === '') return null;
