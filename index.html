@@ -437,6 +437,8 @@
   .verdict { margin-top:2px; font-weight:700; }  
   .verdict.ok { color: var(--if-accent); }
   .verdict.no { color: var(--subtle-text); }
+  .verdict.purple { color: var(--result-accent); }
+  .verdict-label { color: #fff; }
 
   
   .mini-lead { margin-bottom: 10px; }
@@ -644,6 +646,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
+    white-space: normal;
   }
 
   .q6-impact-placeholder {
@@ -1266,7 +1269,7 @@ function renderMiniQ6(intoEl, node){
 
   const hiddenMasters = document.createElement('div');
   hiddenMasters.style.display = 'none';
-  hiddenMasters.innerHTML = '<input id="q6N" name="q6N" type="number" value="1"><input id="miniS" name="miniS" type="number"><input id="q6C_up" name="q6C_up" type="number"><input id="q6C_res" name="q6C_res" type="number"><input id="miniC" name="miniC" type="number"><select id="miniMode" name="q6Units"><option value="percent">Percentage (%)</option><option value="oneInX">1 in X</option><option value="micromort">Micromorts (µm)</option></select><input id="miniVal" name="miniVal" type="number"><label id="miniProbLabel"></label>';
+  hiddenMasters.innerHTML = '<input id="q6N" name="q6N" type="number" min="1" step="1" value="1"><input id="miniS" name="miniS" type="number"><input id="q6C_up" name="q6C_up" type="number"><input id="q6C_res" name="q6C_res" type="number"><input id="miniC" name="miniC" type="number"><select id="miniMode" name="q6Units"><option value="percent">Percentage (%)</option><option value="oneInX">1 in X</option><option value="micromort">Micromorts (µm)</option></select><input id="miniVal" name="miniVal" type="number"><label id="miniProbLabel"></label>';
   wrap.appendChild(hiddenMasters);
 
   function q6ImpactVariantTemplate(values, index){
@@ -1276,13 +1279,14 @@ function renderMiniQ6(intoEl, node){
     const isBase = (index || 0) === 0;
     tile.innerHTML = [
       '<div class="mini-heading">Impact</div>',
-      '<div class="mini-field"><label>Impact (I)</label><input data-q6-role="S" type="number" step="any" placeholder="e.g. 5"></div>',
+      '<div class="mini-field"><label>Impact (up to -/+10)</label><input data-q6-role="S" type="number" step="any" placeholder="e.g. 5"></div>',
+      '<label class="mini-lock-row"><input data-q6-role="noActFlip" type="checkbox"> Applies if you DON\'T act</label>',
       isBase
         ? '<button type="button" class="q6-variant-btn q6-add-impact">Add Variant Impact</button>'
         : '<button type="button" class="q6-variant-btn q6-delete-impact">Delete Variant Impact</button>',
       isBase
-        ? '<div class="mini-sep q6-impact-after-btn"></div><div class="mini-heading">Cost</div><div class="mini-field"><label>Upfront Cost (C)</label><input data-q6-role="C_up" type="number" min="0" step="any" placeholder="e.g. 2.5"></div><div class="mini-field"><label>Resulting Cost (C)</label><input data-q6-role="C_res" type="number" min="0" step="any" placeholder="e.g. 1"></div>'
-        : '<div class="mini-sep q6-impact-after-btn" aria-hidden="true"></div><div class="mini-heading q6-impact-placeholder" aria-hidden="true">Cost</div><div class="mini-field q6-impact-placeholder" aria-hidden="true"><label>Upfront Cost (C)</label><input type="number" tabindex="-1"></div><div class="mini-field q6-impact-placeholder" aria-hidden="true"><label>Resulting Cost (C)</label><input type="number" tabindex="-1"></div>',
+        ? '<div class="mini-sep q6-impact-after-btn"></div><div class="mini-heading">Cost</div><div class="mini-field"><label>Upfront Cost (up to 10)</label><input data-q6-role="C_up" type="number" min="0" step="any" placeholder="e.g. 2.5"></div><div class="mini-field"><label>Resulting Cost (up to 10)</label><input data-q6-role="C_res" type="number" min="0" step="any" placeholder="e.g. 1"></div>'
+        : '<div class="mini-sep q6-impact-after-btn" aria-hidden="true"></div><div class="mini-heading q6-impact-placeholder" aria-hidden="true">Cost</div><div class="mini-field q6-impact-placeholder" aria-hidden="true"><label>Upfront Cost (up to 10)</label><input type="number" tabindex="-1"></div><div class="mini-field q6-impact-placeholder" aria-hidden="true"><label>Resulting Cost (up to 10)</label><input type="number" tabindex="-1"></div>',
       '<div class="mini-sep"></div>',
       '<div class="mini-heading">Probability</div>',
       '<div class="mini-field"><label>Probability Unit</label><select data-q6-role="mode"><option value="percent">Percentage (%)</option><option value="oneInX">1 in X</option><option value="micromort">Micromorts (µm)</option></select></div>',
@@ -1296,6 +1300,7 @@ function renderMiniQ6(intoEl, node){
     const get = role => tile.querySelector('[data-q6-role="'+role+'"]');
     return {
       S: get('S') ? get('S').value : '',
+      noActFlip: !!(get('noActFlip') && get('noActFlip').checked),
       mode: get('mode') ? get('mode').value : 'percent',
       val: get('val') ? get('val').value : ''
     };
@@ -1304,6 +1309,8 @@ function renderMiniQ6(intoEl, node){
   function applyQ6ImpactValues(tile, values){
     const set = (role, value) => { const el = tile.querySelector('[data-q6-role="'+role+'"]'); if (el && value != null) el.value = value; };
     set('S', values.S || '');
+    const flip = tile.querySelector('[data-q6-role="noActFlip"]');
+    if (flip) flip.checked = !!values.noActFlip;
     set('mode', values.mode || 'percent');
     set('val', values.val || '');
   }
@@ -1313,12 +1320,20 @@ function renderMiniQ6(intoEl, node){
     if (!grid) return;
     const buttons = Array.from(grid.querySelectorAll(':scope > .q6-impact-tile .q6-add-impact, :scope > .q6-impact-tile .q6-delete-impact'));
     if (!buttons.length) return;
-    grid.style.removeProperty('--q6-impact-btn-h');
-    buttons.forEach(btn => btn.style.minHeight = '');
-    requestAnimationFrame(() => {
+
+    // Single alignment rule: every impact-tile action button in this row uses
+    // the tallest natural button height. When narrow screens wrap “Delete
+    // Variant Impact,” the base tile's “Add Variant Impact” grows to match,
+    // so the rows below stay adjacent and aligned without spacer hacks.
+    if (grid.__q6ButtonHeightFrame) cancelAnimationFrame(grid.__q6ButtonHeightFrame);
+    grid.__q6ButtonHeightFrame = requestAnimationFrame(() => {
+      grid.style.removeProperty('--q6-impact-btn-h');
       let maxH = 36;
-      buttons.forEach(btn => { maxH = Math.max(maxH, Math.ceil(btn.getBoundingClientRect().height)); });
+      buttons.forEach(btn => {
+        maxH = Math.max(maxH, Math.ceil(btn.scrollHeight), Math.ceil(btn.getBoundingClientRect().height));
+      });
       grid.style.setProperty('--q6-impact-btn-h', maxH + 'px');
+      grid.__q6ButtonHeightFrame = null;
     });
   }
 
@@ -1336,7 +1351,7 @@ function renderMiniQ6(intoEl, node){
     chunk.className = 'mini-wrap q6-variant-chunk';
     chunk.innerHTML = [
       '<div class="q6-variant-title"></div>',
-      '<div class="mini-field"><label>Total instances (N)</label><input data-q6-role="N" type="number" min="1" step="1" inputmode="numeric" value="1"></div>',
+      '<div class="mini-field"><label>Total instances (N)</label><input data-q6-role="N" type="number" min="1" step="1" inputmode="numeric" pattern="[0-9]*" value="1"></div>',
       '<div class="q6-impact-variant-grid"></div>'
     ].join('');
 
@@ -1369,7 +1384,7 @@ function renderMiniQ6(intoEl, node){
 
   function applyQ6VariantValues(chunk, values){
     const nEl = chunk.querySelector(':scope > .mini-field [data-q6-role="N"]');
-    if (nEl) nEl.value = values.N || '1';
+    if (nEl) nEl.value = String(q6CleanInstanceCount(values.N || 1));
     const baseTile = chunk.querySelector('.q6-impact-tile[data-q6-impact-index="0"]') || chunk.querySelector('.q6-impact-tile');
     if (baseTile){
       const setCost = (role, value) => { const el = baseTile.querySelector('[data-q6-role="'+role+'"]'); if (el && value != null) el.value = value; };
@@ -1486,8 +1501,14 @@ function renderMiniQ6(intoEl, node){
       });
       const nEl = chunk.querySelector(':scope > .mini-field [data-q6-role="N"]');
       if (nEl && !nEl.__q6VariantBound){
-        nEl.addEventListener('input', () => { window.miniPristine = false; if (typeof draw === 'function') draw(); });
-        nEl.addEventListener('change', () => { window.miniPristine = false; if (typeof draw === 'function') draw(); });
+        nEl.addEventListener('keydown', e => { if (e.key === '-' || e.key === '+' || e.key === '.' || e.key.toLowerCase() === 'e') e.preventDefault(); });
+        nEl.addEventListener('beforeinput', e => { if (e.data && /[-+.eE]/.test(e.data)) e.preventDefault(); });
+        nEl.addEventListener('paste', e => {
+          const pasted = (e.clipboardData || window.clipboardData).getData('text');
+          if (!/^\d+$/.test(pasted.trim())) e.preventDefault();
+        });
+        nEl.addEventListener('input', () => { window.miniPristine = false; q6EnforceInstanceCount(nEl); if (typeof draw === 'function') draw(); });
+        nEl.addEventListener('change', () => { window.miniPristine = false; q6EnforceInstanceCount(nEl); if (typeof draw === 'function') draw(); });
         nEl.__q6VariantBound = true;
       }
       syncQ6ImpactButtonHeights(chunk);
@@ -1508,6 +1529,15 @@ function renderMiniQ6(intoEl, node){
   rebuildQ6Variants([null]);
   intoEl.appendChild(stack);
   requestAnimationFrame(() => variantList.querySelectorAll(':scope > .q6-variant-chunk').forEach(syncQ6ImpactButtonHeights));
+  const syncAllQ6ImpactButtonHeights = () => variantList.querySelectorAll(':scope > .q6-variant-chunk').forEach(syncQ6ImpactButtonHeights);
+  if (!window.__q6ImpactButtonResizeBound){
+    window.addEventListener('resize', () => requestAnimationFrame(syncAllQ6ImpactButtonHeights));
+    window.__q6ImpactButtonResizeBound = true;
+  }
+  if (window.ResizeObserver && !variantList.__q6ImpactResizeObserver){
+    variantList.__q6ImpactResizeObserver = new ResizeObserver(() => requestAnimationFrame(syncAllQ6ImpactButtonHeights));
+    variantList.__q6ImpactResizeObserver.observe(variantList);
+  }
 
   const lockRow = document.createElement('label');
   lockRow.className = 'mini-lock-row';
@@ -1579,6 +1609,20 @@ function renderMiniQ6(intoEl, node){
     return Number.isFinite(n) ? Math.abs(n) : null;
   }
 
+  function q6CleanInstanceCount(value){
+    const n = Math.floor(Number(value));
+    return Number.isFinite(n) && n >= 1 ? n : 1;
+  }
+
+  function q6EnforceInstanceCount(el){
+    if (!el) return 1;
+    const raw = String(el.value || '').trim();
+    const n = Math.floor(Number(raw));
+    const clean = Number.isFinite(n) && n >= 1 ? n : 1;
+    if (raw !== String(clean)) el.value = String(clean);
+    return clean;
+  }
+
   function q6ImpactProbability(impact, fallbackMode){
     const X = miniNormalizeToX((impact && impact.mode) || fallbackMode || 'percent', impact && impact.val);
     if (!Number.isFinite(X) || X <= 0) return NaN;
@@ -1606,7 +1650,9 @@ function renderMiniQ6(intoEl, node){
       const signedTiles = tiles.filter(tile => {
         const sEl = tile.querySelector('[data-q6-role="S"]');
         const n = Number(sEl && sEl.value);
-        return Number.isFinite(n) && n !== 0 && (kind === 'positive' ? n > 0 : n < 0);
+        const flip = !!(tile.querySelector('[data-q6-role="noActFlip"]') || {}).checked;
+        const effective = flip ? -n : n;
+        return Number.isFinite(effective) && effective !== 0 && (kind === 'positive' ? effective > 0 : effective < 0);
       });
       if (!signedTiles.length) return;
       const activeInGroup = activeTile && signedTiles.includes(activeTile) ? activeTile : signedTiles[signedTiles.length - 1];
@@ -1650,9 +1696,10 @@ function renderMiniQ6(intoEl, node){
     let firstMode = (variants[0] && variants[0].mode) || 'percent';
 
     window.__q6NetImpactNonPositive = false;
+    window.__q6NetValuation = NaN;
 
     variants.forEach((v, variantIdx) => {
-      const N = Math.max(1, Math.floor(Math.abs(Number(v.N)) || 1));
+      const N = q6CleanInstanceCount(v.N);
       const up = readQ6CostPart({ value: v.C_up });
       const res = readQ6CostPart({ value: v.C_res });
       const Cw = q6WeightedCost(up || 0) + q6WeightedCost(res || 0);
@@ -1681,7 +1728,8 @@ function renderMiniQ6(intoEl, node){
         }
 
         variantHasCompleteImpact = true;
-        const sign = rawS < 0 ? -1 : 1;
+        const effectiveS = impact.noActFlip ? -rawS : rawS;
+        const sign = effectiveS < 0 ? -1 : 1;
         const usedP = sign > 0
           ? Math.min(pRaw, Math.max(0, 1 - positivePUsed))
           : Math.min(pRaw, Math.max(0, 1 - negativePUsed));
@@ -1718,6 +1766,8 @@ function renderMiniQ6(intoEl, node){
       return false;
     }
 
+    window.__q6NetValuation = totalCostWeight > 0 ? (totalNetExpectedImpactWeight / totalCostWeight) : NaN;
+
     if (totalNetExpectedImpactWeight <= 0){
       window.__q6NetImpactNonPositive = true;
       if (elS) elS.value = '';
@@ -1750,7 +1800,7 @@ function renderMiniQ6(intoEl, node){
   }
 
   const q6Root  = intoEl;
-  const Q6_STATE_VERSION = 'q6-impact-variants-signed-v2';
+  const Q6_STATE_VERSION = 'q6-impact-variants-signed-v3';
   const savedQ6 = loadNodeState('Q6');
   // Only restore Q6 values saved by this base function version. This prevents old
   // default-filled Q6 state from repopulating the boxes; fresh Q6 loads start blank
@@ -1916,7 +1966,7 @@ function renderMiniQ6(intoEl, node){
   const veilT   = document.createElementNS('http://www.w3.org/2000/svg','text');
   veilT.setAttribute('x', pad.left + plotW/2); veilT.setAttribute('y', pad.top + plotH/2);
   veilT.setAttribute('text-anchor','middle'); veilT.setAttribute('dominant-baseline','middle');
-  veilT.setAttribute('fill', '#aaa'); veilT.setAttribute('font-size','18');
+  veilT.setAttribute('fill', 'var(--axis-color-dim)'); veilT.setAttribute('font-size','24');
   veilT.textContent = 'Enter values above to see the cutoff curve';
   veilG.appendChild(veilR); veilG.appendChild(veilT);
 
@@ -2052,17 +2102,23 @@ function renderMiniQ6(intoEl, node){
     curve.setAttribute('d','');
     shadeIn.setAttribute('d','');
     veilG.removeAttribute('visibility');
+    veilT.setAttribute('fill', 'var(--axis-color-dim)');
+    veilT.setAttribute('font-size','24');
+    veilT.textContent = 'Enter values above to see the cutoff curve';
     handle.setAttribute('visibility','hidden');
     labelG.setAttribute('visibility','hidden');
     lockHLine.setAttribute('visibility','hidden');
     lockVLine.setAttribute('visibility','hidden');
     verdict.textContent = 'Enter values to see if action should be considered.';
-    verdict.classList.remove('ok','no');
+    verdict.classList.remove('ok','no','purple');
     if (cont) cont.disabled = true;
   }
 
   function setNetNonPositiveGraphState(){
-    valuationEl.textContent = 'Valuation Grade: 0';
+    const netValuation = Number(window.__q6NetValuation);
+    const isNegative = Number.isFinite(netValuation) && netValuation < 0;
+    const isZero = !isNegative;
+    valuationEl.textContent = 'Valuation Grade: ' + formatSignedValuationGrade(Number.isFinite(netValuation) ? netValuation : 0);
     axesG.setAttribute('opacity','0.55');
     curve.setAttribute('d','');
     shadeIn.setAttribute('d','');
@@ -2071,12 +2127,27 @@ function renderMiniQ6(intoEl, node){
     labelG.setAttribute('visibility','hidden');
     lockHLine.setAttribute('visibility','hidden');
     lockVLine.setAttribute('visibility','hidden');
-    veilT.textContent = 'Net weighted impact is zero or negative';
-    verdict.textContent = 'Verdict: Action should NOT be considered.';
-    verdict.classList.remove('ok');
-    verdict.classList.add('no');
+    veilT.setAttribute('fill', 'var(--result-accent)');
+    veilT.setAttribute('font-size','24');
+    veilT.textContent = isZero ? 'Net impact is zero' : 'Net impact is negative';
+    verdict.innerHTML = '<span class="verdict-label">Verdict:</span> Action should NOT be considered.';
+    verdict.classList.remove('ok','no');
+    verdict.classList.add('purple');
     renderMiniQ6._act = false;
     if (cont) cont.disabled = false;
+  }
+
+  function formatSignedValuationGrade(valuation){
+    if (!Number.isFinite(valuation)) return '—';
+    if (Math.abs(valuation) <= 1e-12) return '0';
+    const sign = valuation < 0 ? '-' : '';
+    const absVal = Math.abs(valuation);
+    if (absVal >= 1000) return sign + Math.round(absVal).toLocaleString();
+    const decimals = absVal < 1 ? 4
+                   : absVal < 10 ? 3
+                   : absVal < 100 ? 2
+                   : 1;
+    return sign + absVal.toFixed(decimals).replace(/0+$/,'').replace(/\.$/,'');
   }
 
   function formatValuationGrade(Xc, Xuser){
@@ -2113,6 +2184,8 @@ function renderMiniQ6(intoEl, node){
       return;
     }
 
+    veilT.setAttribute('fill', 'var(--axis-color-dim)');
+    veilT.setAttribute('font-size','24');
     veilT.textContent = 'Enter values above to see the cutoff curve';
     const hasAll = [elS, elC, elV].every(el => el && String(el.value || '').trim() !== '');
     if (!hasAll) {
@@ -2167,7 +2240,8 @@ function renderMiniQ6(intoEl, node){
 
     const valuationForVerdict = (Xuser > 0 && isFinite(Xc) && isFinite(Xuser)) ? (Xc / Xuser) : NaN;
     const act = isFinite(valuationForVerdict) ? (valuationForVerdict > 1 + 1e-9) : false;
-    verdict.textContent = act ? 'Verdict: Action should be considered.' : 'Verdict: Action should NOT be considered.';
+    verdict.innerHTML = '<span class="verdict-label">Verdict:</span> ' + (act ? 'Action should be considered.' : 'Action should NOT be considered.');
+    verdict.classList.remove('purple');
     verdict.classList.toggle('ok', act);
     verdict.classList.toggle('no', !act);
 
