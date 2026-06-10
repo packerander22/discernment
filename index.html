@@ -889,8 +889,13 @@ var miniMaster = {
   const isReload = nav ? (nav.type === 'reload') 
                        : (performance && performance.navigation && performance.navigation.type === 1);
   if (isReload) {
+    // A browser refresh should start Q6 fresh. Session storage is still used
+    // for normal in-guide navigation/back behavior, but it must not survive
+    // an actual page reload.
+    sessionStorage.removeItem('node:Q6');
+    sessionStorage.removeItem('miniMaster');
     sessionStorage.removeItem('userThreshold');
-    
+
     delete window.currentThresholdPct;
   }
 })();
@@ -2734,33 +2739,51 @@ function syncHeatSliderFill(sl){
   }
 
 function resetQ6State() {
-  
+  // Restart should clear Q6 completely, while ordinary navigation/back keeps
+  // the current Q6 state through saveNodeState/loadNodeState.
   try {
-    sessionStorage.removeItem('userThreshold');   
-    sessionStorage.removeItem('miniMaster');      
+    sessionStorage.removeItem('node:Q6');
+    sessionStorage.removeItem('miniMaster');
   } catch (_) {}
 
-  
   window.miniPristine = true;
-
-  
   window.miniMaster = {
     S: null,
     C: null,
-    mode: 'oneInX',
+    mode: 'percent',
     val: null,
     X_user: null
   };
 
-  
-  const s = document.querySelector('#q6_S');
-  const c = document.querySelector('#q6_C');
-  const v = document.querySelector('#q6_val');
-  const modeSel = document.querySelector('#q6_mode');
-  if (s) s.value = '';
-  if (c) c.value = '';
-  if (v) v.value = '';
-  if (modeSel) modeSel.value = 'oneInX';
+  const variantList = document.querySelector('#q6VariantList');
+  if (variantList) {
+    const chunks = Array.from(variantList.querySelectorAll('.q6-variant-chunk'));
+    chunks.forEach((chunk, idx) => {
+      if (idx > 0) chunk.remove();
+    });
+    const base = variantList.querySelector('.q6-variant-chunk');
+    if (base) {
+      base.querySelectorAll('[data-q6-role]').forEach(el => {
+        const role = el.getAttribute('data-q6-role');
+        if (role === 'N') el.value = '1';
+        else if (role === 'mode') el.value = 'percent';
+        else if (el.tagName === 'INPUT') el.value = '';
+      });
+      const label = base.querySelector('[data-q6-role="probLabel"]');
+      const val = base.querySelector('[data-q6-role="val"]');
+      if (label) label.textContent = 'Enter percentage (%)';
+      if (val) { val.placeholder = 'e.g. 1'; val.min = '0'; val.max = '100'; }
+    }
+  }
+
+  ['#q6N', '#miniS', '#q6C_up', '#q6C_res', '#miniC', '#miniVal'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.value = (sel === '#q6N') ? '1' : '';
+  });
+  const modeSel = document.querySelector('#miniMode');
+  if (modeSel) modeSel.value = 'percent';
+  const lock = document.querySelector('#miniLockAxes');
+  if (lock) lock.checked = true;
 }
   
 
