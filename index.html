@@ -431,10 +431,7 @@
 
   .ptlabel    { font-size: 16px; font-weight: 700; fill: var(--label-text); pointer-events:none; }
   .ptlabel-bg { fill: var(--label-bg); fill-opacity:.98; stroke: var(--border); rx:10; ry:10; }
-  
-  
-  .rule    { font-weight:700; margin-top:2px; }
-  .verdict { margin-top:2px; font-weight:700; }  
+.verdict { margin-top:2px; font-weight:700; }  
   .verdict.ok { color: var(--if-accent); }
   .verdict.no { color: var(--subtle-text); }
   .verdict.purple { color: var(--result-accent); }
@@ -598,8 +595,7 @@
     overflow-x: auto;
     padding-bottom: 0;
   }
-
-  .q6-impact-tile {
+.q6-impact-tile {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--q6-gap);
@@ -669,7 +665,6 @@
 
   .q6-graph-section .mini-lock-row { margin-bottom: -4px; }
   .q6-graph-section .mini-svg { margin-top: -6px; margin-bottom: -8px; }
-  .q6-graph-section .rule { margin-top: 0; }
 
   @media (max-width: 560px){
     .q6-impact-variant-grid { grid-template-columns: 1fr; }
@@ -1314,6 +1309,11 @@ function renderMiniQ6(intoEl, node){
     set('mode', values.mode || 'percent');
     set('val', values.val || '');
   }
+  function updateQ6ImpactGridOverflowSpacing(chunk){
+    const grid = chunk && chunk.querySelector('.q6-impact-variant-grid');
+    if (!grid) return;
+    grid.style.paddingBottom = grid.scrollWidth > grid.clientWidth + 1 ? '8px' : '0';
+  }
 
   function syncQ6ImpactButtonHeights(chunk){
     const grid = chunk && chunk.querySelector('.q6-impact-variant-grid');
@@ -1333,6 +1333,7 @@ function renderMiniQ6(intoEl, node){
         maxH = Math.max(maxH, Math.ceil(btn.scrollHeight), Math.ceil(btn.getBoundingClientRect().height));
       });
       grid.style.setProperty('--q6-impact-btn-h', maxH + 'px');
+      updateQ6ImpactGridOverflowSpacing(chunk);
       grid.__q6ButtonHeightFrame = null;
     });
   }
@@ -1344,6 +1345,7 @@ function renderMiniQ6(intoEl, node){
     grid.style.setProperty('--q6-impact-count', String(Math.max(1, tiles.length)));
     tiles.forEach((tile, idx) => tile.dataset.q6ImpactIndex = String(idx));
     syncQ6ImpactButtonHeights(chunk);
+    requestAnimationFrame(() => updateQ6ImpactGridOverflowSpacing(chunk));
   }
 
   function q6VariantTemplate(values){
@@ -1420,6 +1422,9 @@ function renderMiniQ6(intoEl, node){
       }
     });
   }
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.q6-variant-chunk').forEach(updateQ6ImpactGridOverflowSpacing);
+  });
 
   function rebuildQ6Variants(items){
     variantList.innerHTML = '';
@@ -1554,7 +1559,7 @@ function renderMiniQ6(intoEl, node){
 
   // Valuation (actual formula value) — under the graph, before the verdict
   const valuationEl = document.createElement('div');
-  valuationEl.className = 'rule';
+  valuationEl.className = 'verdict valuation-grade';
   valuationEl.id = 'miniValuation';
   valuationEl.textContent = 'Valuation Grade: —';
   wrap.appendChild(valuationEl);
@@ -2081,9 +2086,11 @@ function renderMiniQ6(intoEl, node){
     vv = clampProbForMode(mode, vv);
     if (!Number.isFinite(vv)) return false;
 
-    if (document.activeElement !== elS) elS.value = String(S);
-    if (document.activeElement !== elC) elC.value = String(C);
-    if (document.activeElement !== elV) elV.value = displayProbVal(mode, vv);
+    if (!dragging){
+      if (document.activeElement !== elS) elS.value = String(S);
+      if (document.activeElement !== elC) elC.value = String(C);
+      if (document.activeElement !== elV) elV.value = displayProbVal(mode, vv);
+    }
 
     miniMaster.S = S;
     miniMaster.C = (dragging && Number.isFinite(dragExactC)) ? dragExactC : C;
@@ -2298,53 +2305,6 @@ function renderMiniQ6(intoEl, node){
     return bestC;
   }
 
-  function setCostFromDrag(Cn){
-    Cn = Math.max(MINI_EPS, Cn);
-    dragExactC = Cn;
-    const upEl = document.getElementById('q6C_up');
-    const rsEl = document.getElementById('q6C_res');
-    if (upEl && rsEl){
-      const rawR = (rsEl.value || '').trim();
-      let resVal = parseFloat(rawR);
-      if (!isFinite(resVal) || resVal < 0) resVal = 0;
-      
-      // Cn is the equivalent total cost on the 1–10 weighted scale.
-      // Preserve resulting cost when possible; solve upfront so:
-      // weight10(upfront) + weight10(resulting) = weight10(Cn).
-      const targetW = q6WeightedCost(Cn);
-      let resW = q6WeightedCost(resVal);
-      let upW = targetW - resW;
-      if (upW <= 0){
-        // If resulting alone exceeds the target total, reduce resulting and set upfront to 0.
-        resVal = q6CostFromWeight(targetW);
-        if (resVal < 0) resVal = 0;
-        
-        rsEl.value = displayProbVal('oneInX', resVal);
-        upW = 0;
-      }
-      let upVal = upW > 0 ? q6CostFromWeight(upW) : 0;
-      if (upVal < 0) upVal = 0;
-      
-      upEl.value = displayProbVal('oneInX', upVal);
-      if (typeof window.q6DualCostCompute === 'function') window.q6DualCostCompute(false, null);
-    } else if (elC){
-      elC.value = displayProbVal('oneInX', Cn);
-    }
-    miniMaster.C = Cn;
-  }
-
-  function setProbFromX(X_user, mode){
-    X_user = Math.max(1, Math.abs(Number(X_user) || 1));
-    dragExactX = X_user;
-    miniMaster.mode   = mode;
-    miniMaster.X_user = X_user;
-    let valOut = (mode==='oneInX') ? X_user
-              : (mode==='percent') ? (100/X_user)
-              : (1e6/X_user);
-    valOut = clampProbForMode(mode, valOut);
-    elV.value = displayProbVal(mode, valOut);
-    miniMaster.val = valOut;
-  }
 
   function onPointerMove(e){
     if(!dragging) return; e.preventDefault();
@@ -2406,7 +2366,7 @@ function renderMiniQ6(intoEl, node){
     }
 
     Cn = Math.max(MINI_EPS, Cn);
-    setCostFromDrag(Cn);
+    dragExactC = Cn;
 
     let X_user;
     if (forcedX != null){
@@ -2421,7 +2381,12 @@ function renderMiniQ6(intoEl, node){
       X_user = unitToX(Y, mode);
     }
 
-    setProbFromX(X_user, mode);
+    X_user = Math.max(1, Math.abs(Number(X_user) || 1));
+    dragExactX = X_user;
+    miniMaster.S = SDragLock;
+    miniMaster.C = Cn;
+    miniMaster.mode = mode;
+    miniMaster.X_user = X_user;
     draw();
   }
 
@@ -2478,6 +2443,22 @@ function renderMiniQ6(intoEl, node){
   [elCUp, elCRes].forEach(el => { if (el) el.addEventListener('input', ()=>{ window.miniPristine=false; syncQ6ComputedCost(); draw(); }); });
   elV.addEventListener('input', ()=>{ window.miniPristine=false; /* no draw here to avoid clobbering while typing */ });
   if (elLockAxes) elLockAxes.addEventListener('change', draw);
+
+  function resetQ6GraphToEnteredValues(){
+    dragging = false;
+    dragStart = null;
+    dragExactC = null;
+    dragExactX = null;
+    SDragLock = null;
+    draw();
+  }
+
+  q6Root.querySelectorAll('.mini-field input, .mini-field select, .mini-field textarea').forEach(el => {
+    if (!el.__q6FocusResetsGraph){
+      el.addEventListener('focus', resetQ6GraphToEnteredValues);
+      el.__q6FocusResetsGraph = true;
+    }
+  });
 
   const persistQ6 = () => {
     const vals = collectFormValues(q6Root);
