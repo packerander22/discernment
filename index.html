@@ -68,7 +68,7 @@
   .segment-heading {
     display:flex; align-items:center; justify-content:space-between;
     font-size:1.8em; font-weight:bold; margin-bottom:15px; padding:8px;
-    border-bottom:2px solid #ddd; gap:12px; transition: color var(--flash-dur) cubic-bezier(.4,0,.6,1);
+    border-bottom:2px solid #ddd; gap:8px; transition: color var(--flash-dur) cubic-bezier(.4,0,.6,1);
   }
   .segment-title { display:inline-flex; align-items:center; gap:8px; }
   .segment-title img.logo {
@@ -127,7 +127,7 @@
   .buttons.center { justify-content:center; }
 
   
-  .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:12px; background:#fafafa; margin:8px 0 18px 0; }
+  .risk-inline { display:none; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa; margin:8px 0 18px 0; }
   .sev-display { text-align:center; font-size:1.8em; font-weight:bold; margin-bottom:8px; }
   .risk-row { display:flex; align-items:center; gap:10px; margin:0; }
   .risk-row input[type="range"] { width:100%; }
@@ -440,7 +440,7 @@
 
   
   .mini-lead { margin-bottom: 10px; }
-  .mini-wrap { display:block; border:1px solid var(--border); border-radius:8px; background: color-mix(in oklab, var(--card), var(--bg) 6%); padding:12px; margin:10px 0 16px; overflow: visible; }
+  .mini-wrap { display:block; border:1px solid var(--border); border-radius:8px; background: color-mix(in oklab, var(--card), var(--bg) 6%); padding:8px; margin:10px 0 16px; overflow: visible; }
   .mini-wrap > a{font-size:.95rem;text-decoration:underline;color:var(--curve-color);margin-top:8px;display:inline-block}
   .mini-fields { display: grid; grid-template-columns: 1fr; gap: 12px; }
   @media (min-width: 560px){ .mini-fields { grid-template-columns: 1fr 1fr; } }
@@ -486,26 +486,7 @@
   gtag('config', 'G-VJSYRKHSRM');
 </script>
 
-<style id="mini-fix-css">
-  
-  .mini-wrap { width:100%; max-width:100%; overflow-x:hidden; overflow-y:visible; }
-  
-  .mini-wrap .mini-fields,
-  .mini-wrap .fields { display:grid; grid-template-columns: 1fr !important; gap:14px; }
-  .mini-wrap .mini-field input,
-  .mini-wrap .mini-field select,
-  .mini-wrap .mini-field textarea { width:100% !important; max-width:100% !important; box-sizing:border-box; }
-  
-  .mini-wrap svg { width:100%; max-width:100%; height:auto; }
-  
-  .mini-field label { font-size: 0.95rem; line-height: 1.35; }
-  .mini-field label input[type="checkbox"]{ vertical-align: middle; margin-right: .5rem; }
-</style>
 
-<style id="mini-fix-css-ovr">
-  #q6-entry { max-width:100%; overflow-x:hidden; }
-  .tile, .content, .mini-wrap, #q6-entry { box-sizing:border-box; }
-</style>
 
 <style id="mini-sep-base">
   .mini-sep{
@@ -542,47 +523,154 @@
   }
 </style>
 
-<style>
-  
-  .mini-wrap, #q6-entry { width: 100%; }
+<style id="q6-layout-css">
+  /* Q6 spacing system: one 8px rhythm for tiles, fields, and variant buttons. */
   #q6-entry {
+    --q6-gap: 8px;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 14px;
-    max-width: none;  
+    gap: var(--q6-gap);
+    width: 100%;
+    max-width: none;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
+
+  #q6-entry *,
+  .mini-wrap.q6-variant-chunk,
+  .mini-wrap.q6-graph-section {
+    box-sizing: border-box;
+  }
+
   #q6-entry .mini-heading {
     font-weight: 700;
     font-size: 1.5rem;
   }
+
   #q6-entry label {
     font-size: 0.95rem;
     font-weight: 400;
+    line-height: 1.35;
   }
-  #q6-entry .mini-field input, #q6-entry .mini-field select {
+
+  #q6-entry .mini-field input,
+  #q6-entry .mini-field select,
+  #q6-entry .mini-field textarea {
     width: 100%;
-    max-width: none;
+    max-width: 100%;
   }
+
+  #q6-entry svg {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
   #q6-entry .muted { opacity: .6; }
   .mini-spacer { height: 6px; }
 
-  .q6-variant-list { display:grid; grid-template-columns:1fr; gap:14px; margin:10px 0 0; }
-  .q6-variant-chunk { display:grid; grid-template-columns:1fr; gap:14px; margin:0; }
-  .q6-graph-section { display:grid; grid-template-columns:1fr; gap:10px; margin:14px 0 16px; overflow:visible; }
-  .q6-variant-title, .q6-graph-title { font-weight:800; font-size:1.05rem; opacity:.9; }
-  .q6-variant-btn { width:100%; flex:0 0 auto; padding:7px var(--btn-pad-x); min-height:36px; line-height:1.15; font-size:1em; border:none; border-radius:5px; cursor:pointer; background:var(--btn-restart); color:var(--btn-text); }
-  .q6-delete-variant { margin-top:0; }
+  .q6-variant-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--q6-gap);
+    margin: var(--q6-gap) 0 0;
+  }
+
+  .mini-wrap.q6-variant-chunk {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--q6-gap);
+    width: 100%;
+    max-width: 100%;
+    padding: var(--q6-gap);
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .q6-impact-variant-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--q6-impact-count, 1), minmax(150px, 1fr));
+    gap: var(--q6-gap);
+    align-items: start;
+    overflow-x: auto;
+    padding-bottom: 0;
+  }
+
+  .q6-impact-tile {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--q6-gap);
+    min-width: 150px;
+    padding: var(--q6-gap);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+  }
+
+  .q6-impact-tile .mini-heading { font-size: 1.35rem; }
+
+  .q6-impact-tile .mini-sep,
+  .q6-impact-after-btn {
+    margin: 0;
+  }
+
+  .q6-variant-title,
+  .q6-graph-title {
+    font-weight: 800;
+    font-size: 1.05rem;
+    opacity: .9;
+  }
+
+  .q6-variant-btn {
+    width: 100%;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: var(--q6-gap) var(--btn-pad-x);
+    min-height: 36px;
+    line-height: 1.15;
+    font-size: 1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background: var(--btn-restart);
+    color: var(--btn-text);
+  }
+
+  .q6-impact-tile .q6-add-impact,
+  .q6-impact-tile .q6-delete-impact {
+    min-height: var(--q6-impact-btn-h, 36px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .q6-impact-placeholder {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* Graph tile: 8px outer spacing only. The graph's internal tuning stays isolated here. */
+  .mini-wrap.q6-graph-section {
+    --q6-gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    padding: var(--q6-gap);
+    margin: var(--q6-gap) 0;
+    overflow: visible;
+  }
+
   .q6-graph-section .mini-lock-row { margin-bottom: -4px; }
   .q6-graph-section .mini-svg { margin-top: -6px; margin-bottom: -8px; }
   .q6-graph-section .rule { margin-top: 0; }
-  .q6-impact-variant-grid { display:grid; grid-template-columns: repeat(var(--q6-impact-count, 1), minmax(150px, 1fr)); gap:10px; align-items:start; overflow-x:auto; padding-bottom:2px; }
-  .q6-impact-tile { display:grid; grid-template-columns:1fr; gap:14px; border:1px solid var(--border); border-radius:8px; background:var(--card); padding:12px; min-width:150px; box-sizing:border-box; }
-  .q6-impact-tile .mini-heading { font-size:1.35rem; }
-  .q6-impact-after-btn { margin:0; }
-  .q6-impact-tile .q6-add-impact,
-  .q6-impact-tile .q6-delete-impact { min-height: var(--q6-impact-btn-h, 36px); display:flex; align-items:center; justify-content:center; text-align:center; }
-  .q6-impact-placeholder { visibility:hidden; pointer-events:none; }
-  @media (max-width: 560px){ .q6-impact-variant-grid { grid-template-columns:1fr !important; } }
+
+  @media (max-width: 560px){
+    .q6-impact-variant-grid { grid-template-columns: 1fr; }
+  }
 </style>
   
 </head>
@@ -1846,7 +1934,7 @@ function renderMiniQ6(intoEl, node){
       axesG.appendChild(v);
 
       const lab = document.createElementNS('http://www.w3.org/2000/svg','text');
-      lab.setAttribute('x', x); lab.setAttribute('y', pad.top + plotH + 16);
+      lab.setAttribute('x', x); lab.setAttribute('y', pad.top + plotH + 8);
       lab.setAttribute('dominant-baseline', 'hanging'); lab.setAttribute('text-anchor', 'middle');
       lab.textContent = (Math.abs(t - Math.round(t)) < 1e-8) ? Math.round(t) : t.toFixed(1).replace(/\.0$/,'');
       axesG.appendChild(lab);
@@ -1859,16 +1947,19 @@ function renderMiniQ6(intoEl, node){
       h.setAttribute('x1',pad.left); h.setAttribute('x2',pad.left+plotW); h.setAttribute('y1',y); h.setAttribute('y2',y);
       axesG.appendChild(h);
       const yt=document.createElementNS('http://www.w3.org/2000/svg','text');
-      yt.setAttribute('x', pad.left - 10); yt.setAttribute('y', y);
+      yt.setAttribute('x', pad.left - 8); yt.setAttribute('y', y);
       yt.setAttribute('text-anchor','end'); yt.setAttribute('dominant-baseline','middle');
       yt.textContent = (mode==='percent' ? (yv>=1?String(yv):yv.toExponential(1)) : yv.toLocaleString());
       axesG.appendChild(yt);
     });
 
-    xLab.setAttribute('x', pad.left+plotW/2); xLab.setAttribute('y', H-34);
+    const AXIS_TITLE_GAP = 50;
+    const Y_LABEL_OFFSET = 90, desiredLeftPadding=8;
+
+    xLab.setAttribute('x', pad.left + plotW / 2);
+    xLab.setAttribute('y', pad.top + plotH + AXIS_TITLE_GAP);
     xLab.textContent = 'Cost (C)';
 
-    const Y_LABEL_OFFSET = 90, desiredLeftPadding=8;
     yLab.textContent = yRange(mode).label;
     yLab.setAttribute('text-anchor','middle'); yLab.setAttribute('dominant-baseline','middle');
     const cy = pad.top + plotH/2, cx0 = pad.left - Y_LABEL_OFFSET;
@@ -2861,12 +2952,12 @@ function noteOrigin(node) {
 
 window.addEventListener('error', e => {
   const box = document.getElementById('errorBox') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'errorBox'}));
-  box.style.cssText = 'white-space:pre-wrap;padding:12px;margin:8px;border:1px solid #a00;background:#2b0000;color:#fff';
+  box.style.cssText = 'white-space:pre-wrap;padding:8px;margin:8px;border:1px solid #a00;background:#2b0000;color:#fff';
   box.textContent = 'JS Error: ' + (e.message || e.error || e);
 });
 window.addEventListener('unhandledrejection', e => {
   const box = document.getElementById('errorBox') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'errorBox'}));
-  box.style.cssText = 'white-space:pre-wrap;padding:12px;margin:8px;border:1px solid #a00;background:#2b0000;color:#fff';
+  box.style.cssText = 'white-space:pre-wrap;padding:8px;margin:8px;border:1px solid #a00;background:#2b0000;color:#fff';
   box.textContent = 'Promise Rejection: ' + (e.reason && (e.reason.message || e.reason)) ;
 });
   
