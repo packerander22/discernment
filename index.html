@@ -30,6 +30,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/favicons/favicon_180_transparent.png">
   
 <script>
+window.__q6ConverterPageBack = null;
+
   
   window.MathJax = {
     tex: {inlineMath: [['\\(','\\)']]},
@@ -1774,21 +1776,31 @@ function renderMiniQ6(intoEl, node){
     return Number(x).toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
   }
 
-  function setQ6ConverterBottomBackButton(targetEl, q6Node){
+  function clearQ6ConverterPageState(){
+    window.__q6ConverterPageBack = null;
+  }
+
+  function setQ6ConverterPageState(targetEl, q6Node){
+    window.__q6ConverterPageBack = () => {
+      clearQ6ConverterPageState();
+      renderMiniQ6(targetEl, q6Node);
+    };
+
     const buttons = document.getElementById('buttons');
     if (!buttons) return;
     buttons.innerHTML = '';
+
     const back = document.createElement('button');
     back.type = 'button';
     back.className = 'restart';
     back.textContent = 'Back';
-    back.addEventListener('click', () => renderMiniQ6(targetEl, q6Node));
+    back.addEventListener('click', window.__q6ConverterPageBack);
     buttons.appendChild(back);
   }
 
   function renderQ6WeightedValueConverter(targetEl, q6Node){
     targetEl.innerHTML = '';
-    setQ6ConverterBottomBackButton(targetEl, q6Node);
+    setQ6ConverterPageState(targetEl, q6Node);
 
     const page = document.createElement('div');
     page.className = 'q6-converter-page';
@@ -2851,6 +2863,8 @@ function goToNode(id) {
   maybeFlashOnEnter(currentNode, fromId);
 }
 function goBack() {
+  if (typeof window.__q6ConverterPageBack === 'function') { window.__q6ConverterPageBack(); return; }
+
   persistCurrentNodeState();
   closeAllPanels();
   var fromId = currentNode ? currentNode.id : '';
