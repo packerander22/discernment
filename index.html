@@ -1159,6 +1159,7 @@ if (typeof window.miniPristine === 'undefined') window.miniPristine = true;
   
 
 var MINI_EPS = 1e-9, MINI_MAX = 1e12;
+var MINI_BOUNDARY_EPS = 1e-9;
 var MINI_ALPHA = Math.log(0.5) / Math.log((Math.sqrt(10) - 1) / 9);
 
 function miniClamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
@@ -2410,7 +2411,7 @@ baseEl.addEventListener('input', () => {
     if (!Number.isFinite(Xc) || !Number.isFinite(Xuser) || Xuser <= 0) return '—';
 
     let valuation = Xc / Xuser;
-    if (Number.isFinite(valuation) && Math.abs(valuation - 1) <= 1e-9) valuation = 1;
+    if (Number.isFinite(valuation) && Math.abs(valuation - 1) <= MINI_BOUNDARY_EPS) valuation = 1;
 
     if (!Number.isFinite(valuation) || valuation <= 0) return '—';
     if (valuation >= 1000) return Math.round(valuation).toLocaleString();
@@ -2495,7 +2496,7 @@ baseEl.addEventListener('input', () => {
     labelBg.setAttribute('width', bb.width+2*padBox); labelBg.setAttribute('height', bb.height+2*padBox);
 
     const valuationForVerdict = (Xuser > 0 && isFinite(Xc) && isFinite(Xuser)) ? (Xc / Xuser) : NaN;
-    const act = isFinite(valuationForVerdict) ? (valuationForVerdict > 1 + 1e-9) : false;
+    const act = isFinite(valuationForVerdict) ? (valuationForVerdict >= 1 - MINI_BOUNDARY_EPS) : false;
     verdict.innerHTML = '<span class="verdict-label">Verdict:</span> ' + (act ? 'Action should be considered.' : 'Action should NOT be considered.');
     verdict.classList.remove('purple');
     verdict.classList.toggle('ok', act);
