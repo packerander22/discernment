@@ -2850,7 +2850,14 @@ function closeAllPanels() {
   }
 }
 
+function resetQ1bTemporaryModeIfAtOrBeforeQ1b(nodeId) {
+  if (nodeId === 'Q0' || nodeId === 'Q1' || nodeId === 'Q1b') {
+    q1bYesQ6ResultMode = false;
+  }
+}
+
 function beforeEnterNode(nextId) {
+  resetQ1bTemporaryModeIfAtOrBeforeQ1b(nextId);
   return nextId;
 }
 
@@ -2915,6 +2922,7 @@ function goBack() {
 
   var prev = flowchart.find(n => n.id === prevId);
   currentNode = prev || currentNode;
+  resetQ1bTemporaryModeIfAtOrBeforeQ1b(currentNode && currentNode.id);
   renderNode(currentNode);
   maybeFlashOnEnter(currentNode, fromId);
 }
