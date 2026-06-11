@@ -2285,6 +2285,16 @@ baseEl.addEventListener('input', () => {
     return yToPx(Yc, range.yMin, range.yMax);
   }
 
+  function curveYPxAtCostWithMasterCost(C, masterC, mode){
+    const oldC = miniMaster.C;
+    miniMaster.C = Math.max(MINI_EPS, Number(masterC) || MINI_EPS);
+    try {
+      return curveYPxAtCost(C, mode);
+    } finally {
+      miniMaster.C = oldC;
+    }
+  }
+
   function clampProbForMode(mode, val){
     let n = Math.abs(Number(val));
     if (!Number.isFinite(n)) return NaN;
@@ -2579,7 +2589,7 @@ baseEl.addEventListener('input', () => {
         // Vertical lock: cost never changes. The only allowed snap is
         // the fixed vertical line's exact intersection with the cutoff curve.
         Cn = dragStart.C;
-        const yCurve = curveYPxAtCost(Cn, mode);
+        const yCurve = curveYPxAtCostWithMasterCost(Cn, Cn, mode);
         const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
         if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
         isSnapped = willSnap;
@@ -2587,7 +2597,7 @@ baseEl.addEventListener('input', () => {
       }
     } else {
       Cn = pxToC(xCursor);
-      const yCurve  = curveYPxAtCost(Cn, mode);
+      const yCurve  = curveYPxAtCostWithMasterCost(Cn, Cn, mode);
       const willSnap = Math.abs(yCursor - yCurve) <= SNAP_PX;
       if (willSnap && !isSnapped && typeof window.hapticBump === 'function') window.hapticBump();
       isSnapped = willSnap;
@@ -2596,6 +2606,15 @@ baseEl.addEventListener('input', () => {
 
     Cn = Math.max(MINI_EPS, Cn);
     dragExactC = Cn;
+
+    // During drag, the dragged graph point is the canonical source of truth.
+    // Set miniMaster.C before deriving snapped X so the snapped point and
+    // draw() compute valuation from the same state. This preserves the existing
+    // curved cutoff renderer instead of replacing it with the straight-line
+    // algebraic shortcut.
+    miniMaster.S = SDragLock;
+    miniMaster.C = Cn;
+    miniMaster.mode = mode;
 
     let X_user;
     if (forcedX != null){
