@@ -550,32 +550,38 @@ window.__q6ConverterPageBack = null;
   }
 
   .q6-converter-page {
+    --q6-gap: 8px;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
-    justify-items: center;
-    align-content: center;
-    text-align: center;
-    min-height: 260px;
+    gap: var(--q6-gap);
+    justify-items: stretch;
+    align-content: start;
+    text-align: left;
     width: 100%;
   }
 
-  .q6-converter-card {
+  .mini-wrap.q6-converter-card {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
-    width: min(100%, 360px);
-    margin: 0 auto;
+    gap: var(--q6-gap);
+    width: 100%;
+    max-width: 100%;
+    padding: var(--q6-gap);
+    margin: 0;
+    overflow: visible;
+    box-sizing: border-box;
   }
 
   .q6-converter-card .mini-field {
-    align-items: center;
-    text-align: center;
+    align-items: stretch;
+    text-align: left;
   }
 
   .q6-converter-card .mini-field input {
-    max-width: 260px;
-    justify-self: center;
+    width: 100%;
+    max-width: 100%;
+    justify-self: stretch;
+    box-sizing: border-box;
   }
 
   @media (max-width: 560px){
@@ -785,32 +791,38 @@ window.__q6ConverterPageBack = null;
   }
 
   .q6-converter-page {
+    --q6-gap: 8px;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
-    justify-items: center;
-    align-content: center;
-    text-align: center;
-    min-height: 260px;
+    gap: var(--q6-gap);
+    justify-items: stretch;
+    align-content: start;
+    text-align: left;
     width: 100%;
   }
 
-  .q6-converter-card {
+  .mini-wrap.q6-converter-card {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
-    width: min(100%, 360px);
-    margin: 0 auto;
+    gap: var(--q6-gap);
+    width: 100%;
+    max-width: 100%;
+    padding: var(--q6-gap);
+    margin: 0;
+    overflow: visible;
+    box-sizing: border-box;
   }
 
   .q6-converter-card .mini-field {
-    align-items: center;
-    text-align: center;
+    align-items: stretch;
+    text-align: left;
   }
 
   .q6-converter-card .mini-field input {
-    max-width: 260px;
-    justify-self: center;
+    width: 100%;
+    max-width: 100%;
+    justify-self: stretch;
+    box-sizing: border-box;
   }
 
   @media (max-width: 560px){
